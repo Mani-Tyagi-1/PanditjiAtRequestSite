@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 const DeleteMyAccount = () => {
   const [phone, setPhone] = useState("");
@@ -7,35 +8,64 @@ const DeleteMyAccount = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Handle phone number input change
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPhone(e.target.value);
   };
 
+  // Handle OTP input change
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOtp(e.target.value);
   };
-  
+
+  // Send OTP to the backend API
   const sendOtp = async () => {
-    // Simulate OTP sending
     if (phone.length === 10) {
       setError("");
       setOtpSent(true);
-      // Simulate sending OTP via API (for now, we assume OTP is "123456")
-      console.log(`OTP sent to: ${phone}`);
+
+      try {
+        // Send phone number to backend to request OTP
+        const response = await axios.post(
+          "http://localhost:5000/api/delete-account",
+          { phone }
+        );
+        if (response.status === 200) {
+          console.log("OTP sent to:", phone);
+        }
+      } catch (err) {
+        setError("Failed to send OTP. Please try again.");
+        console.error("Error sending OTP:", err);
+      }
     } else {
       setError("Please enter a valid phone number.");
     }
   };
 
+  // Verify OTP and delete account via backend API
   const handleDeleteAccount = async () => {
-    // Simulate deleting account with OTP verification
-    if (otp === "123456") {
+    if (otp.length === 6) {
       setError("");
-      setSuccess(true);
-      // Simulate API call to delete account
-      console.log(`Account for phone number ${phone} deleted.`);
+
+      try {
+        // Send OTP to backend to verify and delete account
+        const response = await axios.post(
+          "http://localhost:5000/api/verify-otp-and-delete",
+          {
+            phone,
+            otp,
+          }
+        );
+
+        if (response.status === 200) {
+          setSuccess(true);
+        }
+      } catch (err) {
+        setError("Invalid OTP. Please try again.");
+        console.error("Error verifying OTP and deleting account:", err);
+      }
     } else {
-      setError("Invalid OTP. Please try again.");
+      setError("Please enter a valid 6-digit OTP.");
     }
   };
 
@@ -111,15 +141,6 @@ const DeleteMyAccount = () => {
             )}
           </>
         )}
-
-        <div className="text-center text-sm text-gray-500">
-          <p>
-            If you change your mind, you can always{" "}
-            <a href="/" className="text-indigo-600 hover:underline">
-              re-activate your account.
-            </a>
-          </p>
-        </div>
       </div>
     </div>
   );

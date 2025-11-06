@@ -48,30 +48,25 @@ const getExpiry = (minutes: number): Date => {
 // Main function to send OTP for Pandit account deletion
 export const sendOtp = async (req: Request, res: Response) => {
   try {
-    // Get the Pandit ID from the URL
-    const panditId = req.params.id;
+    // Get the phone number from the request body
+    const { phone } = req.body;
 
-    // Find the Pandit by the provided ID
-    let pandit = await Pandit.findById(panditId);
+    if (!phone || phone.length !== 10) {
+      return res.status(400).json({ message: "Invalid phone number format." });
+    }
+
+    // Normalize the phone number (remove any non-digit characters)
+    const normalizedPhone = normalizePhone(phone);
+
+    // Find the Pandit by the phone number
+    const pandit = await Pandit.findOne({ mobile: normalizedPhone });
 
     if (!pandit) {
       return res.status(404).json({
         success: false,
-        message: "Pandit not found with the provided ID.",
+        message: "Pandit not found with the provided phone number.",
       });
     }
-
-    // Get the phone number from the found Pandit document
-    const rawPhone = String(pandit.mobile || "");
-    const digits = (rawPhone.match(/\d/g) || []).join("");
-    if (digits.length !== 10) {
-      return res
-        .status(400)
-        .json({ message: "Invalid phone number in Pandit document" });
-    }
-
-    // Normalize phone number
-    const normalized = normalizePhone(digits);
 
     // Generate OTP and hash it
     const otp = generateOtp();
@@ -96,7 +91,7 @@ export const sendOtp = async (req: Request, res: Response) => {
     const url =
       `https://www.fast2sms.com/dev/bulkV2?authorization=${authKey}` +
       `&route=dlt&sender_id=${senderId}&message=${templateId}` +
-      `&variables_values=${otp}|1&flash=0&numbers=${normalized}`;
+      `&variables_values=${otp}|1&flash=0&numbers=${normalizedPhone}`;
 
     // Sending OTP via Fast2SMS API
     await axios.get(url);
@@ -113,21 +108,18 @@ export const verifyOtpAndDeleteAccount = async (
   req: Request,
   res: Response
 ): Promise<Response> => {
-  const { id } = req.params;
-  const { otp } = req.body;
+  const { phone, otp } = req.body; // Get phone and OTP from the request body
 
   try {
-    const pandit = await Pandit.findById(id);
+    // Find the Pandit using the phone number from the request body
+    const pandit = await Pandit.findOne({ mobile: phone });
 
     if (!pandit) {
       return res.status(404).json({
         success: false,
-        message: "Pandit not found",
+        message: "Pandit not found with the provided phone number.",
       });
     }
-
-    console.log("Stored OTP:", pandit.otp);
-    console.log("Received OTP:", otp);
 
     // Compare the received OTP with the stored (hashed) OTP
     const isOtpValid = await bcrypt.compare(otp, pandit.otp);
@@ -148,7 +140,7 @@ export const verifyOtpAndDeleteAccount = async (
     }
 
     // Delete the Pandit account after OTP validation
-    await Pandit.deleteOne({ _id: id });
+    await Pandit.deleteOne({ _id: pandit._id });
 
     return res.status(200).json({
       success: true,

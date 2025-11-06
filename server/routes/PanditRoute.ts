@@ -12,10 +12,10 @@ const router = Router();
 router.get("/pandits", getAllPandits);
 
 // Route to request account deletion (OTP sent)
-router.post("/delete-account/:id", sendOtp);
+router.post("/delete-account", sendOtp);
 
 // Route to verify OTP and delete account
-router.post('/verify-otp-and-delete/:id', verifyOtpAndDeleteAccount);
+router.post('/verify-otp-and-delete', verifyOtpAndDeleteAccount);
 
 router.post("/create", createPandit);
 

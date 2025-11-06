@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { Link as ScrollLink } from "react-scroll"; // Importing react-scroll Link
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -15,8 +16,8 @@ const navLinks = [
   { label: "Home", href: "/" },
   { label: "Registration", href: "/registration", highlight: true },
   { label: "Videos", href: "/videos" },
-  { label: "About Us", href: "/about" },
-  { label: "Contact Us", href: "/contact" },
+  { label: "About Us", href: "#about" }, // Updated to use id-based scrolling
+  { label: "Contact Us", href: "#contact" }, // Updated to use id-based scrolling
 ];
 
 const Navbar: React.FC = () => {
@@ -77,7 +78,7 @@ const Navbar: React.FC = () => {
 
         {/* Desktop Nav Links */}
         <motion.ul
-          className="hidden lg:flex items-center gap-6 xl:gap-8 bg-[#ffe3de] px-8 xl:px-10 py-5 rounded-bl-[2.5rem] rounded-br-[2.5rem]"
+          className="hidden lg:flex items-center gap-6 xl:gap-8 bg-[#ffe3de] px-8 xl:px-10 py-5 rounded-bl-[2.5rem] rounded-br-[2.5rem] "
           initial="hidden"
           animate="visible"
           variants={{
@@ -97,24 +98,28 @@ const Navbar: React.FC = () => {
               >
                 {link.highlight ? (
                   <motion.div whileHover={{ scale: 1.07 }}>
-                    <Link
-                      to={link.href}
-                      className="bg-orange-500 text-white font-medium rounded-full px-5 py-1 shadow transition-all"
+                    <ScrollLink
+                      to={link.href.slice(1)} // Remove "#" for scroll behavior
+                      smooth={true}
+                      duration={500}
+                      className="cursor-pointer bg-orange-500 text-white font-medium rounded-full px-5 py-1 shadow transition-all"
                     >
                       {link.label}
-                    </Link>
+                    </ScrollLink>
                   </motion.div>
                 ) : (
-                  <Link
-                    to={link.href}
-                    className={`font-medium transition-all ${
+                  <ScrollLink
+                    to={link.href.slice(1)} // Remove "#" for scroll behavior
+                    smooth={true}
+                    duration={500}
+                    className={`cursor-pointer font-medium transition-all ${
                       isActive
                         ? "text-orange-500 underline underline-offset-8"
                         : "text-black"
                     }`}
                   >
                     {link.label}
-                  </Link>
+                  </ScrollLink>
                 )}
               </motion.li>
             );
@@ -197,16 +202,20 @@ const Navbar: React.FC = () => {
                           transition={{ delay: index * 0.1 }}
                         >
                           {link.highlight ? (
-                            <Link
-                              to={link.href}
+                            <ScrollLink
+                              to={link.href.slice(1)} // Remove "#" for scroll behavior
+                              smooth={true}
+                              duration={500}
                               onClick={closeMobileMenu}
                               className="block bg-orange-500 text-white font-medium rounded-lg px-4 py-3 text-center shadow transition-all"
                             >
                               {link.label}
-                            </Link>
+                            </ScrollLink>
                           ) : (
-                            <Link
-                              to={link.href}
+                            <ScrollLink
+                              to={link.href.slice(1)} // Remove "#" for scroll behavior
+                              smooth={true}
+                              duration={500}
                               onClick={closeMobileMenu}
                               className={`block font-medium px-4 py-3 rounded-lg transition-all ${
                                 isActive
@@ -215,7 +224,7 @@ const Navbar: React.FC = () => {
                               }`}
                             >
                               {link.label}
-                            </Link>
+                            </ScrollLink>
                           )}
                         </motion.li>
                       );

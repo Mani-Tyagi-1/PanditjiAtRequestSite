@@ -20,7 +20,7 @@ export default function PrivacyPolicy() {
               Introduction
             </h2>
             <p className="text-slate-700 leading-relaxed">
-              TechVista Solutions Inc. ("we," "our," or "us") is committed to
+              VEDIC VAIBHAV DOT COM. ("we," "our," or "us") is committed to
               protecting your privacy. This Privacy Policy explains how we
               collect, use, disclose, and safeguard your information when you
               visit our website or use our services. Please read this privacy
@@ -293,20 +293,19 @@ export default function PrivacyPolicy() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
               <div className="space-y-2">
                 <p className="text-slate-800">
-                  <span className="font-semibold">Company:</span> TechVista
-                  Solutions Inc.
+                  <span className="font-semibold">Company:</span>{" "} VEDICVAIBHAV
+                  DOT COM PRIVATE LIMITED
                 </p>
                 <p className="text-slate-800">
                   <span className="font-semibold">Email:</span>{" "}
-                  privacy@techvista.com
+                  vedicvaibhav72@gmail.com
                 </p>
                 <p className="text-slate-800">
-                  <span className="font-semibold">Phone:</span> +1 (555)
-                  123-4567
+                  <span className="font-semibold">Phone:</span>{" "} +91 9872788769
                 </p>
                 <p className="text-slate-800">
-                  <span className="font-semibold">Address:</span> 123 Technology
-                  Drive, San Francisco, CA 94105, United States
+                  <span className="font-semibold">Address:</span>{" "} 343, Bhadson
+                  Road, North Avenue Patiala, Punjab 147001
                 </p>
               </div>
             </div>
@@ -317,7 +316,9 @@ export default function PrivacyPolicy() {
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 mt-12">
         <div className="max-w-4xl mx-auto px-6 py-6 text-center text-slate-600 text-sm">
-          <p>© 2025 TechVista Solutions Inc. All rights reserved.</p>
+          <p>
+            © 2025 VEDICVAIBHAV DOT COM PRIVATE LIMITED. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>

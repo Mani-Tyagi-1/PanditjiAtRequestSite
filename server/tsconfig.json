@@ -11,7 +11,7 @@
   },
   "include": ["src/**/*"],
   "exclude": [
-    "node_modules", // Exclude node_modules to avoid compilation of dependencies
-    "dist" // Exclude compiled JavaScript in dist folder
+    "node_modules", 
+    "dist" 
   ]
 }

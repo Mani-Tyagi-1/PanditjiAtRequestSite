@@ -87,6 +87,14 @@ const Footer: React.FC = () => {
                   Register as Pandit Ji
                 </a>
               </li>
+              <li>
+                <a
+                  href="/privacypolicy"
+                  className="text-sm hover:text-[#ff7a00] transition-colors"
+                >
+                  Privacy Policy
+                </a>
+              </li>
             </motion.ul>
           </div>
 

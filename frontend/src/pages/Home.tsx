@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
 import Section2 from "../components/Section2";
@@ -19,14 +18,14 @@ export default function Home() {
       <Stats />
       <Contact />
       <Footer />
-    <div className="p-4 flex flex-col">
+    {/* <div className="p-4 flex flex-col">
       <Link to="/privacypolicy" className="text-blue-500 underline">
         Privacy Policy
       </Link>
       <Link to="/delete-my-account" className="text-blue-500 underline">
         Delete My account
       </Link>
-    </div>
+    </div> */}
     </>
   );
 }

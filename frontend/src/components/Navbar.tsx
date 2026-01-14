@@ -14,7 +14,11 @@ import {
 
 const navLinks = [
   { label: "Home", href: "/" },
-  { label: "Registration", href: "/registration", highlight: true },
+  {
+    label: "Pandit Registration",
+    href: "https://partner.vedicvaibhav.in/affiliate-register",
+    highlight: true,
+  },
   { label: "Videos", href: "/videos" },
   { label: "About Us", href: "#about" }, // Updated to use id-based scrolling
   { label: "Contact Us", href: "#contact" }, // Updated to use id-based scrolling
@@ -134,7 +138,7 @@ const Navbar: React.FC = () => {
           className="block"
         >
           <Link
-            to="/book"
+            to="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
             className="bg-red-600 text-white px-6 xl:px-8 py-2 rounded-full font-semibold text-sm xl:text-base shadow-md hover:bg-red-700 transition-all"
           >
             BOOK PANDIT
@@ -234,7 +238,7 @@ const Navbar: React.FC = () => {
                   {/* Mobile Book Pandit Button */}
                   <div className="p-6 border-t">
                     <Link
-                      to="/book"
+                      to="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
                       onClick={closeMobileMenu}
                       className="block w-full bg-red-600 text-white px-6 py-3 rounded-full font-semibold text-center shadow-md hover:bg-red-700 transition-all"
                     >

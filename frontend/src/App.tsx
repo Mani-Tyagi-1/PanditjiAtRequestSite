@@ -9,6 +9,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/privacypolicy" element={<PrivacyPolicy />} />
       <Route path="/delete-my-account" element={<DeleteMyAccount />} />
+      {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
       
       {/* Redirect example */}
       <Route path="*" element={<Navigate to="/" replace />} />

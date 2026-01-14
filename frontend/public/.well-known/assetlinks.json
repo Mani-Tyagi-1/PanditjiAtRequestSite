@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.panditJiAtReqapp",
+      "sha256_cert_fingerprints": [
+        "8F:A6:31:14:B2:CB:04:6B:9B:EF:75:5B:4A:64:9A:5C:5B:68:CA:48:6D:B1:A1:6D:43:7F:32:F5:FF:15:1E:D4"
+      ]
+    }
+  }
+]

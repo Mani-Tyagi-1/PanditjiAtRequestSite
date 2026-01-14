@@ -81,7 +81,7 @@ const Footer: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="/registration"
+                  href="https://partner.vedicvaibhav.in/affiliate-register"
                   className="text-sm hover:text-[#ff7a00] transition-colors"
                 >
                   Register as Pandit Ji
@@ -115,7 +115,7 @@ const Footer: React.FC = () => {
               className="flex justify-center md:justify-start gap-4 text-2xl"
             >
               <a
-                href="https://www.facebook.com/"
+                href="https://www.facebook.com/share/1ZT53FVEHJ/?mibextid=wwXIfr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#CC3600] hover:text-white transition-all duration-300"
@@ -123,7 +123,7 @@ const Footer: React.FC = () => {
                 <FaFacebookF />
               </a>
               <a
-                href="https://www.instagram.com/"
+                href="https://www.instagram.com/panditjiatrequest?igsh=Ym1sbzZkbnJwM3Jh&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#CC3600] hover:text-white transition-all duration-300"
@@ -131,7 +131,7 @@ const Footer: React.FC = () => {
                 <FaInstagram />
               </a>
               <a
-                href="https://www.youtube.com/"
+                href="https://www.youtube.com/@TheVedicVaibhav?sub_confirmation=1"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#CC3600] hover:text-white transition-all duration-300"
@@ -147,11 +147,17 @@ const Footer: React.FC = () => {
         {/* Footer Bottom: Copyright */}
         <div className="mt-4 md:mt-7 text-center text-xs md:text-sm font-light">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
-            <img
-              src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png"
-              alt="Available on google play store"
-              className="h-10 sm:h-12"
-            />
+            <a
+              href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png"
+                alt="Available on google play store"
+                className="h-10 sm:h-12"
+              />
+            </a>
             <p className="px-2">
               Copyright © 2025 Pandit Ji At Request. All Rights Reserved.
             </p>

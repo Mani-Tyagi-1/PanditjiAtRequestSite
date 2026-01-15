@@ -23,12 +23,13 @@ const BookPanditSection: React.FC = () => {
               transition={{ type: "spring", stiffness: 80 }}
               className="text-md text-[#333] leading-relaxed text-center md:text-start "
             >
-              Panditji at Request is the most trusted platform for availing
-              Vedic and Hindu Puja services like performing Vedic rituals,
-              religious ceremonies, Vastu Yagya, and many more. We provide the
-              best experienced and well-known purohits and pandits at your place
-              to do puja. We are leading Pandit booking website. Now, you can
-              perform your pooja with our professional purohits & pandits.
+              Now booking a Pandit Ji is easy. Select your occasion, choose a
+              suitable date/time, and get an experienced Pandit Ji at your
+              place. We provide pandits for all Vedic and Hindu pujas, including
+              home pujas, vastu pujas, havans, weddings, and festivals. Our
+              Pandit Ji follow proper Vedic methods and help you with the
+              required samagri list, so your puja is completed smoothly with
+              full satisfaction.
             </motion.p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">

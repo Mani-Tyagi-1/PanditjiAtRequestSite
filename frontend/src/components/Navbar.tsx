@@ -15,11 +15,10 @@ import {
 const navLinks = [
   { label: "Home", href: "/" },
   {
-    label: "Pandit Registration",
+    label: "Pandit Ji Registration",
     href: "https://partner.vedicvaibhav.in/affiliate-register",
     highlight: true,
   },
-  { label: "Videos", href: "/videos" },
   { label: "About Us", href: "#about" },
   { label: "Contact Us", href: "#contact" },
 ];
@@ -59,20 +58,7 @@ const Navbar: React.FC = () => {
     // 1) Hash links => react-scroll
     if (isHashLink(link.href)) {
       const targetId = link.href.replace("#", "");
-      if (link.highlight) {
-        return (
-          <ScrollLink
-            to={targetId}
-            smooth={true}
-            duration={500}
-            onClick={isMobile ? closeMobileMenu : undefined}
-            className={highlightClass}
-            offset={-80} // optional: adjust if navbar overlaps section
-          >
-            {link.label}
-          </ScrollLink>
-        );
-      }
+      const cls = link.highlight ? highlightClass : baseClass;
 
       return (
         <ScrollLink
@@ -80,8 +66,8 @@ const Navbar: React.FC = () => {
           smooth={true}
           duration={500}
           onClick={isMobile ? closeMobileMenu : undefined}
-          className={baseClass}
-          offset={-80} // optional
+          className={cls}
+          offset={-110} // ✅ adjust if section gets hidden behind sticky header
         >
           {link.label}
         </ScrollLink>
@@ -118,7 +104,8 @@ const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="w-full">
+    // ✅ STAYS ON TOP WHILE SCROLLING (desktop + mobile)
+    <header className="sticky top-0 z-30 w-full">
       {/* Top Bar */}
       <div className="bg-red-600 flex items-center justify-between px-4 md:px-10 lg:px-20 py-2 text-white text-xs md:text-sm">
         <div className="flex items-center gap-2 md:gap-6 flex-wrap">
@@ -144,6 +131,7 @@ const Navbar: React.FC = () => {
             </a>
           </span>
         </div>
+
         <div className="flex items-center gap-3 md:gap-4">
           <a
             href="https://www.facebook.com/share/1ZT53FVEHJ/?mibextid=wwXIfr"
@@ -167,13 +155,13 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Main Navbar */}
-      <nav className="w-full flex items-center justify-between pl-2 md:px-10 lg:px-20 py-0 md:py-0 bg-white relative">
+      <nav className="w-full flex items-center justify-between pl-2 md:px-10 lg:px-20 py-0 bg-white/95 backdrop-blur border-b border-black/5 relative">
         {/* Logo */}
         <motion.div
           initial={{ x: -40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 60 }}
-          className="flex items-center z-50"
+          className="flex items-center relative z-10"
         >
           <img
             src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
@@ -214,7 +202,7 @@ const Navbar: React.FC = () => {
           initial={{ x: 30, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 60 }}
-          className="block"
+          className="block relative z-10"
         >
           <a
             href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
@@ -222,7 +210,7 @@ const Navbar: React.FC = () => {
             rel="noopener noreferrer"
             className="bg-red-600 text-white px-6 xl:px-8 py-2 rounded-full font-semibold text-sm xl:text-base shadow-md hover:bg-red-700 transition-all"
           >
-            BOOK PANDIT
+            BOOK PANDIT JI
           </a>
         </motion.div>
 
@@ -232,7 +220,7 @@ const Navbar: React.FC = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 60 }}
           onClick={toggleMobileMenu}
-          className="lg:hidden text-2xl text-gray-800 z-50"
+          className="lg:hidden text-2xl text-gray-800 relative z-10"
           aria-label="Toggle menu"
         >
           {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
@@ -262,10 +250,23 @@ const Navbar: React.FC = () => {
               >
                 <div className="flex flex-col h-full">
                   {/* Mobile Menu Header */}
-                  <div className="flex items-center justify-between p-6 border-b">
-                    <h2 className="text-lg font-semibold text-gray-800">
-                      Menu
-                    </h2>
+                  <div className="flex items-start justify-between p-6 border-b">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-3 text-amber-700/90">
+                        <span className="h-px w-10 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+                        <span className="text-lg">ॐ</span>
+                        <span className="h-px w-10 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
+                      </div>
+
+                      <h2 className="mt-1 text-xl md:text-3xl font-semibold tracking-wider text-gray-900">
+                        Pandit Ji At Request
+                      </h2>
+
+                      <p className="mt-1 text-sm text-gray-600">
+                        शुभ मुहूर्त • पूजा • मार्गदर्शन
+                      </p>
+                    </div>
+
                     <button
                       onClick={closeMobileMenu}
                       className="text-2xl text-gray-600"
@@ -298,7 +299,7 @@ const Navbar: React.FC = () => {
                       onClick={closeMobileMenu}
                       className="block w-full bg-red-600 text-white px-6 py-3 rounded-full font-semibold text-center shadow-md hover:bg-red-700 transition-all"
                     >
-                      BOOK PANDIT
+                      BOOK PANDIT JI
                     </a>
                   </div>
                 </div>

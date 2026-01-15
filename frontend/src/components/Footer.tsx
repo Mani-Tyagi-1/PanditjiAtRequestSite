@@ -37,7 +37,7 @@ const Footer: React.FC = () => {
               transition={{ type: "spring", stiffness: 80 }}
               className="text-sm md:text-md px-2 md:px-0"
             >
-              "Book Qualified Pandit Anytime Anywhere"
+              "Book Qualified Pandit Ji Anytime Anywhere"
               <br />
               Pandit Ji at Request is the most trusted platform for availing
               Vedic and Hindu Puja Services like performing Vedic Rituals,

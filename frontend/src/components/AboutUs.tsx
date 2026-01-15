@@ -33,12 +33,11 @@ const AboutUsSection: React.FC = () => {
               transition={{ type: "spring", stiffness: 80 }}
               className="text-md md:text-lg text-gray-700 leading-relaxed"
             >
-              Welcome to AU Natural Organics. We are an organic store creating
-              natural, organic beauty products that nurture and beautify your
-              skin in a healthy way. We offer the healthiest, purest, and most
-              effective organic skincare products so you can shop confidently
-              with the peace of mind that you are revitalizing and nourishing
-              your hair, skin, and nails in an eco-friendly and non-toxic way.
+              Pandit Ji at Request is a trusted platform that makes Vedic and
+              Hindu puja services simple, reliable, and accessible. We connect
+              you with experienced, qualified Pandit Ji who perform every
+              ritual with devotion and proper Vedic vidhi—right at your
+              doorstep.
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -46,9 +45,21 @@ const AboutUsSection: React.FC = () => {
               transition={{ type: "spring", stiffness: 80 }}
               className="text-md md:text-lg text-gray-700 leading-relaxed"
             >
-              We curate all our products, including our organic essential oils,
-              natural butter, carrier oils, and oral care products, from
-              handpicked natural, fresh ingredients.
+              Whether it’s Griha Pravesh, Car Pooja, Satyanarayan Katha, Havan,
+              Naming Ceremony (Naamkaran), Vastu Puja/Yagya, Festival Pooja,
+              Marriage Rituals, or any other sacred occasion, our Pandit Jis
+              ensure the ceremony is conducted smoothly and spiritually.
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 80 }}
+              className="text-md md:text-lg text-gray-700 leading-relaxed"
+            >
+              We also help with puja samagri and arrangements, so you don’t have
+              to worry about anything. With Pandit Ji at Request, book a
+              qualified Pandit Ji anytime, anywhere—and bring divine blessings into
+              your home and life.
             </motion.p>
 
             {/* Decorative Element (Arrow with orange background) */}

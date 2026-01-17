@@ -1,19 +1,27 @@
-import Navbar from "../components/Navbar";
+// import {Navbar} from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
-import Section2 from "../components/Section2";
-import Section3 from "../components/Section3";
-import AboutUs from "../components/AboutUs";
+// import {JoinPandit} from "../components/JoinPanditJi";
+// import {Services} from "../components/Services";
+// import {AboutUs} from "../components/AboutUs";
 // import Stats from "../components/Stats";
 import Contact from "../components/Contact";
 import Footer from "../components/Footer";
 
+import {Navigation} from "../components/NewComponents/Navigation";
+// import { Hero } from "../components/NewComponents/Hero";
+import { Services } from "../components/NewComponents/Services";
+import { JoinPandit } from "../components/NewComponents/JoinPandit";
+import { AboutUs } from "../components/NewComponents/About";
+// import { BookingFlow } from "../components/NewComponents/BookingFlow";
+
 export default function Home() {
   return (
     <>
-      <Navbar />
+      <Navigation />
       <HeroSection />
-      <Section3 />
-      <Section2 />
+      <Services />
+      {/* <BookingFlow /> */}
+      <JoinPandit />
       <AboutUs />
       {/* <Stats /> */}
       <Contact />

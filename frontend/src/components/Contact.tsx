@@ -4,13 +4,10 @@ import { motion } from "framer-motion";
 const WEB3FORMS_ACCESS_KEY = (import.meta as any).env
   ?.VITE_WEB3FORMS_ACCESS_KEY as string | undefined;
 
-
-
-
-
 const ContactSection: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -22,17 +19,26 @@ const ContactSection: React.FC = () => {
   const validateEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
+  const validatePhone = (value: string) =>
+    /^[6-9]\d{9}$/.test(value.trim()); // Indian mobile validation
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus(null);
 
     const n = name.trim();
     const em = email.trim();
+    const ph = phone.trim();
     const msg = message.trim();
 
     if (!n) return setStatus({ type: "error", msg: "Please enter your name." });
     if (!em || !validateEmail(em))
       return setStatus({ type: "error", msg: "Please enter a valid email." });
+    if (!ph || !validatePhone(ph))
+      return setStatus({
+        type: "error",
+        msg: "Please enter a valid 10-digit mobile number.",
+      });
     if (!msg || msg.length < 10)
       return setStatus({
         type: "error",
@@ -46,6 +52,7 @@ const ContactSection: React.FC = () => {
         access_key: WEB3FORMS_ACCESS_KEY,
         name: n,
         email: em,
+        phone: ph,
         message: msg,
         subject: `New Contact Form Message - ${n}`,
         from_name: "PanditJiAtRequest Website",
@@ -69,6 +76,7 @@ const ContactSection: React.FC = () => {
       });
       setName("");
       setEmail("");
+      setPhone("");
       setMessage("");
     } catch (err: any) {
       setStatus({
@@ -81,17 +89,17 @@ const ContactSection: React.FC = () => {
   };
 
   return (
-    <section id="contact" className="bg-white py-20">
+    <section id="contact" className="bg-white md:py-20 py-10">
       <div className="max-w-7xl mx-auto px-6 lg:px-16">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          {/* Left Column: Form */}
+          {/* Left Column */}
           <div>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ type: "spring", stiffness: 80 }}
-              className="text-4xl font-semibold text-[#FF5F01] leading-tight"
+              className="text-4xl font-semibold text-[#FF5F01]"
             >
               Get in Touch
             </motion.h2>
@@ -120,54 +128,55 @@ const ContactSection: React.FC = () => {
               transition={{ type: "spring", stiffness: 80 }}
               className="mt-8 space-y-6"
             >
-              <div>
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500"
+              />
 
-              <div>
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500"
+              />
 
-              <div>
-                <textarea
-                  placeholder="Type your message here"
-                  rows={4}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              </div>
+              <input
+                type="tel"
+                placeholder="Enter your mobile number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                maxLength={10}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500"
+              />
 
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full text-white py-3 rounded-lg font-semibold transition-all ${
-                    loading
-                      ? "bg-orange-400 cursor-not-allowed"
-                      : "bg-[#FF5F01] hover:bg-orange-600"
-                  }`}
-                >
-                  {loading ? "Sending..." : "Submit"}
-                </button>
-              </div>
+              <textarea
+                placeholder="Type your message here"
+                rows={4}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500"
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full text-white py-3 rounded-lg font-semibold ${
+                  loading
+                    ? "bg-orange-400 cursor-not-allowed"
+                    : "bg-[#FF5F01] hover:bg-orange-600"
+                }`}
+              >
+                {loading ? "Sending..." : "Submit"}
+              </button>
             </motion.form>
           </div>
 
-          {/* Right Column: Image */}
-          <div className="hidden md:block relative">
+          {/* Right Column */}
+          <div className="hidden md:block">
             <img
               src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/getintouchimg.webp"
               alt="Pandit Ji Contact"

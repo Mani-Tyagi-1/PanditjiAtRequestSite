@@ -1,6 +1,6 @@
 const HeroSection = () => {
   return (
-    <div className="w-full flex justify-center mt-2 px-2 md:px-0 md:mt-2">
+    <div className="w-full flex justify-center mt-22 px-2 md:px-0 md:mt-24">
       {/* ✅ Mobile Banner (below md) */}
       <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp">
         <img

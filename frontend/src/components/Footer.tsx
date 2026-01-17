@@ -95,6 +95,14 @@ const Footer: React.FC = () => {
                   Privacy Policy
                 </a>
               </li>
+              <li>
+                <a
+                  href="/termsandconditions"
+                  className="text-sm hover:text-[#ff7a00] transition-colors"
+                >
+                  Terms and Conditions
+                </a>
+              </li>
             </motion.ul>
           </div>
 

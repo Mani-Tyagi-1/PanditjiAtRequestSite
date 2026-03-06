@@ -7,6 +7,7 @@ import { BookingFlow } from "./components/NewComponents/BookingFlow";
 import LandingPage from "./pages/LandingPage";
 import CategoryPage from "./components/BookingComponents/CategoryPage";
 import PujaDetailPage from "./components/BookingComponents/PujaPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
       <Route path="/category/:serviceName" element={<CategoryPage />} />
       <Route path="/puja" element={<PujaDetailPage />} />
       <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
 
       {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

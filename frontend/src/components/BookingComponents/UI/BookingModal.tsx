@@ -12,6 +12,11 @@ export default function BookingModal({ isOpen, onClose, pujaTitle, price }: Book
     const [mode, setMode] = useState<'online' | 'offline'>('online');
     const [saveAs, setSaveAs] = useState<'home' | 'work' | 'other'>('home');
     const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+    const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
+    // Date computation (minimum 3 days from today)
+    const minDateStr = new Date(new Date().setDate(new Date().getDate() + 3)).toISOString().split('T')[0];
+    const [selectedDate, setSelectedDate] = useState<string>(minDateStr);
 
     const handleFetchLocation = () => {
         setIsFetchingLocation(true);
@@ -78,7 +83,7 @@ export default function BookingModal({ isOpen, onClose, pujaTitle, price }: Book
                     </div>
 
                     {/* Scrollable Body */}
-                    <div className="flex-1 overflow-y-auto pb-32">
+                    <div className="flex-1 overflow-y-auto pb-6">
 
                         <div className="px-4 py-4 space-y-7">
 
@@ -116,19 +121,12 @@ export default function BookingModal({ isOpen, onClose, pujaTitle, price }: Book
                                     <div className="flex-1 space-y-3 pr-28 sm:pr-32">
                                         <div className="relative">
                                             <input
-                                                type="text"
-                                                placeholder="3/9/2026"
-                                                className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+                                                type="date"
+                                                min={minDateStr}
+                                                value={selectedDate}
+                                                onChange={(e) => setSelectedDate(e.target.value)}
+                                                className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm appearance-none"
                                             />
-                                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                                                    <line x1="16" y1="2" x2="16" y2="6" />
-                                                    <line x1="8" y1="2" x2="8" y2="6" />
-                                                    <line x1="3" y1="10" x2="21" y2="10" />
-                                                    <circle cx="12" cy="15" r="1" fill="currentColor" />
-                                                </svg>
-                                            </div>
                                         </div>
                                         <div className="relative">
                                             <input
@@ -265,8 +263,8 @@ export default function BookingModal({ isOpen, onClose, pujaTitle, price }: Book
                                                             key={type}
                                                             onClick={() => setSaveAs(type)}
                                                             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors border ${saveAs === type
-                                                                    ? 'bg-orange-50 border-orange-200 text-orange-600'
-                                                                    : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
+                                                                ? 'bg-orange-50 border-orange-200 text-orange-600'
+                                                                : 'bg-white border-stone-200 text-stone-500 hover:bg-stone-50'
                                                                 }`}
                                                         >
                                                             {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -311,14 +309,48 @@ export default function BookingModal({ isOpen, onClose, pujaTitle, price }: Book
                     </div>
 
                     {/* Sticky Footer */}
-                    <div className="absolute bottom-0 w-full bg-[#fdfdfd] shrink-0 border-t border-stone-200 px-4 pt-3 pb-safe-bottom shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.1)]">
-                        <div className="flex items-center justify-between mb-3">
+                    <div className="w-full bg-[#fdfdfd] shrink-0 border-t border-stone-200 px-4 pt-3 pb-safe-bottom shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.1)]">
+                        <button
+                            onClick={() => setIsSummaryOpen(!isSummaryOpen)}
+                            className="w-full flex items-center justify-between mb-2 pb-1 focus:outline-none"
+                        >
                             <h3 className="text-stone-800 font-medium text-[15px]">Order Summary</h3>
+                            <div className="flex items-center gap-1.5 text-stone-500 text-xs font-semibold">
+                                {isSummaryOpen ? "Hide" : "View"} Details
+                                <svg
+                                    className={`w-3.5 h-3.5 transition-transform duration-200 ${isSummaryOpen ? "rotate-180" : ""}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </div>
+                        </button>
+
+                        {/* Price Breakdown */}
+                        <div className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-40 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"}`}>
+                            <div className="space-y-1.5 px-1 text-sm">
+                                <div className="flex justify-between text-stone-500">
+                                    <span>Base Puja</span>
+                                    <span>₹{price - 350 - 501}</span>
+                                </div>
+                                <div className="flex justify-between text-stone-500">
+                                    <span>Samagri</span>
+                                    <span>₹{350}</span>
+                                </div>
+                                <div className="flex justify-between text-stone-500">
+                                    <span>Pandit Dakshina</span>
+                                    <span>₹{501}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-stone-800 pt-1.5 border-t border-stone-100 mt-1">
+                                    <span>Total Payable</span>
+                                    <span className="text-orange-600">₹{price}</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <button className="w-full bg-[#9E9E9E] hover:bg-[#8E8E8E] text-white rounded-xl py-3.5 px-5 flex items-center justify-between transition-colors shadow-md active:scale-[0.98] mb-4">
-                            <span className="font-bold text-lg tracking-wide">₹{price}</span>
-                            <span className="font-semibold text-sm">Schedule Pandit</span>
+                        <button className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-xl py-3.5 px-5 flex items-center justify-between transition-colors shadow-md mb-4 font-bold tracking-wide">
+                            <span className="text-xl">₹{price}</span>
+                            <span className="text-sm uppercase tracking-widest text-orange-50">Schedule Pandit</span>
                         </button>
                     </div>
 

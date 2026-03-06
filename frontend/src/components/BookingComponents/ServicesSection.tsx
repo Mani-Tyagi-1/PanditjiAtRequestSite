@@ -1,13 +1,15 @@
-const services = [
-    { title: "Puja", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234666851.png" },
-    { title: "Jaap", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234657517.png" },
-    { title: "Festive", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234650321.png" },
-    { title: "Hawan", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234600889.png" },
-    { title: "Rashi Fal Pooja", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234639920.png" },
-    { title: "Dosh Nivaran", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234631877.png" },
-    { title: "Remedies Pooja", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234620032.png" },
-    { title: "Occasions Pooja", img: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234611308.png" },
-];
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+interface Category {
+    _id: string;
+    category_id: string;
+    category_name_en: string;
+    category_name_hin: string;
+    category_image: string;
+    sub_categories: string[];
+    isActive: boolean;
+}
 
 const items = [
     { title: "Verified" },
@@ -15,10 +17,33 @@ const items = [
     { title: "5+ Year Experience" },
 ];
 
-import { useNavigate } from "react-router-dom";
-
 export default function PujaServices() {
     const navigate = useNavigate();
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+                const response = await fetch(`${apiUrl}/fetch-all-pooja-category`);
+                const data = await response.json();
+
+                if (data && data.poojaCategory && Array.isArray(data.poojaCategory)) {
+                    // Filter active categories if necessary, or just use all
+                    setCategories(data.poojaCategory.filter((cat: Category) => cat.isActive));
+                } else if (data && Array.isArray(data)) {
+                    setCategories(data.filter((cat: Category) => cat.isActive));
+                }
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
     return (
         <>
             <div className="w-full  flex justify-center bg-gradient-to-b from-white via-orange-200 via-orange-300 via-orange-300 pt-7 pb-5">
@@ -37,25 +62,39 @@ export default function PujaServices() {
 
                     {/* Grid */}
                     <div className="grid grid-cols-4 sm:grid-cols-4 gap-2">
-                        {services.map((service, index) => (
-                            <div
-                                key={index}
-                                onClick={() => navigate(`/category/${encodeURIComponent(service.title)}`)}
-                                className="bg-white rounded-2xl border border-orange-200 shadow-md hover:shadow-lg transition p-1 flex flex-col items-center text-center cursor-pointer"
-                            >
-                                <div className="w-12 h-12 flex items-center justify-center">
-                                    <img
-                                        src={service.img}
-                                        alt={service.title}
-                                        className="w-10 h-10 object-contain"
-                                    />
-                                </div>
+                        {isLoading ? (
+                            // Add a simple loading skeleton state
+                            Array.from({ length: 8 }).map((_, idx) => (
+                                <div key={idx} className="bg-white/50 animate-pulse rounded-2xl border border-orange-100 p-1 flex flex-col items-center h-24" />
+                            ))
+                        ) : categories.length > 0 ? (
+                            categories.map((category) => (
+                                <div
+                                    key={category._id}
+                                    onClick={() => navigate(`/category/${encodeURIComponent(category.category_name_en)}`)}
+                                    className="bg-white rounded-2xl border border-orange-200 shadow-md hover:shadow-lg transition p-1 flex flex-col items-center text-center cursor-pointer"
+                                >
+                                    <div className="w-12 h-12 flex items-center justify-center">
+                                        <img
+                                            src={category.category_image}
+                                            alt={category.category_name_en}
+                                            className="w-10 h-10 object-contain"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = 'https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/category-images/category-images_1771234666851.png'; // Fallback image
+                                            }}
+                                        />
+                                    </div>
 
-                                <p className="text-gray-700 font-semibold text-sm leading-tight">
-                                    {service.title}
-                                </p>
+                                    <p className="text-gray-700 font-semibold text-sm leading-tight">
+                                        {category.category_name_en}
+                                    </p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-4 text-center text-stone-500 py-4 text-sm font-medium">
+                                No services found.
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             </div>

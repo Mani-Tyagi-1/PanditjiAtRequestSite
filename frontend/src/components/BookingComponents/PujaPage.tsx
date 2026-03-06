@@ -1,37 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 
 // ── Dummy Data ────────────────────────────────────────────────
-const PUJA = {
-    title: "Shri Lakshmi Pooja",
-    deity: "Shri Mahalakshmi",
-    image: "https://as2.ftcdn.net/v2/jpg/15/88/14/57/1000_F_1588145769_qpwIIJPLJkcK4066174NlWblD9cLHPi4.jpg",
-    price: 2100,
-    duration: "2–3 hrs",
-    rating: 4.9,
-    reviews: 312,
-    includes: [
-        "Trusted Pandit Ji",
-        "Verified Background",
-        "Vedic Rituals Followed",
-        "Samagri Included",
-        "Digital Prasad Kit",
-        "Post-Puja Guidance",
-    ],
-};
-
-const ACCORDIONS = [
-    { key: "purpose", title: "Purpose of Puja" },
-    { key: "process", title: "Puja Process" },
-    { key: "samagri", title: "Samagri Required" },
-    { key: "duration", title: "Duration & Timing" },
-    { key: "pandit", title: "About Pandit Ji" },
-    { key: "preparation", title: "How to Prepare" },
-    { key: "post", title: "Post Puja Guidelines" },
-    { key: "faq", title: "FAQs" },
+const STATIC_INCLUDES = [
+    "Trusted Pandit Ji",
+    "Verified Background",
+    "Vedic Rituals Followed",
+    "Samagri Included",
+    "Digital Prasad Kit",
+    "Post-Puja Guidance",
 ];
-
-const ACCORDION_CONTENT =
-    "Invoke the blessings of Goddess Lakshmi for wealth, prosperity, and abundance. This puja removes financial obstacles and invites divine grace into your home and family.";
 
 // ── Sub-components ─────────────────────────────────────────────
 
@@ -111,7 +89,60 @@ import BookingModal from "./UI/BookingModal";
 
 // ── Main Page ──────────────────────────────────────────────────
 export default function PujaDetailPage() {
+    const { pujaId } = useParams();
+    const navigate = useNavigate();
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [pujaData, setPujaData] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPooja = async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+                const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
+                const data = await response.json();
+
+                if (data && data.pooja) {
+                    setPujaData(data.pooja);
+                } else {
+                    setPujaData(data);
+                }
+            } catch (err) {
+                console.error("Error fetching puja details:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (pujaId) {
+            fetchPooja();
+        }
+    }, [pujaId]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-[#FFFAF3] flex items-center justify-center">
+                <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+            </div>
+        );
+    }
+
+    if (!pujaData) {
+        return (
+            <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center text-center px-4">
+                <span className="text-4xl mb-3">🕉</span>
+                <h2 className="text-xl font-bold text-stone-800 font-serif">Puja Not Found</h2>
+                <p className="text-stone-500 text-sm mt-1">We couldn't find the requested puja details.</p>
+            </div>
+        );
+    }
+
+    const price = pujaData.poojaPriceOnline || pujaData.poojaPriceOffline || 0;
+    const title = pujaData.poojaNameEng || "";
+    const deity = pujaData.poojaGods?.[0] || "Divine Deity";
+    const image = pujaData.poojaMainImage || pujaData.poojaCardImage || "";
+    const totalPayable = price + 350 + 501; // Following the old logic for booking price
+
 
     return (
         <>
@@ -132,15 +163,18 @@ export default function PujaDetailPage() {
             <BookingModal
                 isOpen={isBookingModalOpen}
                 onClose={() => setIsBookingModalOpen(false)}
-                pujaTitle={PUJA.title}
-                price={(PUJA.price + 350 + 501)}
+                pujaTitle={title}
+                price={totalPayable}
             />
 
             <div className="detail-page max-w-[500px] mx-auto pb-32">
 
                 {/* ── Header ── */}
                 <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
-                    <button className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm">
+                    <button 
+                        onClick={() => navigate(-1)} 
+                        className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
+                    >
                         <svg
                             className="w-4 h-4 text-stone-600"
                             fill="none"
@@ -156,9 +190,9 @@ export default function PujaDetailPage() {
                         className="text-orange-600 font-extrabold"
                         style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "26px" }}
                     >
-                        {PUJA.title}
+                        {title}
                     </h1>
-                    <p className="text-orange-900/50 text-xs font-medium mt-0.5">{PUJA.deity}</p>
+                    <p className="text-orange-900/50 text-xs font-medium mt-0.5">{deity}</p>
 
                     <div className="flex items-center justify-center gap-3 mt-2">
                         <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-orange-400/50" />
@@ -173,8 +207,8 @@ export default function PujaDetailPage() {
                     {/* Hero Image */}
                     <div className="img-wrap rounded-2xl overflow-hidden shadow-md border border-orange-100 h-56 bg-gradient-to-b from-amber-100 to-orange-50">
                         <img
-                            src={PUJA.image}
-                            alt={PUJA.title}
+                            src={image}
+                            alt={title}
                             className="img-zoom w-full h-full object-cover"
                         />
                     </div>
@@ -182,18 +216,18 @@ export default function PujaDetailPage() {
                     {/* Stats row */}
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="bg-orange-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
-                            {PUJA.deity}
+                            {deity}
                         </span>
                         <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
-                            ★ {PUJA.rating}
-                            <span className="text-stone-400 font-light ml-0.5">({PUJA.reviews} reviews)</span>
+                            ★ 4.9
+                            <span className="text-stone-400 font-light ml-0.5">(312 reviews)</span>
                         </div>
                         <div className="flex items-center gap-1 text-stone-400 text-xs ml-auto">
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <circle cx="12" cy="12" r="10" />
                                 <path d="M12 6v6l4 2" />
                             </svg>
-                            {PUJA.duration}
+                            2-3 hrs
                         </div>
                     </div>
 
@@ -236,19 +270,27 @@ export default function PujaDetailPage() {
                     <div>
                         <SectionLabel>What's Included</SectionLabel>
                         <div className="flex flex-wrap gap-2">
-                            {PUJA.includes.map((inc) => (
+                            {STATIC_INCLUDES.map((inc) => (
                                 <IncludePill key={inc} text={inc} />
                             ))}
                         </div>
                     </div>
 
-                    {/* 8 Accordions */}
+                    {/* Dynamic Accordions */}
                     <div>
                         <SectionLabel>More Details</SectionLabel>
                         <div className="space-y-2">
-                            {ACCORDIONS.map(({ key, title }) => (
-                                <AccordionRow key={key} title={title} content={ACCORDION_CONTENT} />
-                            ))}
+                            {pujaData.poojaDescription && pujaData.poojaDescription.length > 0 ? (
+                                pujaData.poojaDescription.map((desc: any) => (
+                                    <AccordionRow
+                                        key={desc.headingId || desc.heading}
+                                        title={desc.heading}
+                                        content={<div dangerouslySetInnerHTML={{ __html: desc.description }} />}
+                                    />
+                                ))
+                            ) : (
+                                <p className="text-sm font-medium text-stone-400">No additional details available.</p>
+                            )}
                         </div>
                     </div>
 
@@ -263,7 +305,7 @@ export default function PujaDetailPage() {
                                 className="text-orange-600 font-bold text-lg leading-none"
                                 style={{ fontFamily: "'DM Sans', sans-serif" }}
                             >
-                                ₹{PUJA.price.toLocaleString("en-IN")}
+                                ₹{price.toLocaleString("en-IN")}
                             </p>
                         </div>
                         <button

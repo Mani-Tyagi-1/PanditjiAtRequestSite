@@ -1,17 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES6",
-    "module": "CommonJS",
-    "outDir": "./dist",
+    "target": "ES2021",
+    "module": "commonjs",
+
+    "lib": ["ES2021", "DOM"],          // <-- gives types for fetch/Request/Response
+    "moduleResolution": "Node",        // <-- modern Node resolution
+    "types": ["node"],                 // <-- Node globals (process, Buffer, etc.)
+
+    "resolveJsonModule": true,
     "esModuleInterop": true,
     "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
-  },
-  "include": ["*.ts"],
-  "exclude": [
-    "node_modules", 
-    "dist" 
-  ]
+    "skipLibCheck": true
+  }
 }

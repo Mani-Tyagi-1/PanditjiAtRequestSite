@@ -1,9 +1,9 @@
-// import {Navbar} from "../components/Navbar";
+import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
-// import {JoinPandit} from "../components/JoinPanditJi";
-// import {Services} from "../components/Services";
-// import {AboutUs} from "../components/AboutUs";
-// import Stats from "../components/Stats";
+// import JoinPandit from "../components/JoinPanditJi";
+// import Services from "../components/Services";
+// import AboutUs from "../components/AboutUs";
+import Stats from "../components/Stats";
 import Contact from "../components/Contact";
 import Footer from "../components/Footer";
 
@@ -12,7 +12,7 @@ import {Navigation} from "../components/NewComponents/Navigation";
 import { Services } from "../components/NewComponents/Services";
 import { JoinPandit } from "../components/NewComponents/JoinPandit";
 import { AboutUs } from "../components/NewComponents/About";
-// import { BookingFlow } from "../components/NewComponents/BookingFlow";
+import { BookingFlow } from "../components/NewComponents/BookingFlow";
 
 export default function Home() {
   return (
@@ -20,12 +20,13 @@ export default function Home() {
       <Navigation />
       <HeroSection />
       <Services />
-      {/* <BookingFlow /> */}
+      <BookingFlow />
       <JoinPandit />
       <AboutUs />
-      {/* <Stats /> */}
+      <Stats />
       <Contact />
       <Footer />
+      <Navbar/>
     {/* <div className="p-4 flex flex-col">
       <Link to="/privacypolicy" className="text-blue-500 underline">
         Privacy Policy

@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, openLoginModal } = useAuth();
 
   const navItems = useMemo(
     () => [
@@ -143,22 +145,36 @@ export function Navigation() {
             })}
 
             {/* external link => keep <a> */}
-            <a
-              href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
-              target="_blank"
-              rel="noreferrer"
-            >
+            {user ? (
+              <Link to="/profile">
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gradient-to-r from-stone-500 to-stone-600 text-white px-6 py-2.5 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2 hover:cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span>Profile</span>
+                </motion.button>
+              </Link>
+            ) : (
               <motion.button
+                onClick={openLoginModal}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-2.5 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all flex items-center space-x-2 hover:cursor-pointer"
               >
-                <Phone className="w-4 h-4" />
-                <span>Book Pandit Ji</span>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                <span>Login</span>
               </motion.button>
-            </a>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -204,16 +220,26 @@ export function Navigation() {
               );
             })}
 
-            <a
-              href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <button className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg flex items-center justify-center space-x-2">
-                <Phone className="w-4 h-4" />
-                <span>Book Pandit Ji</span>
+            {user ? (
+              <Link to="/profile" onClick={() => setIsOpen(false)}>
+                <button className="w-full mt-4 bg-gradient-to-r from-stone-500 to-stone-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span>Profile</span>
+                </button>
+              </Link>
+            ) : (
+              <button
+                onClick={() => { setIsOpen(false); openLoginModal(); }}
+                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg flex items-center justify-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                <span>Login</span>
               </button>
-            </a>
+            )}
           </motion.div>
         )}
       </div>

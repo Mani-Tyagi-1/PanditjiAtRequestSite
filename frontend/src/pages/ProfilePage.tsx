@@ -1,28 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import CryptoJS from "crypto-js";
 import { motion } from "framer-motion";
 import { FaUser, FaPhone, FaEnvelope, FaChevronLeft, FaSignOutAlt, FaCalendarAlt, FaVenusMars } from "react-icons/fa";
 
-const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY;
+import { useAuth } from "../context/AuthContext";
+import { decryptData } from "../utils/encryption";
 
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const [user, setUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    const decryptData = (encryptedData: string) => {
-        try {
-            const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
-            const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-            return JSON.parse(decryptedText);
-        } catch (err) {
-            console.error("Decryption failed:", err);
-            return null;
-        }
-    };
 
     const fetchUserProfile = async () => {
         try {
@@ -67,8 +57,7 @@ const ProfilePage: React.FC = () => {
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem("user_token");
-        localStorage.removeItem("user_data");
+        logout();
         navigate("/");
     };
 

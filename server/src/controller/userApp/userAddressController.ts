@@ -169,3 +169,23 @@ export const checkServiceability: RequestHandler = asyncHandler(async (req, res)
     message: "Sorry, service is not yet available in your area.",
   });
 });
+
+/* -------------------- POST /addresses/check-pincode (DECRYPTED IN MIDDLEWARE) -------------------- */
+export const checkPincodeServiceability: RequestHandler = asyncHandler(async (req, res) => {
+  const { pincode } = req.body;
+  if (!pincode) return res.status(400).json({ message: "Pincode is required." });
+
+  const serviceableCity = await servicabileCityModel.findOne({ pincodes: pincode });
+
+  if (serviceableCity) {
+    return res.status(200).json({
+      isServiceable: true,
+      message: "Service is available in your area.",
+      city: { name: serviceableCity.name, state: serviceableCity.state },
+    });
+  }
+  return res.status(200).json({
+    isServiceable: false,
+    message: "Sorry, service is not yet available in your area.",
+  });
+});

@@ -28,3 +28,27 @@ export const fetchPoojaById = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Server error", error });
   }
 };
+
+export const fetchPoojabycategoryId = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const poojas = await poojaModel
+      .find({
+        isActive: true,
+        "mainCategories.id": id,
+      })
+      .select(
+        "_id poojaID poojaNameEng poojaNameHindi poojaMode poojaPriceOnline poojaPriceOffline mainCategories subCategories poojaCardImage isFeatured isActive"
+      )
+      .lean();
+
+    return res.status(200).json({
+      message: "Poojas fetched successfully",
+      poojas,
+    });
+  } catch (error) {
+    console.error("Error fetching poojas by category id:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};

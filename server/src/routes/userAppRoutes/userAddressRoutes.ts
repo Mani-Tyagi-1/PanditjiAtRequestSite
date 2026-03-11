@@ -6,18 +6,20 @@ import {
   getAddressById,
   updateAddress,
   deleteAddress,
-  checkServiceability
+  checkServiceability,
+  checkPincodeServiceability
 } from "../../controller/userApp/userAddressController";
 import { decryptRequest } from "../../utils/encryption";
 
 const router = Router();
 
 // Public routes — user identification must be provided by the caller (OTP layer / frontend)
-router.post("/", decryptRequest,createAddress);
+router.post("/", decryptRequest, createAddress);
 router.get("/", getAddresses);
 router.get("/:id", getAddressById);
-router.put("/:id",decryptRequest, updateAddress);
+router.put("/:id", decryptRequest, updateAddress);
 router.delete("/:id", deleteAddress);
-router.post('/check',decryptRequest, checkServiceability);
+router.post('/check', decryptRequest, checkServiceability);
+router.post('/check-pincode', decryptRequest, checkPincodeServiceability);
 
 export default router;

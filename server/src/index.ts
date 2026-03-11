@@ -14,6 +14,7 @@ import pujaCategoryRoutes from "./routes/userAppRoutes/pujaCategoryRoutes";
 import mobileOtpRoutes from "./routes/userAppRoutes/mobileOtpRoutes";
 import userAddressRoutes from "./routes/userAppRoutes/userAddressRoutes";
 import userRoutes from "./routes/userAppRoutes/userRoutes";
+import configRoutes from "./routes/userAppRoutes/configRoutes";
 import poojaBookingRoutes from "./routes/poojaBookingRouts/poojaBookingRoutes";
 
 // Pandit app auth & address routes
@@ -36,6 +37,7 @@ app.use("/api/", poojaRoutes);
 app.use("/api/", pujaCategoryRoutes);
 app.use("/api/", mobileOtpRoutes);
 app.use("/api/addresses", userAddressRoutes);
+app.use("/api/config", configRoutes);
 
 app.use("/api", poojaBookingRoutes);
 app.use("/api", userRoutes);

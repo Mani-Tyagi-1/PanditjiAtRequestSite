@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { fetchAllPoojas, fetchPoojaById } from "../../controller/userApp/poojaController";
+import { fetchAllPoojas, fetchPoojabycategoryId, fetchPoojaById } from "../../controller/userApp/poojaController";
 
 const router = express.Router();
 
@@ -23,6 +23,17 @@ router.get(
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         await fetchPoojaById(req, res);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+router.get(
+    "/fetch-pooja-by-cat-id/:id",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await fetchPoojabycategoryId(req, res);
       } catch (err) {
         next(err);
       }

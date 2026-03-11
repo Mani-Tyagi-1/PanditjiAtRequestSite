@@ -120,11 +120,11 @@ export default function PujaCard({
                 )}
 
                 {/* Image */}
-                <div className="relative overflow-hidden h-32 bg-amber-50 rounded-t-2xl">
+                <div className="relative overflow-hidden aspect-square bg-amber-50 rounded-t-2xl flex items-center justify-center">
                     <img
                         src={image}
                         alt={title}
-                        className="puja-img w-full h-full object-cover"
+                        className="puja-img w-full h-full object-contain"
                     />
                     {/* Gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />

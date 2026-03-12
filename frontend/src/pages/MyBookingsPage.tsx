@@ -149,6 +149,7 @@ const MyBookingsPage: React.FC = () => {
                             const date = new Date(booking.bookingDate);
                             const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                             const formattedTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                            const isToday = new Date().toDateString() === date.toDateString();
 
                             return (
                                 <motion.div
@@ -209,7 +210,14 @@ const MyBookingsPage: React.FC = () => {
                                         </div>
 
                                         {/* Call Action */}
-                                        <button className="w-full bg-[#FFBC94] hover:bg-[#FF7000] text-white py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors active:scale-[0.98]">
+                                        <button 
+                                            disabled={!isToday}
+                                            className={`w-full py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+                                                isToday 
+                                                ? "bg-[#FF7000] text-white shadow-lg shadow-orange-100" 
+                                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                            }`}
+                                        >
                                             {booking.poojaMode === 'online' ? (
                                                 <div className="flex items-center gap-2">
                                                     <Video className="w-5 h-5" />

@@ -44,6 +44,9 @@ export interface IUser {
   // ✅ Added:
   addresses: IAddress[];
   dob: string;
+  birthTime?: string;
+  birthPlace?: string;
+  gotra?: string;
 }
 
 const userSchema = new Schema<IUser>({
@@ -66,6 +69,9 @@ const userSchema = new Schema<IUser>({
   // ✅ Added: schema fields
   addresses: { type: [AddressSchema], default: [] },
   dob: { type: String },
+  birthTime: { type: String },
+  birthPlace: { type: String },
+  gotra: { type: String },
 });
 
 const User: Model<IUser> = VedicVaibhavMongoose.model<IUser>(

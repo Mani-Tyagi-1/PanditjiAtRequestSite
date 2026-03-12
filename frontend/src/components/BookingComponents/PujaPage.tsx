@@ -164,7 +164,6 @@ export default function PujaDetailPage() {
     const title = pujaData.poojaNameEng || "";
     const deity = pujaData.poojaGods?.[0] || "Divine Deity";
     const image = pujaData.poojaMainImage || pujaData.poojaCardImage || "";
-    const totalPayable = price;
 
     return (
         <>
@@ -185,9 +184,7 @@ export default function PujaDetailPage() {
             <BookingModal
                 isOpen={isBookingModalOpen}
                 onClose={() => setIsBookingModalOpen(false)}
-                pujaTitle={title}
-                price={totalPayable}
-                pujaId={pujaData._id || pujaData.id}
+                pooja={pujaData}
             />
 
             <div className="detail-page max-w-[500px] mx-auto pb-32">

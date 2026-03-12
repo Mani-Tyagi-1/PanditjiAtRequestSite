@@ -137,21 +137,28 @@ export const deleteAddress: RequestHandler = asyncHandler(async (req, res) => {
 
 /* -------------------- POST /addresses/check (DECRYPTED IN MIDDLEWARE) -------------------- */
 export const checkServiceability: RequestHandler = asyncHandler(async (req, res) => {
-  const userId = extractUserId(req);
-  if (!userId) return res.status(400).json({ message: "User ID is required (body.userId, query.userId or x-user-id header)." });
-  if (!isValidObjectId(userId)) return res.status(400).json({ message: "Invalid user ID." });
+  const { addressId, latitude, longitude } = req.body; // already decrypted by middleware
 
-  const { addressId } = req.body; // already decrypted by middleware
-  if (!addressId) return res.status(400).json({ message: "Address ID is required." });
-  if (!isValidObjectId(addressId)) return res.status(400).json({ message: "Invalid address ID." });
+  let userLocationPoint;
 
-  const userAddress = await userAddressModel.findById(addressId);
-  if (!userAddress) return res.status(404).json({ message: "User address not found." });
-  if (String(userAddress.user) !== String(userId)) {
-    return res.status(403).json({ message: "Forbidden: this address does not belong to the given user." });
+  if (addressId) {
+    if (!isValidObjectId(addressId)) return res.status(400).json({ message: "Invalid address ID." });
+
+    const userAddress = await userAddressModel.findById(addressId);
+    if (!userAddress) return res.status(404).json({ message: "User address not found." });
+
+    // If addressId is provided, we still check ownership if userId is available
+    const userId = extractUserId(req);
+    if (userId && String(userAddress.user) !== String(userId)) {
+      return res.status(403).json({ message: "Forbidden: this address does not belong to the given user." });
+    }
+
+    userLocationPoint = { type: "Point" as const, coordinates: [userAddress.longitude, userAddress.latitude] };
+  } else if (latitude != null && longitude != null) {
+    userLocationPoint = { type: "Point" as const, coordinates: [Number(longitude), Number(latitude)] };
+  } else {
+    return res.status(400).json({ message: "Address ID or coordinates (latitude, longitude) are required." });
   }
-
-  const userLocationPoint = { type: "Point" as const, coordinates: [userAddress.longitude, userAddress.latitude] };
 
   const serviceableCity = await servicabileCityModel.findOne({
     bounds: { $geoIntersects: { $geometry: userLocationPoint } },

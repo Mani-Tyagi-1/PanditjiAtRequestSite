@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { encryptPayload } from "../../../utils/encryption";
+import { encryptPayload, decryptData } from "../../../utils/encryption";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -23,9 +23,7 @@ const GOOGLE_LIBRARIES: ("places")[] = ["places"];
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  pujaTitle: string;
-  price: number;
-  pujaId: string;
+  pooja: any;
 }
 
 type LatLng = {
@@ -318,9 +316,7 @@ function OfflineLocationPicker({
 export default function BookingModal({
   isOpen,
   onClose,
-  pujaTitle,
-  price,
-  pujaId,
+  pooja,
 }: BookingModalProps) {
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"online" | "offline">("online");
@@ -337,6 +333,10 @@ export default function BookingModal({
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
+
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
   const { user, openLoginModal } = useAuth();
 
@@ -405,26 +405,32 @@ export default function BookingModal({
   );
 
   const fetchAddressFromCoords = useCallback(
-    async (lat: number, lng: number) => {
-      if (!googleMapsApiKey) return;
+  async (lat: number, lng: number) => {
+    if (!(window as any).google?.maps) return;
 
-      try {
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${googleMapsApiKey}`
-        );
+    try {
+      const geocoder = new google.maps.Geocoder();
 
-        const data = await response.json();
+      const response = await geocoder.geocode({
+        location: { lat, lng },
+      });
 
-        if (data.results && data.results.length > 0) {
-          const result = data.results[0];
-          updateAddressFieldsFromGoogleAddress(result.address_components);
+      if (response.results && response.results.length > 0) {
+        const result = response.results[0];
+
+        updateAddressFieldsFromGoogleAddress(result.address_components || []);
+
+        // Optional: if street is still empty, use formatted address as fallback
+        if (!street && result.formatted_address) {
+          setStreet(result.formatted_address);
         }
-      } catch (error) {
-        console.error("Error reverse geocoding:", error);
       }
-    },
-    [googleMapsApiKey, updateAddressFieldsFromGoogleAddress]
-  );
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error);
+    }
+  },
+  [street, updateAddressFieldsFromGoogleAddress]
+);
 
   const handleFetchLocation = useCallback(() => {
     setIsFetchingLocation(true);
@@ -479,6 +485,38 @@ export default function BookingModal({
 
     fetchConfig();
   }, []);
+
+  useEffect(() => {
+    const fetchSavedAddresses = async () => {
+      if (!user) return;
+      setIsLoadingAddresses(true);
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const userId = user?._id || user?.id;
+        console.log("Fetching saved addresses for user:", userId);
+        const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
+
+        if (res.ok) {
+          const data = await res.json();
+          const decrypted = decryptData(data.encrypted);
+          console.log("Decrypted addresses:", decrypted);
+          if (Array.isArray(decrypted)) {
+            setSavedAddresses(decrypted);
+          }
+        } else {
+          console.error("Failed to fetch saved addresses, status:", res.status);
+        }
+      } catch (err) {
+        console.error("Failed to fetch saved addresses error:", err);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    if (isOpen && user) {
+      fetchSavedAddresses();
+    }
+  }, [isOpen, user]);
 
   const handleBodyScroll = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -538,11 +576,13 @@ export default function BookingModal({
     };
   }, [isOpen, user]);
 
-  const samagriCharge = 350;
-  const panditDakshina = 501;
+  const samagriCharge = pooja?.samagriPrice || 0;
+  const panditDakshina = pooja?.panditDakshina || 0;
+  const currentPoojaPrice = mode === "online" ? (pooja?.poojaPriceOnline || 0) : (pooja?.poojaPriceOffline || 0);
+
   const totalDiscount = samagriCharge + panditDakshina;
-  const discountedPrice = price;
-  const originalPrice = price + totalDiscount;
+  const discountedPrice = currentPoojaPrice;
+  const originalPrice = currentPoojaPrice + totalDiscount;
   const discountPercent =
     originalPrice > 0 ? Math.round((totalDiscount / originalPrice) * 100) : 0;
 
@@ -566,11 +606,19 @@ export default function BookingModal({
 
     if (mode === "offline") {
       try {
-        const checkPayload = encryptPayload({ pincode });
+        const checkPayload = selectedAddressId 
+          ? encryptPayload({ addressId: selectedAddressId })
+          : encryptPayload({ 
+              latitude: markerPosition.lat, 
+              longitude: markerPosition.lng 
+            });
 
-        const checkRes = await fetch(`${apiUrl}/addresses/check-pincode`, {
+        const checkRes = await fetch(`${apiUrl}/addresses/check`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "x-user-id": user?._id || user?.id || ""
+          },
           body: JSON.stringify(checkPayload),
         });
 
@@ -581,6 +629,37 @@ export default function BookingModal({
             setNotServiceablePopup(true);
             setIsProcessing(false);
             return;
+          }
+
+          // --- Automatically Save Address if it's new ---
+          if (!selectedAddressId && user) {
+            try {
+              const addressPayload = {
+                userId: user?._id || user?.id,
+                addressLine1: houseNo,
+                addressLine2: landmark,
+                street: street,
+                city: city,
+                state: stateVal,
+                pincode: pincode,
+                latitude: markerPosition.lat,
+                longitude: markerPosition.lng,
+                addressName: saveAs === 'home' ? 'Home' : saveAs === 'work' ? 'Work' : 'Other',
+                country: "India",
+                isPrimary: false
+              };
+              
+              const encryptedAddress = encryptPayload(addressPayload);
+              
+              // We'll fire and forget or just log errors, don't block booking for this
+              fetch(`${apiUrl}/addresses`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(encryptedAddress),
+              }).catch(err => console.error("Auto-save address failed:", err));
+            } catch (err) {
+              console.error("Failed to prepare address saving payload:", err);
+            }
           }
         } else {
           console.warn("Failed to verify pincode serviceability.");
@@ -602,12 +681,12 @@ export default function BookingModal({
 
       const pendingPayload = {
         userId,
-        poojaId: pujaId,
+        poojaId: pooja?._id || pooja?.id,
         poojaMode: mode,
         bookingDate: selectedDate,
         bookingTime: selectedTime || undefined,
         amount: discountedPrice,
-        panditDakshina: 501,
+        panditDakshina: panditDakshina,
         bhaktName,
         gotra,
         contactNumber,
@@ -650,7 +729,7 @@ export default function BookingModal({
         amount: discountedPrice * 100,
         currency: "INR",
         name: "PanditJiAtRequest",
-        description: pujaTitle,
+        description: pooja?.poojaNameEng || "Pooja Booking",
         order_id: pendingData.razorpayOrderId,
         handler: async function (response: any) {
           try {
@@ -773,7 +852,7 @@ export default function BookingModal({
               </svg>
             </button>
             <h2 className="text-stone-800 font-medium text-base truncate flex-1">
-              {pujaTitle}
+              {pooja?.poojaNameEng}
             </h2>
           </div>
 
@@ -919,8 +998,62 @@ export default function BookingModal({
                   />
 
                   {mode === "offline" && (
-                    <>
-                      {googleMapsApiKey ? (
+                    <div className="pt-4 space-y-4 border-t border-stone-100 mt-4">
+                      {user && (
+                        <div className="space-y-3">
+                          <p className="text-stone-500 text-xs font-semibold uppercase tracking-wider">
+                            Saved Addresses
+                          </p>
+                          {isLoadingAddresses ? (
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                              {[1, 2].map((i) => (
+                                <div key={i} className="flex-shrink-0 w-40 h-20 bg-stone-100 animate-pulse rounded-xl" />
+                              ))}
+                            </div>
+                          ) : savedAddresses.length > 0 ? (
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 custom-scrollbar">
+                              {savedAddresses.map((addr) => (
+                                <button
+                                  key={addr._id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedAddressId(addr._id);
+                                    setHouseNo(addr.addressLine1 || addr.houseFlatNo || "");
+                                    setStreet(addr.street || addr.streetArea || "");
+                                    setLandmark(addr.landmark || "");
+                                    setCity(addr.city || "");
+                                    setStateVal(addr.state || "");
+                                    setPincode(addr.pincode || "");
+                                    const normalizedSaveAs = addr.addressName?.toLowerCase();
+                                    setSaveAs(normalizedSaveAs === 'home' ? 'home' : normalizedSaveAs === 'work' ? 'work' : 'other');
+                                    if (addr.latitude != null && addr.longitude != null) {
+                                      const pos = { lat: Number(addr.latitude), lng: Number(addr.longitude) };
+                                      setMarkerPosition(pos);
+                                      setMapCenter(pos);
+                                    }
+                                  }}
+                                  className={`flex-shrink-0 w-40 p-3 rounded-xl border text-left transition-all ${
+                                    selectedAddressId === addr._id
+                                      ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
+                                      : "bg-white border-stone-200 hover:border-stone-300"
+                                  }`}
+                                >
+                                  <p className={`text-xs font-bold mb-1 ${selectedAddressId === addr._id ? "text-orange-600" : "text-stone-700"}`}>
+                                    {addr.addressName || "Address"}
+                                  </p>
+                                  <p className="text-[10px] text-stone-500 line-clamp-2">
+                                    {addr.addressLine1 || addr.houseFlatNo}, {addr.street || addr.streetArea}, {addr.city}
+                                  </p>
+                                </button>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[11px] text-stone-400 italic">No saved addresses found. Use form below to add one.</p>
+                          )}
+                        </div>
+                      )}
+
+                      {googleMapsApiKey && (
                         <OfflineLocationPicker
                           googleMapsApiKey={googleMapsApiKey}
                           street={street}
@@ -944,72 +1077,10 @@ export default function BookingModal({
                           markerPosition={markerPosition}
                           setMarkerPosition={setMarkerPosition}
                           fetchAddressFromCoords={fetchAddressFromCoords}
-                          updateAddressFieldsFromGoogleAddress={
-                            updateAddressFieldsFromGoogleAddress
-                          }
+                          updateAddressFieldsFromGoogleAddress={updateAddressFieldsFromGoogleAddress}
                         />
-                      ) : (
-                        <div className="pt-4 pb-2 space-y-4 border-t border-stone-100 mt-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-stone-800 font-semibold text-[14px]">
-                              Address Details
-                            </h4>
-                            <button
-                              onClick={handleFetchLocation}
-                              disabled={isFetchingLocation}
-                              className="flex items-center gap-1.5 text-orange-600 text-xs font-bold hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-                            >
-                              {isFetchingLocation ? "Fetching..." : "Use Current Location"}
-                            </button>
-                          </div>
-
-                          <input
-                            type="text"
-                            placeholder="House / Flat No.*"
-                            value={houseNo}
-                            onChange={(e) => setHouseNo(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Street / Area*"
-                            value={street}
-                            onChange={(e) => setStreet(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Landmark (Optional)"
-                            value={landmark}
-                            onChange={(e) => setLandmark(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                          />
-                          <div className="flex gap-3">
-                            <input
-                              type="text"
-                              placeholder="City*"
-                              value={city}
-                              onChange={(e) => setCity(e.target.value)}
-                              className="w-1/2 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                            />
-                            <input
-                              type="text"
-                              placeholder="State*"
-                              value={stateVal}
-                              onChange={(e) => setStateVal(e.target.value)}
-                              className="w-1/2 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                            />
-                          </div>
-                          <input
-                            type="text"
-                            placeholder="Pincode*"
-                            value={pincode}
-                            onChange={(e) => setPincode(e.target.value)}
-                            className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                          />
-                        </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               </div>

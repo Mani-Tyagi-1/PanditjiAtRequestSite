@@ -9,13 +9,16 @@ import { sendEncryptedResponse } from "../../utils/encryption"; // ⬅️ encryp
  */
 export const updateUserProfile: RequestHandler = async (req, res) => {
   const { id } = req.params as { id: string };
-  const { phone, gender, firstname, lastname, email, dob } = (req.body || {}) as {
+  const { phone, gender, firstname, lastname, email, dob, birthTime, birthPlace, gotra } = (req.body || {}) as {
     phone?: string;
     gender?: string;
     firstname?: string;
     lastname?: string;
     email?: string;
     dob?: string;
+    birthTime?: string;
+    birthPlace?: string;
+    gotra?: string;
   };
 
   if (!phone || !gender || !firstname || !lastname || !dob) {
@@ -35,6 +38,9 @@ export const updateUserProfile: RequestHandler = async (req, res) => {
     user.given_name = firstname;
     user.family_name = lastname;
     user.dob = dob;
+    if (birthTime !== undefined) user.birthTime = birthTime;
+    if (birthPlace !== undefined) user.birthPlace = birthPlace;
+    if (gotra !== undefined) user.gotra = gotra;
     if (email !== undefined) user.email = email;
 
     

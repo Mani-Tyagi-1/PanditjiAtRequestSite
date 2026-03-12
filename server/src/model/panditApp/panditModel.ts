@@ -29,6 +29,7 @@ export interface IPandit extends Document {
   aadharFile?: string;
   isVerified: boolean;
   isActive: boolean;
+  rating: number; // ⬅️ NEW: Rating for pandit ji
 
   otp?: string;
   otpExpiry?: Date;
@@ -62,6 +63,7 @@ const PanditSchema = new Schema<IPandit>(
     aadharFile: { type: String, default: "" },
     isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    rating: { type: Number, default: 5.0 }, // ⬅️ NEW: Default rating
 
     otp: String,
     otpExpiry: Date,

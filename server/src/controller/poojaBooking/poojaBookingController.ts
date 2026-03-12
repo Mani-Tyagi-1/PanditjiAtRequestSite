@@ -400,6 +400,7 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
       .find({ userPhone: alias10, isCompleted: false })
       .sort({ bookingDate: -1 })
       .populate('poojaId', 'poojaNameEng poojaCardImage')
+      .populate('assignedPandit', 'firstName lastName rating profileImage')
       .lean();
 
     res.status(200).json(bookings || []);
@@ -465,7 +466,7 @@ export const getAllPendingBookings: RequestHandler = async (req, res, next) => {
         .skip(skip)
         .limit(limitNum)
         .populate('poojaId', 'poojaNameEng poojaCardImage')
-        .populate('assignedPandit', 'name phone')
+        .populate('assignedPandit', 'firstName lastName rating phone')
         .lean(),
       poojaBookingModel.countDocuments(filter),
     ]);
@@ -520,7 +521,7 @@ export const getPendingBookingsForPandit: RequestHandler = async (req, res, next
         .skip(skip)
         .limit(limitNum)
         .populate('poojaId', 'poojaNameEng poojaCardImage')
-        .populate('assignedPandit', 'name phone')
+        .populate('assignedPandit', 'firstName lastName rating phone')
         .lean(),
       poojaBookingModel.countDocuments(filter),
     ]);

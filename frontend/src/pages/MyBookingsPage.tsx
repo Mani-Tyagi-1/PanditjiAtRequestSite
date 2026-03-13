@@ -70,9 +70,9 @@ const MyBookingsPage: React.FC = () => {
             });
 
             if (type === 'video') {
-                navigate(`/video-call/${callId}`);
+                navigate(`/video-call/${callId}`, { replace: true });
             } else {
-                navigate(`/audio-call/${callId}/${panditId}`);
+                navigate(`/audio-call/${callId}/${panditId}`, { replace: true });
             }
         } catch (err) {
             console.error("Error starting call:", err);
@@ -117,8 +117,9 @@ const MyBookingsPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#FFFAF5] pb-7">
-            {/* Header */}
+        <div className="min-h-screen bg-[#FFFAF3] font-sans flex justify-center">
+            <div className="w-full max-w-md bg-white min-h-screen shadow-sm relative pb-10">
+                {/* Header */}
             <div className="bg-white px-4 pt-4 pb-0 sticky top-0 z-50 shadow-sm border-b border-orange-50">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
@@ -331,6 +332,7 @@ const MyBookingsPage: React.FC = () => {
                         })}
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

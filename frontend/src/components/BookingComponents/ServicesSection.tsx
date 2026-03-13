@@ -60,7 +60,7 @@ export default function PujaServices() {
   return (
     <>
       <div className="w-full flex justify-center bg-gradient-to-b from-white via-orange-200 via-orange-300 via-orange-300 pt-7 pb-5">
-        <div className="w-full max-w-4xl px-4">
+        <div className="w-full max-w-md px-4">
           <div className="flex items-center justify-center mb-4">
             <div className="flex-1 h-[2px] bg-yellow-500"></div>
             <div

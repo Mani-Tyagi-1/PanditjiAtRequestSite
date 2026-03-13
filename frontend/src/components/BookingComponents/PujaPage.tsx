@@ -187,11 +187,16 @@ export default function PujaDetailPage() {
                 pooja={pujaData}
             />
 
-            <div className="detail-page max-w-[500px] mx-auto pb-32">
+            <div className="detail-page flex justify-center">
+                <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm pb-32">
                 {/* ── Header ── */}
                 <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={() => {
+                            const catId = pujaData?.mainCategories?.[0]?.id;
+                            if (catId) navigate(`/category/${catId}`);
+                            else navigate("/");
+                        }}
                         className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
                     >
                         <svg
@@ -304,7 +309,7 @@ export default function PujaDetailPage() {
 
                 {/* ── Sticky Bottom CTA ── */}
                 <div className="fixed bottom-0 left-0 right-0 z-50">
-                    <div className="max-w-[500px] mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3 flex items-center gap-3">
+                    <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3 flex items-center gap-3">
                         <div>
                             <p className="text-[10px] text-stone-400 font-light">
                                 Starting at
@@ -336,6 +341,7 @@ export default function PujaDetailPage() {
                             </svg>
                         </button>
                     </div>
+                </div>
                 </div>
             </div>
         </>

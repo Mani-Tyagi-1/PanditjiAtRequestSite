@@ -46,7 +46,7 @@ const AudioCallInterface = () => {
       if (!remoteParticipant) {
         console.log("[AudioCall] Alone in call for too long, ending...");
         await call.endCall();
-        navigate("/my-bookings");
+        navigate("/my-bookings", { replace: true });
       }
     }, 30000);
 
@@ -58,10 +58,10 @@ const AudioCallInterface = () => {
     setIsEnding(true);
     try {
       await call.endCall();
-      navigate("/my-bookings");
+      navigate("/my-bookings", { replace: true });
     } catch (err) {
       console.error("Failed to end call", err);
-      navigate("/my-bookings");
+      navigate("/my-bookings", { replace: true });
     }
   };
 
@@ -156,7 +156,7 @@ const AudioCallInterface = () => {
 
       {/* Exit Button - top left */}
       <button 
-        onClick={() => navigate("/my-bookings")}
+        onClick={() => navigate("/my-bookings", { replace: true })}
         className="absolute top-8 left-8 text-white/40 hover:text-white transition-colors"
       >
         Exit

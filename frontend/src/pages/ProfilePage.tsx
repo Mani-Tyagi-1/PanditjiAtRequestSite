@@ -45,6 +45,7 @@ const ProfilePage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [mode, setMode] = useState<"view" | "edit">("view");
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState<Partial<UserData>>({});
@@ -92,8 +93,13 @@ const ProfilePage: React.FC = () => {
     }, []);
 
     const handleLogout = () => {
+        setIsLogoutModalOpen(true);
+    };
+
+    const confirmLogout = () => {
         logout();
         navigate("/");
+        setIsLogoutModalOpen(false);
     };
 
     const handleSave = async () => {
@@ -200,8 +206,9 @@ const ProfilePage: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#FFFAF5] pb-24 font-sans">
-            <AnimatePresence mode="wait">
+        <div className="min-h-screen bg-[#FFFAF5] font-sans flex justify-center">
+            <div className="w-full max-w-md bg-white min-h-screen shadow-sm relative pb-24">
+                <AnimatePresence mode="wait">
                 {mode === "view" ? (
                     <motion.div
                         key="view"
@@ -213,7 +220,7 @@ const ProfilePage: React.FC = () => {
                         {/* Navigation Header */}
                         <div className="flex items-center gap-4 pt-6 pb-2">
                             <button
-                                onClick={() => navigate(-1)}
+                                onClick={() => navigate("/landing-page")}
                                 className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000]"
                             >
                                 <ChevronLeft className="w-6 h-6" />
@@ -299,8 +306,8 @@ const ProfilePage: React.FC = () => {
                                 Log Out
                             </button>
 
-                            <div className="flex flex-col items-center opacity-40 grayscale pointer-events-none scale-75">
-                                <img src="/logo.png" alt="Emblem" className="w-20 h-20 object-contain mb-2" />
+                            <div className="flex flex-col items-center opacity-50 pointer-events-none scale-90">
+                                <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png" alt="Emblem" className="w-20 h-20 object-contain mb-2" />
                                 <span className="text-xs font-semibold text-gray-400">ver 2.41</span>
                             </div>
                         </div>
@@ -469,7 +476,64 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </motion.div>
                 )}
-            </AnimatePresence>
+                </AnimatePresence>
+
+                {/* Logout Confirmation Modal */}
+                <AnimatePresence>
+                    {isLogoutModalOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsLogoutModalOpen(false)}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            />
+
+                            {/* Modal Content */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 100 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 100 }}
+                                className="relative w-full max-w-sm bg-white rounded-t-[40px] sm:rounded-[32px] p-8 shadow-2xl overflow-hidden"
+                            >
+                                {/* Decorative elements */}
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-full translate-x-16 -translate-y-16" />
+                                
+                                <div className="relative z-10 flex flex-col items-center text-center">
+                                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                                        <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
+                                            <LogOut className="w-7 h-7 text-red-500" />
+                                        </div>
+                                    </div>
+
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Logout</h2>
+                                    <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+                                        Are you sure you want to log out from <br />
+                                        <span className="font-bold text-gray-700">Panditji At Request?</span>
+                                    </p>
+
+                                    <div className="flex flex-col w-full gap-3">
+                                        <button
+                                            onClick={confirmLogout}
+                                            className="w-full py-4 bg-red-500 text-white font-bold rounded-2xl shadow-lg shadow-red-100 active:scale-[0.98] transition-all"
+                                        >
+                                            Yes, Log Me Out
+                                        </button>
+                                        <button
+                                            onClick={() => setIsLogoutModalOpen(false)}
+                                            className="w-full py-4 bg-gray-50 text-gray-500 font-bold rounded-2xl active:scale-[0.98] transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 };

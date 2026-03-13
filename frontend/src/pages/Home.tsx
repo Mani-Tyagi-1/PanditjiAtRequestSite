@@ -7,7 +7,7 @@ import Stats from "../components/Stats";
 import Contact from "../components/Contact";
 import Footer from "../components/Footer";
 
-import {Navigation} from "../components/NewComponents/Navigation";
+// import {Navigation} from "../components/NewComponents/Navigation";
 // import { Hero } from "../components/NewComponents/Hero";
 import { Services } from "../components/NewComponents/Services";
 import { JoinPandit } from "../components/NewComponents/JoinPandit";
@@ -17,7 +17,7 @@ import { BookingFlow } from "../components/NewComponents/BookingFlow";
 export default function Home() {
   return (
     <>
-      <Navigation />
+      <Navbar/>
       <HeroSection />
       <Services />
       <BookingFlow />
@@ -26,7 +26,6 @@ export default function Home() {
       <Stats />
       <Contact />
       <Footer />
-      <Navbar/>
     {/* <div className="p-4 flex flex-col">
       <Link to="/privacypolicy" className="text-blue-500 underline">
         Privacy Policy

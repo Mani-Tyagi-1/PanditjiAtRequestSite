@@ -94,7 +94,7 @@ export function BookingFlow() {
       </motion.div>
 
       {/* Flow Steps */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-md mx-auto">
         <div className="relative">
           {/* Connection Lines for Desktop */}
           {/* <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-orange-300 via-amber-400 to-yellow-500 -translate-y-1/2 z-0" /> */}

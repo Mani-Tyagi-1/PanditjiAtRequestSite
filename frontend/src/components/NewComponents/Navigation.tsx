@@ -78,8 +78,8 @@ export function Navigation() {
 
   return (
     <nav ref={navRef} className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-50 via-white to-orange-50 backdrop-blur-md border-b border-orange-200/50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+      <div className="max-w-md mx-auto px-4">
+        <div className="flex justify-between items-center h-20 hidden">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}

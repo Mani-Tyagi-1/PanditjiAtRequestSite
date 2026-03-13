@@ -6,16 +6,48 @@ import { FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
 import axios from "axios";
 
 const navLinks = [
-    { label: "Home", href: "/" },
+    { label: "Book Puja Now", href: "/" },
     { label: "Pandit Ji Registration", href: "https://partner.vedicvaibhav.in/affiliate-register", highlight: true },
-    { label: "About Us", href: "/#about" },
-    { label: "Contact Us", href: "/#contact" },
+    { label: "Join as Pandit Ji Guide", href: "/join-as-panditji" },
+
+
 ];
 
 const HeroSection = () => {
     const [searchQuery, setSearchQuery] = useState("");
+    const [allPujas, setAllPujas] = useState<any[]>([]);
+    const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navigate = useNavigate();
+
+    // Fetch all pujas for search
+    useEffect(() => {
+        const fetchAllPujas = async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://192.168.0.188:8000/api';
+                const { data } = await axios.get(`${apiUrl}/fetch-all-poojas`);
+                if (data && data.poojas) {
+                    setAllPujas(data.poojas);
+                }
+            } catch (err) {
+                console.error("Error fetching pujas for search:", err);
+            }
+        };
+        fetchAllPujas();
+    }, []);
+
+    // Filter pujas based on search query
+    useEffect(() => {
+        if (searchQuery.trim() === "") {
+            setSearchResults([]);
+            return;
+        }
+        const filtered = allPujas.filter(puja =>
+            puja.poojaNameEng.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            puja.poojaNameHindi.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setSearchResults(filtered.slice(0, 6)); // Limit to 6 results
+    }, [searchQuery, allPujas]);
 
     // Login State
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -83,7 +115,7 @@ const HeroSection = () => {
     return (
         <>
             <div className="w-full" style={{ background: "linear-gradient(to bottom, #f3b287ff, #e8d19cff, #ffffff)" }}>
-                <div className="w-full pt-3 md:pt-10 px-4 md:px-6 max-w-2xl mx-auto">
+                <div className="w-full pt-3 md:pt-3 px-4 md:px-6 max-w-2xl mx-auto">
                     {/* Top Nav inside Hero Banner */}
                     <div className="flex items-center justify-between mb-4 relative z-20">
                         <motion.img
@@ -124,15 +156,57 @@ const HeroSection = () => {
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative mb-2">
+                    <div className="relative mb-2 z-30">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search Puja"
-                            className="w-full pl-12 pr-4 py-2 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all"
+                            className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all"
                         />
+
+                        {/* Search Results Dropdown */}
+                        <AnimatePresence>
+                            {searchResults.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden max-h-80 overflow-y-auto"
+                                >
+                                    {searchResults.map((puja) => (
+                                        <div
+                                            key={puja._id}
+                                            onClick={() => {
+                                                navigate(`/puja/${puja._id}`);
+                                                setSearchQuery("");
+                                            }}
+                                            className="flex items-center gap-3 p-3 hover:bg-orange-50 cursor-pointer transition-colors border-b last:border-0 border-gray-50"
+                                        >
+                                            <div className="w-12 h-12 rounded-lg bg-orange-50 overflow-hidden flex-shrink-0">
+                                                <img
+                                                    src={puja.poojaCardImage}
+                                                    alt={puja.poojaNameEng}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-gray-800 truncate">
+                                                    {puja.poojaNameEng}
+                                                </p>
+                                                <p className="text-xs text-gray-500 font-medium">
+                                                    {puja.poojaNameHindi}
+                                                </p>
+                                            </div>
+                                            <div className="text-orange-600 font-bold text-xs">
+                                                ₹{puja.poojaPriceOnline || puja.poojaPriceOffline}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Hero Banner Card */}
@@ -160,14 +234,14 @@ const HeroSection = () => {
                         />
 
                         {/* Text Content */}
-                        <div className="relative z-10 p-5 md:p-8 flex flex-col justify-center min-h-[200px] max-w-[95%] md:max-w-[55%]">
+                        <div className="relative z-10 p-3 md:p-3 flex flex-col justify-center min-h-[200px] max-w-[95%] md:max-w-[95%]">
                             <h2
-                                className="text-lg md:text-2xl lg:text-3xl font-extrabold leading-tight mb-2"
+                                className="text-lg md:text-lg lg:text-lg font-extrabold leading-tight mb-2"
                                 style={{ color: "#2d1810" }}
                             >
                                 BOOK PANDIT JI ONLINE & OFFLINE FOR ALL KIND OF POOJA!
                             </h2>
-                            <p className="text-xs md:text-sm text-gray-700 mb-4 leading-relaxed">
+                            <p className="text-xs md:text-xs text-gray-700 mb-4 leading-relaxed">
                                 Pandit Ji At Request — Your Trusted Partner for Vedic & Hindu Puja
                                 Services.
                             </p>
@@ -176,9 +250,9 @@ const HeroSection = () => {
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => navigate("/booking-flow")}
-                                    className="inline-flex items-center bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-bold px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all"
+                                    className="inline-flex items-center bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-bold px-5 py-2 rounded-lg shadow-md hover:shadow-md transition-all"
                                 >
-                                    Book Pandit Ji
+                                    Download App Now
                                 </motion.button>
                             </div>
                         </div>
@@ -255,14 +329,15 @@ const HeroSection = () => {
                             </ul>
 
                             {/* Drawer CTA */}
-                            <div className="p-6 border-t">
+                            <div className="p-6 border-t gap-4 flex items-center justify-center flex-col">
+                                <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png" alt="" />
                                 <a
                                     href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="block w-full bg-red-600 text-white px-6 py-3 rounded-full font-semibold text-center shadow-md hover:bg-red-700 transition-all"
                                 >
-                                    BOOK PANDIT JI
+                                    Download App Now
                                 </a>
                             </div>
                         </motion.div>

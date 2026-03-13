@@ -14,44 +14,44 @@ const Footer: React.FC = () => {
     >
       {/* Overlay */}
       <div className="absolute inset-0 bg-[#CC3600] opacity-30"></div>
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-16 z-10">
+      <div className="relative max-w-md mx-auto px-6 z-10">
         {/* Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-20 text-center md:text-left mb-6 md:mb-4">
+        <div className="flex flex-col items-center text-center space-y-10 mb-8">
           {/* Left Column: Logo + Text */}
-          <div className="space-y-3 md:space-y-4">
+          <div className="space-y-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 80 }}
-              className="flex items-center justify-center md:justify-start"
+              className="flex justify-center"
             >
               <img
                 src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
                 alt="Pandit Ji At Request"
-                className="h-16 sm:h-20 md:h-24"
+                className="h-20"
               />
             </motion.div>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 80 }}
-              className="text-sm md:text-md px-2 md:px-0"
+              className="text-sm leading-relaxed text-stone-700 px-4"
             >
               "Book Qualified Pandit Ji Anytime Anywhere"
               <br />
-              Pandit Ji at Request is the most trusted platform for availing
-              Vedic and Hindu Puja Services like performing Vedic Rituals,
-              Religious Ceremonies, Vastu Yagya, and many more.
+              <span className="opacity-80">
+                Pandit Ji at Request is the most trusted platform for Vedic and Hindu rituals.
+              </span>
             </motion.p>
           </div>
 
           {/* Center Column: Quick Links */}
-          <div className="space-y-3 md:space-y-4 md:mt-8">
+          <div className="space-y-4 w-full">
             <motion.h3
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 80 }}
-              className="text-lg md:text-xl font-semibold"
+              className="text-lg font-bold text-stone-800"
               style={{ fontFamily: "Poppins, sans-serif" }}
             >
               Quick Links
@@ -61,72 +61,37 @@ const Footer: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 80 }}
-              className="space-y-2"
+              className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm"
             >
-              <li>
-                <a
-                  href="/about"
-                  className="text-sm hover:text-[#ff7a00] transition-colors"
-                >
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/contact"
-                  className="text-sm hover:text-[#ff7a00] transition-colors"
-                >
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://partner.vedicvaibhav.in/affiliate-register"
-                  className="text-sm hover:text-[#ff7a00] transition-colors"
-                >
-                  Register as Pandit Ji
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/privacypolicy"
-                  className="text-sm hover:text-[#ff7a00] transition-colors"
-                >
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/termsandconditions"
-                  className="text-sm hover:text-[#ff7a00] transition-colors"
-                >
-                  Terms and Conditions
-                </a>
-              </li>
+              <li><a href="/about" className="hover:text-[#ff7a00] transition-colors">About Us</a></li>
+              <li><a href="/contact" className="hover:text-[#ff7a00] transition-colors">Contact Us</a></li>
+              <li><a href="https://partner.vedicvaibhav.in/affiliate-register" className="hover:text-[#ff7a00] transition-colors">Affiliate</a></li>
+              <li><a href="/privacypolicy" className="hover:text-[#ff7a00] transition-colors">Privacy</a></li>
+              <li className="col-span-2"><a href="/termsandconditions" className="hover:text-[#ff7a00] transition-colors">Terms & Conditions</a></li>
             </motion.ul>
           </div>
 
           {/* Right Column: Social Media */}
-          <div className="space-y-3 md:space-y-4 md:mt-8">
+          <div className="space-y-4">
             <motion.h3
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 80 }}
-              className="text-lg md:text-xl font-semibold"
+              className="text-lg font-bold text-stone-800"
             >
-              Stay In Touch With Us
+              Stay In Touch
             </motion.h3>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ type: "spring", stiffness: 80 }}
-              className="flex justify-center md:justify-start gap-4 text-2xl"
+              className="flex justify-center gap-6 text-2xl"
             >
               <a
                 href="https://www.facebook.com/share/1ZT53FVEHJ/?mibextid=wwXIfr"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#CC3600] hover:text-white transition-all duration-300"
+                className="text-stone-800 hover:text-orange-600 transition-all duration-300"
               >
                 <FaFacebookF />
               </a>
@@ -134,7 +99,7 @@ const Footer: React.FC = () => {
                 href="https://www.instagram.com/panditjiatrequest?igsh=Ym1sbzZkbnJwM3Jh&utm_source=qr"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#CC3600] hover:text-white transition-all duration-300"
+                className="text-stone-800 hover:text-orange-600 transition-all duration-300"
               >
                 <FaInstagram />
               </a>
@@ -142,7 +107,7 @@ const Footer: React.FC = () => {
                 href="https://www.youtube.com/@TheVedicVaibhav?sub_confirmation=1"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#CC3600] hover:text-white transition-all duration-300"
+                className="text-stone-800 hover:text-orange-600 transition-all duration-300"
               >
                 <FaYoutube />
               </a>

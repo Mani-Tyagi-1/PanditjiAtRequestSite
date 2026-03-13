@@ -22,12 +22,12 @@ function App() {
     <AuthProvider>
       <LoginModal />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<LandingPage/>} />
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />
         <Route path="/termsandconditions" element={<TermsAndConditions />} />
         <Route path="/delete-my-account" element={<DeleteMyAccount />} />
         <Route path="/booking-flow" element={<BookingFlow />} />
-        <Route path="/landing-page" element={<LandingPage />} />
+        <Route path="/join-as-panditji" element={<Home />} />
         <Route path="/category" element={<CategoryPage />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
         <Route path="/puja" element={<PujaDetailPage />} />

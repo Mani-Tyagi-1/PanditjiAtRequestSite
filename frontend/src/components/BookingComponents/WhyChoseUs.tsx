@@ -98,7 +98,7 @@ export default function WhyChooseUs() {
                     </div>
 
                     {/* 2×2 grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-1 gap-2">
                         {REASONS.map((r, i) => (
                             <div
                                 key={i}

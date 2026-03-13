@@ -29,7 +29,7 @@ const CallInterface = () => {
       if (participantCount < 2) {
         console.log("Ending call due to timeout (only one participant)");
         await call.endCall();
-        navigate("/my-bookings");
+        navigate("/my-bookings", { replace: true });
       }
     }, 15000); // Increased to 15s to give some time for joining
 
@@ -39,7 +39,7 @@ const CallInterface = () => {
   return (
     <StreamTheme>
       <SpeakerLayout />
-      <CallControls onLeave={() => navigate("/my-bookings")} />
+      <CallControls onLeave={() => navigate("/my-bookings", { replace: true })} />
     </StreamTheme>
   );
 };

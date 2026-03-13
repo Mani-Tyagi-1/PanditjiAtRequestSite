@@ -186,11 +186,12 @@ export default function CategoryPage() {
         .fade-up { animation: fadeUp 0.38s ease both; }
       `}</style>
 
-      <div className="max-w-[500px] mx-auto">
+      <div className="puja-page flex justify-center">
+        <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm">
         {/* Header */}
         <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
             className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
           >
             <svg
@@ -271,7 +272,7 @@ export default function CategoryPage() {
               <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-orange-300" />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               {recommended.map((p) => (
                 <PujaCard
                   key={p._id}
@@ -376,6 +377,7 @@ export default function CategoryPage() {
             </p>
           </div>
         )}
+        </div>
       </div>
     </>
   );

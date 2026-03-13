@@ -271,11 +271,11 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
     <div className="relative h-screen w-full bg-[#0a0a0a] overflow-hidden">
       {/* Header Overlay */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4 md:p-6 pointer-events-none">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-md mx-auto flex items-center justify-between">
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/my-bookings")}
             className="w-12 h-12 flex items-center justify-center rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white pointer-events-auto hover:bg-black/60 transition-all active:scale-95"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -521,7 +521,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
 
       {/* Bottom Controls */}
       <div className="absolute bottom-8 left-0 right-0 z-10 px-4 md:px-8 pointer-events-none">
-        <div className="max-w-4xl mx-auto flex items-end justify-between gap-4">
+        <div className="max-w-md mx-auto flex items-end justify-between gap-4">
           
           <div className="flex flex-col gap-3 pointer-events-auto">
              <AnimatePresence>

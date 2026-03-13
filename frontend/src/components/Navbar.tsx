@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 
 const navLinks = [
-  { label: "Home", href: "/" },
+  { label: "Home", href: "/join-as-panditji" },
   {
     label: "Pandit Ji Registration",
     href: "https://partner.vedicvaibhav.in/affiliate-register",
@@ -397,7 +397,7 @@ const Navbar: React.FC = () => {
                         onClick={closeMobileMenu}
                         className="block w-full bg-red-600 text-white px-6 py-3 rounded-full font-semibold text-center shadow-md hover:bg-red-700 transition-all"
                       >
-                        BOOK PANDIT JI
+                        Download App Now
                       </a>
                     </div>
                   </div>

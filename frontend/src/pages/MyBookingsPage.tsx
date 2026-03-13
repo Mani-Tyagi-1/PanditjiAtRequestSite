@@ -177,6 +177,14 @@ const MyBookingsPage: React.FC = () => {
                             const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                             const formattedTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                             const isToday = new Date().toDateString() === date.toDateString();
+                            
+                            const isOnline = booking.poojaMode === 'online';
+                            const isOffline = booking.poojaMode === 'offline';
+                            const hasStartedJourney = !!booking.journeyStartTime;
+                            const hasAssignedPandit = booking.assignedPandit && booking.assignedPandit.length > 0;
+                            
+                            // Enable button if (Online + Today) OR (Offline + Journey Started)
+                            const isActionEnabled = isOnline ? (isToday && hasAssignedPandit) : (isOffline && hasStartedJourney && hasAssignedPandit);
 
                             return (
                                 <motion.div
@@ -238,18 +246,21 @@ const MyBookingsPage: React.FC = () => {
 
                                         {/* Call Action */}
                                         <button
-                                            disabled={!isToday || booking.poojaMode !== 'online'}
+                                            disabled={!isActionEnabled}
                                             onClick={() => {
-                                                if (booking.poojaMode === 'online' && booking.assignedPandit?.[0]?._id) {
-                                                    startCall(booking.assignedPandit[0]._id);
+                                                if (isOnline && hasAssignedPandit) {
+                                                    startCall(booking.assignedPandit?.[0]?._id);
+                                                } else if (isOffline && hasAssignedPandit && booking.address?.coordinates) {
+                                                    const { lat, lng } = booking.address.coordinates;
+                                                    navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
                                                 }
                                             }}
-                                            className={`w-full py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${isToday && booking.poojaMode === 'online'
+                                            className={`w-full py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${isActionEnabled
                                                 ? "bg-[#FF7000] text-white shadow-lg shadow-orange-100"
                                                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
                                                 }`}
                                         >
-                                            {booking.poojaMode === 'online' ? (
+                                            {isOnline ? (
                                                 <div className="flex items-center gap-2">
                                                     <Video className="w-5 h-5" />
                                                     <span>Video Call</span>
@@ -257,7 +268,7 @@ const MyBookingsPage: React.FC = () => {
                                             ) : (
                                                 <div className="flex items-center gap-2">
                                                     <MapPin className="w-5 h-5" />
-                                                    <span>View Location</span>
+                                                    <span>Track Pandit</span>
                                                 </div>
                                             )}
                                         </button>

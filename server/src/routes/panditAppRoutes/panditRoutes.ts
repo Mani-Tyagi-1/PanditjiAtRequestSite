@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from "express";
-import { createPandit, fetchAllPandit, fetchPanditById, getLocationSuggestions } from "../../controller/panditApp/panditController";
+import { createPandit, fetchAllPandit, fetchPanditById, getLocationSuggestions, getPanditLocation } from "../../controller/panditApp/panditController";
 import { createMultipleFileUpload } from "../../middlewares/panditUploadMiddleware";
 import { getPanditStats } from "../../controller/panditApp/panditStatsController";
 
@@ -62,5 +62,13 @@ router.get(
     }
   }
 );
+
+router.get("/:id/location", async (req, res, next) => {
+  try {
+    await getPanditLocation(req, res);
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

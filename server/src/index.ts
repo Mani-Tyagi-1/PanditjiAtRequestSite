@@ -77,6 +77,35 @@ io.on("connection", (socket) => {
     console.log(`👳 Pandit ${socket.id} joined active_pandits`);
   });
 
+  socket.on("user:track_pandit", (panditId: string) => {
+    const room = `pandit:${panditId}`;
+    socket.join(room);
+    console.log(`👤 User tracking pandit in room: ${room}`);
+  });
+
+  socket.on("pandit:location_update", async (data: { panditId: string; latitude: number; longitude: number }) => {
+    const { panditId, latitude, longitude } = data;
+    const room = `pandit:${panditId}`;
+
+    // Emit to all users in the pandit's room
+    io.to(room).emit("user:pandit_location", {
+      panditId,
+      latitude,
+      longitude,
+    });
+
+    // Optionally update database (could be throttled in a real app)
+    try {
+      const panditModel = (await import("./model/panditApp/panditModel")).default;
+      await panditModel.findByIdAndUpdate(panditId, {
+        "location.latitude": latitude,
+        "location.longitude": longitude,
+      });
+    } catch (err) {
+      console.error("Failed to update pandit location in DB:", err);
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("🔌 Socket disconnected:", socket.id);
   });

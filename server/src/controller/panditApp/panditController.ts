@@ -183,3 +183,22 @@ export const fetchPanditById = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Server error", error });
   }
 };
+export const getPanditLocation = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const pandit = await panditModel.findById(id).select("location");
+
+    if (!pandit) {
+      return res.status(404).json({ message: "Pandit not found" });
+    }
+
+    return res.status(200).json({
+      latitude: pandit.location?.latitude,
+      longitude: pandit.location?.longitude,
+      address: pandit.location?.address,
+    });
+  } catch (error) {
+    console.error("Error fetching pandit location:", error);
+    return res.status(500).json({ message: "Server error", error });
+  }
+};

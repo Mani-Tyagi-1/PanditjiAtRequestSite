@@ -29,6 +29,7 @@ export interface ICallInvite {
   bookingId?: Types.ObjectId | null;
 
   status: CallStatus;
+  callType: "video" | "audio";
   expiresAt: Date;
 
   createdAt: Date;
@@ -66,6 +67,12 @@ const CallInviteSchema = new Schema<ICallInvite>(
       enum: ["ringing", "call-ringing", "accepted", "rejected", "canceled", "missed"],
       default: "ringing",
       index: true,
+    },
+
+    callType: {
+      type: String,
+      enum: ["video", "audio"],
+      default: "video",
     },
 
     expiresAt: { type: Date, required: true, index: true },

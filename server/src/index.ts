@@ -23,6 +23,7 @@ import { generateStreamToken } from "./controller/userApp/StreamTokenController"
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
 import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
+import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use("/api", poojaBookingRoutes);
 app.use("/api", userRoutes);
 app.use("/api/calls", callingRoutes);
 app.use("/api", pushRoutes);
+app.use("/api/stream", streamRoutes);
 app.get("/gen-stream-token/:userId", generateStreamToken);
 
 // PANDIT ROUTES

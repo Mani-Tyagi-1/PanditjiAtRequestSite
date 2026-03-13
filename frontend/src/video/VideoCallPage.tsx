@@ -64,7 +64,18 @@ const VideoCallPage = () => {
     if (!client || !callId) return;
 
     const myCall = client.call("default", callId);
-    myCall.join({ create: true }).then(() => {
+    myCall.join({ create: true }).then(async () => {
+      // Set custom metadata for the receiver
+      try {
+        await myCall.update({
+          custom: {
+            callerName: user?.name || user?.userName || "User",
+            type: "video",
+          },
+        });
+      } catch (err) {
+        console.warn("Failed to update call metadata", err);
+      }
       setCall(myCall);
       setLoading(false);
     }).catch((err) => {

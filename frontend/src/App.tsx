@@ -10,6 +10,7 @@ import PujaDetailPage from "./components/BookingComponents/PujaPage";
 import ProfilePage from "./pages/ProfilePage";
 import MyBookingsPage from "./pages/MyBookingsPage";
 import VideoCallPage from "./video/VideoCallPage";
+import AudioCallPage from "./video/AudioCallPage";
 import TrackPanditPage from "./pages/TrackPanditPage";
 
 // Global Auth Context & Modal
@@ -34,6 +35,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-bookings" element={<MyBookingsPage />} />
         <Route path="/video-call/:callId" element={<VideoCallPage />} />
+        <Route path="/audio-call/:callId/:panditId" element={<AudioCallPage />} />
         <Route path="/track-pandit/:panditId/:destLat/:destLng" element={<TrackPanditPage />} />
 
         {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}

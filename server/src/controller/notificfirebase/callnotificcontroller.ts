@@ -43,6 +43,7 @@ export const inviteCall: RequestHandler = async (req, res) => {
       callerId,
       bookingId,
       status,
+      callType,
       fromAppType: fromAppTypeRaw,
       toAppType: toAppTypeRaw,
     } = req.body as any;
@@ -65,6 +66,7 @@ export const inviteCall: RequestHandler = async (req, res) => {
 
     // ✅ backward-compatible default
     const inviteStatus = normalizeInviteStatus(status);
+    const resolvedCallType = (callType === "audio") ? "audio" : "video";
 
     const expiresAt = addSeconds(45);
 
@@ -83,16 +85,18 @@ export const inviteCall: RequestHandler = async (req, res) => {
         callerId: String(callerId),
         bookingId: bookingId ?? null,
         status: inviteStatus,
+        callType: resolvedCallType,
         expiresAt,
       },
       { upsert: true, new: true }
     );
 
-    console.log("fcm invite sent", {
+    console.log("FCM invite record created", {
       callId,
       toUserId,
       toAppType,
       status: inviteStatus,
+      callType: resolvedCallType,
     });
 
     const pushResult = await sendFcmToUser({
@@ -107,6 +111,7 @@ export const inviteCall: RequestHandler = async (req, res) => {
         callerId,
         bookingId: bookingId ?? "",
         status: inviteStatus, // ✅ "ringing" or "call-ringing"
+        callType: resolvedCallType,
       },
     });
 

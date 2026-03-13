@@ -17,8 +17,10 @@ import {
   Signal,
   SignalLow,
   Clock,
-  Navigation2
+  Navigation2,
+  Phone
 } from "lucide-react";
+import axios from "axios";
 import { usePanditTrackingStore } from "../store/panditTrackingStore";
 
 const mapContainerStyle = {
@@ -179,6 +181,35 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
       setRouteLoading(false);
     }
   }, [map, isLoaded]);
+
+  const handleCall = async () => {
+    if (!panditId) return;
+    try {
+      const userDataString = localStorage.getItem("user_data");
+      if (!userDataString) return;
+      const user = JSON.parse(userDataString);
+
+      const baseCallId = crypto.randomUUID();
+      const callId = `${baseCallId}_AC`;
+      const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+
+      await axios.post(`${apiUrl}/calls/invite`, {
+        fromUserId: user._id,
+        toUserId: panditId,
+        callId,
+        callerName: user.name || user.userName || "User",
+        callerId: user._id,
+        fromAppType: "user",
+        toAppType: "pandit",
+        callType: "audio"
+      });
+
+      navigate(`/audio-call/${callId}/${panditId}`);
+    } catch (err) {
+      console.error("Error starting call:", err);
+      alert("Failed to start call. Please try again.");
+    }
+  };
 
   // Refetch route when pandit moves
   useEffect(() => {
@@ -522,6 +553,13 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
           </div>
 
           <div className="flex gap-3 pointer-events-auto">
+            <button
+               onClick={handleCall}
+               className="w-14 h-14 flex items-center justify-center rounded-2xl bg-green-600 text-white shadow-xl shadow-green-500/20 hover:bg-green-700 transition-all active:scale-95"
+               title="Call Pandit"
+            >
+              <Phone className="w-6 h-6 fill-white" />
+            </button>
             <button
               onClick={fitBoth}
               className="w-14 h-14 flex items-center justify-center rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white hover:bg-black/60 transition-all active:scale-95"

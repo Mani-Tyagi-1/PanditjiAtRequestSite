@@ -5,8 +5,8 @@ import { useStreamClientStore } from "./streamClientStore";
 const apiKey = "s22skkdyjhaf";
 
 export async function initStreamClient(userId: string, name: string) {
-
-  const res = await axios.get(`/gen-stream-token/${userId}`);
+  const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+  const res = await axios.get(`${apiUrl}/stream/gen-stream-token/${userId}`);
 
   const token = res.data.token || res.data.data.token;
 

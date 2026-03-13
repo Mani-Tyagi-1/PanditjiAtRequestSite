@@ -9,7 +9,8 @@ import {
     User,
     Video,
     MapPin,
-    Star
+    Star,
+    Phone
 } from "lucide-react";
 
 const MyBookingsPage: React.FC = () => {
@@ -47,14 +48,14 @@ const MyBookingsPage: React.FC = () => {
         fetchBookings();
     }, []);
 
-    const startCall = async (panditId: string) => {
+    const startCall = async (panditId: string, type: 'video' | 'audio' = 'video') => {
         try {
             const userDataString = localStorage.getItem("user_data");
             if (!userDataString) return;
             const user = JSON.parse(userDataString);
 
-            const callId = crypto.randomUUID();
-
+            const baseCallId = crypto.randomUUID();
+            const callId = type === "audio" ? `${baseCallId}_AC` : baseCallId;
             const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
 
             await axios.post(`${apiUrl}/calls/invite`, {
@@ -65,9 +66,14 @@ const MyBookingsPage: React.FC = () => {
                 callerId: user._id,
                 fromAppType: "user",
                 toAppType: "pandit",
+                callType: type
             });
 
-            navigate(`/video-call/${callId}`);
+            if (type === 'video') {
+                navigate(`/video-call/${callId}`);
+            } else {
+                navigate(`/audio-call/${callId}/${panditId}`);
+            }
         } catch (err) {
             console.error("Error starting call:", err);
             alert("Failed to start call. Please try again.");
@@ -177,12 +183,12 @@ const MyBookingsPage: React.FC = () => {
                             const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                             const formattedTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                             const isToday = new Date().toDateString() === date.toDateString();
-                            
+
                             const isOnline = booking.poojaMode === 'online';
                             const isOffline = booking.poojaMode === 'offline';
                             const hasStartedJourney = !!booking.journeyStartTime;
                             const hasAssignedPandit = booking.assignedPandit && booking.assignedPandit.length > 0;
-                            
+
                             // Enable button if (Online + Today) OR (Offline + Journey Started)
                             const isActionEnabled = isOnline ? (isToday && hasAssignedPandit) : (isOffline && hasStartedJourney && hasAssignedPandit);
 
@@ -245,33 +251,49 @@ const MyBookingsPage: React.FC = () => {
                                         </div>
 
                                         {/* Call Action */}
-                                        <button
-                                            disabled={!isActionEnabled}
-                                            onClick={() => {
-                                                if (isOnline && hasAssignedPandit) {
-                                                    startCall(booking.assignedPandit?.[0]?._id);
-                                                } else if (isOffline && hasAssignedPandit && booking.address?.coordinates) {
-                                                    const { lat, lng } = booking.address.coordinates;
-                                                    navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
-                                                }
-                                            }}
-                                            className={`w-full py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${isActionEnabled
-                                                ? "bg-[#FF7000] text-white shadow-lg shadow-orange-100"
-                                                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                                }`}
-                                        >
-                                            {isOnline ? (
-                                                <div className="flex items-center gap-2">
-                                                    <Video className="w-5 h-5" />
-                                                    <span>Video Call</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin className="w-5 h-5" />
-                                                    <span>Track Pandit</span>
-                                                </div>
-                                            )}
-                                        </button>
+                                        {isOnline ? (
+                                            <button
+                                                disabled={!isActionEnabled}
+                                                onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'video')}
+                                                className={`w-full py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${isActionEnabled
+                                                    ? "bg-[#FF7000] text-white shadow-lg shadow-orange-100"
+                                                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                    }`}
+                                            >
+                                                <Video className="w-5 h-5" />
+                                                <span>Video Call</span>
+                                            </button>
+                                        ) : (
+                                            <div className="flex gap-2 w-full">
+                                                <button
+                                                    disabled={!hasAssignedPandit}
+                                                    onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'audio')}
+                                                    className={`w-14 h-11 rounded-2xl font-bold flex items-center justify-center transition-all active:scale-[0.98] ${hasAssignedPandit
+                                                        ? "bg-green-600 text-white shadow-lg shadow-green-100 hover:bg-green-700"
+                                                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                        }`}
+                                                    title="Call Pandit"
+                                                >
+                                                    <Phone className="w-5 h-5" />
+                                                </button>
+                                                <button
+                                                    disabled={!isActionEnabled}
+                                                    onClick={() => {
+                                                        if (hasAssignedPandit && booking.address?.coordinates) {
+                                                            const { lat, lng } = booking.address.coordinates;
+                                                            navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
+                                                        }
+                                                    }}
+                                                    className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${isActionEnabled
+                                                        ? "bg-[#FF7000] text-white shadow-lg shadow-orange-100"
+                                                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                        }`}
+                                                >
+                                                    <MapPin className="w-4 h-4" />
+                                                    <span className="text-sm">Track Panditji</span>
+                                                </button>
+                                            </div>
+                                        )}
 
                                         {/* Assignment Status */}
                                         <div className="mt-2 border-2 border-dashed border-orange-200 rounded-2xl p-2 flex items-center justify-between bg-orange-50/30">

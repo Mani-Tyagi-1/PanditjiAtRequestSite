@@ -9,6 +9,7 @@ import CategoryPage from "./components/BookingComponents/CategoryPage";
 import PujaDetailPage from "./components/BookingComponents/PujaPage";
 import ProfilePage from "./pages/ProfilePage";
 import MyBookingsPage from "./pages/MyBookingsPage";
+import VideoCallPage from "./video/VideoCallPage";
 
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
@@ -31,6 +32,7 @@ function App() {
         <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-bookings" element={<MyBookingsPage />} />
+        <Route path="/video-call/:callId" element={<VideoCallPage />} />
 
         {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

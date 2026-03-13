@@ -4,6 +4,6 @@ import { registerPushToken } from "../../controller/notificfirebase/pushnotifeec
 
 const router = Router();
 
-router.post("/api/push/register", registerPushToken);
+router.post("/push/register", registerPushToken);
 
 export default router;

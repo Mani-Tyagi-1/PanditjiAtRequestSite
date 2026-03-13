@@ -30,7 +30,7 @@ const MyBookingsPage: React.FC = () => {
             const user = JSON.parse(userDataString);
             const userPhone = user.phone;
 
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
             const response = await axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${userPhone}`);
 
             setBookings(response.data || []);
@@ -46,6 +46,33 @@ const MyBookingsPage: React.FC = () => {
     useEffect(() => {
         fetchBookings();
     }, []);
+
+    const startCall = async (panditId: string) => {
+        try {
+            const userDataString = localStorage.getItem("user_data");
+            if (!userDataString) return;
+            const user = JSON.parse(userDataString);
+
+            const callId = crypto.randomUUID();
+
+            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+
+            await axios.post(`${apiUrl}/calls/invite`, {
+                fromUserId: user._id,
+                toUserId: panditId,
+                callId,
+                callerName: user.name || user.userName || "User",
+                callerId: user._id,
+                fromAppType: "user",
+                toAppType: "pandit",
+            });
+
+            navigate(`/video-call/${callId}`);
+        } catch (err) {
+            console.error("Error starting call:", err);
+            alert("Failed to start call. Please try again.");
+        }
+    };
 
     const filteredBookings = bookings.filter(booking => {
         if (filterMode === "all") return true;
@@ -210,13 +237,17 @@ const MyBookingsPage: React.FC = () => {
                                         </div>
 
                                         {/* Call Action */}
-                                        <button 
-                                            disabled={!isToday}
-                                            className={`w-full py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                                                isToday 
-                                                ? "bg-[#FF7000] text-white shadow-lg shadow-orange-100" 
+                                        <button
+                                            disabled={!isToday || booking.poojaMode !== 'online'}
+                                            onClick={() => {
+                                                if (booking.poojaMode === 'online' && booking.assignedPandit?.[0]?._id) {
+                                                    startCall(booking.assignedPandit[0]._id);
+                                                }
+                                            }}
+                                            className={`w-full py-2 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${isToday && booking.poojaMode === 'online'
+                                                ? "bg-[#FF7000] text-white shadow-lg shadow-orange-100"
                                                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                            }`}
+                                                }`}
                                         >
                                             {booking.poojaMode === 'online' ? (
                                                 <div className="flex items-center gap-2">
@@ -236,9 +267,9 @@ const MyBookingsPage: React.FC = () => {
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 bg-orange-100/50 rounded-full flex items-center justify-center overflow-hidden border border-orange-200">
                                                     {booking.assignedPandit && booking.assignedPandit[0]?.profileImage ? (
-                                                        <img 
-                                                            src={booking.assignedPandit[0].profileImage} 
-                                                            alt="Pandit Ji" 
+                                                        <img
+                                                            src={booking.assignedPandit[0].profileImage}
+                                                            alt="Pandit Ji"
                                                             className="w-full h-full object-cover"
                                                         />
                                                     ) : (
@@ -248,7 +279,7 @@ const MyBookingsPage: React.FC = () => {
                                                 <div>
                                                     <p className="text-[10px] text-[#FFB68D] font-bold uppercase tracking-wider">Pandit Ji assigned</p>
                                                     <p className="text-gray-800 font-bold text-sm">
-                                                        {booking.assignedPandit && booking.assignedPandit.length > 0 
+                                                        {booking.assignedPandit && booking.assignedPandit.length > 0
                                                             ? `Pandit ${booking.assignedPandit[0].firstName} ${booking.assignedPandit[0].lastName}`
                                                             : "Not assigned yet"}
                                                     </p>

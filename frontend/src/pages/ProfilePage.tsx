@@ -2,17 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    User, 
-    Phone, 
-    Mail, 
-    ChevronLeft, 
-    ChevronRight, 
-    LogOut, 
-    Calendar, 
-    Clock, 
-    MapPin, 
-    Bookmark, 
+import {
+    User,
+    Phone,
+    Mail,
+    ChevronLeft,
+    ChevronRight,
+    LogOut,
+    Calendar,
+    Clock,
+    MapPin,
+    Bookmark,
     Camera,
     Info,
     HelpCircle,
@@ -63,7 +63,7 @@ const ProfilePage: React.FC = () => {
             const storedUser = JSON.parse(userDataString);
             const userId = storedUser._id;
 
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
             const response = await axios.get(`${apiUrl}/profile/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -101,8 +101,8 @@ const ProfilePage: React.FC = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem("user_token");
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-            
+            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+
             // Prepare payload
             const payload = {
                 firstname: formData.given_name,
@@ -119,7 +119,7 @@ const ProfilePage: React.FC = () => {
             // Use the standard encryptPayload helper
             const encryptedPayload = encryptPayload(payload);
 
-            await axios.put(`${apiUrl}/updateProfile/${user._id}`, 
+            await axios.put(`${apiUrl}/updateProfile/${user._id}`,
                 encryptedPayload,
                 {
                     headers: {
@@ -165,7 +165,7 @@ const ProfilePage: React.FC = () => {
     }
 
     const ProfileMenuItem = ({ icon: Icon, title, subtitle, onClick }: any) => (
-        <button 
+        <button
             onClick={onClick}
             className="w-full flex items-center justify-between p-4 bg-white rounded-2xl mb-3 shadow-sm border border-orange-50 active:scale-[0.98] transition-all"
         >
@@ -187,7 +187,7 @@ const ProfilePage: React.FC = () => {
             <label className="block text-xs font-semibold text-gray-700 mb-2 ml-1">{label}</label>
             <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${disabled ? 'bg-gray-50 border-gray-100' : 'bg-white border-orange-100 focus-within:border-[#FF7000] shadow-sm'}`}>
                 <Icon className={`w-4 h-4 ${disabled ? 'text-gray-400' : 'text-[#FF7000]'}`} />
-                <input 
+                <input
                     type={type}
                     value={value || ""}
                     onChange={(e) => onChange(e.target.value)}
@@ -203,7 +203,7 @@ const ProfilePage: React.FC = () => {
         <div className="min-h-screen bg-[#FFFAF5] pb-24 font-sans">
             <AnimatePresence mode="wait">
                 {mode === "view" ? (
-                    <motion.div 
+                    <motion.div
                         key="view"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -212,8 +212,8 @@ const ProfilePage: React.FC = () => {
                     >
                         {/* Navigation Header */}
                         <div className="flex items-center gap-4 pt-6 pb-2">
-                            <button 
-                                onClick={() => navigate(-1)} 
+                            <button
+                                onClick={() => navigate(-1)}
                                 className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000]"
                             >
                                 <ChevronLeft className="w-6 h-6" />
@@ -226,12 +226,12 @@ const ProfilePage: React.FC = () => {
                             <div className="relative bg-[#FFEDE0] rounded-[32px] p-6 pt-10 overflow-hidden border border-orange-100 shadow-sm">
                                 {/* Decorative circles */}
                                 <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/30 rounded-full -translate-x-12 -translate-y-12" />
-                                
+
                                 <div className="flex items-center gap-6 relative z-10">
                                     <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-orange-100">
-                                        <img 
-                                            src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"} 
-                                            alt="Profile" 
+                                        <img
+                                            src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
+                                            alt="Profile"
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
@@ -243,7 +243,7 @@ const ProfilePage: React.FC = () => {
                                             <Phone className="w-3.5 h-3.5" />
                                             <span className="text-sm">+91 {user?.phone}</span>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => setMode("edit")}
                                             className="flex items-center gap-2 bg-[#FF7000] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-200 active:scale-95 transition-all"
                                         >
@@ -257,41 +257,41 @@ const ProfilePage: React.FC = () => {
 
                         {/* Menu Items */}
                         <div className="space-y-1">
-                            <ProfileMenuItem 
-                                icon={User} 
-                                title="My Profile" 
-                                subtitle="Tap to open" 
+                            <ProfileMenuItem
+                                icon={User}
+                                title="My Profile"
+                                subtitle="Tap to open"
                                 onClick={() => setMode("edit")}
                             />
-                            <ProfileMenuItem 
-                                icon={Users} 
-                                title="Family" 
-                                subtitle="Tap to open" 
-                                onClick={() => {}}
+                            <ProfileMenuItem
+                                icon={Users}
+                                title="Family"
+                                subtitle="Tap to open"
+                                onClick={() => { }}
                             />
-                            <ProfileMenuItem 
-                                icon={Calendar} 
-                                title="My Puja Booking" 
-                                subtitle="Tap to open" 
+                            <ProfileMenuItem
+                                icon={Calendar}
+                                title="My Puja Booking"
+                                subtitle="Tap to open"
                                 onClick={() => navigate("/my-bookings")}
                             />
-                            <ProfileMenuItem 
-                                icon={Info} 
-                                title="About Us" 
-                                subtitle="Tap to open" 
+                            <ProfileMenuItem
+                                icon={Info}
+                                title="About Us"
+                                subtitle="Tap to open"
                                 onClick={() => navigate("/about")}
                             />
-                            <ProfileMenuItem 
-                                icon={HelpCircle} 
-                                title="FAQs & Help Center" 
-                                subtitle="Tap to open" 
+                            <ProfileMenuItem
+                                icon={HelpCircle}
+                                title="FAQs & Help Center"
+                                subtitle="Tap to open"
                                 onClick={() => navigate("/help")}
                             />
                         </div>
 
                         {/* Logout Section */}
                         <div className="mt-12 flex flex-col items-center gap-6">
-                            <button 
+                            <button
                                 onClick={handleLogout}
                                 className="flex items-center gap-2 px-8 py-3 rounded-full border-2 border-red-100 text-red-500 font-bold bg-white shadow-sm active:scale-95 transition-all"
                             >
@@ -306,7 +306,7 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </motion.div>
                 ) : (
-                    <motion.div 
+                    <motion.div
                         key="edit"
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -315,8 +315,8 @@ const ProfilePage: React.FC = () => {
                         {/* Header */}
                         <div className="bg-[#FF7000] px-4 pt-8 pb-20 relative">
                             <div className="flex items-center gap-4 text-white mb-6">
-                                <button 
-                                    onClick={() => setMode("view")} 
+                                <button
+                                    onClick={() => setMode("view")}
                                     className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all shadow-sm border border-white/10"
                                     aria-label="Back to Profile"
                                 >
@@ -327,15 +327,15 @@ const ProfilePage: React.FC = () => {
                                     <p className="text-white/80 text-[10px]">Personal & astro details for accurate Pooja</p>
                                 </div>
                             </div>
-                            
+
                             {/* Profile Image card overlay */}
                             <div className="absolute left-4 right-4 -bottom-16">
                                 <div className="bg-[#FF7000] rounded-3xl p-6 flex flex-col items-center justify-center">
                                     <div className="relative">
                                         <div className="w-28 h-28 rounded-full border-4 border-white/30 shadow-xl overflow-hidden bg-white">
-                                            <img 
-                                                src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"} 
-                                                alt="Profile" 
+                                            <img
+                                                src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
+                                                alt="Profile"
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
@@ -359,34 +359,34 @@ const ProfilePage: React.FC = () => {
                                     </div>
                                     <h2 className="font-bold text-gray-800">Basic Details</h2>
                                 </div>
-                                
-                                <EditInput 
-                                    label="First Name" 
-                                    icon={Edit3} 
+
+                                <EditInput
+                                    label="First Name"
+                                    icon={Edit3}
                                     value={formData.given_name}
-                                    onChange={(v: string) => setFormData({...formData, given_name: v})}
+                                    onChange={(v: string) => setFormData({ ...formData, given_name: v })}
                                 />
-                                <EditInput 
-                                    label="Last Name" 
+                                <EditInput
+                                    label="Last Name"
                                     icon={Edit3}
                                     value={formData.family_name}
-                                    onChange={(v: string) => setFormData({...formData, family_name: v})}
+                                    onChange={(v: string) => setFormData({ ...formData, family_name: v })}
                                 />
-                                <EditInput 
-                                    label="Mobile Number" 
-                                    icon={Phone} 
+                                <EditInput
+                                    label="Mobile Number"
+                                    icon={Phone}
                                     value={formData.phone}
                                     disabled={true}
                                 />
                                 <p className="text-[10px] text-gray-400 -mt-2 ml-1 mb-4">Mobile number cannot be changed</p>
-                                
+
                                 <div className="space-y-2">
                                     <label className="block text-xs font-semibold text-gray-700 ml-1">Gender</label>
                                     <div className="grid grid-cols-3 gap-3">
                                         {["Male", "Female", "Other"].map((g) => (
                                             <button
                                                 key={g}
-                                                onClick={() => setFormData({...formData, gender: g})}
+                                                onClick={() => setFormData({ ...formData, gender: g })}
                                                 className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all text-sm font-medium ${formData.gender === g ? 'bg-[#FF7000] border-[#FF7000] text-white shadow-md' : 'bg-white border-orange-100 text-gray-500'}`}
                                             >
                                                 <User className="w-4 h-4" />
@@ -406,33 +406,33 @@ const ProfilePage: React.FC = () => {
                                     <h2 className="font-bold text-gray-800">Astro Details</h2>
                                 </div>
 
-                                <EditInput 
-                                    label="Date of Birth" 
-                                    icon={Calendar} 
+                                <EditInput
+                                    label="Date of Birth"
+                                    icon={Calendar}
                                     type="date"
                                     value={formData.dob}
-                                    onChange={(v: string) => setFormData({...formData, dob: v})}
+                                    onChange={(v: string) => setFormData({ ...formData, dob: v })}
                                 />
-                                <EditInput 
-                                    label="Birth Time" 
-                                    icon={Clock} 
+                                <EditInput
+                                    label="Birth Time"
+                                    icon={Clock}
                                     type="time"
                                     value={formData.birthTime}
-                                    onChange={(v: string) => setFormData({...formData, birthTime: v})}
+                                    onChange={(v: string) => setFormData({ ...formData, birthTime: v })}
                                 />
-                                <EditInput 
-                                    label="Birth Place" 
+                                <EditInput
+                                    label="Birth Place"
                                     icon={MapPin}
                                     placeholder="Enter birth city"
                                     value={formData.birthPlace}
-                                    onChange={(v: string) => setFormData({...formData, birthPlace: v})}
+                                    onChange={(v: string) => setFormData({ ...formData, birthPlace: v })}
                                 />
-                                <EditInput 
-                                    label="Gotra" 
+                                <EditInput
+                                    label="Gotra"
                                     icon={Bookmark}
                                     placeholder="Enter your gotra"
                                     value={formData.gotra}
-                                    onChange={(v: string) => setFormData({...formData, gotra: v})}
+                                    onChange={(v: string) => setFormData({ ...formData, gotra: v })}
                                 />
                                 <p className="text-[10px] text-gray-400 mt-1 ml-1">Helps Purohit perform Sankalp correctly.</p>
                             </div>
@@ -445,12 +445,12 @@ const ProfilePage: React.FC = () => {
                                     </div>
                                     <h2 className="font-bold text-gray-800">Contact</h2>
                                 </div>
-                                <EditInput 
-                                    label="Email" 
-                                    icon={Mail} 
+                                <EditInput
+                                    label="Email"
+                                    icon={Mail}
                                     type="email"
                                     value={formData.email}
-                                    onChange={(v: string) => setFormData({...formData, email: v})}
+                                    onChange={(v: string) => setFormData({ ...formData, email: v })}
                                 />
                             </div>
 
@@ -459,7 +459,7 @@ const ProfilePage: React.FC = () => {
                             </p>
 
                             {/* Save Button */}
-                            <button 
+                            <button
                                 onClick={handleSave}
                                 disabled={isSaving}
                                 className="w-full bg-[#FFB58A] hover:bg-[#FF7000] disabled:opacity-50 text-white font-bold py-4 rounded-[20px] shadow-lg shadow-orange-100 transition-all mb-10 active:scale-[0.98]"

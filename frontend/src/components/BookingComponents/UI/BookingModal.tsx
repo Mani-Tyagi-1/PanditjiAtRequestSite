@@ -298,11 +298,10 @@ function OfflineLocationPicker({
               key={type}
               type="button"
               onClick={() => setSaveAs(type)}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors border ${
-                saveAs === type
-                  ? "bg-orange-50 border-orange-200 text-orange-600"
-                  : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50"
-              }`}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors border ${saveAs === type
+                ? "bg-orange-50 border-orange-200 text-orange-600"
+                : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50"
+                }`}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </button>
@@ -405,32 +404,32 @@ export default function BookingModal({
   );
 
   const fetchAddressFromCoords = useCallback(
-  async (lat: number, lng: number) => {
-    if (!(window as any).google?.maps) return;
+    async (lat: number, lng: number) => {
+      if (!(window as any).google?.maps) return;
 
-    try {
-      const geocoder = new google.maps.Geocoder();
+      try {
+        const geocoder = new google.maps.Geocoder();
 
-      const response = await geocoder.geocode({
-        location: { lat, lng },
-      });
+        const response = await geocoder.geocode({
+          location: { lat, lng },
+        });
 
-      if (response.results && response.results.length > 0) {
-        const result = response.results[0];
+        if (response.results && response.results.length > 0) {
+          const result = response.results[0];
 
-        updateAddressFieldsFromGoogleAddress(result.address_components || []);
+          updateAddressFieldsFromGoogleAddress(result.address_components || []);
 
-        // Optional: if street is still empty, use formatted address as fallback
-        if (!street && result.formatted_address) {
-          setStreet(result.formatted_address);
+          // Optional: if street is still empty, use formatted address as fallback
+          if (!street && result.formatted_address) {
+            setStreet(result.formatted_address);
+          }
         }
+      } catch (error) {
+        console.error("Reverse geocoding failed:", error);
       }
-    } catch (error) {
-      console.error("Reverse geocoding failed:", error);
-    }
-  },
-  [street, updateAddressFieldsFromGoogleAddress]
-);
+    },
+    [street, updateAddressFieldsFromGoogleAddress]
+  );
 
   const handleFetchLocation = useCallback(() => {
     setIsFetchingLocation(true);
@@ -463,7 +462,7 @@ export default function BookingModal({
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
         const res = await fetch(`${apiUrl}/config/maps`);
 
         if (!res.ok) {
@@ -491,7 +490,7 @@ export default function BookingModal({
       if (!user) return;
       setIsLoadingAddresses(true);
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
         const userId = user?._id || user?.id;
         console.log("Fetching saved addresses for user:", userId);
         const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
@@ -602,20 +601,20 @@ export default function BookingModal({
 
     setIsProcessing(true);
 
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+    const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
 
     if (mode === "offline") {
       try {
-        const checkPayload = selectedAddressId 
+        const checkPayload = selectedAddressId
           ? encryptPayload({ addressId: selectedAddressId })
-          : encryptPayload({ 
-              latitude: markerPosition.lat, 
-              longitude: markerPosition.lng 
-            });
+          : encryptPayload({
+            latitude: markerPosition.lat,
+            longitude: markerPosition.lng
+          });
 
         const checkRes = await fetch(`${apiUrl}/addresses/check`, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "x-user-id": user?._id || user?.id || ""
           },
@@ -648,9 +647,9 @@ export default function BookingModal({
                 country: "India",
                 isPrimary: false
               };
-              
+
               const encryptedAddress = encryptPayload(addressPayload);
-              
+
               // We'll fire and forget or just log errors, don't block booking for this
               fetch(`${apiUrl}/addresses`, {
                 method: "POST",
@@ -694,18 +693,18 @@ export default function BookingModal({
         address:
           mode === "offline"
             ? {
-                houseFlatNo: houseNo,
-                streetArea: street,
-                landmark: landmark,
-                city: city,
-                state: stateVal,
-                pincode: pincode,
-                saveAs: saveAs,
-                coordinates: {
-                  lat: markerPosition.lat,
-                  lng: markerPosition.lng,
-                },
-              }
+              houseFlatNo: houseNo,
+              streetArea: street,
+              landmark: landmark,
+              city: city,
+              state: stateVal,
+              pincode: pincode,
+              saveAs: saveAs,
+              coordinates: {
+                lat: markerPosition.lat,
+                lng: markerPosition.lng,
+              },
+            }
             : undefined,
       };
 
@@ -821,16 +820,14 @@ export default function BookingModal({
 
       <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center booking-modal">
         <div
-          className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${
-            isOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"
+            }`}
           onClick={onClose}
         />
 
         <div
-          className={`relative w-full sm:max-w-md h-[95vh] sm:h-[85vh] bg-[#fdfdfd] sm:rounded-2xl rounded-t-2xl flex flex-col overflow-hidden ${
-            isOpen ? "slide-up" : "slide-down"
-          }`}
+          className={`relative w-full sm:max-w-md h-[95vh] sm:h-[85vh] bg-[#fdfdfd] sm:rounded-2xl rounded-t-2xl flex flex-col overflow-hidden ${isOpen ? "slide-up" : "slide-down"
+            }`}
         >
           <div className="flex items-center gap-3 px-4 py-3.5 bg-white border-b border-stone-200 sticky top-0 z-10 shrink-0">
             <button
@@ -865,33 +862,29 @@ export default function BookingModal({
               <div className="flex bg-stone-100 p-1 rounded-xl w-fit">
                 <button
                   onClick={() => setMode("online")}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === "online"
-                      ? "bg-white text-orange-600 shadow-sm"
-                      : "text-stone-500 hover:text-stone-700"
-                  }`}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
+                    ? "bg-white text-orange-600 shadow-sm"
+                    : "text-stone-500 hover:text-stone-700"
+                    }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      mode === "online"
-                        ? "bg-orange-500 animate-pulse"
-                        : "bg-stone-300"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${mode === "online"
+                      ? "bg-orange-500 animate-pulse"
+                      : "bg-stone-300"
+                      }`}
                   />
                   Online Mode
                 </button>
                 <button
                   onClick={() => setMode("offline")}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    mode === "offline"
-                      ? "bg-white text-orange-600 shadow-sm"
-                      : "text-stone-500 hover:text-stone-700"
-                  }`}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
+                    ? "bg-white text-orange-600 shadow-sm"
+                    : "text-stone-500 hover:text-stone-700"
+                    }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      mode === "offline" ? "bg-orange-500" : "bg-stone-300"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${mode === "offline" ? "bg-orange-500" : "bg-stone-300"
+                      }`}
                   />
                   Offline Mode
                 </button>
@@ -1032,11 +1025,10 @@ export default function BookingModal({
                                       setMapCenter(pos);
                                     }
                                   }}
-                                  className={`flex-shrink-0 w-40 p-3 rounded-xl border text-left transition-all ${
-                                    selectedAddressId === addr._id
-                                      ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
-                                      : "bg-white border-stone-200 hover:border-stone-300"
-                                  }`}
+                                  className={`flex-shrink-0 w-40 p-3 rounded-xl border text-left transition-all ${selectedAddressId === addr._id
+                                    ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
+                                    : "bg-white border-stone-200 hover:border-stone-300"
+                                    }`}
                                 >
                                   <p className={`text-xs font-bold mb-1 ${selectedAddressId === addr._id ? "text-orange-600" : "text-stone-700"}`}>
                                     {addr.addressName || "Address"}
@@ -1148,9 +1140,8 @@ export default function BookingModal({
               <div className="flex items-center gap-1.5 text-stone-500 text-xs font-semibold">
                 {isSummaryOpen ? "Hide" : "View"} Details
                 <svg
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    isSummaryOpen ? "rotate-180" : ""
-                  }`}
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${isSummaryOpen ? "rotate-180" : ""
+                    }`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -1166,9 +1157,8 @@ export default function BookingModal({
             </button>
 
             <div
-              className={`overflow-hidden transition-all duration-300 ${
-                isSummaryOpen ? "max-h-56 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"
-              }`}
+              className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-56 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"
+                }`}
             >
               <div className="space-y-1.5 px-1 text-sm">
                 <div className="flex justify-between text-stone-500">
@@ -1203,9 +1193,8 @@ export default function BookingModal({
             <button
               onClick={handleCheckout}
               disabled={isProcessing}
-              className={`w-full ${
-                isProcessing ? "bg-orange-400" : "bg-orange-500 hover:bg-orange-600"
-              } active:scale-95 text-white rounded-xl py-3.5 px-5 flex items-center justify-between transition-colors shadow-md mb-4 font-bold tracking-wide`}
+              className={`w-full ${isProcessing ? "bg-orange-400" : "bg-orange-500 hover:bg-orange-600"
+                } active:scale-95 text-white rounded-xl py-3.5 px-5 flex items-center justify-between transition-colors shadow-md mb-4 font-bold tracking-wide`}
             >
               <span className="text-xl">₹{discountedPrice}</span>
               <span className="text-sm uppercase tracking-widest text-orange-50">

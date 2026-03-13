@@ -11,7 +11,7 @@ export default function LoginModal() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState('');
 
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+    const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
 
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -159,8 +159,8 @@ export default function LoginModal() {
                                     type="submit"
                                     disabled={isProcessing || phone.length !== 10}
                                     className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white transition-all ${isProcessing || phone.length !== 10
-                                            ? 'bg-orange-300 cursor-not-allowed'
-                                            : 'bg-orange-500 hover:bg-orange-600 active:scale-[0.98]'
+                                        ? 'bg-orange-300 cursor-not-allowed'
+                                        : 'bg-orange-500 hover:bg-orange-600 active:scale-[0.98]'
                                         }`}
                                 >
                                     {isProcessing ? 'Sending...' : 'Get OTP'}
@@ -189,8 +189,8 @@ export default function LoginModal() {
                                     type="submit"
                                     disabled={isProcessing || otp.length < 4}
                                     className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white transition-all ${isProcessing || otp.length < 4
-                                            ? 'bg-orange-300 cursor-not-allowed'
-                                            : 'bg-orange-500 hover:bg-orange-600 active:scale-[0.98]'
+                                        ? 'bg-orange-300 cursor-not-allowed'
+                                        : 'bg-orange-500 hover:bg-orange-600 active:scale-[0.98]'
                                         }`}
                                 >
                                     {isProcessing ? 'Verifying...' : 'Verify & Secure Login'}

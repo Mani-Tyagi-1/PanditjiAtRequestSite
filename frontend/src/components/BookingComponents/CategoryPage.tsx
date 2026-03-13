@@ -59,7 +59,7 @@ export default function CategoryPage() {
     const fetchHeaderFallback = async () => {
       // only used when page refreshed directly and state is missing
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
         const response = await fetch(`${apiUrl}/fetch-all-pooja-category`, {
           signal: controller.signal,
         });
@@ -89,7 +89,7 @@ export default function CategoryPage() {
 
     const fetchPujas = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
         const cacheKey = `poojas_by_cat_${categoryId}`;
 
         // 1. instant cache load
@@ -172,7 +172,7 @@ export default function CategoryPage() {
 
   const recommended = filteredPujas.filter((p) => p.isFeatured);
   const otherPujas = filteredPujas.filter((p) => !p.isFeatured);
-  
+
 
   return (
     <>
@@ -244,11 +244,10 @@ export default function CategoryPage() {
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`shrink-0 text-sm font-semibold px-4 py-1.5 rounded-full border transition-all duration-200 ${
-                    activeCategory === cat
-                      ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-md shadow-orange-200"
-                      : "bg-white text-stone-600 border-stone-200 hover:border-orange-400 hover:text-orange-600"
-                  }`}
+                  className={`shrink-0 text-sm font-semibold px-4 py-1.5 rounded-full border transition-all duration-200 ${activeCategory === cat
+                    ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-md shadow-orange-200"
+                    : "bg-white text-stone-600 border-stone-200 hover:border-orange-400 hover:text-orange-600"
+                    }`}
                 >
                   {cat}
                 </button>

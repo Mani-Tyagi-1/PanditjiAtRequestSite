@@ -3,9 +3,9 @@ import { acceptCall, cancelCall, inviteCall, rejectCall } from "../../controller
 
 const router = Router();
 
-router.post("/api/calls/invite", inviteCall);
-router.post("/api/calls/:callId/accept", acceptCall);
-router.post("/api/calls/:callId/reject", rejectCall);
-router.post("/api/calls/:callId/cancel", cancelCall);
+router.post("/invite", inviteCall);
+router.post("/:callId/accept", acceptCall);
+router.post("/:callId/reject", rejectCall);
+router.post("/:callId/cancel", cancelCall);
 
 export default router;

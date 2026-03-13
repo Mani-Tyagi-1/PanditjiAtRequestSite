@@ -117,7 +117,7 @@ export default function PujaDetailPage() {
     useEffect(() => {
         const fetchPooja = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+                const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
                 const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
                 const data = await response.json();
 

@@ -21,7 +21,7 @@ app.use(express.json());
 app.use("/api", panditRoutes);
 
 // Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 8000;
+app.listen(8000, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });

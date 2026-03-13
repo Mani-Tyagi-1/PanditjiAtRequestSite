@@ -37,7 +37,7 @@ const HeroSection = () => {
         if (phone.length !== 10) return alert("Please enter a valid 10-digit number.");
         setIsSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://192.168.0.188:8000/api';
             await axios.post(`${apiUrl}/send-otp`, { phone, isNotifyOkay: true });
             setLoginStep(2);
         } catch (err) {
@@ -52,7 +52,7 @@ const HeroSection = () => {
         if (!otp) return alert("Please enter the OTP.");
         setIsSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://192.168.0.188:8000/api';
             const { data } = await axios.post(`${apiUrl}/verify-otp`, { phone, otp });
             localStorage.setItem('user_token', data.token);
             localStorage.setItem('user_data', JSON.stringify(data.user));

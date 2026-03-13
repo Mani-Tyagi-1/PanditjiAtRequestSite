@@ -16,6 +16,9 @@ import userAddressRoutes from "./routes/userAppRoutes/userAddressRoutes";
 import userRoutes from "./routes/userAppRoutes/userRoutes";
 import configRoutes from "./routes/userAppRoutes/configRoutes";
 import poojaBookingRoutes from "./routes/poojaBookingRouts/poojaBookingRoutes";
+import callingRoutes from "./routes/pushroutescontroller/callingroutesused";
+import pushRoutes from "./routes/pushroutescontroller/pushnotificationfirebaseroutes";
+import { generateStreamToken } from "./controller/userApp/StreamTokenController";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -41,6 +44,9 @@ app.use("/api/config", configRoutes);
 
 app.use("/api", poojaBookingRoutes);
 app.use("/api", userRoutes);
+app.use("/api/calls", callingRoutes);
+app.use("/api", pushRoutes);
+app.get("/gen-stream-token/:userId", generateStreamToken);
 
 // PANDIT ROUTES
 app.use('/', panditAuthRoutes);

@@ -212,7 +212,10 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       razorpayOrderId: order.id,
 
       ...(poojaMode === 'offline' && { address }),
-      ...(poojaMode === 'online' && { bhaktName, gotra, contactNumber, emailId }),
+      bhaktName,
+      gotra,
+      contactNumber,
+      emailId,
     });
 
     // 🛎️ NEW: Notify pandits on PENDING creation (optional; controlled via env)

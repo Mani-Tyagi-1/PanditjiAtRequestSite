@@ -14,9 +14,9 @@ import {
     MapPin,
     Bookmark,
     Camera,
-    Info,
-    HelpCircle,
-    Users,
+    // Info,
+    // HelpCircle,
+    // Users,
     Edit3
 } from "lucide-react";
 
@@ -50,6 +50,28 @@ const ProfilePage: React.FC = () => {
     // Form State
     const [formData, setFormData] = useState<Partial<UserData>>({});
     const [isSaving, setIsSaving] = useState(false);
+
+    const [alertConfig, setAlertConfig] = useState<{
+        show: boolean;
+        title: string;
+        message: string;
+        type: "error" | "info" | "success";
+        onConfirm?: () => void;
+    }>({
+        show: false,
+        title: "",
+        message: "",
+        type: "info",
+    });
+
+    const triggerAlert = (
+        title: string,
+        message: string,
+        type: "error" | "info" | "success" = "info",
+        onConfirm?: () => void
+    ) => {
+        setAlertConfig({ show: true, title, message, type, onConfirm });
+    };
 
     const fetchUserProfile = async () => {
         try {
@@ -139,7 +161,7 @@ const ProfilePage: React.FC = () => {
             setMode("view");
         } catch (err: any) {
             console.error("Error updating profile:", err);
-            alert(err.response?.data?.message || "Failed to update profile.");
+            triggerAlert("Update Failed", err.response?.data?.message || "Failed to update profile.", "error");
         } finally {
             setIsSaving(false);
         }
@@ -270,30 +292,30 @@ const ProfilePage: React.FC = () => {
                                 subtitle="Tap to open"
                                 onClick={() => setMode("edit")}
                             />
-                            <ProfileMenuItem
+                            {/* <ProfileMenuItem
                                 icon={Users}
                                 title="Family"
                                 subtitle="Tap to open"
                                 onClick={() => { }}
-                            />
+                            /> */}
                             <ProfileMenuItem
                                 icon={Calendar}
                                 title="My Puja Booking"
                                 subtitle="Tap to open"
                                 onClick={() => navigate("/my-bookings")}
                             />
-                            <ProfileMenuItem
+                            {/* <ProfileMenuItem
                                 icon={Info}
                                 title="About Us"
                                 subtitle="Tap to open"
                                 onClick={() => navigate("/about")}
-                            />
-                            <ProfileMenuItem
+                            /> */}
+                            {/* <ProfileMenuItem
                                 icon={HelpCircle}
                                 title="FAQs & Help Center"
                                 subtitle="Tap to open"
                                 onClick={() => navigate("/help")}
-                            />
+                            /> */}
                         </div>
 
                         {/* Logout Section */}
@@ -534,6 +556,54 @@ const ProfilePage: React.FC = () => {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* Premium Notification Modal */}
+            {alertConfig.show && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] p-8 max-w-sm w-full text-center shadow-2xl relative border border-stone-100 animate-in fade-in zoom-in duration-300">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${alertConfig.type === 'error' ? 'bg-red-50 text-red-500' :
+                                alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
+                                    'bg-blue-50 text-blue-500'
+                            }`}>
+                            {alertConfig.type === 'error' && (
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            )}
+                            {alertConfig.type === 'success' && (
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            )}
+                            {alertConfig.type === 'info' && (
+                                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            )}
+                        </div>
+
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">
+                            {alertConfig.title}
+                        </h3>
+                        <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+                            {alertConfig.message}
+                        </p>
+
+                        <button
+                            onClick={() => {
+                                setAlertConfig({ ...alertConfig, show: false });
+                                if (alertConfig.onConfirm) alertConfig.onConfirm();
+                            }}
+                            className={`w-full py-4 px-6 rounded-2xl font-bold text-white transition-all shadow-md active:scale-95 ${alertConfig.type === 'error' ? 'bg-red-500 hover:bg-red-600 shadow-red-100' :
+                                    alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
+                                        'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
+                                }`}
+                        >
+                            Understand
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

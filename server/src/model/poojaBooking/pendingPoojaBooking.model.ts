@@ -16,6 +16,8 @@ export interface IPendingPoojaBooking extends Document {
   poojaMode: 'online' | 'offline';
   poojaPrice: number;          // base price stored (derived if dakshina present)
   bookingDate: Date;
+  callID?: string | null;
+  userAvailabilityVC?: boolean;
 
   // Online puja devotee fields
   bhaktName?: string;
@@ -33,6 +35,7 @@ export interface IPendingPoojaBooking extends Document {
   isPaymentDone: boolean;      // false initially, set to true in complete-booking
   isCompleted: boolean;
   isPoojaStarted: boolean;
+  isReview: boolean;
   isPanditReached?: boolean | null;
 
   // Times
@@ -47,6 +50,10 @@ export interface IPendingPoojaBooking extends Document {
 
   // Assignment
   assignedPandit: Types.ObjectId[];
+
+  // Location tracking (initial or live)
+  currentLat?: number | null;
+  currentLong?: number | null;
 }
 
 const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
@@ -57,12 +64,14 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     userEmail: { type: String },
 
     address: { type: Object },
+    callID: { type: String, default: null },
 
     poojaId: { type: Schema.Types.ObjectId, ref: 'Pooja', required: true },
     poojaNameEng: { type: String, required: true },
     poojaMode: { type: String, enum: ['online', 'offline'], required: true },
     poojaPrice: { type: Number, required: true },
     bookingDate: { type: Date, required: true },
+    userAvailabilityVC: { type: Boolean, default: true },
 
     // Amounts
     amount: { type: Number, required: true },
@@ -82,6 +91,7 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     isPaymentDone: { type: Boolean, default: false },
     isCompleted: { type: Boolean, default: false },
     isPoojaStarted: { type: Boolean, default: false },
+    isReview: { type: Boolean, default: false },
     isPanditReached: { type: Boolean, default: null },
 
     // Times
@@ -95,6 +105,10 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     arrivedAt: { type: Date, default: null },
 
     assignedPandit: [{ type: Schema.Types.ObjectId, ref: 'Pandit' }],
+
+    // Location
+    currentLat: { type: Number, default: null },
+    currentLong: { type: Number, default: null },
   },
   { timestamps: true },
 );

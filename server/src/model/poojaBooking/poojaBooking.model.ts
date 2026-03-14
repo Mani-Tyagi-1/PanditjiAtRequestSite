@@ -5,17 +5,20 @@ import { IPendingPoojaBooking } from './pendingPoojaBooking.model'; // Use the i
 
 // Extends pending model but requires payment/order IDs and ensures confirmation
 export interface IPoojaBooking extends Omit<IPendingPoojaBooking, 'razorpayOrderId' | 'isPaymentDone'> {
-  // Overriding _id to be explicitly Types.ObjectId for clearer typing
   _id: Types.ObjectId;
-
-  // Payment details
+  callID: string;
   razorpayPaymentId: string;
   razorpayOrderId: string;
   razorpaySignature: string;
+  userAvailabilityVC: boolean;
+  isReview: boolean;
 
-  isPaymentDone: true; // Must be true for this collection
+  isPaymentDone: true;
 
-  // ⬇️ NEW: completion media captured by pandit (photos/videos)
+  // ✅ NEW: live pandit location (ONLY lat/long)
+  currentLat?: number | null;
+  currentLong?: number | null;
+
   completionMedia?: Array<{
     url: string;
     key?: string;
@@ -34,14 +37,14 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     userEmail: { type: String },
 
     address: { type: Object },
-
+    callID: { type: String, default: null, required: false },
     poojaId: { type: Schema.Types.ObjectId, ref: 'Pooja', required: true },
     poojaNameEng: { type: String, required: true },
     poojaMode: { type: String, enum: ['online', 'offline'], required: true },
     poojaPrice: { type: Number, required: true },
     bookingDate: { type: Date, required: true },
+    userAvailabilityVC: { type: Boolean, default: true },
 
-    // Amounts
     amount: { type: Number, required: true },
     panditDakshina: { type: Number, default: undefined },
 
@@ -50,28 +53,31 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     contactNumber: { type: String },
     emailId: { type: String },
 
-    // ⚠️ Payment details for successful booking
     razorpayPaymentId: { type: String, required: true },
     razorpayOrderId: { type: String, required: true },
     razorpaySignature: { type: String, required: true },
 
     isConfirmed: { type: Boolean, default: false },
-    isPaymentDone: { type: Boolean, default: true }, // Must be true
+    isPaymentDone: { type: Boolean, default: true },
     isCompleted: { type: Boolean, default: false },
     isPoojaStarted: { type: Boolean, default: false },
+    isReview: { type: Boolean, default: false },
     isPanditReached: { type: Boolean, default: null },
 
     poojaTotalTime: { type: Number, default: null },
     poojaStartTime: { type: Date, default: null },
     poojaEndTime: { type: Date, default: null },
 
-    stage: { type: Number, default: 0 }, // 0..4
+    stage: { type: Number, default: 0 },
     journeyStartTime: { type: Date, default: null },
     arrivedAt: { type: Date, default: null },
 
     assignedPandit: [{ type: Schema.Types.ObjectId, ref: 'Pandit' }],
 
-    // ⬇️ NEW: store uploaded completion media
+    // ✅ NEW: live location fields
+    currentLat: { type: Number, default: null },
+    currentLong: { type: Number, default: null },
+
     completionMedia: [
       {
         url: { type: String, required: true },

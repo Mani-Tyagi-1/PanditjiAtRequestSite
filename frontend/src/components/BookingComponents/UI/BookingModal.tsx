@@ -324,6 +324,28 @@ export default function BookingModal({
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasAutoOpenedSummary, setHasAutoOpenedSummary] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    type: "error" | "info" | "success";
+    onConfirm?: () => void;
+  }>({
+    show: false,
+    title: "",
+    message: "",
+    type: "info",
+  });
+
+  const triggerAlert = (
+    title: string,
+    message: string,
+    type: "error" | "info" | "success" = "info",
+    onConfirm?: () => void
+  ) => {
+    setAlertConfig({ show: true, title, message, type, onConfirm });
+  };
 
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<LatLng>(defaultCenter);
@@ -436,7 +458,7 @@ export default function BookingModal({
 
     if (!navigator.geolocation) {
       setIsFetchingLocation(false);
-      alert("Error: Your browser doesn't support geolocation.");
+      triggerAlert("Location Error", "Your browser doesn't support geolocation.", "error");
       return;
     }
 
@@ -454,7 +476,7 @@ export default function BookingModal({
       },
       () => {
         setIsFetchingLocation(false);
-        alert("Error: The Geolocation service failed.");
+        triggerAlert("Location Error", "The Geolocation service failed. Please check your permissions.", "error");
       }
     );
   }, [fetchAddressFromCoords]);
@@ -498,7 +520,7 @@ export default function BookingModal({
         if (res.ok) {
           const data = await res.json();
           const decrypted = decryptData(data.encrypted);
-          console.log("Decrypted addresses:", decrypted);
+
           if (Array.isArray(decrypted)) {
             setSavedAddresses(decrypted);
           }
@@ -587,7 +609,7 @@ export default function BookingModal({
 
   const handleCheckout = async () => {
     if (!bhaktName || !contactNumber) {
-      alert("Please provide at least your name and contact number.");
+      triggerAlert("Details Required", "Please provide at least your name and contact number to proceed.", "info");
       return;
     }
 
@@ -595,7 +617,7 @@ export default function BookingModal({
       mode === "offline" &&
       (!houseNo || !street || !city || !stateVal || !pincode)
     ) {
-      alert("Please fill all required address fields for offline pooja.");
+      triggerAlert("Address Required", "Please fill all required address fields for offline pooja.", "info");
       return;
     }
 
@@ -643,7 +665,7 @@ export default function BookingModal({
                 pincode: pincode,
                 latitude: markerPosition.lat,
                 longitude: markerPosition.lng,
-                addressName: saveAs === 'home' ? 'Home' : saveAs === 'work' ? 'Work' : 'Other',
+                addressName: `${saveAs.charAt(0).toUpperCase() + saveAs.slice(1)} (${street.split(',')[0].trim()})`,
                 country: "India",
                 isPrimary: false
               };
@@ -678,12 +700,15 @@ export default function BookingModal({
         return;
       }
 
+      const combinedDateTime = selectedTime
+        ? `${selectedDate}T${selectedTime}`
+        : selectedDate;
+
       const pendingPayload = {
         userId,
         poojaId: pooja?._id || pooja?.id,
         poojaMode: mode,
-        bookingDate: selectedDate,
-        bookingTime: selectedTime || undefined,
+        bookingDate: combinedDateTime,
         amount: discountedPrice,
         panditDakshina: panditDakshina,
         bhaktName,
@@ -752,10 +777,9 @@ export default function BookingModal({
               throw new Error("Payment verification failed on server");
             }
 
-            alert("Pooja booked successfully!");
-            onClose();
+            setShowSuccessModal(true);
           } catch (err: any) {
-            alert(err.message || "Failed to complete booking after payment.");
+            triggerAlert("Booking Error", err.message || "Failed to complete booking after payment.", "error");
           } finally {
             setIsProcessing(false);
           }
@@ -770,9 +794,7 @@ export default function BookingModal({
         },
         modal: {
           ondismiss: function () {
-            alert(
-              "Payment cancelled. Your booking is saved as pending in your account."
-            );
+            triggerAlert("Payment Cancelled", "Your booking session was cancelled. You can try again from the menu.", "info");
             setIsProcessing(false);
             onClose();
           },
@@ -788,13 +810,13 @@ export default function BookingModal({
       const rzp = new RazorpayCtor(options);
 
       rzp.on("payment.failed", function (response: any) {
-        alert(`Payment failed: ${response?.error?.description || "Unknown error"}`);
+        triggerAlert("Payment Failed", response?.error?.description || "Your payment could not be processed.", "error");
         setIsProcessing(false);
       });
 
       rzp.open();
     } catch (error: any) {
-      alert(error.message || "An unexpected error occurred.");
+      triggerAlert("Unexpected Error", error.message || "An unexpected error occurred while processing your request.", "error");
       setIsProcessing(false);
     }
   };
@@ -1259,6 +1281,105 @@ export default function BookingModal({
               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md"
             >
               Choose Online Mode
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative slide-up border border-orange-100">
+            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
+              <svg
+                className="w-10 h-10"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={3}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+
+            <h3 className="text-2xl font-bold text-stone-800 mb-3 tracking-tight">
+              Booking Confirmed! 🙏
+            </h3>
+
+            <div className="space-y-4 mb-8">
+              <p className="text-stone-600 leading-relaxed">
+                Thank you for choosing <span className="text-orange-600 font-bold">PanditJiAtRequest</span>. Your booking for <span className="font-semibold text-stone-800">{pooja?.poojaNameEng}</span> has been received.
+              </p>
+
+              <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
+                <p className="text-sm text-orange-800 font-medium">
+                  One of our verified Pandits will accept your request shortly. You'll receive a notification once assigned.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                onClose();
+              }}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg active:scale-[0.98]"
+            >
+              Great, I'll Wait!
+            </button>
+
+            <p className="mt-4 text-[11px] text-stone-400 font-medium uppercase tracking-widest">
+              May this puja bring you peace & prosperity
+            </p>
+          </div>
+        </div>
+      )}
+
+      {alertConfig.show && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full text-center shadow-2xl relative slide-up border border-stone-100">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${alertConfig.type === 'error' ? 'bg-red-50 text-red-500' :
+                alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
+                  'bg-blue-50 text-blue-500'
+              }`}>
+              {alertConfig.type === 'error' && (
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              )}
+              {alertConfig.type === 'success' && (
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              {alertConfig.type === 'info' && (
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+            </div>
+
+            <h3 className="text-xl font-bold text-stone-800 mb-2 font-display">
+              {alertConfig.title}
+            </h3>
+            <p className="text-stone-500 text-sm mb-8 leading-relaxed">
+              {alertConfig.message}
+            </p>
+
+            <button
+              onClick={() => {
+                setAlertConfig({ ...alertConfig, show: false });
+                if (alertConfig.onConfirm) alertConfig.onConfirm();
+              }}
+              className={`w-full py-4 px-6 rounded-2xl font-bold text-white transition-all shadow-md active:scale-95 ${alertConfig.type === 'error' ? 'bg-red-500 hover:bg-red-600 shadow-red-100' :
+                  alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
+                    'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
+                }`}
+            >
+              Understand
             </button>
           </div>
         </div>

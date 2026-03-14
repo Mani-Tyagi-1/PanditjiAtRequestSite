@@ -132,7 +132,7 @@ const Footer: React.FC = () => {
               />
             </a>
             <p className="px-2">
-              Copyright © 2025 Pandit Ji At Request. All Rights Reserved.
+              Copyright © {new Date().getFullYear()} Pandit Ji At Request. All Rights Reserved.
             </p>
           </div>
         </div>

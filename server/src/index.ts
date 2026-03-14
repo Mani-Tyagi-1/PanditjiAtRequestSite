@@ -128,6 +128,15 @@ async function startServer() {
     await panditJiAtRequestDB();
     await VVMainConnectDB();
 
+    // Drop the old unique index to allow multiple addresses in the same category
+    try {
+      const UserAddressModel = (await import("./model/userApp/userAddressModel")).default;
+      await UserAddressModel.collection.dropIndex("user_1_addressName_1");
+      console.log("✅ Successfully dropped old unique address index.");
+    } catch (err) {
+      // Ignore if index doesn't exist
+    }
+
     console.log("Starting the server...");
     server.listen(PORT, () => {
       console.log(`🌐 Server listening on http://localhost:${PORT}`);

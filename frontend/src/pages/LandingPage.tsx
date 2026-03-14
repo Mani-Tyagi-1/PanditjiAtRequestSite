@@ -25,7 +25,7 @@ export default function LandingPage() {
     <>
       <AnimatePresence>
         {showAppPopup && (
-          <div className="fixed top-4 left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none">
+          <div className="fixed top-35 left-0 right-0 z-[100] flex justify-center px-2 pointer-events-none">
             <motion.div
               initial={{ scale: 0.8, opacity: 0, y: -20 }}
               animate={{ 

@@ -36,7 +36,7 @@ const AddressSchema = new Schema<IAddress>(
   { timestamps: true }
 );
 
-AddressSchema.index({ user: 1, addressName: 1 }, { unique: true });
+AddressSchema.index({ user: 1, addressName: 1 });
 
 
 const UserAddressModel: Model<IAddress> = panditJiAtRequestMongooose.model<IAddress>(

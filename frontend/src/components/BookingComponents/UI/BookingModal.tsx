@@ -367,10 +367,10 @@ export default function BookingModal({
       const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
       
       // 1. Check if user has bookings
-      console.log("Checking bookings for:", contactNumber);
+      // console.log("Checking bookings for:", contactNumber);
       const bookingRes = await fetch(`${apiUrl}/bookings/get-pending-poojabookings/${contactNumber}`);
       const bookingData = await bookingRes.json();
-      console.log("Raw Booking Data:", bookingData);
+      // console.log("Raw Booking Data:", bookingData);
       
       // Handle various booking response formats (direct array, or object with poojas/data field)
       const poojaList = Array.isArray(bookingData) 
@@ -378,7 +378,7 @@ export default function BookingModal({
         : (bookingData.poojas || bookingData.data || bookingData.results || []);
       
       const hasPreviousBookings = poojaList.length > 0;
-      console.log("Has Previous Bookings:", hasPreviousBookings, "Count:", poojaList.length);
+      // console.log("Has Previous Bookings:", hasPreviousBookings, "Count:", poojaList.length);
 
       if (hasPreviousBookings) {
         setCoupons([]);
@@ -818,6 +818,8 @@ export default function BookingModal({
               state: stateVal,
               pincode: pincode,
               saveAs: saveAs,
+              latitude: markerPosition.lat,
+              longitude: markerPosition.lng,
               coordinates: {
                 lat: markerPosition.lat,
                 lng: markerPosition.lng,

@@ -374,8 +374,8 @@ const ProfilePage: React.FC = () => {
                                 </div>
 
                                 {/* Form — desktop gets 2-col grid */}
-                                <div className="px-4 mt-12 pb-6 max-w-3xl mx-auto">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="px-4 mt-12 pb-6 mx-auto">
+                                    <div className="grid grid-cols-1 gap-3">
 
                                         {/* Basic Details */}
                                         <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
@@ -463,15 +463,15 @@ const ProfilePage: React.FC = () => {
                                             <p className="text-[10px] text-gray-400 mt-1 ml-1">Helps Purohit perform Sankalp correctly.</p>
                                         </div>
 
-                                        {/* Contact — spans full width on desktop */}
-                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:col-span-2">
+                                        {/* Contact */}
+                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
                                             <div className="flex items-center gap-2 mb-3">
                                                 <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
                                                     <Mail className="w-3.5 h-3.5 text-[#FF7000]" />
                                                 </div>
                                                 <h2 className="font-bold text-gray-800 text-sm">Contact</h2>
                                             </div>
-                                            <div className="md:max-w-sm">
+                                            <div>
                                                 <EditInput
                                                     label="Email"
                                                     icon={Mail}
@@ -484,7 +484,7 @@ const ProfilePage: React.FC = () => {
                                     </div>
 
                                     {/* Save Button + note */}
-                                    <div className="mt-3 md:max-w-xs md:mx-auto">
+                                    <div className="mt-3">
                                         <button
                                             onClick={handleSave}
                                             disabled={isSaving}

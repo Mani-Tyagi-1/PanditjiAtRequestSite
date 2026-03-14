@@ -249,10 +249,11 @@ const HeroSection = () => {
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => navigate("/booking-flow")}
+                                    // onClick={() => navigate("/booking-flow")}
                                     className="inline-flex items-center bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-bold px-5 py-2 rounded-lg shadow-md hover:shadow-md transition-all"
                                 >
-                                    Download App Now
+                                    <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp">Download App Now</a>
+
                                 </motion.button>
                             </div>
                         </div>

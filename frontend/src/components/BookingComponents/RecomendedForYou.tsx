@@ -72,7 +72,7 @@ export default function RecomendedForYou() {
                             {pujas.map((puja, i) => (
                                 <div
                                     key={puja._id}
-                                    className="card-enter"
+                                    className="card-enter h-full"
                                     style={{ animationDelay: `${i * 60}ms` }}
                                 >
                                     <PujaCard

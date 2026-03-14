@@ -347,6 +347,78 @@ export default function BookingModal({
     setAlertConfig({ show: true, title, message, type, onConfirm });
   };
 
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
+  const [tempTime, setTempTime] = useState("");
+
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [isCouponsModalOpen, setIsCouponsModalOpen] = useState(false);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  const [couponCode, setCouponCode] = useState("");
+
+  const fetchCoupons = async () => {
+    if (!contactNumber) {
+      triggerAlert("Number Required", "Please enter your contact number to check for available coupons.", "info");
+      return;
+    }
+
+    setIsLoadingCoupons(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+      
+      // 1. Check if user has bookings
+      console.log("Checking bookings for:", contactNumber);
+      const bookingRes = await fetch(`${apiUrl}/bookings/get-pending-poojabookings/${contactNumber}`);
+      const bookingData = await bookingRes.json();
+      console.log("Raw Booking Data:", bookingData);
+      
+      // Handle various booking response formats (direct array, or object with poojas/data field)
+      const poojaList = Array.isArray(bookingData) 
+        ? bookingData 
+        : (bookingData.poojas || bookingData.data || bookingData.results || []);
+      
+      const hasPreviousBookings = poojaList.length > 0;
+      console.log("Has Previous Bookings:", hasPreviousBookings, "Count:", poojaList.length);
+
+      if (hasPreviousBookings) {
+        setCoupons([]);
+        setIsCouponsModalOpen(true);
+      } else {
+        // 2. Fetch coupons via backend proxy
+        const promoRes = await fetch(`${apiUrl}/config/fetch-promo-proxy`);
+        const promoData = await promoRes.json();
+        
+        // Handle various promo response formats
+        const allPromos = Array.isArray(promoData) 
+          ? promoData 
+          : (promoData.promos || promoData.data || promoData.results || promoData.promotions || []);
+
+        // Filter by PROMO_TYPE_ALLOWED = "Festival-Promo" (Case-insensitive check)
+        const targetCategory = "festival-promo";
+        const filtered = allPromos.filter((p: any) => {
+          // Identify category using promoType (as seen in API) or other fallbacks
+          const cat = (p.promoType || p.category || p.promo_category || "").toLowerCase();
+          return cat === targetCategory;
+        });
+
+        setCoupons(filtered);
+        setIsCouponsModalOpen(true);
+      }
+    } catch (err) {
+      console.error("Error fetching coupons:", err);
+      triggerAlert("Error", "Failed to check coupons. Please try again.", "error");
+    } finally {
+      setIsLoadingCoupons(false);
+    }
+  };
+
+  const handleApplyCoupon = (promo: any) => {
+    setAppliedCoupon(promo);
+    setCouponCode(promo.promoName || promo.code || promo.promoCode || "");
+    setIsCouponsModalOpen(false);
+    triggerAlert("Coupon Applied", `Successfully applied coupon: ${promo.promoName || promo.code || promo.promoCode}`, "success");
+  };
+
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState<LatLng>(defaultCenter);
   const [markerPosition, setMarkerPosition] = useState<LatLng>(defaultCenter);
@@ -602,14 +674,35 @@ export default function BookingModal({
   const currentPoojaPrice = mode === "online" ? (pooja?.poojaPriceOnline || 0) : (pooja?.poojaPriceOffline || 0);
 
   const totalDiscount = samagriCharge + panditDakshina;
-  const discountedPrice = currentPoojaPrice;
+  
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+    if (appliedCoupon.discountType === 'percentage' || appliedCoupon.type === 'percentage') {
+      const val = appliedCoupon.discountAmount || appliedCoupon.discountValue || appliedCoupon.value || 0;
+      couponDiscount = (currentPoojaPrice * val) / 100;
+    } else {
+      couponDiscount = appliedCoupon.discountAmount || appliedCoupon.discountValue || appliedCoupon.value || 0;
+    }
+  }
+
+  const discountedPrice = Math.max(0, currentPoojaPrice - couponDiscount);
   const originalPrice = currentPoojaPrice + totalDiscount;
   const discountPercent =
-    originalPrice > 0 ? Math.round((totalDiscount / originalPrice) * 100) : 0;
+    originalPrice > 0 ? Math.round(((totalDiscount + couponDiscount) / (originalPrice)) * 100) : 0;
 
   const handleCheckout = async () => {
     if (!bhaktName || !contactNumber) {
       triggerAlert("Details Required", "Please provide at least your name and contact number to proceed.", "info");
+      return;
+    }
+
+    if (!selectedDate) {
+      triggerAlert("Date Required", "Please select a date for the pooja.", "info");
+      return;
+    }
+
+    if (!selectedTime) {
+      triggerAlert("Time Required", "Please specify a preferred time for the ritual.", "info");
       return;
     }
 
@@ -928,25 +1021,37 @@ export default function BookingModal({
                         className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm appearance-none"
                       />
                     </div>
-                    <div className="relative">
+                    <div className="space-y-1">
+                      {/* <div 
+                        className="relative cursor-pointer"
+                        onClick={() => {
+                          setTempTime(selectedTime || "09:00");
+                          setIsTimePickerOpen(true);
+                        }}
+                      >
+                        <div className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 pr-11 text-sm text-stone-500 shadow-sm flex items-center justify-between min-h-[44px]">
+                          <span>{selectedTime || "Select Time"}</span>
+                        </div>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <svg
+                            className="w-4 h-4 text-slate-400"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                          </svg>
+                        </div>
+                      </div> */}
                       <input
                         type="time"
+                        min={minDateStr}
                         value={selectedTime}
                         onChange={(e) => setSelectedTime(e.target.value)}
-                        className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 pr-11 text-sm text-stone-500 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+                        className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm appearance-none"
                       />
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg
-                          className="w-4 h-4 text-slate-400"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <path d="M12 6v6l4 2" />
-                        </svg>
-                      </div>
                     </div>
                   </div>
 
@@ -1106,8 +1211,12 @@ export default function BookingModal({
                   <h3 className="text-stone-800 font-medium text-[15px]">
                     Have a Coupon?
                   </h3>
-                  <button className="text-[#E65100] text-xs font-bold hover:underline">
-                    View All Coupons
+                  <button 
+                    onClick={fetchCoupons}
+                    disabled={isLoadingCoupons}
+                    className="text-[#E65100] text-xs font-bold hover:underline disabled:opacity-50"
+                  >
+                    {isLoadingCoupons ? "Checking..." : "View All Coupons"}
                   </button>
                 </div>
 
@@ -1131,12 +1240,16 @@ export default function BookingModal({
                     <input
                       type="text"
                       placeholder="Enter coupon code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
                       className="w-full bg-white border border-stone-200 rounded-lg pl-10 pr-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-300 shadow-sm placeholder:text-stone-400"
                     />
                   </div>
                   <button
-                    disabled
-                    className="bg-[#C9C9C9] text-white text-sm font-semibold rounded-lg sm:px-8 py-2.5 sm:w-auto w-full transition-colors opacity-90"
+                    onClick={() => {
+                        if (couponCode) triggerAlert("Manual Entry", "Please use 'View All Coupons' to select verified active offers.", "info");
+                    }}
+                    className={`${couponCode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#C9C9C9]'} text-white text-sm font-semibold rounded-lg sm:px-8 py-2.5 sm:w-auto w-full transition-colors opacity-90`}
                   >
                     Apply
                   </button>
@@ -1198,10 +1311,17 @@ export default function BookingModal({
                   <span className="line-through">₹{panditDakshina}</span>
                 </div>
 
+                {appliedCoupon && (
+                    <div className="flex justify-between text-orange-600 font-medium">
+                        <span>Coupon ({appliedCoupon.code || appliedCoupon.promoCode || appliedCoupon.promoName})</span>
+                        <span>-₹{Math.floor(couponDiscount)}</span>
+                    </div>
+                )}
+
                 <div className="flex justify-between text-green-600 font-semibold bg-green-50 border border-green-100 rounded-lg px-2 py-1 mt-2">
                   <span>You Save</span>
                   <span>
-                    ₹{totalDiscount} ({discountPercent}% OFF)
+                    ₹{Math.floor(totalDiscount + couponDiscount)} ({discountPercent}% OFF)
                   </span>
                 </div>
 
@@ -1381,6 +1501,128 @@ export default function BookingModal({
             >
               Understand
             </button>
+          </div>
+        </div>
+      )}
+      {isTimePickerOpen && (
+        <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 max-w-[320px] w-full shadow-2xl relative border border-stone-100 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-stone-800 font-semibold text-sm mb-4">
+              Preferred Time
+            </h3>
+            
+            <div className="relative mb-6">
+              <input 
+                type="time"
+                value={tempTime}
+                onChange={(e) => setTempTime(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl px-4 py-3 text-base font-medium text-stone-800 focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition-all"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setTempTime("");
+                  setSelectedTime("");
+                  setIsTimePickerOpen(false);
+                }}
+                className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-stone-400 hover:text-red-500 hover:bg-red-50 transition-all"
+              >
+                Clear
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setIsTimePickerOpen(false)}
+                  className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedTime(tempTime);
+                    setIsTimePickerOpen(false);
+                  }}
+                  className="px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider text-white bg-orange-500 hover:bg-orange-600 shadow-sm shadow-orange-100 transition-all"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {isCouponsModalOpen && (
+        <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl relative slide-up border border-stone-100 flex flex-col max-h-[80vh]">
+            <button
+              onClick={() => setIsCouponsModalOpen(false)}
+              className="absolute top-6 right-6 p-2 text-stone-400 hover:text-stone-600 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 className="text-xl font-bold text-stone-800 mb-2 pr-10">
+              Available Coupons
+            </h3>
+            <p className="text-stone-500 text-sm mb-6">
+              Exclusive offers just for you
+            </p>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
+              {coupons.length > 0 ? (
+                coupons.map((promo, idx) => (
+                  <div 
+                    key={idx}
+                    className="bg-orange-50/50 border-2 border-dashed border-orange-200 rounded-2xl p-5 relative overflow-hidden group hover:border-orange-400 transition-colors"
+                  >
+                    <div className="absolute -right-2 -top-2 w-12 h-12 bg-orange-100 rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity" />
+                    
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="bg-white text-orange-600 border border-orange-200 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest">
+                          {promo.promoName || promo.code || promo.promoCode}
+                        </span>
+                        <span className="text-stone-800 font-bold text-lg">
+                          {(promo.discountType === 'percentage' || promo.type === 'percentage') 
+                             ? `${promo.discountAmount || promo.discountValue || promo.value}% OFF` 
+                             : `₹${promo.discountAmount || promo.discountValue || promo.value} OFF`}
+                        </span>
+                      </div>
+                      
+                      <p className="text-stone-600 text-xs font-medium leading-relaxed mb-4">
+                        {promo.description || `Get ${promo.discountValue}${promo.discountType === 'percentage' ? '%' : ''} discount on your first booking!`}
+                      </p>
+
+                      <button
+                        onClick={() => handleApplyCoupon(promo)}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] shadow-sm shadow-orange-100"
+                      >
+                        Apply Coupon
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <div className="w-16 h-16 bg-stone-50 text-stone-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-stone-500 font-bold mb-1">No coupons available</p>
+                  <p className="text-stone-400 text-xs px-6">
+                    This offer is only available for first-time users.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <p className="mt-6 text-[10px] text-stone-400 text-center uppercase tracking-widest font-semibold">
+              Terms & Conditions Apply
+            </p>
           </div>
         </div>
       )}

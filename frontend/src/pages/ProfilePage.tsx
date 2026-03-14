@@ -13,10 +13,6 @@ import {
     Clock,
     MapPin,
     Bookmark,
-    Camera,
-    // Info,
-    // HelpCircle,
-    // Users,
     Edit3
 } from "lucide-react";
 
@@ -37,6 +33,42 @@ interface UserData {
     gotra?: string;
     picture?: string;
 }
+
+
+const ProfileMenuItem = ({ icon: Icon, title, subtitle, onClick }: any) => (
+    <button
+        onClick={onClick}
+        className="w-full flex items-center justify-between p-4 bg-white rounded-2xl mb-3 shadow-sm border border-orange-50 active:scale-[0.98] transition-all"
+    >
+        <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                <Icon className="w-5 h-5 text-[#FF7000]" />
+            </div>
+            <div className="text-left">
+                <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
+                <p className="text-xs text-gray-400">{subtitle}</p>
+            </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-gray-300" />
+    </button>
+);
+
+const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text", placeholder }: any) => (
+    <div className="mb-4">
+        <label className="block text-xs font-semibold text-gray-700 mb-2 ml-1">{label}</label>
+        <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${disabled ? 'bg-gray-50 border-gray-100' : 'bg-white border-orange-100 focus-within:border-[#FF7000] shadow-sm'}`}>
+            <Icon className={`w-4 h-4 ${disabled ? 'text-gray-400' : 'text-[#FF7000]'}`} />
+            <input
+                type={type}
+                value={value || ""}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+                placeholder={placeholder}
+                className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-300"
+            />
+        </div>
+    </div>
+);
 
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
@@ -192,43 +224,8 @@ const ProfilePage: React.FC = () => {
         );
     }
 
-    const ProfileMenuItem = ({ icon: Icon, title, subtitle, onClick }: any) => (
-        <button
-            onClick={onClick}
-            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl mb-3 shadow-sm border border-orange-50 active:scale-[0.98] transition-all"
-        >
-            <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-[#FF7000]" />
-                </div>
-                <div className="text-left">
-                    <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
-                    <p className="text-xs text-gray-400">{subtitle}</p>
-                </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-300" />
-        </button>
-    );
-
-    const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text", placeholder }: any) => (
-        <div className="mb-4">
-            <label className="block text-xs font-semibold text-gray-700 mb-2 ml-1">{label}</label>
-            <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${disabled ? 'bg-gray-50 border-gray-100' : 'bg-white border-orange-100 focus-within:border-[#FF7000] shadow-sm'}`}>
-                <Icon className={`w-4 h-4 ${disabled ? 'text-gray-400' : 'text-[#FF7000]'}`} />
-                <input
-                    type={type}
-                    value={value || ""}
-                    onChange={(e) => onChange(e.target.value)}
-                    disabled={disabled}
-                    placeholder={placeholder}
-                    className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-300"
-                />
-            </div>
-        </div>
-    );
-
     return (
-        <div className="min-h-screen bg-[#FFFAF5] font-sans flex justify-center">
+        <div className="min-h-screen   font-sans flex justify-center">
             <div className="w-full max-w-md bg-white min-h-screen shadow-sm relative pb-24">
                 <AnimatePresence mode="wait">
                 {mode === "view" ? (
@@ -335,168 +332,172 @@ const ProfilePage: React.FC = () => {
                         </div>
                     </motion.div>
                 ) : (
-                    <motion.div
-                        key="edit"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                    >
-                        {/* Header */}
-                        <div className="bg-[#FF7000] px-4 pt-8 pb-20 relative">
-                            <div className="flex items-center gap-4 text-white mb-6">
-                                <button
-                                    onClick={() => setMode("view")}
-                                    className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all shadow-sm border border-white/10"
-                                    aria-label="Back to Profile"
-                                >
-                                    <ChevronLeft className="w-6 h-6" />
-                                </button>
-                                <div>
-                                    <h1 className="text-xl font-bold">Edit Profile</h1>
-                                    <p className="text-white/80 text-[10px]">Personal & astro details for accurate Pooja</p>
-                                </div>
-                            </div>
-
-                            {/* Profile Image card overlay */}
-                            <div className="absolute left-4 right-4 -bottom-16">
-                                <div className="bg-[#FF7000] rounded-3xl p-6 flex flex-col items-center justify-center">
-                                    <div className="relative">
-                                        <div className="w-28 h-28 rounded-full border-4 border-white/30 shadow-xl overflow-hidden bg-white">
-                                            <img
-                                                src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
-                                                alt="Profile"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-                                        <button className="absolute bottom-1 right-1 p-2 bg-white rounded-full shadow-lg border border-orange-50 text-[#FF7000] active:scale-90 transition-all">
-                                            <Camera className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                    <h3 className="text-white font-bold text-lg mt-3">{user?.given_name} {user?.family_name}</h3>
-                                    <p className="text-white/80 text-sm">{user?.phone ? `+91 ${user.phone}` : ""}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Form Sections */}
-                        <div className="px-4 mt-20 space-y-4">
-                            {/* Basic Details */}
-                            <div className="bg-white rounded-[28px] p-5 shadow-sm border border-orange-50">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
-                                        <User className="w-4 h-4 text-[#FF7000]" />
-                                    </div>
-                                    <h2 className="font-bold text-gray-800">Basic Details</h2>
-                                </div>
-
-                                <EditInput
-                                    label="First Name"
-                                    icon={Edit3}
-                                    value={formData.given_name}
-                                    onChange={(v: string) => setFormData({ ...formData, given_name: v })}
-                                />
-                                <EditInput
-                                    label="Last Name"
-                                    icon={Edit3}
-                                    value={formData.family_name}
-                                    onChange={(v: string) => setFormData({ ...formData, family_name: v })}
-                                />
-                                <EditInput
-                                    label="Mobile Number"
-                                    icon={Phone}
-                                    value={formData.phone}
-                                    disabled={true}
-                                />
-                                <p className="text-[10px] text-gray-400 -mt-2 ml-1 mb-4">Mobile number cannot be changed</p>
-
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-semibold text-gray-700 ml-1">Gender</label>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {["Male", "Female", "Other"].map((g) => (
-                                            <button
-                                                key={g}
-                                                onClick={() => setFormData({ ...formData, gender: g })}
-                                                className={`flex items-center justify-center gap-2 py-3 rounded-xl border transition-all text-sm font-medium ${formData.gender === g ? 'bg-[#FF7000] border-[#FF7000] text-white shadow-md' : 'bg-white border-orange-100 text-gray-500'}`}
-                                            >
-                                                <User className="w-4 h-4" />
-                                                {g}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Astro Details */}
-                            <div className="bg-white rounded-[28px] p-5 shadow-sm border border-orange-50">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
-                                        <Bookmark className="w-4 h-4 text-[#FF7000]" />
-                                    </div>
-                                    <h2 className="font-bold text-gray-800">Astro Details</h2>
-                                </div>
-
-                                <EditInput
-                                    label="Date of Birth"
-                                    icon={Calendar}
-                                    type="date"
-                                    value={formData.dob}
-                                    onChange={(v: string) => setFormData({ ...formData, dob: v })}
-                                />
-                                <EditInput
-                                    label="Birth Time"
-                                    icon={Clock}
-                                    type="time"
-                                    value={formData.birthTime}
-                                    onChange={(v: string) => setFormData({ ...formData, birthTime: v })}
-                                />
-                                <EditInput
-                                    label="Birth Place"
-                                    icon={MapPin}
-                                    placeholder="Enter birth city"
-                                    value={formData.birthPlace}
-                                    onChange={(v: string) => setFormData({ ...formData, birthPlace: v })}
-                                />
-                                <EditInput
-                                    label="Gotra"
-                                    icon={Bookmark}
-                                    placeholder="Enter your gotra"
-                                    value={formData.gotra}
-                                    onChange={(v: string) => setFormData({ ...formData, gotra: v })}
-                                />
-                                <p className="text-[10px] text-gray-400 mt-1 ml-1">Helps Purohit perform Sankalp correctly.</p>
-                            </div>
-
-                            {/* Contact Section */}
-                            <div className="bg-white rounded-[28px] p-5 shadow-sm border border-orange-50">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
-                                        <Mail className="w-4 h-4 text-[#FF7000]" />
-                                    </div>
-                                    <h2 className="font-bold text-gray-800">Contact</h2>
-                                </div>
-                                <EditInput
-                                    label="Email"
-                                    icon={Mail}
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(v: string) => setFormData({ ...formData, email: v })}
-                                />
-                            </div>
-
-                            <p className="text-center text-[10px] text-gray-400 px-8 py-4">
-                                Your details are used only to perform Pooja correctly and securely.
-                            </p>
-
-                            {/* Save Button */}
-                            <button
-                                onClick={handleSave}
-                                disabled={isSaving}
-                                className="w-full bg-[#FFB58A] hover:bg-[#FF7000] disabled:opacity-50 text-white font-bold py-4 rounded-[20px] shadow-lg shadow-orange-100 transition-all mb-10 active:scale-[0.98]"
+                            <motion.div
+                                key="edit"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="min-h-screen bg-[#FFF8F3]"
                             >
-                                {isSaving ? "Saving..." : "Save Changes"}
-                            </button>
-                        </div>
-                    </motion.div>
+                                {/* Compact Header */}
+                                <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-14 relative">
+                                    <div className="flex items-center gap-3 text-white mb-0">
+                                        <button
+                                            onClick={() => setMode("view")}
+                                            className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                            aria-label="Back to Profile"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        <div>
+                                            <h1 className="text-lg font-bold leading-tight">Edit Profile</h1>
+                                            <p className="text-white/75 text-[10px]">Personal & astro details for accurate Pooja</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Profile card overlap */}
+                                    <div className="absolute left-4 right-4 -bottom-10">
+                                        <div className="bg-white rounded-2xl px-5 py-3 flex items-center gap-4 shadow-lg border border-orange-100">
+                                            <div className="w-14 h-14 rounded-full border-2 border-orange-200 overflow-hidden bg-orange-50 flex-shrink-0">
+                                                <img
+                                                    src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
+                                                    alt="Profile"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-gray-800 font-bold text-sm leading-tight">{user?.given_name} {user?.family_name}</h3>
+                                                <p className="text-orange-400 text-xs">{user?.phone ? `+91 ${user.phone}` : ""}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Form — desktop gets 2-col grid */}
+                                <div className="px-4 mt-12 pb-6 max-w-3xl mx-auto">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                                        {/* Basic Details */}
+                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
+                                                    <User className="w-3.5 h-3.5 text-[#FF7000]" />
+                                                </div>
+                                                <h2 className="font-bold text-gray-800 text-sm">Basic Details</h2>
+                                            </div>
+
+                                            <EditInput
+                                                label="First Name"
+                                                icon={Edit3}
+                                                value={formData.given_name}
+                                                onChange={(v: string) => setFormData({ ...formData, given_name: v })}
+                                            />
+                                            <EditInput
+                                                label="Last Name"
+                                                icon={Edit3}
+                                                value={formData.family_name}
+                                                onChange={(v: string) => setFormData({ ...formData, family_name: v })}
+                                            />
+                                            <EditInput
+                                                label="Mobile Number"
+                                                icon={Phone}
+                                                value={formData.phone}
+                                                disabled={true}
+                                            />
+                                            <p className="text-[10px] text-gray-400 -mt-2 mb-3 ml-1">Mobile number cannot be changed</p>
+
+                                            <div className="space-y-1.5">
+                                                <label className="block text-xs font-semibold text-gray-700 ml-1">Gender</label>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {["Male", "Female", "Other"].map((g) => (
+                                                        <button
+                                                            key={g}
+                                                            onClick={() => setFormData({ ...formData, gender: g })}
+                                                            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl border transition-all text-xs font-medium ${formData.gender === g ? 'bg-[#FF7000] border-[#FF7000] text-white shadow-md shadow-orange-100' : 'bg-orange-50/60 border-orange-100 text-gray-500 hover:border-orange-200'}`}
+                                                        >
+                                                            <User className="w-3 h-3" />
+                                                            {g}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Astro Details */}
+                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
+                                                    <Bookmark className="w-3.5 h-3.5 text-[#FF7000]" />
+                                                </div>
+                                                <h2 className="font-bold text-gray-800 text-sm">Astro Details</h2>
+                                            </div>
+
+                                            <EditInput
+                                                label="Date of Birth"
+                                                icon={Calendar}
+                                                type="date"
+                                                value={formData.dob}
+                                                onChange={(v: string) => setFormData({ ...formData, dob: v })}
+                                            />
+                                            <EditInput
+                                                label="Birth Time"
+                                                icon={Clock}
+                                                type="time"
+                                                value={formData.birthTime}
+                                                onChange={(v: string) => setFormData({ ...formData, birthTime: v })}
+                                            />
+                                            <EditInput
+                                                label="Birth Place"
+                                                icon={MapPin}
+                                                placeholder="Enter birth city"
+                                                value={formData.birthPlace}
+                                                onChange={(v: string) => setFormData({ ...formData, birthPlace: v })}
+                                            />
+                                            <EditInput
+                                                label="Gotra"
+                                                icon={Bookmark}
+                                                placeholder="Enter your gotra"
+                                                value={formData.gotra}
+                                                onChange={(v: string) => setFormData({ ...formData, gotra: v })}
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-1 ml-1">Helps Purohit perform Sankalp correctly.</p>
+                                        </div>
+
+                                        {/* Contact — spans full width on desktop */}
+                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:col-span-2">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
+                                                    <Mail className="w-3.5 h-3.5 text-[#FF7000]" />
+                                                </div>
+                                                <h2 className="font-bold text-gray-800 text-sm">Contact</h2>
+                                            </div>
+                                            <div className="md:max-w-sm">
+                                                <EditInput
+                                                    label="Email"
+                                                    icon={Mail}
+                                                    type="email"
+                                                    value={formData.email}
+                                                    onChange={(v: string) => setFormData({ ...formData, email: v })}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Save Button + note */}
+                                    <div className="mt-3 md:max-w-xs md:mx-auto">
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={isSaving}
+                                            className="w-full bg-[#FF7000] hover:bg-[#e56200] disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 transition-all active:scale-[0.98] text-sm"
+                                        >
+                                            {isSaving ? "Saving..." : "Save Changes"}
+                                        </button>
+                                        <p className="text-center text-[10px] text-gray-400 mt-2">
+                                            Your details are used only to perform Pooja correctly and securely.
+                                        </p>
+                                    </div>
+                                </div>
+                            </motion.div>
                 )}
                 </AnimatePresence>
 

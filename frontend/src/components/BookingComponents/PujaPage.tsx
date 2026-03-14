@@ -192,11 +192,7 @@ export default function PujaDetailPage() {
                 {/* ── Header ── */}
                 <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
                     <button
-                        onClick={() => {
-                            const catId = pujaData?.mainCategories?.[0]?.id;
-                            if (catId) navigate(`/category/${catId}`);
-                            else navigate("/");
-                        }}
+                        onClick={() => navigate(-1)}
                         className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
                     >
                         <svg

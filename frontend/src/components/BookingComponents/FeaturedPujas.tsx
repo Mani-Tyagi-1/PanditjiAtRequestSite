@@ -71,7 +71,7 @@ export default function FeaturedPujas() {
                             {displayPujas.map((puja: any, i: number) => (
                                 <div
                                     key={puja._id}
-                                    className="card-enter"
+                                    className="card-enter h-full"
                                     style={{ animationDelay: `${i * 60}ms` }}
                                 >
                                     <PujaCard
@@ -89,14 +89,14 @@ export default function FeaturedPujas() {
                     )}
 
                     {/* ── Bottom CTA ── */}
-                    <div className="mt-10 text-center">
+                    {/* <div className="mt-10 text-center">
                         <button className="inline-flex items-center gap-2 border border-orange-300 text-orange-600 text-sm font-medium px-6 py-2.5 rounded-full hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all duration-200">
                             Browse All Pujas
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
                             </svg>
                         </button>
-                    </div>
+                    </div> */}
 
                 </div>
             </section>

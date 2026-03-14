@@ -105,7 +105,7 @@ export default function PujaCard({
       `}</style>
 
             <div
-                className="puja-card group relative bg-white rounded-2xl overflow-visible shadow-sm hover:shadow-xl transition-shadow duration-400 border border-stone-100 flex flex-col cursor-pointer"
+                className="puja-card group relative bg-white rounded-2xl overflow-visible shadow-sm hover:shadow-xl transition-shadow duration-400 border border-stone-100 flex flex-col cursor-pointer h-full"
                 onClick={() => {
                     navigate(id ? `/puja/${id}` : '/puja');
                     window.scrollTo(0, 0);

@@ -83,8 +83,9 @@ const MyBookingsPage: React.FC = () => {
             const user = JSON.parse(userDataString);
 
             const baseCallId = crypto.randomUUID();
-            const callId = type === "audio" ? `${baseCallId}_AC` : baseCallId;
+            const callId = type === "audio" ? `${baseCallId}_AC` : `${baseCallId}_VC`;
             const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+            const status = type === "video" ? "ringing" : "call-ringing";
 
             await axios.post(`${apiUrl}/calls/invite`, {
                 fromUserId: user._id,
@@ -94,11 +95,12 @@ const MyBookingsPage: React.FC = () => {
                 callerId: user._id,
                 fromAppType: "user",
                 toAppType: "pandit",
-                callType: type
+                callType: type,
+                status: status,
             });
 
             if (type === 'video') {
-                navigate(`/video-call/${callId}`, { replace: true });
+                navigate(`/video-call/${callId}/${panditId}`, { replace: true });
             } else {
                 navigate(`/audio-call/${callId}/${panditId}`, { replace: true });
             }

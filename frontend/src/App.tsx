@@ -34,7 +34,7 @@ function App() {
         <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/my-bookings" element={<MyBookingsPage />} />
-        <Route path="/video-call/:callId" element={<VideoCallPage />} />
+        <Route path="/video-call/:callId/:panditId" element={<VideoCallPage />} />
         <Route path="/audio-call/:callId/:panditId" element={<AudioCallPage />} />
         <Route path="/track-pandit/:panditId/:destLat/:destLng" element={<TrackPanditPage />} />
 

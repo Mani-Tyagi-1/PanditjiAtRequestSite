@@ -254,13 +254,22 @@ const MyBookingsPage: React.FC = () => {
                                     const date = new Date(booking.bookingDate);
                                     const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                                     const formattedTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                                    const isToday = new Date().toDateString() === date.toDateString();
+
+                                    const now = new Date();
+                                    now.setHours(0, 0, 0, 0);
+                                    const bookingDateOnly = new Date(date);
+                                    bookingDateOnly.setHours(0, 0, 0, 0);
+
+                                    const isToday = bookingDateOnly.getTime() === now.getTime();
+                                    const isPast = bookingDateOnly.getTime() < now.getTime();
 
                                     const isOnline = booking.poojaMode === 'online';
                                     const isOffline = booking.poojaMode === 'offline';
                                     const hasStartedJourney = !!booking.journeyStartTime;
                                     const hasAssignedPandit = booking.assignedPandit && booking.assignedPandit.length > 0;
-                                    const isActionEnabled = isOnline ? (isToday && hasAssignedPandit) : (isOffline && hasStartedJourney && hasAssignedPandit);
+
+                                    const isActionEnabled = isOnline ? (isToday && hasAssignedPandit) : (isOffline && isToday && hasStartedJourney && hasAssignedPandit);
+                                    const isAudioCallEnabled = isOffline && hasAssignedPandit && isToday;
 
                                     return (
                                         <motion.div
@@ -268,25 +277,30 @@ const MyBookingsPage: React.FC = () => {
                                             initial={{ opacity: 0, y: 16 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.07, type: "spring", stiffness: 300, damping: 28 }}
-                                            className="bg-white rounded-3xl overflow-hidden shadow-lg shadow-orange-100/60 border border-orange-100/80"
+                                            className={`bg-white rounded-3xl overflow-hidden shadow-lg shadow-orange-100/60 border border-orange-100/80 transition-all ${
+                                                isPast ? "opacity-75 grayscale-[30%] scale-[0.98]" : ""
+                                            }`}
                                         >
                                             {/* ── Card Header Band ── */}
-                                            <div className="relative bg-gradient-to-r from-[#FF7000] to-[#FF9A45] px-4 py-3 overflow-hidden">
+                                            <div className={`relative px-4 py-3 overflow-hidden ${
+                                                isPast ? "bg-gray-400" : "bg-gradient-to-r from-[#FF7000] to-[#FF9A45]"
+                                            }`}>
                                                 {/* Decorative blobs */}
                                                 <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full" />
                                                 <div className="absolute -bottom-5 -left-3 w-12 h-12 bg-white/10 rounded-full" />
 
                                                 <div className="relative flex items-center justify-between">
                                                     <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
-                                                        <span className="text-lg">🪔</span>
+                                                        <span className="text-lg">{isPast ? "✅" : "🪔"}</span>
                                                         <h3 className="text-white font-bold text-sm leading-tight truncate">
                                                             {booking.poojaNameEng || "Puja Service"}
+                                                            {isPast && <span className="ml-2 text-[10px] uppercase tracking-wider opacity-80">(Completed)</span>}
                                                         </h3>
                                                     </div>
                                                     <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold flex-shrink-0 ${
-                                                        isOnline
-                                                            ? "bg-white text-[#FF7000]"
-                                                            : "bg-white/20 text-white border border-white/30"
+                                                        isPast
+                                                            ? "bg-white/20 text-white"
+                                                            : (isOnline ? "bg-white text-[#FF7000]" : "bg-white/20 text-white border border-white/30")
                                                     }`}>
                                                         {isOnline
                                                             ? <><Wifi className="w-3 h-3" /> Online</>
@@ -370,51 +384,53 @@ const MyBookingsPage: React.FC = () => {
                                                 </div>
 
                                                 {/* ── Action Buttons ── */}
-                                                {isOnline ? (
-                                                    <button
-                                                        disabled={!isActionEnabled}
-                                                        onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'video')}
-                                                        className={`w-full py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${
-                                                            isActionEnabled
-                                                                ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
-                                                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                        }`}
-                                                    >
-                                                        <Video className="w-4 h-4" />
-                                                        {isActionEnabled ? "Join Video Call" : "Video Call — Not Available Yet"}
-                                                    </button>
-                                                ) : (
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            disabled={!hasAssignedPandit}
-                                                            onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'audio')}
-                                                            className={`w-12 h-11 rounded-2xl font-bold flex items-center justify-center transition-all active:scale-[0.98] flex-shrink-0 ${
-                                                                hasAssignedPandit
-                                                                    ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
-                                                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                            }`}
-                                                            title="Call Pandit"
-                                                        >
-                                                            <Phone className="w-4 h-4" />
-                                                        </button>
+                                                {hasAssignedPandit && (
+                                                    isOnline ? (
                                                         <button
                                                             disabled={!isActionEnabled}
-                                                            onClick={() => {
-                                                                if (hasAssignedPandit && booking.address?.coordinates) {
-                                                                    const { lat, lng } = booking.address.coordinates;
-                                                                    navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
-                                                                }
-                                                            }}
-                                                            className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${
+                                                            onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'video')}
+                                                            className={`w-full py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${
                                                                 isActionEnabled
                                                                     ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
                                                                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
                                                             }`}
                                                         >
-                                                            <MapPin className="w-4 h-4" />
-                                                            {isActionEnabled ? "Track Panditji" : "Awaiting Departure"}
+                                                            <Video className="w-4 h-4" />
+                                                            {isActionEnabled ? "Join Video Call" : (isOnline && !isToday ? "Video Call Restricted" : "Video Call — Not Available Yet")}
                                                         </button>
-                                                    </div>
+                                                    ) : (
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                disabled={!isAudioCallEnabled}
+                                                                onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'audio')}
+                                                                className={`w-12 h-11 rounded-2xl font-bold flex items-center justify-center transition-all active:scale-[0.98] flex-shrink-0 ${
+                                                                    isAudioCallEnabled
+                                                                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
+                                                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                                }`}
+                                                                title={isAudioCallEnabled ? "Call Pandit" : (isToday ? "Call Pandit — Awaiting Assignment" : "Call Restricted to Booking Date")}
+                                                            >
+                                                                <Phone className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                disabled={!isActionEnabled}
+                                                                onClick={() => {
+                                                                    if (hasAssignedPandit && booking.address?.coordinates) {
+                                                                        const { lat, lng } = booking.address.coordinates;
+                                                                        navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
+                                                                    }
+                                                                }}
+                                                                className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${
+                                                                    isActionEnabled
+                                                                        ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
+                                                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                                }`}
+                                                            >
+                                                                <MapPin className="w-4 h-4" />
+                                                                {isActionEnabled ? "Track Panditji" : (isToday ? "Awaiting Departure" : "Tracking Restricted")}
+                                                            </button>
+                                                        </div>
+                                                    )
                                                 )}
                                             </div>
                                         </motion.div>

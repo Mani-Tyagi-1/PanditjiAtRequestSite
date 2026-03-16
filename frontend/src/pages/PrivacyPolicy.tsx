@@ -330,15 +330,26 @@ export default function PrivacyPolicy() {
               <p className="text-gray-700 leading-relaxed mb-4">
                 For privacy questions, complaints, or requests:
               </p>
-              <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 border-2 border-orange-300 rounded-xl p-6 shadow-lg">
-                <div className="space-y-3">
-                    <p className="text-gray-800 font-bold text-lg">
-                      <span className="text-orange-600">✉</span> panditjiatrequest@vedicvaibhav.com | 
-                      <span className="text-orange-600"> ☎</span> +91 98727 88769
+              <div className="bg-[#FFFAF3] border border-orange-200 rounded-2xl p-2 shadow-md inline-block min-w-[300px]">
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <div className="text-2xl mb-1">✉️</div>
+                    <p className="text-[#1A2D42] font-bold text-lg">
+                      panditjiatrequest@vedicvaibhav.com
                     </p>
-                    <p className="text-gray-700">
-                        <span className="font-semibold text-orange-600">Registered Office:</span> # 1031 Tricity Trade Tower, Patiala Zirakpur Road, Zirakpur, Punjab India
+                    <div className="flex items-center gap-2 text-[#1A2D42] font-bold text-lg">
+                      <span className="text-orange-400">|</span>
+                      <span className="text-xl">☎️</span>
+                      <span>+91 98727 88769</span>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <p className="text-orange-600 font-bold">Registered Office:</p>
+                    <p className="text-gray-700 text-sm leading-snug">
+                      # 1031 Tricity Trade Tower, Patiala Zirakpur Road, Zirakpur, Punjab India
                     </p>
+                  </div>
                 </div>
               </div>
             </section>

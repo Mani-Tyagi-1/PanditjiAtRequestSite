@@ -1,5 +1,6 @@
 import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const Footer: React.FC = () => {
   return (
@@ -63,11 +64,11 @@ const Footer: React.FC = () => {
               transition={{ type: "spring", stiffness: 80 }}
               className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm"
             >
-              <li><a href="/about" className="hover:text-[#ff7a00] transition-colors">About Us</a></li>
-              <li><a href="/contact" className="hover:text-[#ff7a00] transition-colors">Contact Us</a></li>
-              <li><a href="https://partner.vedicvaibhav.in/affiliate-register" className="hover:text-[#ff7a00] transition-colors">Affiliate</a></li>
-              <li><a href="/privacypolicy" className="hover:text-[#ff7a00] transition-colors">Privacy</a></li>
-              <li className="col-span-2"><a href="/termsandconditions" className="hover:text-[#ff7a00] transition-colors">Terms & Conditions</a></li>
+              <li><Link to="/join-as-panditji#about" className="hover:text-[#ff7a00] transition-colors">About Us</Link></li>
+              <li><Link to="/join-as-panditji#contact" className="hover:text-[#ff7a00] transition-colors">Contact Us</Link></li>
+              <li><a href="https://partner.vedicvaibhav.in/affiliate-register" className="hover:text-[#ff7a00] transition-colors" target="_blank" rel="noopener noreferrer">Affiliate</a></li>
+              <li><Link to="/privacypolicy" className="hover:text-[#ff7a00] transition-colors">Privacy</Link></li>
+              <li className="col-span-2"><Link to="/termsandconditions" className="hover:text-[#ff7a00] transition-colors">Terms & Conditions</Link></li>
             </motion.ul>
           </div>
 

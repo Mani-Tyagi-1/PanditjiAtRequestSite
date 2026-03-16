@@ -46,7 +46,12 @@ export default function CategoryPage() {
   const [subCategories, setSubCategories] = useState<string[]>(
     passedCategory?.sub_categories || []
   );
-  const [activeCategory, setActiveCategory] = useState("");
+  const [activeCategory, setActiveCategory] = useState(() => {
+    if (categoryId) {
+      return sessionStorage.getItem(`active_subcat_${categoryId}`) || "";
+    }
+    return "";
+  });
   const [allPujas, setAllPujas] = useState<PujaData[]>([]);
   const [isLoadingHeader, setIsLoadingHeader] = useState(!passedCategory);
   const [isLoadingPujas, setIsLoadingPujas] = useState(true);
@@ -99,6 +104,7 @@ export default function CategoryPage() {
           setAllPujas(cachedPujas);
           setIsLoadingPujas(false);
         } else {
+          setAllPujas([]);
           setIsLoadingPujas(true);
         }
 
@@ -144,6 +150,14 @@ export default function CategoryPage() {
     return () => controller.abort();
   }, [categoryId, passedCategory]);
 
+  // Re-sync activeCategory when categoryId changes
+  useEffect(() => {
+    if (categoryId) {
+      const saved = sessionStorage.getItem(`active_subcat_${categoryId}`);
+      setActiveCategory(saved || "");
+    }
+  }, [categoryId]);
+
   const visibleSubCategories = useMemo(() => {
     const usedSubCategoryNames = new Set(
       allPujas.flatMap((p) => p.subCategories?.map((sc) => sc.name) || [])
@@ -153,15 +167,25 @@ export default function CategoryPage() {
   }, [allPujas, subCategories]);
 
   useEffect(() => {
+    if (isLoadingPujas) return;
+
     if (visibleSubCategories.length === 0) {
       setActiveCategory("");
       return;
     }
 
-    if (!visibleSubCategories.includes(activeCategory)) {
+    // Only set to first category if we don't have a valid activeCategory yet
+    if (!activeCategory || !visibleSubCategories.includes(activeCategory)) {
       setActiveCategory(visibleSubCategories[0]);
     }
-  }, [visibleSubCategories, activeCategory]);
+  }, [visibleSubCategories, activeCategory, isLoadingPujas]);
+
+  // Persist activeCategory to sessionStorage whenever it changes
+  useEffect(() => {
+    if (activeCategory && categoryId) {
+      sessionStorage.setItem(`active_subcat_${categoryId}`, activeCategory);
+    }
+  }, [activeCategory, categoryId]);
 
   const filteredPujas = useMemo(() => {
     if (!activeCategory) return [];

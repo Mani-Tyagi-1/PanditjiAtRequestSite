@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
 // import JoinPandit from "../components/JoinPanditJi";
@@ -15,6 +17,19 @@ import { AboutUs } from "../components/NewComponents/About";
 import { BookingFlow } from "../components/NewComponents/BookingFlow";
 
 export default function Home() {
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      const element = document.getElementById(hash.replace("#", ""));
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+      }
+    }
+  }, [hash]);
+
   return (
     <>
       <Navbar/>

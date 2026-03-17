@@ -653,9 +653,26 @@ export default function BookingModal({
       setIsSummaryOpen(false);
 
       if (user) {
-        if (user.name) setBhaktName(user.name);
-        if (user.phone) setContactNumber(user.phone);
-        if (user.email) setEmailId(user.email);
+        // Try to get complete/unmasked data from localStorage first
+        try {
+          const storedData = localStorage.getItem("user_data");
+          const localUser = storedData ? JSON.parse(storedData) : null;
+
+          const name = localUser?.name || user.name || "";
+          const phone = localUser?.phone || user.phone || "";
+          const email = localUser?.email || user.email || "";
+          const gotraVal = localUser?.gotra || (user as any).gotra || "";
+
+          if (name) setBhaktName(name);
+          if (phone) setContactNumber(phone);
+          if (email) setEmailId(email);
+          if (gotraVal) setGotra(gotraVal);
+        } catch {
+          // Fallback to user context if localStorage parse fails
+          if (user.name) setBhaktName(user.name);
+          if (user.phone) setContactNumber(user.phone);
+          if (user.email) setEmailId(user.email);
+        }
       }
     } else {
       closeTimerRef.current = window.setTimeout(() => setMounted(false), 300);

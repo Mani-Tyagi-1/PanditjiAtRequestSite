@@ -9,7 +9,7 @@ import AppDownloadTopBar from "./AppDownloadTopBar";
 const navLinks = [
     { label: "Profile", href: "/profile", icon: "👤" },
     { label: "My Bookings", href: "/my-bookings", icon: "📖" },
-    { label: "Book Puja Now", href: "/", icon: "🪔" },
+    { label: "Book Puja Now", href: "/category/685b290c922c7df97c114213", icon: "🪔" },
     { label: "Pandit Ji Registration", href: "/join-as-panditji#register-as-panditji", icon: "🙏" },
     { label: "Booking Flow", href: "/join-as-panditji#booking-flow", icon: "📋" },
 ];
@@ -117,9 +117,9 @@ const HeroSection = () => {
         <>
             <AppDownloadTopBar />
             <div className="w-full" style={{ background: "linear-gradient(to bottom, #f3b287ff, #e8d19cff, #ffffff)" }}>
-                <div className="w-full pt-2 md:pt-2 px-4 md:px-6 max-w-2xl mx-auto">
+                <div className="w-full px-4 md:px-6 max-w-2xl mx-auto ">
                     {/* Top Nav inside Hero Banner */}
-                    <div className="flex items-center justify-center gap-4 my-3 relative z-20">
+                    <div className="flex items-center justify-center gap-4 mb-1 relative z-20 ">
                         <motion.img
                             whileTap={{ scale: 0.95 }}
                             whileHover={{ scale: 1.05 }}
@@ -130,7 +130,7 @@ const HeroSection = () => {
                         />
 
                         {/* Search Bar */}
-                    <div className="relative w-full mb-2 z-30">
+                    <div className="relative w-full z-30">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
@@ -183,7 +183,7 @@ const HeroSection = () => {
                         </AnimatePresence>
                     </div>
 
-                        <div className="flex items-center   ">
+                        <div className="flex items-center ">
                            
 
                             {/* Hamburger Menu Button */}
@@ -241,7 +241,9 @@ const HeroSection = () => {
                                     // onClick={() => navigate("/booking-flow")}
                                     className="inline-flex items-center bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-bold px-5 py-2 rounded-lg shadow-md hover:shadow-md transition-all"
                                 >
-                                    <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp">Download App Now</a>
+                                    <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp" target="_blank" rel="noopener noreferrer">
+                                        Download App Now
+                                    </a>
 
                                 </motion.button>
                             </div>
@@ -364,11 +366,13 @@ const HeroSection = () => {
                             {/* Drawer Footer CTA */}
                             <div className="p-4 border-t border-orange-100">
                                 <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-4 flex flex-col items-center gap-3">
-                                    <img
-                                        src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png"
-                                        alt="App preview"
-                                        className="h-16 object-contain"
-                                    />
+                                    <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp" target="_blank" rel="noopener noreferrer">
+                                        <img
+                                            src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png"
+                                            alt="App preview"
+                                            className="h-16 object-contain"
+                                        />
+                                    </a>
                                     <p className="text-[11px] text-stone-500 text-center font-medium">
                                         Get ₹100 off your first booking
                                     </p>

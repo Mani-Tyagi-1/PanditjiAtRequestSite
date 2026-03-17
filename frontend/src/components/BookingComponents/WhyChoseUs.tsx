@@ -81,7 +81,7 @@ export default function WhyChooseUs() {
         .wcu-card-anim { animation: fadeUp 0.5s ease both; }
       `}</style>
 
-            <section className="wcu-wrap bg-[#FFFAF3] px-4 py-5 sm:px-6 lg:px-10">
+            <section className="wcu-wrap bg-[#FFFAF3] px-4 py-2 sm:px-6 lg:px-10">
                 <div className="max-w-3xl mx-auto">
 
                     {/* Header */}
@@ -125,7 +125,7 @@ export default function WhyChooseUs() {
 
                     {/* Bottom trust strip */}
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-                        {["500+ Verified Pandits", "10,000+ Bookings", "4.9 ★ Rated"].map((t) => (
+                        {["5000+ Verified Pandits", "10,000+ Bookings", "4.9 ★ Rated"].map((t) => (
                             <span key={t} className="flex items-center gap-1.5 text-xs text-stone-500 font-normal">
                                 <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block" />
                                 {t}

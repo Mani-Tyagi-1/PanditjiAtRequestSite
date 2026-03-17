@@ -321,6 +321,7 @@ export default function BookingModal({
   const [mode, setMode] = useState<"online" | "offline">(
     pooja?.poojaMode === "offline" ? "offline" : "online"
   );
+  const [modeInfoType, setModeInfoType] = useState<"online" | "offline" | null>(null);
   const [saveAs, setSaveAs] = useState<"home" | "work" | "other">("home");
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -995,45 +996,131 @@ export default function BookingModal({
             className="flex-1 overflow-y-auto pb-6"
           >
             <div className="px-4 py-4 space-y-7">
+              {/* Mode info centered modal */}
+              {modeInfoType && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-6" onClick={() => setModeInfoType(null)}>
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                  <div
+                    className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                        {modeInfoType === "online" ? "Online Puja" : "Offline Puja"}
+                      </p>
+                      <button
+                        onClick={() => setModeInfoType(null)}
+                        className="w-7 h-7 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {modeInfoType === "online" ? (
+                      <>
+                        <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.07A2 2 0 0122 9.764V15a2 2 0 01-2.894 1.789L15 15M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                          </svg>
+                        </div>
+                        <p className="text-stone-700 text-sm leading-relaxed">
+                          Pandit Ji performs the puja <strong>virtually via video call</strong>. You participate from the comfort of your home — no travel or physical setup needed.
+                        </p>
+                        <ul className="space-y-2">
+                          {["Join from anywhere in India", "Pandit Ji arranges all rituals online", "Digital prasad & post-puja guidance included", "Flexible scheduling"].map((pt) => (
+                            <li key={pt} className="flex items-center gap-2 text-xs text-stone-500">
+                              <span className="w-4 h-4 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center shrink-0">
+                                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                              </span>
+                              {pt}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                          </svg>
+                        </div>
+                        <p className="text-stone-700 text-sm leading-relaxed">
+                          Pandit Ji <strong>visits your home or venue</strong> to perform the puja in person with all traditional Vedic rituals and samagri.
+                        </p>
+                        <ul className="space-y-2">
+                          {["Pandit Ji comes to your location", "Full samagri & materials arranged", "Traditional in-person rituals", "Post-puja blessings & guidance"].map((pt) => (
+                            <li key={pt} className="flex items-center gap-2 text-xs text-stone-500">
+                              <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center shrink-0">
+                                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                              </span>
+                              {pt}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {pooja?.poojaMode !== "online" && pooja?.poojaMode !== "offline" ? (
                 <div className="flex bg-stone-100 p-1 rounded-xl w-fit">
                   <button
                     onClick={() => setMode("online")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-stone-500 hover:text-stone-700"
                       }`}
                   >
-                    <span
-                      className={`w-2 h-2 rounded-full ${mode === "online"
-                        ? "bg-orange-500 animate-pulse"
-                        : "bg-stone-300"
-                        }`}
-                    />
+                    <span className={`w-2 h-2 rounded-full ${mode === "online" ? "bg-orange-500 animate-pulse" : "bg-stone-300"}`} />
                     Online Mode
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setModeInfoType("online"); }}
+                      className="w-4 h-4 flex items-center justify-center rounded-full text-stone-400 hover:text-orange-500 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
                   </button>
                   <button
                     onClick={() => setMode("offline")}
-                    className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-stone-500 hover:text-stone-700"
                       }`}
                   >
-                    <span
-                      className={`w-2 h-2 rounded-full ${mode === "offline" ? "bg-orange-500" : "bg-stone-300"
-                        }`}
-                    />
+                    <span className={`w-2 h-2 rounded-full ${mode === "offline" ? "bg-orange-500" : "bg-stone-300"}`} />
                     Offline Mode
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setModeInfoType("offline"); }}
+                      className="w-4 h-4 flex items-center justify-center rounded-full text-stone-400 hover:text-orange-500 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
                   </button>
                 </div>
               ) : (
-                <div className="flex bg-stone-100 p-1 rounded-xl w-fit">
-                  <div
-                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold bg-white text-orange-600 shadow-sm"
-                  >
+                <div className="flex items-center gap-2 bg-stone-100 p-1 rounded-xl w-fit">
+                  <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-white text-orange-600 shadow-sm">
                     <span className={`w-2 h-2 rounded-full bg-orange-500 ${pooja?.poojaMode === "online" ? "animate-pulse" : ""}`} />
                     {pooja?.poojaMode === "online" ? "Online Mode" : "Offline Mode"}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setModeInfoType(pooja?.poojaMode === "online" ? "online" : "offline")}
+                    className="mr-1 w-6 h-6 flex items-center justify-center rounded-full text-stone-400 hover:text-orange-500 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
                 </div>
               )}
 

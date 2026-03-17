@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 
 // ── Dummy Data ────────────────────────────────────────────────
@@ -110,7 +111,16 @@ import BookingModal from "./UI/BookingModal";
 export default function PujaDetailPage() {
     const { pujaId } = useParams();
     const navigate = useNavigate();
+    const { user, openLoginModal } = useAuth();
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    const [pendingBooking, setPendingBooking] = useState(false);
+
+    useEffect(() => {
+        if (user && pendingBooking) {
+            setPendingBooking(false);
+            setIsBookingModalOpen(true);
+        }
+    }, [user, pendingBooking]);
     const [pujaData, setPujaData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -318,7 +328,14 @@ export default function PujaDetailPage() {
                             </p>
                         </div>
                         <button
-                            onClick={() => setIsBookingModalOpen(true)}
+                            onClick={() => {
+                                if (user) {
+                                    setIsBookingModalOpen(true);
+                                } else {
+                                    setPendingBooking(true);
+                                    openLoginModal();
+                                }
+                            }}
                             className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
                         >
                             Book Pandit Ji

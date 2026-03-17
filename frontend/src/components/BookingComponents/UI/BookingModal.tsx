@@ -941,9 +941,10 @@ export default function BookingModal({
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-        .booking-modal { font-family: 'DM Sans', sans-serif; }
-        .slide-up { animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        .booking-modal { font-family: 'DM Sans', sans-serif; background: #FFFAF3; }
+        .booking-modal input, .booking-modal select { font-family: 'DM Sans', sans-serif; }
+        .slide-up { animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .slide-down { animation: modalSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes modalSlideUp {
           from { transform: translateY(100%); }
@@ -952,6 +953,25 @@ export default function BookingModal({
         @keyframes modalSlideDown {
           from { transform: translateY(0); }
           to { transform: translateY(100%); }
+        }
+        .bm-input {
+          width: 100%; background: #fff; border: 1px solid #e7ddd1;
+          border-radius: 14px; padding: 12px 16px; font-size: 14px;
+          color: #292524; outline: none; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+          transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .bm-input:focus { border-color: #fb923c; box-shadow: 0 0 0 3px rgba(251,146,60,0.12); }
+        .bm-input::placeholder { color: #a8a29e; }
+        .bm-section-label {
+          display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+        }
+        .bm-section-label span {
+          font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+          text-transform: uppercase; color: #f97316;
+        }
+        .bm-section-label div {
+          height: 1px; flex: 1;
+          background: linear-gradient(to right, #fed7aa, transparent);
         }
       `}</style>
 
@@ -963,113 +983,128 @@ export default function BookingModal({
         />
 
         <div
-          className={`relative w-full sm:max-w-md h-[95vh] sm:h-[85vh] bg-[#fdfdfd] sm:rounded-2xl rounded-t-2xl flex flex-col overflow-hidden ${isOpen ? "slide-up" : "slide-down"
+          className={`relative w-full sm:max-w-md h-[95vh] sm:h-[85vh] bg-[#FFFAF3] sm:rounded-2xl rounded-t-2xl flex flex-col overflow-hidden ${isOpen ? "slide-up" : "slide-down"
             }`}
         >
-          <div className="flex items-center gap-3 px-4 py-3.5 bg-white border-b border-stone-200 sticky top-0 z-10 shrink-0">
+          {/* ── Gradient Header ── */}
+          <div className="relative px-4 pt-4 pb-4 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 shrink-0 shadow-sm">
             <button
               onClick={onClose}
-              className="p-1 -ml-1 text-stone-700 active:scale-95 transition-transform"
+              className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm active:scale-95 transition-transform"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
+              <svg className="w-4 h-4 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h2 className="text-stone-800 font-medium text-base truncate flex-1">
+            <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-orange-500 mb-0.5">Book Your Puja</p>
+            <h2 className="text-orange-700 font-extrabold leading-tight truncate px-10"
+              style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "22px" }}>
               {pooja?.poojaNameEng}
             </h2>
+            <div className="flex items-center justify-center gap-3 mt-1.5">
+              <div className="h-[2px] w-10 bg-gradient-to-r from-transparent to-orange-400/50" />
+              <span className="text-orange-500 text-xs">🕉</span>
+              <div className="h-[2px] w-10 bg-gradient-to-l from-transparent to-orange-400/50" />
+            </div>
           </div>
 
           <div
             ref={scrollContainerRef}
             onScroll={handleBodyScroll}
-            className="flex-1 overflow-y-auto pb-6"
+            className="flex-1 overflow-y-auto pb-6 bg-[#FFFAF3]"
           >
-            <div className="px-4 py-4 space-y-7">
-              {/* Mode info centered modal */}
+            <div className="px-4 py-4 ">
+              {/* Mode info modal */}
               {modeInfoType && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center p-6" onClick={() => setModeInfoType(null)}>
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                <div className="fixed inset-0 z-[300] flex items-end justify-center" onClick={() => setModeInfoType(null)}>
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
                   <div
-                    className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4"
+                    className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl overflow-hidden slide-up"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-                        {modeInfoType === "online" ? "Online Puja" : "Offline Puja"}
-                      </p>
-                      <button
-                        onClick={() => setModeInfoType(null)}
-                        className="w-7 h-7 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                    {/* Close */}
+                    <button
+                      onClick={() => setModeInfoType(null)}
+                      className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+
+                    {/* Pandit image */}
+                    <div className="flex justify-center pt-8 pb-2">
+                      <img
+                        src="https://png.pngtree.com/png-vector/20250731/ourmid/pngtree-indian-pujari-priest-cartoon-illustration-vector-png-image_16949581.webp"
+                        alt="Pandit Ji"
+                        className="w-28 h-28 object-contain drop-shadow-md"
+                        style={{ mixBlendMode: "multiply" }}
+                      />
                     </div>
 
-                    {modeInfoType === "online" ? (
-                      <>
-                        <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center">
-                          <svg className="w-6 h-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.07A2 2 0 0122 9.764V15a2 2 0 01-2.894 1.789L15 15M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-                          </svg>
+                    {/* Title */}
+                    <div className="text-center px-6 pb-4">
+                      <h3 className="text-2xl font-bold text-stone-800 mb-1"
+                        style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                        About this Puja
+                      </h3>
+                      <p className="text-stone-500 text-sm">
+                        What to expect with{" "}
+                        <strong className="text-orange-600">
+                          {modeInfoType === "online" ? "Online" : "Offline"}
+                        </strong>{" "}
+                        puja
+                      </p>
+                    </div>
+
+                    {/* Points */}
+                    <div className="px-6 pb-6 space-y-4">
+                      {(modeInfoType === "online" ? [
+                        { icon: "?", text: "The puja will be performed in online mode by our experienced Pandit Ji." },
+                        { icon: "📷", text: "You will receive photos & short video clips after the puja is completed." },
+                        { icon: "?", text: "The selected time will be respected as far as possible; minor adjustments may occur." },
+                        { icon: "?", text: "For online pujas, items are arranged virtually. You will get a samagri list via message." },
+                      ] : [
+                        { icon: "🏠", text: "Pandit Ji will visit your provided address to perform the puja in person." },
+                        { icon: "🪔", text: "Pandit Ji brings all samagri & materials required for the puja." },
+                        { icon: "?", text: "The selected time will be respected as far as possible; minor adjustments may occur." },
+                        { icon: "?", text: "Traditional Vedic rituals will be followed with post-puja blessings & guidance." },
+                      ]).map((pt, i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <span className="text-orange-500 text-lg shrink-0 leading-snug w-6 text-center">
+                            {pt.icon === "?" ? (
+                              <svg className="w-5 h-5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            ) : pt.icon === "📷" ? (
+                              <svg className="w-5 h-5 mt-0.5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            ) : pt.icon}
+                          </span>
+                          <p className="text-stone-600 text-sm leading-relaxed">{pt.text}</p>
                         </div>
-                        <p className="text-stone-700 text-sm leading-relaxed">
-                          Pandit Ji performs the puja <strong>virtually via video call</strong>. You participate from the comfort of your home — no travel or physical setup needed.
-                        </p>
-                        <ul className="space-y-2">
-                          {["Join from anywhere in India", "Pandit Ji arranges all rituals online", "Digital prasad & post-puja guidance included", "Flexible scheduling"].map((pt) => (
-                            <li key={pt} className="flex items-center gap-2 text-xs text-stone-500">
-                              <span className="w-4 h-4 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center shrink-0">
-                                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                              </span>
-                              {pt}
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center">
-                          <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                          </svg>
-                        </div>
-                        <p className="text-stone-700 text-sm leading-relaxed">
-                          Pandit Ji <strong>visits your home or venue</strong> to perform the puja in person with all traditional Vedic rituals and samagri.
-                        </p>
-                        <ul className="space-y-2">
-                          {["Pandit Ji comes to your location", "Full samagri & materials arranged", "Traditional in-person rituals", "Post-puja blessings & guidance"].map((pt) => (
-                            <li key={pt} className="flex items-center gap-2 text-xs text-stone-500">
-                              <span className="w-4 h-4 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center shrink-0">
-                                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                              </span>
-                              {pt}
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
+                      ))}
+                    </div>
+
+                    {/* CTA */}
+                    <div className="px-6 pb-8">
+                      <button
+                        onClick={() => setModeInfoType(null)}
+                        className="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-bold py-4 rounded-2xl text-sm transition-all shadow-lg shadow-orange-200"
+                      >
+                        Got it — Continue
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
 
               {pooja?.poojaMode !== "online" && pooja?.poojaMode !== "offline" ? (
-                <div className="flex bg-stone-100 p-1 rounded-xl w-fit">
+                <div className="flex bg-stone-100 p-1 rounded-xl w-full justify-center space-x-4">
                   <button
                     onClick={() => setMode("online")}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
+                    className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-stone-500 hover:text-stone-700"
                       }`}
@@ -1088,7 +1123,7 @@ export default function BookingModal({
                   </button>
                   <button
                     onClick={() => setMode("offline")}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
+                    className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
                       ? "bg-white text-orange-600 shadow-sm"
                       : "text-stone-500 hover:text-stone-700"
                       }`}
@@ -1125,53 +1160,16 @@ export default function BookingModal({
               )}
 
               <div className="relative">
-                <h3 className="text-stone-800 font-medium text-[15px] mb-3">
-                  Fill Your Preferences
-                </h3>
+                <div className="bm-section-label"><span>Your Preferences</span><div /></div>
 
                 <div className="flex items-start">
                   <div className="flex-1 space-y-3 pr-28 sm:pr-32">
-                    <div className="relative">
-                      <input
-                        type="date"
-                        min={minDateStr}
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm appearance-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      {/* <div 
-                        className="relative cursor-pointer"
-                        onClick={() => {
-                          setTempTime(selectedTime || "09:00");
-                          setIsTimePickerOpen(true);
-                        }}
-                      >
-                        <div className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 pr-11 text-sm text-stone-500 shadow-sm flex items-center justify-between min-h-[44px]">
-                          <span>{selectedTime || "Select Time"}</span>
-                        </div>
-                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg
-                            className="w-4 h-4 text-slate-400"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M12 6v6l4 2" />
-                          </svg>
-                        </div>
-                      </div> */}
-                      <input
-                        type="time"
-                        min={minDateStr}
-                        value={selectedTime}
-                        onChange={(e) => setSelectedTime(e.target.value)}
-                        className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm appearance-none"
-                      />
-                    </div>
+                    <input type="date" min={minDateStr} value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="bm-input appearance-none" />
+                    <input type="time" value={selectedTime}
+                      onChange={(e) => setSelectedTime(e.target.value)}
+                      className="bm-input appearance-none" />
                   </div>
 
                   <div className="absolute right-0 bottom-[-10px] w-[110px] sm:w-[130px] pointer-events-none">
@@ -1186,55 +1184,41 @@ export default function BookingModal({
               </div>
             </div>
 
-            <div className="bg-[#FF6D00] text-white px-4 py-2.5 flex items-start gap-2.5 text-xs shadow-inner">
-              <div className="shrink-0 mt-0.5 border border-white/50 rounded-full w-3.5 h-3.5 flex items-center justify-center">
-                <span className="text-[8px] font-bold">i</span>
+            <div className={`mx-4 mb-1 rounded-2xl px-4 py-3 flex items-start gap-3 border ${mode === "online" ? "bg-orange-50 border-orange-200" : "bg-amber-50 border-amber-200"}`}>
+              <div className={`shrink-0 mt-0.5 w-6 h-6 rounded-full flex items-center justify-center ${mode === "online" ? "bg-orange-100" : "bg-amber-100"}`}>
+                {mode === "online" ? (
+                  <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.07A2 2 0 0122 9.764V15a2 2 0 01-2.894 1.789L15 15M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+                  </svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                )}
               </div>
-              <span className="font-medium leading-relaxed">
+              <p className={`text-xs leading-relaxed font-medium ${mode === "online" ? "text-orange-700" : "text-amber-800"}`}>
                 {mode === "online"
-                  ? "Online puja — all items will be arranged virtually."
-                  : "Offline puja — Pandit Ji will visit your provided address."}
-              </span>
+                  ? "Online puja — Pandit Ji performs all rituals virtually. All samagri will be arranged on your behalf."
+                  : "Offline puja — Pandit Ji will visit your provided address with all required samagri."}
+              </p>
             </div>
 
             <div className="px-4 py-6 space-y-6">
               <div>
-                <h3 className="text-stone-800 font-medium text-[15px] mb-3">
-                  Fill Bhakt Details
-                </h3>
+                <div className="bm-section-label"><span>Bhakt Details</span><div /></div>
 
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Fill your name"
-                    value={bhaktName}
-                    onChange={(e) => setBhaktName(e.target.value)}
-                    className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                  />
+                  <input type="text" placeholder="Your full name*" value={bhaktName}
+                    onChange={(e) => setBhaktName(e.target.value)} className="bm-input" />
 
-                  <input
-                    type="text"
-                    placeholder="Gotra"
-                    value={gotra}
-                    onChange={(e) => setGotra(e.target.value)}
-                    className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-500 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                  />
+                  <input type="text" placeholder="Gotra (optional)" value={gotra}
+                    onChange={(e) => setGotra(e.target.value)} className="bm-input" />
 
-                  <input
-                    type="tel"
-                    placeholder="Your Contact Number"
-                    value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)}
-                    className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                  />
+                  <input type="tel" placeholder="Contact number*" value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)} className="bm-input" />
 
-                  <input
-                    type="email"
-                    placeholder="email@example.com"
-                    value={emailId}
-                    onChange={(e) => setEmailId(e.target.value)}
-                    className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-                  />
+                  <input type="email" placeholder="Email address*" value={emailId}
+                    onChange={(e) => setEmailId(e.target.value)} className="bm-input" />
 
                   {mode === "offline" && (
                     <div className="pt-4 space-y-4 border-t border-stone-100 mt-4">
@@ -1323,23 +1307,22 @@ export default function BookingModal({
                 </div>
               </div>
 
-              <div className="h-2 w-full bg-[#f4f4f5] -mx-4 px-8" />
+              <div className="h-px w-full bg-gradient-to-r from-transparent via-orange-200 to-transparent -mx-0" />
 
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-stone-800 font-medium text-[15px]">
-                    Have a Coupon?
-                  </h3>
-                  <button 
+                  <div className="bm-section-label mb-0"><span>Have a Coupon?</span><div /></div>
+                  <button
                     onClick={fetchCoupons}
                     disabled={isLoadingCoupons}
-                    className="text-[#E65100] text-xs font-bold hover:underline disabled:opacity-50"
+                    className="text-orange-600 text-xs font-bold hover:text-orange-700 disabled:opacity-50 flex items-center gap-1"
                   >
                     {isLoadingCoupons ? "Checking..." : "View All Coupons"}
+                    {!isLoadingCoupons && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
                   </button>
                 </div>
 
-                <div className="bg-[#FFF8F2] border border-[#FDE0C9] rounded-xl p-3 flex sm:flex-row flex-col gap-2.5">
+                <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3 flex sm:flex-row flex-col gap-2.5">
                   <div className="flex-1 relative">
                     <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-orange-400">
                       <svg
@@ -1377,74 +1360,54 @@ export default function BookingModal({
             </div>
           </div>
 
-          <div className="w-full bg-[#fdfdfd] shrink-0 border-t border-stone-200 px-4 pt-3 pb-safe-bottom shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.1)]">
+          <div className="w-full bg-white/95 backdrop-blur-md shrink-0 border-t border-orange-100 px-4 pt-3 pb-4 shadow-[0_-12px_24px_-8px_rgba(249,115,22,0.12)]">
             <button
               onClick={() => setIsSummaryOpen(!isSummaryOpen)}
               className="w-full flex items-center justify-between mb-2 pb-1 focus:outline-none"
             >
               <div className="flex items-center gap-2">
-                <h3 className="text-stone-800 font-medium text-[15px]">
+                <span className="text-stone-700 font-semibold text-[13px]" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "15px" }}>
                   Order Summary
-                </h3>
+                </span>
                 <span className="bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
                   {discountPercent}% OFF
                 </span>
               </div>
-
-              <div className="flex items-center gap-1.5 text-stone-500 text-xs font-semibold">
-                {isSummaryOpen ? "Hide" : "View"} Details
-                <svg
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${isSummaryOpen ? "rotate-180" : ""
-                    }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 9l-7 7-7-7"
-                  />
+              <div className="flex items-center gap-1 text-orange-500 text-xs font-semibold">
+                {isSummaryOpen ? "Hide" : "View"}
+                <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${isSummaryOpen ? "rotate-180" : ""}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
             </button>
 
-            <div
-              className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-56 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"
-                }`}
-            >
-              <div className="space-y-1.5 px-1 text-sm">
+            <div className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-56 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"}`}>
+              <div className="bg-orange-50/60 border border-orange-100 rounded-2xl p-3 space-y-1.5 text-sm">
                 <div className="flex justify-between text-stone-500">
                   <span>Base Puja</span>
-                  <span>₹{discountedPrice}</span>
+                  <span className="font-medium text-stone-700">₹{discountedPrice}</span>
                 </div>
-
-                <div className="flex justify-between text-red-500">
+                <div className="flex justify-between text-stone-400">
                   <span className="line-through">Samagri</span>
                   <span className="line-through">₹{samagriCharge}</span>
                 </div>
-
-                <div className="flex justify-between text-red-500">
+                <div className="flex justify-between text-stone-400">
                   <span className="line-through">Pandit Dakshina</span>
                   <span className="line-through">₹{panditDakshina}</span>
                 </div>
-
                 {appliedCoupon && (
-                    <div className="flex justify-between text-orange-600 font-medium">
-                        <span>Coupon ({appliedCoupon.code || appliedCoupon.promoCode || appliedCoupon.promoName})</span>
-                        <span>-₹{Math.floor(couponDiscount)}</span>
-                    </div>
+                  <div className="flex justify-between text-orange-600 font-medium">
+                    <span>Coupon ({appliedCoupon.code || appliedCoupon.promoCode || appliedCoupon.promoName})</span>
+                    <span>-₹{Math.floor(couponDiscount)}</span>
+                  </div>
                 )}
-
-                <div className="flex justify-between text-green-600 font-semibold bg-green-50 border border-green-100 rounded-lg px-2 py-1 mt-2">
+                <div className="h-px bg-orange-200 my-1" />
+                <div className="flex justify-between text-green-700 font-semibold">
                   <span>You Save</span>
-                  <span>
-                    ₹{Math.floor(totalDiscount + couponDiscount)} ({discountPercent}% OFF)
-                  </span>
+                  <span>₹{Math.floor(totalDiscount + couponDiscount)} ({discountPercent}% OFF)</span>
                 </div>
-
-                <div className="flex justify-between font-bold text-stone-800 pt-1.5 border-t border-stone-100 mt-1">
+                <div className="flex justify-between font-bold text-stone-800 pt-1">
                   <span>Total Payable</span>
                   <span className="text-orange-600">₹{discountedPrice}</span>
                 </div>
@@ -1454,13 +1417,22 @@ export default function BookingModal({
             <button
               onClick={handleCheckout}
               disabled={isProcessing}
-              className={`w-full ${isProcessing ? "bg-orange-400" : "bg-orange-500 hover:bg-orange-600"
-                } active:scale-95 text-white rounded-xl py-3.5 px-5 flex items-center justify-between transition-colors shadow-md mb-4 font-bold tracking-wide`}
+              className={`w-full active:scale-[0.98] text-white rounded-2xl py-3.5 px-5 flex items-center justify-between transition-all shadow-lg shadow-orange-200 mb-1 ${isProcessing ? "bg-orange-400" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"}`}
             >
-              <span className="text-xl">₹{discountedPrice}</span>
-              <span className="text-sm uppercase tracking-widest text-orange-50">
-                {isProcessing ? "Processing..." : "Schedule Pandit"}
-              </span>
+              <div>
+                <p className="text-[10px] text-orange-100 font-medium uppercase tracking-widest leading-none mb-0.5">Total</p>
+                <p className="text-xl font-bold leading-none">₹{discountedPrice}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold tracking-wide text-orange-50">
+                  {isProcessing ? "Processing..." : "Schedule Pandit Ji"}
+                </span>
+                {!isProcessing && (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
+                  </svg>
+                )}
+              </div>
             </button>
           </div>
         </div>

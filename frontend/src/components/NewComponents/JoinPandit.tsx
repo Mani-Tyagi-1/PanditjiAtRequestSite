@@ -22,7 +22,7 @@ export function JoinPandit() {
 
 
   return (
-    <section className="md:py-20 py-10  relative overflow-hidden">
+    <section id="register-as-panditji" className="md:py-20 py-10  relative overflow-hidden">
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-red-50">
         <div className="absolute inset-0 opacity-10" style={{
@@ -169,7 +169,7 @@ export function JoinPandit() {
               whileTap={{ scale: 0.95 }}
               className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center space-x-2"
             >
-              <span>Start Your Journey Today</span>
+              <span>Join as Panditji</span>
               <ArrowRight className="w-5 h-5" />
             </motion.button>
             </a>

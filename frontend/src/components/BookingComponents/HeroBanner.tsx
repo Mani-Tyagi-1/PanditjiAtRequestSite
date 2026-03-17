@@ -7,8 +7,8 @@ import axios from "axios";
 
 const navLinks = [
     { label: "Book Puja Now", href: "/" },
-    { label: "Pandit Ji Registration", href: "https://partner.vedicvaibhav.in/affiliate-register", highlight: true },
-    { label: "Join as Pandit Ji Guide", href: "/join-as-panditji" },
+    { label: "Pandit Ji Registration", href: "/join-as-panditji#register-as-panditji", highlight: true },
+    { label: "Booking Flow", href: "/join-as-panditji#booking-flow" },
 
 
 ];
@@ -387,53 +387,57 @@ const HeroSection = () => {
                                             <p className="text-sm text-gray-500 mb-4">
                                                 Enter your mobile number to get an OTP.
                                             </p>
-                                            <div className="relative mb-5">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">+91</span>
-                                                <input
-                                                    type="tel"
-                                                    maxLength={10}
-                                                    value={phone}
-                                                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                                                    placeholder="Mobile Number"
-                                                    className="w-full pl-11 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-gray-800 font-medium"
-                                                    disabled={isSubmitting}
-                                                />
-                                            </div>
-                                            <button
-                                                onClick={handleSendOtp}
-                                                disabled={isSubmitting || phone.length !== 10}
-                                                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center"
-                                            >
-                                                {isSubmitting ? (
-                                                    <span className="w-5 h-5 border-2 border-white/50 border-t-transparent rounded-full animate-spin"></span>
-                                                ) : "Send OTP"}
-                                            </button>
+                                            <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}>
+                                                <div className="relative mb-5">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">+91</span>
+                                                    <input
+                                                        type="tel"
+                                                        maxLength={10}
+                                                        value={phone}
+                                                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                                                        placeholder="Mobile Number"
+                                                        className="w-full pl-11 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-gray-800 font-medium"
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isSubmitting || phone.length !== 10}
+                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center"
+                                                >
+                                                    {isSubmitting ? (
+                                                        <span className="w-5 h-5 border-2 border-white/50 border-t-transparent rounded-full animate-spin"></span>
+                                                    ) : "Send OTP"}
+                                                </button>
+                                            </form>
                                         </>
                                     ) : (
                                         <>
                                             <p className="text-sm text-gray-500 mb-4">
                                                 We sent a verification code to <span className="font-bold text-gray-800">+91 {phone}</span>
                                             </p>
-                                            <div className="mb-5">
-                                                <input
-                                                    type="text"
-                                                    maxLength={4}
-                                                    value={otp}
-                                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                                    placeholder="Enter OTP"
-                                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-lg tracking-[0.5em] font-bold text-gray-800"
-                                                    disabled={isSubmitting}
-                                                />
-                                            </div>
-                                            <button
-                                                onClick={handleVerifyOtp}
-                                                disabled={isSubmitting || otp.length < 4}
-                                                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center mb-3"
-                                            >
-                                                {isSubmitting ? (
-                                                    <span className="w-5 h-5 border-2 border-white/50 border-t-transparent rounded-full animate-spin"></span>
-                                                ) : "Verify & Login"}
-                                            </button>
+                                            <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }}>
+                                                <div className="mb-5">
+                                                    <input
+                                                        type="text"
+                                                        maxLength={4}
+                                                        value={otp}
+                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                                        placeholder="Enter OTP"
+                                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-lg tracking-[0.5em] font-bold text-gray-800"
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    disabled={isSubmitting || otp.length < 4}
+                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center mb-3"
+                                                >
+                                                    {isSubmitting ? (
+                                                        <span className="w-5 h-5 border-2 border-white/50 border-t-transparent rounded-full animate-spin"></span>
+                                                    ) : "Verify & Login"}
+                                                </button>
+                                            </form>
 
                                             <div className="text-center">
                                                 <button

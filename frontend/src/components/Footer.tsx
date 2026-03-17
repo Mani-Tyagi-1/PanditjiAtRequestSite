@@ -66,7 +66,7 @@ const Footer: React.FC = () => {
             >
               <li><Link to="/join-as-panditji#about" className="hover:text-[#ff7a00] transition-colors">About Us</Link></li>
               <li><Link to="/join-as-panditji#contact" className="hover:text-[#ff7a00] transition-colors">Contact Us</Link></li>
-              <li><a href="https://partner.vedicvaibhav.in/affiliate-register" className="hover:text-[#ff7a00] transition-colors" target="_blank" rel="noopener noreferrer">Affiliate</a></li>
+              <li><a href="https://partner.vedicvaibhav.in/affiliate-register" className="hover:text-[#ff7a00] transition-colors" target="_blank" rel="noopener noreferrer">Panditji Registration</a></li>
               <li><Link to="/privacypolicy" className="hover:text-[#ff7a00] transition-colors">Privacy</Link></li>
               <li className="col-span-2"><Link to="/termsandconditions" className="hover:text-[#ff7a00] transition-colors">Terms & Conditions</Link></li>
             </motion.ul>

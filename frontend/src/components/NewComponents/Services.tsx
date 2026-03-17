@@ -24,6 +24,27 @@ export function Services() {
       image: "https://media.istockphoto.com/id/1346254741/photo/hands-of-girl-holding-ghanti-bell-clay-diya-deep-dia-lamp-illuminated-in-pooja-thali-for.webp?a=1&b=1&s=612x612&w=0&k=20&c=3_z07FxprOjRdCb6TCtW2XFtgLyp8vbFvGf72kI6gsI=",
       color: "from-purple-500 to-pink-500",
     },
+    {
+      icon: Flame,
+      title: "Rashifal Puja",
+      description: "Personalized puja rituals based on your zodiac and horoscope",
+      image: "https://www.livehindustan.com/lh-img/smart/img/2025/07/27/1600x900/venus_transit_in_leo_1686291754_1753608023940.jpeg",
+      color: "from-orange-500 to-red-500",
+    },
+    {
+      icon: Home,
+      title: "Dosh Nivaran Puja",
+      description: "Sacred puja rituals to reduce doshas and bring harmony",
+      image: "https://media.istockphoto.com/id/2179080860/photo/close-up-of-oil-lamp-puja-thali-with-flower-and-indian-sweet-on-diwali-festival-in-india.webp?a=1&b=1&s=612x612&w=0&k=20&c=Yybxp1U4Xjoa9p2dOLnaOGYf3UKNVR93H9dybXdavdM=",
+      color: "from-green-500 to-teal-500",
+    },
+    {
+      icon: Star,
+      title: "Remedies Puja",
+      description: "Effective puja rituals for spiritual healing and life remedies",
+      image: "https://media.istockphoto.com/id/1346254741/photo/hands-of-girl-holding-ghanti-bell-clay-diya-deep-dia-lamp-illuminated-in-pooja-thali-for.webp?a=1&b=1&s=612x612&w=0&k=20&c=3_z07FxprOjRdCb6TCtW2XFtgLyp8vbFvGf72kI6gsI=",
+      color: "from-purple-500 to-pink-500",
+    },
   ];
 
   return (
@@ -132,7 +153,7 @@ export function Services() {
             >
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                <img src="/images/playstore.png" alt="Download the App Now" className="w-8 h-8" />
+                  <img src="/images/playstore.png" alt="Download the App Now" className="w-8 h-8" />
                 </div>
                 <span>Download the App Now</span>
               </div>

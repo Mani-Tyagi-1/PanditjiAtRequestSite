@@ -64,7 +64,7 @@ export function BookingFlow() {
   return (
     <>
     <Navigation />
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-10 px-4 overflow-hidden mt-20">
+    <div id="booking-flow" className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 py-10 px-4 overflow-hidden mt-20">
       {/* Header Section */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
@@ -277,7 +277,17 @@ export function BookingFlow() {
         transition={{ duration: 0.8 }}
         className="text-center mt-20"
       >
-        <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp">
+        {/* <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 text-white px-12 py-5 rounded-full text-xl font-bold shadow-2xl shadow-orange-500/50 hover:shadow-orange-500/70 transition-shadow"
+        >
+          Start Booking Now
+        </motion.button>
+        </a> */}
+
+        <a href="/">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

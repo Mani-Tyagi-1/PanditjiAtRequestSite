@@ -122,7 +122,7 @@ export default function PujaServices() {
       </div>
 
       <div className="w-full flex justify-center">
-        <div className="bg-white/80 backdrop-blur-md flex items-center justify-center gap-5">
+        <div className="bg-white/80 backdrop-blur-md flex items-center justify-center gap-5 pb-2">
           {items.map((item, i) => (
             <div
               key={i}

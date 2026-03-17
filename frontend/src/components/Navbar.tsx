@@ -14,14 +14,14 @@ import {
 } from "react-icons/fa";
 
 const navLinks = [
-  { label: "Home", href: "/join-as-panditji" },
+  { label: "Home", href: "/" },
   {
     label: "Pandit Ji Registration",
     href: "https://partner.vedicvaibhav.in/affiliate-register",
     highlight: true,
   },
-  { label: "About Us", href: "#about" },
-  { label: "Contact Us", href: "#contact" },
+  { label: "About Us", href: "/join-as-panditji#about" },
+  { label: "Contact Us", href: "/join-as-panditji#contact" },
 ];
 
 const isHashLink = (href: string) => href.startsWith("#");

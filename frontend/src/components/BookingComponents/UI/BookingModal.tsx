@@ -318,7 +318,9 @@ export default function BookingModal({
   pooja,
 }: BookingModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [mode, setMode] = useState<"online" | "offline">("online");
+  const [mode, setMode] = useState<"online" | "offline">(
+    pooja?.poojaMode === "offline" ? "offline" : "online"
+  );
   const [saveAs, setSaveAs] = useState<"home" | "work" | "other">("home");
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -976,36 +978,47 @@ export default function BookingModal({
             className="flex-1 overflow-y-auto pb-6"
           >
             <div className="px-4 py-4 space-y-7">
-              <div className="flex bg-stone-100 p-1 rounded-xl w-fit">
-                <button
-                  onClick={() => setMode("online")}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
-                    ? "bg-white text-orange-600 shadow-sm"
-                    : "text-stone-500 hover:text-stone-700"
-                    }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${mode === "online"
-                      ? "bg-orange-500 animate-pulse"
-                      : "bg-stone-300"
+              {pooja?.poojaMode !== "online" && pooja?.poojaMode !== "offline" ? (
+                <div className="flex bg-stone-100 p-1 rounded-xl w-fit">
+                  <button
+                    onClick={() => setMode("online")}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
+                      ? "bg-white text-orange-600 shadow-sm"
+                      : "text-stone-500 hover:text-stone-700"
                       }`}
-                  />
-                  Online Mode
-                </button>
-                <button
-                  onClick={() => setMode("offline")}
-                  className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
-                    ? "bg-white text-orange-600 shadow-sm"
-                    : "text-stone-500 hover:text-stone-700"
-                    }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${mode === "offline" ? "bg-orange-500" : "bg-stone-300"
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${mode === "online"
+                        ? "bg-orange-500 animate-pulse"
+                        : "bg-stone-300"
+                        }`}
+                    />
+                    Online Mode
+                  </button>
+                  <button
+                    onClick={() => setMode("offline")}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
+                      ? "bg-white text-orange-600 shadow-sm"
+                      : "text-stone-500 hover:text-stone-700"
                       }`}
-                  />
-                  Offline Mode
-                </button>
-              </div>
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${mode === "offline" ? "bg-orange-500" : "bg-stone-300"
+                        }`}
+                    />
+                    Offline Mode
+                  </button>
+                </div>
+              ) : (
+                <div className="flex bg-stone-100 p-1 rounded-xl w-fit">
+                  <div
+                    className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold bg-white text-orange-600 shadow-sm"
+                  >
+                    <span className={`w-2 h-2 rounded-full bg-orange-500 ${pooja?.poojaMode === "online" ? "animate-pulse" : ""}`} />
+                    {pooja?.poojaMode === "online" ? "Online Mode" : "Offline Mode"}
+                  </div>
+                </div>
+              )}
 
               <div className="relative">
                 <h3 className="text-stone-800 font-medium text-[15px] mb-3">
@@ -1395,15 +1408,17 @@ export default function BookingModal({
               will be available soon!
             </p>
 
-            <button
-              onClick={() => {
-                setNotServiceablePopup(false);
-                setMode("online");
-              }}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md"
-            >
-              Choose Online Mode
-            </button>
+            {pooja?.poojaMode !== "offline" && (
+              <button
+                onClick={() => {
+                  setNotServiceablePopup(false);
+                  setMode("online");
+                }}
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md"
+              >
+                Choose Online Mode
+              </button>
+            )}
           </div>
         </div>
       )}

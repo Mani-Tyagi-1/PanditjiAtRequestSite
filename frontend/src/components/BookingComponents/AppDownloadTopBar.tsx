@@ -6,7 +6,7 @@ const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.pandit
 
 const marqueeItems = [
     // "🕉 Book Pandit Ji in minutes",
-    // "✨ 5000+ Verified Pandits",
+    // "✨ 5000+ Verified Panditji",
     // "🌟 10,000+ Bookings completed",
     "🌟Download the app now and get 20% off your first booking🌟",
 ];

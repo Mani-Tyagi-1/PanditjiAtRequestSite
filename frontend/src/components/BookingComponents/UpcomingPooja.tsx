@@ -57,7 +57,7 @@ export default function FeaturedPujas() {
                         className="text-[20px] text-stone-800 leading-snug font-bold"
                         style={{ fontFamily: "'Cormorant Garamond', serif" }}
                     >
-                        Upcoming ceremonies performed by verified pandits
+                        Upcoming ceremonies performed by verified panditji
                     </h2>
                 </div>
 

@@ -22,7 +22,7 @@ export function JoinPandit() {
 
 
   return (
-    <section id="register-as-panditji" className="md:py-20 py-10  relative overflow-hidden">
+    <section id="register-as-panditji" className="md:py-10 py-10  relative overflow-hidden">
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-red-50">
         <div className="absolute inset-0 opacity-10" style={{
@@ -41,13 +41,13 @@ export function JoinPandit() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-6"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="inline-block mb-4"
+            className="inline-block mb-2"
           >
             <span className="text-orange-600 text-lg font-semibold px-4 py-2 bg-white rounded-full shadow-md">
               Join Our Network
@@ -63,7 +63,7 @@ export function JoinPandit() {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-7 items-center">
           {/* Left - Image */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
@@ -105,7 +105,7 @@ export function JoinPandit() {
             transition={{ duration: 0.8 }}
           >
             {/* Benefits Grid */}
-            <div className="grid gap-6 mb-8">
+            <div className="grid gap-2 mb-8">
               {benefits.map((benefit, index) => {
                 const Icon = benefit.icon;
                 return (

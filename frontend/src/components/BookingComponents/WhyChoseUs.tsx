@@ -7,8 +7,8 @@ const REASONS = [
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
             </svg>
         ),
-        title: "Verified Pandits",
-        desc: "Every pandit is background-checked, trained, and reviewed by our team.",
+        title: "Verified Panditji",
+        desc: "Every panditji is background-checked, trained, and reviewed by our team.",
         accent: "text-orange-500",
         bg: "bg-orange-50",
         border: "border-orange-100",
@@ -125,7 +125,7 @@ export default function WhyChooseUs() {
 
                     {/* Bottom trust strip */}
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-                        {["5000+ Verified Pandits", "10,000+ Bookings", "4.9 ★ Rated"].map((t) => (
+                        {["5000+ Verified Panditji", "10,000+ Bookings", "4.9 ★ Rated"].map((t) => (
                             <span key={t} className="flex items-center gap-1.5 text-xs text-stone-500 font-normal">
                                 <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block" />
                                 {t}

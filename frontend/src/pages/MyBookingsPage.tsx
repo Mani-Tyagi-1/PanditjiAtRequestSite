@@ -410,7 +410,7 @@ const MyBookingsPage: React.FC = () => {
                                                                         ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
                                                                         : "bg-gray-100 text-gray-400 cursor-not-allowed"
                                                                 }`}
-                                                                title={isAudioCallEnabled ? "Call Pandit" : (isToday ? "Call Pandit — Awaiting Assignment" : "Call Restricted to Booking Date")}
+                                                                title={isAudioCallEnabled ? "Call Panditji" : (isToday ? "Call Panditji — Awaiting Assignment" : "Call Restricted to Booking Date")}
                                                             >
                                                                 <Phone className="w-4 h-4" />
                                                             </button>

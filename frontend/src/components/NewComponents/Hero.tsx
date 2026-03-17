@@ -47,7 +47,7 @@ export function Hero() {
               transition={{ delay: 0.4 }}
               className="text-xl text-gray-600 mb-8 leading-relaxed"
             >
-              Book experienced and verified Pandits for all your sacred ceremonies.
+              Book experienced and verified Panditji for all your sacred ceremonies.
               From Pujas to Weddings, we bring spirituality to your home.
             </motion.p>
 
@@ -71,7 +71,7 @@ export function Hero() {
                 whileTap={{ scale: 0.95 }}
                 className="bg-white text-orange-600 px-8 py-4 rounded-full font-semibold text-lg border-2 border-orange-200 hover:border-orange-400 transition-all shadow-lg hover:shadow-xl"
               >
-                Join as Pandit
+                Join as Panditji
               </motion.button>
             </motion.div>
           </motion.div>

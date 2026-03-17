@@ -578,7 +578,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
             <button
                onClick={handleCall}
                className="w-14 h-14 flex items-center justify-center rounded-2xl bg-green-600 text-white shadow-xl shadow-green-500/20 hover:bg-green-700 transition-all active:scale-95"
-               title="Call Pandit"
+               title="Call Panditji"
             >
               <Phone className="w-6 h-6 fill-white" />
             </button>

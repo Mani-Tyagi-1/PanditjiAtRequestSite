@@ -4,13 +4,13 @@ const StatsSection: React.FC = () => {
   const stats = [
     {
       label: "Puja Performed",
-      value: "100+",
+      value: "10000+",
       image:
         "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/stats1.webp",
     },
     {
       label: "Pandit Ji Listed",
-      value: "100+",
+      value: "5000+",
       image:
         "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/stats2.webp",
     },
@@ -22,7 +22,7 @@ const StatsSection: React.FC = () => {
     },
     {
       label: "Satisfied Customers",
-      value: "100+",
+      value: "10000+",
       image:
         "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/stats4.webp",
     },

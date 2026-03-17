@@ -1393,7 +1393,7 @@ export default function BookingModal({
                   <span className="line-through">₹{samagriCharge}</span>
                 </div>
                 <div className="flex justify-between text-stone-400">
-                  <span className="line-through">Pandit Dakshina</span>
+                  <span className="line-through">Panditji Dakshina</span>
                   <span className="line-through">₹{panditDakshina}</span>
                 </div>
                 {appliedCoupon && (
@@ -1529,7 +1529,7 @@ export default function BookingModal({
 
               <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
                 <p className="text-sm text-orange-800 font-medium">
-                  One of our verified Pandits will accept your request shortly. You'll receive a notification once assigned.
+                  One of our verified Panditji will accept your request shortly. You'll receive a notification once assigned.
                 </p>
               </div>
             </div>

@@ -5,7 +5,7 @@ export function AboutUs() {
   const features = [
     {
       icon: Shield,
-      title: "Verified Pandits",
+      title: "Verified Panditji",
       description: "All our pandits are certified and background verified",
     },
     {
@@ -94,7 +94,7 @@ export function AboutUs() {
               className="text-gray-600 text-lg mb-6 leading-relaxed"
             >
               Welcome to Pandit Ji At Request. We are committed to preserving and promoting
-              authentic Vedic traditions by connecting experienced, verified pandits with
+              authentic Vedic traditions by connecting experienced, verified panditji with
               families seeking to perform sacred rituals with devotion and authenticity.
             </motion.p>
 

@@ -7,6 +7,7 @@ import Pooja from '../../model/userApp/poojaModel';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
+import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
 
 // --- helpers ---
 const toAlias10 = (v?: string | number) =>
@@ -301,6 +302,41 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
 
     // 6) Remove pending doc
     await pendingPoojaBookingModel.findByIdAndDelete(pendingBookingId);
+
+    // 6a) META CAPI Purchase (fire-and-forget)
+    void (async () => {
+      try {
+        const forwardedFor = req.headers['x-forwarded-for'];
+        const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]) || req.ip || null;
+
+        await sendMetaPurchaseEvent({
+          orderID: String(finalBooking.razorpayOrderId || razorpayOrderId),
+          value: Number((finalBooking as any).amount || amountPaid || 0),
+          currency: 'INR',
+          contentId: String((finalBooking as any).poojaNameEng || 'PUJA').trim(),
+          deliveryCategory: (finalBooking as any).address ? 'home_delivery' : 'in_store',
+          actionSource: 'website',
+          phone: String((finalBooking as any).userPhone || ''),
+          email: (finalBooking as any).userEmail || null,
+          externalId: String((finalBooking as any).userId || ''),
+          clientIp,
+          userAgent: String(req.headers['user-agent'] || ''),
+          fbp: String(req.headers['x-fbp'] || (req as any).cookies?._fbp || ''),
+          fbc: String(req.headers['x-fbc'] || (req as any).cookies?._fbc || ''),
+          eventSourceUrl:
+            String(req.headers['x-event-source-url'] || '') ||
+            process.env.META_DEFAULT_EVENT_SOURCE_URL ||
+            null,
+        });
+
+        console.log(`[MetaCAPI][Puja] Purchase sent for orderID=${razorpayOrderId}`);
+      } catch (e: any) {
+        console.error(
+          `[MetaCAPI][Puja] Purchase failed for orderID=${razorpayOrderId}:`,
+          e?.response?.data || e?.message || e,
+        );
+      }
+    })();
 
     // 7) Notify dashboard (socket)
     const io = req.app.get('io') as SocketIOServer | undefined;

@@ -1,4 +1,4 @@
-import FeaturedPujas from "../components/BookingComponents/FeaturedPujas";
+import FeaturedPujas from "../components/BookingComponents/UpcomingPooja";
 import HeroBanner from "../components/BookingComponents/HeroBanner";
 import HowItWorks from "../components/BookingComponents/HowItWorksSection";
 import RecomendedForYou from "../components/BookingComponents/RecomendedForYou";
@@ -78,9 +78,9 @@ export default function LandingPage() {
       <div className="w-full max-w-md mx-auto">
         <HeroBanner />
         <ServicesSection />
-        <FeaturedPujas />
-        <HowItWorks />
         <RecomendedForYou />
+        <HowItWorks />
+        <FeaturedPujas />
         <WhyChooseUs />
         <Footer />
       </div>

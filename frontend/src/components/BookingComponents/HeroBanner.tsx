@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
-import { FaBars, FaTimes, FaUserCircle } from "react-icons/fa";
+import { FaBars, FaTimes } from "react-icons/fa";
 import axios from "axios";
+import AppDownloadTopBar from "./AppDownloadTopBar";
 
 const navLinks = [
-    { label: "Book Puja Now", href: "/" },
-    { label: "Pandit Ji Registration", href: "/join-as-panditji#register-as-panditji", highlight: true },
-    { label: "Booking Flow", href: "/join-as-panditji#booking-flow" },
-
-
+    { label: "Profile", href: "/profile", icon: "👤" },
+    { label: "My Bookings", href: "/my-bookings", icon: "📖" },
+    { label: "Book Puja Now", href: "/", icon: "🪔" },
+    { label: "Pandit Ji Registration", href: "/join-as-panditji#register-as-panditji", icon: "🙏" },
+    { label: "Booking Flow", href: "/join-as-panditji#booking-flow", icon: "📋" },
 ];
 
 const HeroSection = () => {
@@ -114,49 +115,22 @@ const HeroSection = () => {
 
     return (
         <>
+            <AppDownloadTopBar />
             <div className="w-full" style={{ background: "linear-gradient(to bottom, #f3b287ff, #e8d19cff, #ffffff)" }}>
-                <div className="w-full pt-3 md:pt-3 px-4 md:px-6 max-w-2xl mx-auto">
+                <div className="w-full pt-2 md:pt-2 px-4 md:px-6 max-w-2xl mx-auto">
                     {/* Top Nav inside Hero Banner */}
-                    <div className="flex items-center justify-between mb-4 relative z-20">
+                    <div className="flex items-center justify-center gap-4 my-3 relative z-20">
                         <motion.img
                             whileTap={{ scale: 0.95 }}
                             whileHover={{ scale: 1.05 }}
                             src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
                             alt="Pandit Ji Logo"
                             className="w-16 h-16 object-contain cursor-pointer"
-                            onClick={() => navigate('/')}
+                            onClick={() => setIsMenuOpen(true)}
                         />
 
-                        <div className="flex items-center gap-3">
-                            {isLoggedIn ? (
-                                <button
-                                    onClick={() => navigate('/profile')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 backdrop-blur-sm border border-orange-200 text-orange-700 font-semibold shadow-sm hover:bg-orange-50 transition-colors"
-                                >
-                                    <FaUserCircle className="w-5 h-5" />
-                                    <span className="text-sm">Profile</span>
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => setIsLoginModalOpen(true)}
-                                    className="px-4 py-1.5 rounded-full bg-orange-600 text-white font-semibold text-sm shadow-md hover:bg-orange-700 transition-colors"
-                                >
-                                    Login
-                                </button>
-                            )}
-
-                            {/* Hamburger Menu Button */}
-                            <button
-                                onClick={() => setIsMenuOpen(true)}
-                                className="p-2 text-gray-800 hover:text-orange-600 transition-colors bg-white/50 backdrop-blur-sm rounded-full shadow-sm"
-                            >
-                                <FaBars className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Search Bar */}
-                    <div className="relative mb-2 z-30">
+                        {/* Search Bar */}
+                    <div className="relative w-full mb-2 z-30">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input
                             type="text"
@@ -208,6 +182,21 @@ const HeroSection = () => {
                             )}
                         </AnimatePresence>
                     </div>
+
+                        <div className="flex items-center   ">
+                           
+
+                            {/* Hamburger Menu Button */}
+                            <button
+                                onClick={() => setIsMenuOpen(true)}
+                                className="p-2 text-gray-800 hover:text-orange-600 transition-colors "
+                            >
+                                <FaBars className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
+
+                    
 
                     {/* Hero Banner Card */}
                     <motion.div
@@ -278,68 +267,120 @@ const HeroSection = () => {
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed top-0 right-0 h-full w-[280px] bg-white shadow-2xl z-[100] flex flex-col"
+                            className="fixed top-0 right-0 h-full w-[300px] bg-[#FFFAF3] shadow-2xl z-[100] flex flex-col"
                         >
                             {/* Drawer Header */}
-                            <div className="flex items-start justify-between p-6 border-b">
-                                <div className="text-center w-full">
-                                    <h2 className="text-xl font-semibold tracking-wide text-gray-900">
-                                        Pandit Ji At Request
-                                    </h2>
-                                    <p className="mt-1 text-sm text-gray-600">
-                                        शुभ मुहूर्त • पूजा • मार्गदर्शन
-                                    </p>
-                                </div>
+                            <div
+                                className="relative px-5 pt-6 pb-5"
+                                style={{
+                                    background: "linear-gradient(135deg, #c2410c 0%, #ea580c 50%, #f97316 100%)",
+                                }}
+                            >
+                                {/* Close button */}
                                 <button
                                     onClick={() => setIsMenuOpen(false)}
-                                    className="text-2xl text-gray-600"
+                                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/15 text-white/90 hover:bg-white/25 transition-colors"
                                 >
-                                    <FaTimes />
+                                    <FaTimes className="w-3.5 h-3.5" />
                                 </button>
+
+                                {/* Logo + brand */}
+                                <div className="flex items-center gap-3 mb-3">
+                                    <img
+                                        src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
+                                        alt="Logo"
+                                        className="w-12 h-12 object-contain rounded-xl bg-white/20 p-1"
+                                    />
+                                    <div>
+                                        <h2 className="text-base font-bold text-white leading-tight">
+                                            Pandit Ji At Request
+                                        </h2>
+                                        <p className="text-[11px] text-orange-100 font-medium mt-0.5">
+                                            शुभ मुहूर्त • पूजा • मार्गदर्शन
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Decorative divider */}
+                                <div className="flex items-center gap-2 mt-1">
+                                    <div className="flex-1 h-px bg-white/20" />
+                                    <span className="text-white/50 text-[10px]">🕉</span>
+                                    <div className="flex-1 h-px bg-white/20" />
+                                </div>
                             </div>
 
-                            {/* Drawer Links */}
-                            <ul className="flex flex-col gap-2 p-6 flex-1">
-                                {navLinks.map((link, index) => (
-                                    <motion.li
-                                        key={link.label}
-                                        initial={{ x: 50, opacity: 0 }}
-                                        animate={{ x: 0, opacity: 1 }}
-                                        transition={{ delay: index * 0.1 }}
-                                    >
-                                        {link.highlight ? (
-                                            <a
-                                                href={link.href}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="block bg-orange-500 text-white font-medium rounded-lg px-4 py-3 text-center shadow transition-all mt-2"
+                            {/* Navigation Links */}
+                            <nav className="flex-1 px-4 py-4 overflow-y-auto">
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 px-3 mb-2">
+                                    Menu
+                                </p>
+                                <ul className="flex flex-col gap-1">
+                                    {!isLoggedIn && (
+                                        <li>
+                                            <button
+                                                onClick={() => { setIsMenuOpen(false); setIsLoginModalOpen(true); }}
+                                                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 transition-colors group"
                                             >
-                                                {link.label}
-                                            </a>
-                                        ) : (
+                                                <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 group-hover:bg-orange-100 text-base transition-colors flex-shrink-0">🔐</span>
+                                                <span className="text-sm font-medium">Login / Register</span>
+                                                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-auto text-stone-300 group-hover:text-orange-400 transition-colors">
+                                                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </li>
+                                    )}
+                                    {navLinks
+                                        .filter(link => isLoggedIn || (link.label !== "Profile" && link.label !== "My Bookings"))
+                                        .map((link) => (
+                                        <li key={link.label}>
                                             <Link
                                                 to={link.href}
                                                 onClick={() => setIsMenuOpen(false)}
-                                                className="block font-medium px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-all"
+                                                className="flex items-center gap-3 px-3 py-3 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 transition-colors group"
                                             >
-                                                {link.label}
+                                                <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 group-hover:bg-orange-100 text-base transition-colors flex-shrink-0">
+                                                    {link.icon}
+                                                </span>
+                                                <span className="text-sm font-medium">
+                                                    {link.label}
+                                                </span>
+                                                <svg
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
+                                                    className="w-4 h-4 ml-auto text-stone-300 group-hover:text-orange-400 transition-colors"
+                                                >
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                                                        clipRule="evenodd"
+                                                    />
+                                                </svg>
                                             </Link>
-                                        )}
-                                    </motion.li>
-                                ))}
-                            </ul>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </nav>
 
-                            {/* Drawer CTA */}
-                            <div className="p-6 border-t gap-4 flex items-center justify-center flex-col">
-                                <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png" alt="" />
-                                <a
-                                    href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block w-full bg-red-600 text-white px-6 py-3 rounded-full font-semibold text-center shadow-md hover:bg-red-700 transition-all"
-                                >
-                                    Download App Now
-                                </a>
+                            {/* Drawer Footer CTA */}
+                            <div className="p-4 border-t border-orange-100">
+                                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-4 flex flex-col items-center gap-3">
+                                    <img
+                                        src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png"
+                                        alt="App preview"
+                                        className="h-16 object-contain"
+                                    />
+                                    <p className="text-[11px] text-stone-500 text-center font-medium">
+                                        Get ₹100 off your first booking
+                                    </p>
+                                    <a
+                                        href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white px-5 py-2.5 rounded-xl font-semibold text-sm text-center shadow-md hover:shadow-lg transition-shadow"
+                                    >
+                                        Download App Now
+                                    </a>
+                                </div>
                             </div>
                         </motion.div>
                     </>

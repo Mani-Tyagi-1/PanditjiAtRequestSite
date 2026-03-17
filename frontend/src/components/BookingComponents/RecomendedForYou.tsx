@@ -13,11 +13,10 @@ export default function RecomendedForYou() {
                 const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
                 const response = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 const allPujas = response.data.poojas || [];
-                // Filter for featured pujas
-                const featured = allPujas.filter((p: any) => p.isFeatured);
-                // Shuffle and pick 2
-                const randomFeatured = [...featured].sort(() => 0.5 - Math.random()).slice(0, 2);
-                setPujas(randomFeatured);
+                const filtered = allPujas.filter(
+                    (p: any) => p.isFeatured && p.isExclusive && p.isActive
+                );
+                setPujas(filtered);
             } catch (error) {
                 console.error("Error fetching recommended pujas:", error);
             } finally {
@@ -40,7 +39,8 @@ export default function RecomendedForYou() {
             <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:wght@300;400;500&display=swap');
         .fp-section { font-family: 'DM Sans', sans-serif; }
-        .fp-title   { font-family: 'Cormorant Garamond', serif; }
+        .fp-scroll::-webkit-scrollbar { display: none; }
+        .fp-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .card-enter { animation: cardIn 0.4s ease both; }
         @keyframes cardIn {
           from { opacity: 0; transform: translateY(14px); }
@@ -48,31 +48,38 @@ export default function RecomendedForYou() {
         }
       `}</style>
 
-            <section className="fp-section bg-[#FFFAF3] px-4 py-10 sm:px-6 lg:px-10 font-medium overflow-hidden">
-                <div className="max-w-md mx-auto">
+            <section className="fp-section bg-[#FFFAF3] py-10 font-medium">
 
-                    {/* ── Section Header ── */}
-                    <div className="text-center mb-6">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full px-3 py-1 mb-3 shadow-sm">
-                            🕉 Recommended For You
-                        </span>
-                        <h2
-                            className="text-[20px] text-stone-800 leading-snug font-bold"
-                            style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                {/* ── Section Header ── */}
+                <div className="text-center mb-6 px-4 sm:px-6 lg:px-10">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full px-3 py-1 mb-3 shadow-sm">
+                        🕉 Recommended For You
+                    </span>
+                    <h2
+                        className="text-[20px] text-stone-800 leading-snug font-bold"
+                        style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                    >
+                        Spiritual ceremonies tailored for your well-being
+                    </h2>
+                </div>
+
+                {/* ── Horizontal Scroll Grid (2 rows) ── */}
+                {pujas.length === 0 ? (
+                    <p className="text-center text-stone-400 text-sm py-16">No recommendations available.</p>
+                ) : (
+                    <div className="fp-scroll overflow-x-auto overflow-y-hidden px-4 sm:px-6 lg:px-10">
+                        <div
+                            className="grid gap-8 py-4"
+                            style={{
+                                gridTemplateRows: "repeat(2, auto)",
+                                gridAutoFlow: "column",
+                                gridAutoColumns: "calc(47% - 6px)",
+                            }}
                         >
-                            Spiritual ceremonies tailored for your well-being
-                        </h2>
-                    </div>
-
-                    {/* ── Grid ── */}
-                    {pujas.length === 0 ? (
-                        <p className="text-center text-stone-400 text-sm py-16">No recommendations available.</p>
-                    ) : (
-                        <div className="grid grid-cols-2 lg:flex lg:justify-center gap-6 max-w-md mx-auto">
                             {pujas.map((puja, i) => (
                                 <div
                                     key={puja._id}
-                                    className="card-enter h-full"
+                                    className="card-enter"
                                     style={{ animationDelay: `${i * 60}ms` }}
                                 >
                                     <PujaCard
@@ -88,9 +95,9 @@ export default function RecomendedForYou() {
                                 </div>
                             ))}
                         </div>
-                    )}
+                    </div>
+                )}
 
-                </div>
             </section>
         </>
     );

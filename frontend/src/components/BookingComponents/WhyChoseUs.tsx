@@ -56,7 +56,7 @@ const REASONS = [
 ];
 
 export default function WhyChooseUs() {
-    const [_hovered, setHovered] = useState<number | null>(null);
+    const [_hovered] = useState(null);
 
     return (
         <>
@@ -90,7 +90,7 @@ export default function WhyChooseUs() {
                             🕉 Why Choose Us
                         </span>
                         <h2
-                            className="text-[15px] text-stone-800 leading-snug"
+                            className="text-[15px] text-stone-700 leading-snug"
                             style={{ fontFamily: "'Cormorant Garamond', serif" }}
                         >
                             We make every ritual seamless, sacred, and stress-free.
@@ -104,8 +104,8 @@ export default function WhyChooseUs() {
                                 key={i}
                                 className={`wcu-card-anim reason-card bg-white rounded-2xl border ${r.border} p-2 flex items-start gap-4 hover:shadow-lg ${r.glow} cursor-default`}
                                 style={{ animationDelay: `${i * 70}ms` }}
-                                onMouseEnter={() => setHovered(i)}
-                                onMouseLeave={() => setHovered(null)}
+                                // onMouseEnter={() => setHovered(i)}
+                                // onMouseLeave={() => setHovered(null)}
                             >
                                 {/* Icon */}
                                 <div className={`icon-ring shrink-0 w-11 h-11 rounded-xl ${r.bg} ${r.accent} flex items-center justify-center mt-2`}>
@@ -117,7 +117,7 @@ export default function WhyChooseUs() {
                                     <h3 className="wcu-title text-stone-800 font-semibold leading-snug mb-0.5" style={{ fontSize: "16px" }}>
                                         {r.title}
                                     </h3>
-                                    <p className="text-stone-400 text-xs font-light leading-relaxed">{r.desc}</p>
+                                    <p className="text-stone-600 text-xs font-normal leading-relaxed">{r.desc}</p>
                                 </div>
                             </div>
                         ))}
@@ -126,8 +126,8 @@ export default function WhyChooseUs() {
                     {/* Bottom trust strip */}
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                         {["500+ Verified Pandits", "10,000+ Bookings", "4.9 ★ Rated"].map((t) => (
-                            <span key={t} className="flex items-center gap-1.5 text-xs text-stone-400 font-light">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-300 inline-block" />
+                            <span key={t} className="flex items-center gap-1.5 text-xs text-stone-500 font-normal">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 inline-block" />
                                 {t}
                             </span>
                         ))}

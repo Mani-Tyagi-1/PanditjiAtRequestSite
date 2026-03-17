@@ -36,6 +36,7 @@ const PoojaSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
     isExclusive: { type: Boolean, default: false },
+    isUpcoming: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

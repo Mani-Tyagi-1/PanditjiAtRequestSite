@@ -114,7 +114,7 @@ export default function PujaCard({
 
                 {/* Badge — sits half-outside the card */}
                 {badge && (
-                    <span className={`absolute -top-2 left-0 z-10 ${badgeColor} text-white text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full shadow`}>
+                    <span className={`absolute -top-2 left-3 z-10 ${badgeColor} text-white text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full shadow`}>
                         {badge}
                     </span>
                 )}

@@ -18,7 +18,7 @@ if (!ENCRYPTION_KEY) {
  */
 const encryptPayload = (payload: any): { encrypted: string } => {
   // ✅ STEP 4: Log the raw data BEFORE sending it back to the app
-  console.log(" SERVER: Encrypting Response Data  ", payload);
+  // console.log(" SERVER: Encrypting Response Data  ", payload);
   
   const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(payload), ENCRYPTION_KEY).toString();
   return { encrypted: ciphertext };

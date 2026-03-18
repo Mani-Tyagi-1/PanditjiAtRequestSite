@@ -22,13 +22,11 @@ export default function AppDownloadTopBar() {
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeInOut" }}
-                    className="overflow-hidden"
+                    className="overflow-hidden w-full max-w-md"
+                    style={{ background: "linear-gradient(90deg, #c2410c 0%, #ea580c 40%, #dc2626 100%)" }}
                 >
                     <div
                         className="relative w-full flex items-center justify-between px-3 py-2 gap-2"
-                        style={{
-                            background: "linear-gradient(90deg, #c2410c 0%, #ea580c 40%, #dc2626 100%)",
-                        }}
                     >
                         {/* Subtle shimmer overlay */}
                         <motion.div

@@ -206,27 +206,27 @@ const HeroSection = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className="relative w-full rounded-2xl overflow-hidden"
-                        style={{ maxHeight: "180px" }}
+                        style={{ maxHeight: "140px" }}
                     >
                         {/* Background Image */}
                         <img
-                            src="https://media.istockphoto.com/id/2179080860/photo/close-up-of-oil-lamp-puja-thali-with-flower-and-indian-sweet-on-diwali-festival-in-india.webp?a=1&b=1&s=612x612&w=0&k=20&c=Yybxp1U4Xjoa9p2dOLnaOGYf3UKNVR93H9dybXdavdM="
+                            src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/PANDIT%20JI%20AT%20REQUEST%20(MOBILE).jpg%20(1).webp"
                             alt="Sacred deity"
-                            className="absolute inset-0 w-full h-full object-cover"
+                            className="absolute inset-0 w-fit "
                         />
 
                         {/* Gradient Overlay — warm fade from left so text is readable */}
-                        <div
+                        {/* <div
                             className="absolute inset-0"
                             style={{
                                 background:
                                     "linear-gradient(to right, #fef3e2 0%, #fef3e2e6 35%, #fde8c8aa 55%, transparent 70%)",
                             }}
-                        />
+                        /> */}
 
                         {/* Text Content */}
                         <div className="relative z-10 p-3 md:p-3 flex flex-col justify-center min-h-[200px] max-w-[95%] md:max-w-[95%]">
-                            <h2
+                            {/* <h2
                                 className="text-lg md:text-lg lg:text-lg font-extrabold leading-tight mb-2"
                                 style={{ color: "#2d1810" }}
                             >
@@ -248,7 +248,7 @@ const HeroSection = () => {
                                     </a>
 
                                 </motion.button>
-                            </div>
+                            </div> */}
                         </div>
                     </motion.div>
                 </div>

@@ -13,9 +13,9 @@ export default function RecomendedForYou() {
                 const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
                 const response = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 const allPujas = response.data.poojas || [];
-                const filtered = allPujas.filter(
-                    (p: any) => p.isFeatured && p.isExclusive && p.isActive
-                );
+                const filtered = allPujas
+                    .filter((p: any) => p.isFeatured && p.isExclusive && p.isActive)
+                    .sort((a: any, b: any) => (a.featuredRank ?? Infinity) - (b.featuredRank ?? Infinity));
                 setPujas(filtered);
             } catch (error) {
                 console.error("Error fetching recommended pujas:", error);

@@ -81,6 +81,21 @@ export default function PujaCard({
     const [_pressed, setPressed] = useState(false);
     const navigate = useNavigate();
 
+    const handleCardClick = () => {
+        if (window.fbq) {
+            window.fbq("track", "ViewPooja", {
+                content_ids: [id],
+                content_name: title,
+                productname: [title],
+                content_type: "product",
+                value: price,
+                currency: "INR",
+            });
+        }
+        navigate(id ? `/puja/${id}` : '/puja');
+        window.scrollTo(0, 0);
+    };
+
     return (
         <>
             <style>{`
@@ -106,10 +121,7 @@ export default function PujaCard({
 
             <div
                 className="puja-card group relative bg-white rounded-2xl overflow-visible shadow-sm hover:shadow-xl transition-shadow duration-400 border border-stone-100 flex flex-col cursor-pointer h-full"
-                onClick={() => {
-                    navigate(id ? `/puja/${id}` : '/puja');
-                    window.scrollTo(0, 0);
-                }}
+                onClick={handleCardClick}
             >
 
                 {/* Badge — sits half-outside the card */}
@@ -162,8 +174,7 @@ export default function PujaCard({
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (onBook) onBook();
-                                navigate(id ? `/puja/${id}` : '/puja');
-                                window.scrollTo(0, 0);
+                                handleCardClick();
                             }}
                             onMouseDown={(e) => { e.stopPropagation(); setPressed(true); }}
                             onMouseUp={(e) => { e.stopPropagation(); setPressed(false); }}

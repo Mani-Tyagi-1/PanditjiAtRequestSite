@@ -329,6 +329,16 @@ export default function PujaDetailPage() {
                         </div>
                         <button
                             onClick={() => {
+                                if (window.fbq) {
+                                    window.fbq("track", "BookingDetailPageOpened", {
+                                        content_ids: [pujaId],
+                                        content_name: title,
+                                        productname: [title],
+                                        content_type: "product",
+                                        value: price,
+                                        currency: "INR",
+                                    });
+                                }
                                 if (user) {
                                     setIsBookingModalOpen(true);
                                 } else {

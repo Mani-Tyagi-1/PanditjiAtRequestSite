@@ -115,95 +115,97 @@ const HeroSection = () => {
 
     return (
         <>
-            <AppDownloadTopBar />
-            <div className="w-full" style={{ background: "linear-gradient(to bottom, #f3b287ff, #e8d19cff, #ffffff)" }}>
-                <div className="w-full px-4 md:px-6 max-w-2xl mx-auto ">
-                    {/* Top Nav inside Hero Banner */}
-                    <div className="flex items-center justify-center gap-4 mb-1 relative z-20 ">
-                        <motion.img
-                            whileTap={{ scale: 0.95 }}
-                            whileHover={{ scale: 1.05 }}
-                            src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
-                            alt="Pandit Ji Logo"
-                            className="w-16 h-16 object-contain cursor-pointer"
-                            onClick={() => setIsMenuOpen(true)}
-                        />
-
-                        {/* Search Bar */}
-                    <div className="relative w-full z-30">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search Puja"
-                            className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all"
-                        />
-
-                        {/* Search Results Dropdown */}
-                        <AnimatePresence>
-                            {searchResults.length > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden max-h-80 overflow-y-auto"
-                                >
-                                    {searchResults.map((puja) => (
-                                        <div
-                                            key={puja._id}
-                                            onClick={() => {
-                                                navigate(`/puja/${puja._id}`);
-                                                setSearchQuery("");
-                                            }}
-                                            className="flex items-center gap-3 p-3 hover:bg-orange-50 cursor-pointer transition-colors border-b last:border-0 border-gray-50"
-                                        >
-                                            <div className="w-12 h-12 rounded-lg bg-orange-50 overflow-hidden flex-shrink-0">
-                                                <img
-                                                    src={puja.poojaCardImage}
-                                                    alt={puja.poojaNameEng}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold text-gray-800 truncate">
-                                                    {puja.poojaNameEng}
-                                                </p>
-                                                <p className="text-xs text-gray-500 font-medium">
-                                                    {puja.poojaNameHindi}
-                                                </p>
-                                            </div>
-                                            <div className="text-orange-600 font-bold text-xs">
-                                                ₹{puja.poojaPriceOnline || puja.poojaPriceOffline}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                        <div className="flex items-center ">
-                           
-
-                            {/* Hamburger Menu Button */}
-                            <button
+            <div className="fixed top-0 left-0 right-0 z-[100] shadow-sm">
+                <AppDownloadTopBar />
+                <div className="w-full bg-[#f3b287ff]">
+                    <div className="w-full px-4 md:px-6 max-w-2xl mx-auto">
+                        <div className="flex items-center justify-center gap-4 py-1 relative z-20">
+                            <motion.img
+                                whileTap={{ scale: 0.95 }}
+                                whileHover={{ scale: 1.05 }}
+                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
+                                alt="Pandit Ji Logo"
+                                className="w-16 h-16 object-contain cursor-pointer"
                                 onClick={() => setIsMenuOpen(true)}
-                                className="p-2 text-gray-800 hover:text-orange-600 transition-colors "
-                            >
-                                <FaBars className="w-6 h-6" />
-                            </button>
+                            />
+
+                            <div className="relative w-full z-30">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search Puja"
+                                    className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-all"
+                                />
+
+                                <AnimatePresence>
+                                    {searchResults.length > 0 && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden max-h-80 overflow-y-auto"
+                                        >
+                                            {searchResults.map((puja) => (
+                                                <div
+                                                    key={puja._id}
+                                                    onClick={() => {
+                                                        navigate(`/puja/${puja._id}`);
+                                                        setSearchQuery("");
+                                                    }}
+                                                    className="flex items-center gap-3 p-3 hover:bg-orange-50 cursor-pointer transition-colors border-b last:border-0 border-gray-50"
+                                                >
+                                                    <div className="w-12 h-12 rounded-lg bg-orange-50 overflow-hidden flex-shrink-0">
+                                                        <img
+                                                            src={puja.poojaCardImage}
+                                                            alt={puja.poojaNameEng}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-bold text-gray-800 truncate">
+                                                            {puja.poojaNameEng}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 font-medium">
+                                                            {puja.poojaNameHindi}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-orange-600 font-bold text-xs">
+                                                        ₹{puja.poojaPriceOnline || puja.poojaPriceOffline}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            <div className="flex items-center">
+                                <button
+                                    onClick={() => setIsMenuOpen(true)}
+                                    className="p-2 text-gray-800 hover:text-orange-600 transition-colors"
+                                >
+                                    <FaBars className="w-6 h-6" />
+                                </button>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    
+            {/* Spacer to push content below fixed header */}
+            <div className="h-[100px]" />
+
+            <div className="w-full" style={{ background: "linear-gradient(to bottom, #f3b287ff, #e8d19cff, #ffffff)" }}>
+                <div className="w-full px-4 md:px-6 max-w-2xl mx-auto pt-8 ">
 
                     {/* Hero Banner Card */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="relative w-full rounded-2xl overflow-hidden shadow-lg"
+                        className="relative w-full rounded-2xl overflow-hidden"
                         style={{ maxHeight: "180px" }}
                     >
                         {/* Background Image */}

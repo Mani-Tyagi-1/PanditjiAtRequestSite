@@ -328,6 +328,21 @@ export default function BookingModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasAutoOpenedSummary, setHasAutoOpenedSummary] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [hasTrackedDetails, setHasTrackedDetails] = useState(false);
+
+  const trackCustomerDetails = () => {
+    if (bhaktName.trim().length >= 3 && contactNumber.trim().length >= 10 && !hasTrackedDetails) {
+      if (window.fbq) {
+        window.fbq("track", "CustomerDetailsFilled", {
+          content_name: pooja?.poojaNameEng || "Pooja Booking",
+          bhaktName: bhaktName,
+          contactNumber: contactNumber,
+        });
+      }
+      setHasTrackedDetails(true);
+    }
+  };
+
   const [alertConfig, setAlertConfig] = useState<{
     show: boolean;
     title: string;
@@ -654,6 +669,7 @@ export default function BookingModal({
       setIsSummaryOpen(false);
 
       if (user) {
+        setHasTrackedDetails(false); // Reset tracking for new session
         // Try to get complete/unmasked data from localStorage first
         try {
           const storedData = localStorage.getItem("user_data");
@@ -735,6 +751,26 @@ export default function BookingModal({
     }
 
     setIsProcessing(true);
+
+    // Track checkout initiation
+    if (window.fbq) {
+      window.fbq("track", "InitiateCheckout", {
+        content_ids: [pooja?._id || pooja?.id],
+        productname: [pooja?.poojaNameEng || "Pooja Booking"],
+        content_name: pooja?.poojaNameEng || "Pooja Booking",
+        content_type: "product",
+        value: discountedPrice,
+        currency: "INR",
+      });
+    }
+    // Also dispatch custom event as requested
+    window.dispatchEvent(new CustomEvent("InitiateCheckout", { 
+      detail: { 
+        poojaId: pooja?._id || pooja?.id, 
+        amount: discountedPrice,
+        productname: pooja?.poojaNameEng || "Pooja Booking"
+      } 
+    }));
 
     const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
 
@@ -893,6 +929,18 @@ export default function BookingModal({
             }
 
             setShowSuccessModal(true);
+
+            // Track successful purchase
+            if (window.fbq) {
+              window.fbq("track", "Purchase", {
+                content_ids: [pooja?._id || pooja?.id],
+                productname: [pooja?.poojaNameEng || "Pooja Booking"],
+                content_name: pooja?.poojaNameEng || "Pooja Booking",
+                content_type: "product",
+                value: discountedPrice,
+                currency: "INR",
+              });
+            }
           } catch (err: any) {
             triggerAlert("Booking Error", err.message || "Failed to complete booking after payment.", "error");
           } finally {
@@ -1209,13 +1257,17 @@ export default function BookingModal({
 
                 <div className="space-y-3">
                   <input type="text" placeholder="Your full name*" value={bhaktName}
-                    onChange={(e) => setBhaktName(e.target.value)} className="bm-input" />
+                    onChange={(e) => setBhaktName(e.target.value)} 
+                    onBlur={trackCustomerDetails}
+                    className="bm-input" />
 
                   <input type="text" placeholder="Gotra (optional)" value={gotra}
                     onChange={(e) => setGotra(e.target.value)} className="bm-input" />
 
                   <input type="tel" placeholder="Contact number*" value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)} className="bm-input" />
+                    onChange={(e) => setContactNumber(e.target.value)} 
+                    onBlur={trackCustomerDetails}
+                    className="bm-input" />
 
                   <input type="email" placeholder="Email address*" value={emailId}
                     onChange={(e) => setEmailId(e.target.value)} className="bm-input" />

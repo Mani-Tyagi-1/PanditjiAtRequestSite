@@ -16,6 +16,8 @@ import TrackPanditPage from "./pages/TrackPanditPage";
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
 import LoginModal from "./components/Auth/LoginModal";
+import PanditPrivacyPolicy from "./pages/PanditPrivacyPolicy";
+import TermsAndConditionPandit from "./pages/TermsAndConditionPandit";
 
 function App() {
   return (
@@ -25,6 +27,9 @@ function App() {
         <Route path="/" element={<LandingPage/>} />
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />
         <Route path="/termsandconditions" element={<TermsAndConditions />} />
+        <Route path="/privacypolicy-pandit" element={<PanditPrivacyPolicy />} />
+        <Route path="/termsandconditions-pandit" element={<TermsAndConditionPandit />} />
+
         <Route path="/delete-my-account" element={<DeleteMyAccount />} />
         <Route path="/booking-flow" element={<BookingFlow />} />
         <Route path="/join-as-panditji" element={<Home />} />

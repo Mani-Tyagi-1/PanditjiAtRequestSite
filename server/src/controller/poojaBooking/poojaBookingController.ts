@@ -8,6 +8,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
+import { sendWhatsappTemplateMessage } from '../../utils/whatsapp';
 
 // --- helpers ---
 const toAlias10 = (v?: string | number) =>
@@ -410,6 +411,36 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     } catch (pushErr) {
       console.error('Push send/schedule failed:', pushErr);
     }
+    // ----------------------------------------------------------
+
+    // 🟢 WhatsApp booking confirmation (fire-and-forget)
+    void (async () => {
+      try {
+        const rawPhone = String((finalBooking as any).userPhone || '');
+        const phone = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
+
+        if (rawPhone.length < 10) return;
+
+        const userName  = (finalBooking as any).userName  || 'Devotee';
+        const poojaName = finalBooking.poojaNameEng        || 'Puja';
+        const bookingId = String((finalBooking as any)._id);
+        const poojaDate = finalBooking.bookingDate
+          ? new Date(finalBooking.bookingDate).toLocaleDateString('en-IN', {
+              day: '2-digit', month: 'long', year: 'numeric',
+            })
+          : 'the scheduled date';
+
+        await sendWhatsappTemplateMessage({
+          to: phone,
+          templateName: 'puja_booking_confirmation',
+          headerImageUrl: 'https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png',
+          parameters: [userName, poojaName, poojaDate, bookingId],
+        });
+        console.log(`✅ [PujaBooking] WhatsApp confirmation sent to ${phone}`);
+      } catch (e: any) {
+        console.error('❌ [PujaBooking] WhatsApp failed:', e?.response?.data || e?.message || e);
+      }
+    })();
     // ----------------------------------------------------------
 
     res.status(201).json({

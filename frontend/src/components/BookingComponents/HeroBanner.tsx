@@ -5,6 +5,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import axios from "axios";
 import AppDownloadTopBar from "./AppDownloadTopBar";
+import LoginModal from "../Auth/LoginModal";
+import { useAuth } from "../../context/AuthContext";
 
 const navLinks = [
     { label: "Profile", href: "/profile", icon: "👤" },
@@ -50,68 +52,20 @@ const HeroSection = () => {
         setSearchResults(filtered.slice(0, 6)); // Limit to 6 results
     }, [searchQuery, allPujas]);
 
-    // Login State
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const [loginStep, setLoginStep] = useState<1 | 2>(1);
-    const [phone, setPhone] = useState("");
-    const [otp, setOtp] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    useEffect(() => {
-        const token = localStorage.getItem('user_token');
-        const userData = localStorage.getItem('user_data');
-        if (token && userData) {
-            setIsLoggedIn(true);
-        }
-    }, []);
-
-    const handleSendOtp = async () => {
-        if (phone.length !== 10) return alert("Please enter a valid 10-digit number.");
-        setIsSubmitting(true);
-        try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-            await axios.post(`${apiUrl}/send-otp`, { phone, isNotifyOkay: true });
-            setLoginStep(2);
-        } catch (err) {
-            console.error(err);
-            alert("Failed to send OTP. Try again.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleVerifyOtp = async () => {
-        if (!otp) return alert("Please enter the OTP.");
-        setIsSubmitting(true);
-        try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-            const { data } = await axios.post(`${apiUrl}/verify-otp`, { phone, otp });
-            localStorage.setItem('user_token', data.token);
-            localStorage.setItem('user_data', JSON.stringify(data.user));
-            setIsLoggedIn(true);
-            setIsLoginModalOpen(false);
-            setLoginStep(1);
-            setPhone("");
-            setOtp("");
-        } catch (err) {
-            console.error(err);
-            alert("Incorrect or expired OTP.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    // Login State (via AuthContext)
+    const { user, openLoginModal } = useAuth();
+    const isLoggedIn = !!user;
 
     // Prevent scrolling when menu is open
     useEffect(() => {
-        if (!isMenuOpen && !isLoginModalOpen) {
+        if (!isMenuOpen) {
             document.body.style.overflow = "unset";
             return;
         }
         const prev = document.body.style.overflow;
         document.body.style.overflow = "hidden";
         return () => { document.body.style.overflow = prev; };
-    }, [isMenuOpen, isLoginModalOpen]);
+    }, [isMenuOpen]);
 
     return (
         <>
@@ -322,7 +276,7 @@ const HeroSection = () => {
                                     {!isLoggedIn && (
                                         <li>
                                             <button
-                                                onClick={() => { setIsMenuOpen(false); setIsLoginModalOpen(true); }}
+                                                onClick={() => { setIsMenuOpen(false); openLoginModal(); }}
                                                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 transition-colors group"
                                             >
                                                 <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 group-hover:bg-orange-100 text-base transition-colors flex-shrink-0">🔐</span>
@@ -393,116 +347,7 @@ const HeroSection = () => {
                 )}
             </AnimatePresence>
 
-            {/* Login Modal Overlay */}
-            <AnimatePresence>
-                {isLoginModalOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center px-4"
-                            onClick={() => {
-                                if (!isSubmitting) setIsLoginModalOpen(false);
-                            }}
-                        >
-                            <motion.div
-                                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                                animate={{ scale: 1, opacity: 1, y: 0 }}
-                                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col"
-                            >
-                                {/* Modal Header */}
-                                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-orange-50 to-red-50">
-                                    <h3 className="font-bold text-gray-800 text-lg">
-                                        {loginStep === 1 ? "Login / Register" : "Verify OTP"}
-                                    </h3>
-                                    <button
-                                        onClick={() => !isSubmitting && setIsLoginModalOpen(false)}
-                                        className="p-1 rounded-full text-gray-400 hover:bg-white hover:text-gray-600 transition-colors"
-                                        disabled={isSubmitting}
-                                    >
-                                        <FaTimes />
-                                    </button>
-                                </div>
-
-                                {/* Modal Body */}
-                                <div className="p-6">
-                                    {loginStep === 1 ? (
-                                        <>
-                                            <p className="text-sm text-gray-500 mb-4">
-                                                Enter your mobile number to get an OTP.
-                                            </p>
-                                            <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}>
-                                                <div className="relative mb-5">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">+91</span>
-                                                    <input
-                                                        type="tel"
-                                                        maxLength={10}
-                                                        value={phone}
-                                                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                                                        placeholder="Mobile Number"
-                                                        className="w-full pl-11 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-gray-800 font-medium"
-                                                        disabled={isSubmitting}
-                                                    />
-                                                </div>
-                                                <button
-                                                    type="submit"
-                                                    disabled={isSubmitting || phone.length !== 10}
-                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center"
-                                                >
-                                                    {isSubmitting ? (
-                                                        <span className="w-5 h-5 border-2 border-white/50 border-t-transparent rounded-full animate-spin"></span>
-                                                    ) : "Send OTP"}
-                                                </button>
-                                            </form>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-sm text-gray-500 mb-4">
-                                                We sent a verification code to <span className="font-bold text-gray-800">+91 {phone}</span>
-                                            </p>
-                                            <form onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(); }}>
-                                                <div className="mb-5">
-                                                    <input
-                                                        type="text"
-                                                        maxLength={4}
-                                                        value={otp}
-                                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                                        placeholder="Enter OTP"
-                                                        className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-center text-lg tracking-[0.5em] font-bold text-gray-800"
-                                                        disabled={isSubmitting}
-                                                    />
-                                                </div>
-                                                <button
-                                                    type="submit"
-                                                    disabled={isSubmitting || otp.length < 4}
-                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2.5 rounded-lg shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center mb-3"
-                                                >
-                                                    {isSubmitting ? (
-                                                        <span className="w-5 h-5 border-2 border-white/50 border-t-transparent rounded-full animate-spin"></span>
-                                                    ) : "Verify & Login"}
-                                                </button>
-                                            </form>
-
-                                            <div className="text-center">
-                                                <button
-                                                    onClick={() => setLoginStep(1)}
-                                                    className="text-sm text-gray-500 hover:text-orange-600 underline"
-                                                    disabled={isSubmitting}
-                                                >
-                                                    Change Number?
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
+            <LoginModal />
         </>
     );
 };

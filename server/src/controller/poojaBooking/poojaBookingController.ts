@@ -427,7 +427,7 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
         await sendWhatsappTemplateMessage({
           to: phone,
           templateName: 'bookingconfirmed_pjar',
-          headerImageUrl: 'https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/chadhavathankyou.png',
+          headerImageUrl: 'https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/THANYOU%20(1).png',
           parameters: [poojaName, poojaMode],
         });
         console.log(`✅ [PujaBooking] WhatsApp confirmation sent to ${phone}`);

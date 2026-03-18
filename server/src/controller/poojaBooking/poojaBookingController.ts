@@ -421,20 +421,14 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
 
         if (rawPhone.length < 10) return;
 
-        const userName  = (finalBooking as any).userName  || 'Devotee';
-        const poojaName = finalBooking.poojaNameEng        || 'Puja';
-        const bookingId = String((finalBooking as any)._id);
-        const poojaDate = finalBooking.bookingDate
-          ? new Date(finalBooking.bookingDate).toLocaleDateString('en-IN', {
-              day: '2-digit', month: 'long', year: 'numeric',
-            })
-          : 'the scheduled date';
+        const poojaName = finalBooking.poojaNameEng || 'Puja';
+        const poojaMode = finalBooking.poojaMode   || 'offline';
 
         await sendWhatsappTemplateMessage({
           to: phone,
-          templateName: 'puja_booking_confirmation',
-          headerImageUrl: 'https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png',
-          parameters: [userName, poojaName, poojaDate, bookingId],
+          templateName: 'bookingconfirmed_pjar',
+          headerImageUrl: 'https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/chadhavathankyou.png',
+          parameters: [poojaName, poojaMode],
         });
         console.log(`✅ [PujaBooking] WhatsApp confirmation sent to ${phone}`);
       } catch (e: any) {

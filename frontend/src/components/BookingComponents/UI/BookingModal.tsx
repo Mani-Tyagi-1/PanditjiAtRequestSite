@@ -375,7 +375,6 @@ export default function BookingModal({
   const [couponCode, setCouponCode] = useState("");
   const [couponUsage, setCouponUsage] = useState<any[]>([]);
   const [couponDiscountVal, setCouponDiscountVal] = useState(0);
-  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const fetchCoupons = async () => {
     setIsLoadingCoupons(true);
@@ -411,7 +410,7 @@ export default function BookingModal({
     }
   };
 
-  const handleApplyCoupon = async (coupon: any) => {
+  const handleApplyCoupon = (coupon: any) => {
     if (!user) {
       triggerAlert("Login Required", "Please login to apply coupons.", "info");
       return;
@@ -422,38 +421,21 @@ export default function BookingModal({
       return;
     }
 
-    setIsApplyingCoupon(true);
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-      const response = await fetch(`${apiUrl}/config/apply-coupon-proxy`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?._id || user?.id,
-          phone: contactNumber || (user as any).phone || 0,
-          appKey: "par",
-          couponCode: coupon.code,
-          orderAmount: currentPoojaPrice
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setAppliedCoupon(coupon);
-        setCouponCode(coupon.code || "");
-        setCouponDiscountVal(data.discount || 0);
-        setIsCouponsModalOpen(false);
-        triggerAlert("Coupon Applied", `Successfully applied: ${coupon.code}. Discount: ₹${data.discount}`, "success");
-      } else {
-        triggerAlert("Invalid Coupon", data.message || "Failed to apply this coupon.", "error");
-      }
-    } catch (err) {
-      console.error("Error applying coupon:", err);
-      triggerAlert("Error", "Something went wrong while applying the coupon.", "error");
-    } finally {
-      setIsApplyingCoupon(false);
+    // Calculate discount locally — coupon will be consumed via API only after successful payment
+    let discount = 0;
+    if (coupon.discountType === 'PERCENT') {
+      discount = (currentPoojaPrice * (coupon.discountValue || 0)) / 100;
+      if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
+    } else {
+      discount = coupon.discountValue || 0;
     }
+    discount = Math.min(discount, currentPoojaPrice);
+
+    setAppliedCoupon(coupon);
+    setCouponCode(coupon.code || "");
+    setCouponDiscountVal(discount);
+    setIsCouponsModalOpen(false);
+    triggerAlert("Coupon Applied", `Coupon ${coupon.code} applied. You save ₹${discount}. Discount will be confirmed on payment.`, "success");
   };
 
   const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
@@ -950,6 +932,21 @@ export default function BookingModal({
 
             if (!compRes.ok) {
               throw new Error("Payment verification failed on server");
+            }
+
+            // Consume coupon only after successful payment
+            if (appliedCoupon) {
+              fetch(`${apiUrl}/config/apply-coupon-proxy`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: user?._id || (user as any)?.id,
+                  phone: contactNumber || (user as any)?.phone || 0,
+                  appKey: "par",
+                  couponCode: appliedCoupon.code,
+                  orderAmount: currentPoojaPrice,
+                }),
+              }).catch((err) => console.error("Coupon apply after payment failed:", err));
             }
 
             setShowSuccessModal(true);
@@ -1785,14 +1782,14 @@ export default function BookingModal({
                         </div>
 
                         <button
-                          onClick={() => !isUsed && !isApplyingCoupon && handleApplyCoupon(coupon)}
-                          disabled={isUsed || isApplyingCoupon}
+                          onClick={() => !isUsed && handleApplyCoupon(coupon)}
+                          disabled={isUsed}
                           className={`w-full font-bold py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] shadow-sm ${isUsed
                               ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none"
-                              : (isApplyingCoupon ? "bg-orange-300" : "bg-orange-500 hover:bg-orange-600") + " text-white shadow-orange-100"
+                              : "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
                             }`}
                         >
-                          {isUsed ? "Coupon Used" : (isApplyingCoupon ? "Applying..." : "Apply Coupon")}
+                          {isUsed ? "Coupon Used" : "Apply Coupon"}
                         </button>
                       </div>
                     </div>

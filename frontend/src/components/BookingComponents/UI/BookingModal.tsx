@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { encryptPayload, decryptData } from "../../../utils/encryption";
 import {
@@ -317,6 +318,7 @@ export default function BookingModal({
   onClose,
   pooja,
 }: BookingModalProps) {
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"online" | "offline">(
     pooja?.poojaMode === "offline" ? "offline" : "online"
@@ -381,14 +383,12 @@ export default function BookingModal({
     try {
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
-      // Fetch available coupons
       const response = await fetch(`${apiUrl}/config/fetch-coupons-proxy`);
       const data = await response.json();
 
       const allCoupons = data.coupons || [];
       const activeCoupons = allCoupons.filter((c: any) => c.isActive);
 
-      // If user is logged in, check their coupon usage
       if (user?._id || user?.id) {
         const userId = user?._id || user?.id;
         try {
@@ -421,7 +421,6 @@ export default function BookingModal({
       return;
     }
 
-    // Calculate discount locally — coupon will be consumed via API only after successful payment
     let discount = 0;
     if (coupon.discountType === 'PERCENT') {
       discount = (currentPoojaPrice * (coupon.discountValue || 0)) / 100;
@@ -532,7 +531,6 @@ export default function BookingModal({
 
           updateAddressFieldsFromGoogleAddress(result.address_components || []);
 
-          // Optional: if street is still empty, use formatted address as fallback
           if (!street && result.formatted_address) {
             setStreet(result.formatted_address);
           }
@@ -707,6 +705,24 @@ export default function BookingModal({
     };
   }, [isOpen, user]);
 
+  useEffect(() => {
+    let redirectTimer: number | undefined;
+
+    if (showSuccessModal) {
+      redirectTimer = window.setTimeout(() => {
+        setShowSuccessModal(false);
+        onClose();
+        navigate("/my-bookings");
+      }, 1800);
+    }
+
+    return () => {
+      if (redirectTimer) {
+        window.clearTimeout(redirectTimer);
+      }
+    };
+  }, [showSuccessModal, navigate, onClose]);
+
   const samagriCharge = pooja?.samagriPrice || 0;
   const panditDakshina = pooja?.panditDakshina || 0;
   const currentPoojaPrice = mode === "online" ? (pooja?.poojaPriceOnline || 0) : (pooja?.poojaPriceOffline || 0);
@@ -715,7 +731,6 @@ export default function BookingModal({
 
   let couponDiscount = 0;
   if (appliedCoupon) {
-    // Use the server-validated discount if available, otherwise fallback to local calculation
     couponDiscount = couponDiscountVal > 0 ? couponDiscountVal : 0;
 
     if (couponDiscountVal === 0) {
@@ -758,7 +773,6 @@ export default function BookingModal({
 
     setIsProcessing(true);
 
-    // Track checkout initiation
     if (window.fbq) {
       window.fbq("track", "InitiateCheckout", {
         content_ids: [pooja?._id || pooja?.id],
@@ -769,7 +783,7 @@ export default function BookingModal({
         currency: "INR",
       });
     }
-    // Also dispatch custom event as requested
+
     window.dispatchEvent(new CustomEvent("InitiateCheckout", {
       detail: {
         poojaId: pooja?._id || pooja?.id,
@@ -807,7 +821,6 @@ export default function BookingModal({
             return;
           }
 
-          // --- Automatically Save Address if it's new ---
           if (!selectedAddressId && user) {
             try {
               const addressPayload = {
@@ -827,7 +840,6 @@ export default function BookingModal({
 
               const encryptedAddress = encryptPayload(addressPayload);
 
-              // We'll fire and forget or just log errors, don't block booking for this
               fetch(`${apiUrl}/addresses`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -934,7 +946,6 @@ export default function BookingModal({
               throw new Error("Payment verification failed on server");
             }
 
-            // Consume coupon only after successful payment
             if (appliedCoupon) {
               fetch(`${apiUrl}/config/apply-coupon-proxy`, {
                 method: "POST",
@@ -951,7 +962,6 @@ export default function BookingModal({
 
             setShowSuccessModal(true);
 
-            // Track successful purchase
             if (window.fbq) {
               window.fbq("track", "Purchase", {
                 content_ids: [pooja?._id || pooja?.id],
@@ -1054,7 +1064,6 @@ export default function BookingModal({
           className={`relative w-full sm:max-w-md h-[95vh] sm:h-[85vh] bg-[#FFFAF3] sm:rounded-2xl rounded-t-2xl flex flex-col overflow-hidden ${isOpen ? "slide-up" : "slide-down"
             }`}
         >
-          {/* ── Gradient Header ── */}
           <div className="relative px-4 pt-4 pb-4 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 shrink-0 shadow-sm">
             <button
               onClick={onClose}
@@ -1082,7 +1091,6 @@ export default function BookingModal({
             className="flex-1 overflow-y-auto pb-6 bg-[#FFFAF3]"
           >
             <div className="px-4 py-4 ">
-              {/* Mode info modal */}
               {modeInfoType && (
                 <div className="fixed inset-0 z-[300] flex items-end justify-center" onClick={() => setModeInfoType(null)}>
                   <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -1090,7 +1098,6 @@ export default function BookingModal({
                     className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl overflow-hidden slide-up"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {/* Close */}
                     <button
                       onClick={() => setModeInfoType(null)}
                       className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors"
@@ -1100,7 +1107,6 @@ export default function BookingModal({
                       </svg>
                     </button>
 
-                    {/* Pandit image */}
                     <div className="flex justify-center pt-8 pb-2">
                       <img
                         src="https://png.pngtree.com/png-vector/20250731/ourmid/pngtree-indian-pujari-priest-cartoon-illustration-vector-png-image_16949581.webp"
@@ -1110,7 +1116,6 @@ export default function BookingModal({
                       />
                     </div>
 
-                    {/* Title */}
                     <div className="text-center px-6 pb-4">
                       <h3 className="text-2xl font-bold text-stone-800 mb-1"
                         style={{ fontFamily: "'Cormorant Garamond', serif" }}>
@@ -1125,7 +1130,6 @@ export default function BookingModal({
                       </p>
                     </div>
 
-                    {/* Points */}
                     <div className="px-6 pb-6 space-y-4">
                       {(modeInfoType === "online" ? [
                         { icon: "?", text: "The puja will be performed in online mode by our experienced Pandit Ji." },
@@ -1155,7 +1159,6 @@ export default function BookingModal({
                       ))}
                     </div>
 
-                    {/* CTA */}
                     <div className="px-6 pb-8">
                       <button
                         onClick={() => setModeInfoType(null)}
@@ -1601,7 +1604,7 @@ export default function BookingModal({
 
               <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
                 <p className="text-sm text-orange-800 font-medium">
-                  One of our verified Panditji will accept your request shortly. You'll receive a notification once assigned.
+                  Redirecting you to My Bookings...
                 </p>
               </div>
             </div>
@@ -1610,10 +1613,11 @@ export default function BookingModal({
               onClick={() => {
                 setShowSuccessModal(false);
                 onClose();
+                navigate("/my-bookings");
               }}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 px-6 rounded-2xl transition-all shadow-lg active:scale-[0.98]"
             >
-              Great, I'll Wait!
+              Go to My Bookings
             </button>
 
             <p className="mt-4 text-[11px] text-stone-400 font-medium uppercase tracking-widest">

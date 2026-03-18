@@ -118,7 +118,7 @@ const ProfilePage: React.FC = () => {
             const storedUser = JSON.parse(userDataString);
             const userId = storedUser._id;
 
-            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
             const response = await axios.get(`${apiUrl}/profile/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -161,7 +161,7 @@ const ProfilePage: React.FC = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem("user_token");
-            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
             // Prepare payload
             const payload = {
@@ -228,277 +228,277 @@ const ProfilePage: React.FC = () => {
         <div className="min-h-screen   font-sans flex justify-center">
             <div className="w-full max-w-md bg-white min-h-screen shadow-sm relative pb-24">
                 <AnimatePresence mode="wait">
-                {mode === "view" ? (
-                    <motion.div
-                        key="view"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        className="px-4"
-                    >
-                        {/* Navigation Header */}
-                        <div className="flex items-center gap-4 pt-6 pb-2">
-                            <button
-                                onClick={() => navigate("/landing-page")}
-                                className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000]"
-                            >
-                                <ChevronLeft className="w-6 h-6" />
-                            </button>
-                            <h1 className="text-xl font-bold text-gray-800">Profile</h1>
-                        </div>
+                    {mode === "view" ? (
+                        <motion.div
+                            key="view"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="px-4"
+                        >
+                            {/* Navigation Header */}
+                            <div className="flex items-center gap-4 pt-6 pb-2">
+                                <button
+                                    onClick={() => navigate("/landing-page")}
+                                    className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000]"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                                <h1 className="text-xl font-bold text-gray-800">Profile</h1>
+                            </div>
 
-                        {/* Header Profile Card */}
-                        <div className="mt-4 mb-8">
-                            <div className="relative bg-[#FFEDE0] rounded-[32px] p-6 pt-10 overflow-hidden border border-orange-100 shadow-sm">
-                                {/* Decorative circles */}
-                                <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/30 rounded-full -translate-x-12 -translate-y-12" />
+                            {/* Header Profile Card */}
+                            <div className="mt-4 mb-8">
+                                <div className="relative bg-[#FFEDE0] rounded-[32px] p-6 pt-10 overflow-hidden border border-orange-100 shadow-sm">
+                                    {/* Decorative circles */}
+                                    <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/30 rounded-full -translate-x-12 -translate-y-12" />
 
-                                <div className="flex items-center gap-6 relative z-10">
-                                    <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-orange-100">
-                                        <img
-                                            src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
-                                            alt="Profile"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h2 className="text-2xl font-bold text-gray-800 leading-tight">
-                                            {user?.given_name} {user?.family_name}
-                                        </h2>
-                                        <div className="flex items-center gap-1 mt-1 text-gray-500 mb-4">
-                                            <Phone className="w-3.5 h-3.5" />
-                                            <span className="text-sm">+91 {user?.phone}</span>
+                                    <div className="flex items-center gap-6 relative z-10">
+                                        <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-orange-100">
+                                            <img
+                                                src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
+                                                alt="Profile"
+                                                className="w-full h-full object-cover"
+                                            />
                                         </div>
-                                        <button
-                                            onClick={() => setMode("edit")}
-                                            className="flex items-center gap-2 bg-[#FF7000] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-200 active:scale-95 transition-all"
-                                        >
-                                            <Edit3 className="w-4 h-4" />
-                                            Edit Profile
-                                        </button>
+                                        <div className="flex-1">
+                                            <h2 className="text-2xl font-bold text-gray-800 leading-tight">
+                                                {user?.given_name} {user?.family_name}
+                                            </h2>
+                                            <div className="flex items-center gap-1 mt-1 text-gray-500 mb-4">
+                                                <Phone className="w-3.5 h-3.5" />
+                                                <span className="text-sm">+91 {user?.phone}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => setMode("edit")}
+                                                className="flex items-center gap-2 bg-[#FF7000] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-200 active:scale-95 transition-all"
+                                            >
+                                                <Edit3 className="w-4 h-4" />
+                                                Edit Profile
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Menu Items */}
-                        <div className="space-y-1">
-                            <ProfileMenuItem
-                                icon={User}
-                                title="My Profile"
-                                subtitle="Tap to open"
-                                onClick={() => setMode("edit")}
-                            />
-                            {/* <ProfileMenuItem
+                            {/* Menu Items */}
+                            <div className="space-y-1">
+                                <ProfileMenuItem
+                                    icon={User}
+                                    title="My Profile"
+                                    subtitle="Tap to open"
+                                    onClick={() => setMode("edit")}
+                                />
+                                {/* <ProfileMenuItem
                                 icon={Users}
                                 title="Family"
                                 subtitle="Tap to open"
                                 onClick={() => { }}
                             /> */}
-                            <ProfileMenuItem
-                                icon={Calendar}
-                                title="My Puja Booking"
-                                subtitle="Tap to open"
-                                onClick={() => navigate("/my-bookings")}
-                            />
-                            {/* <ProfileMenuItem
+                                <ProfileMenuItem
+                                    icon={Calendar}
+                                    title="My Puja Booking"
+                                    subtitle="Tap to open"
+                                    onClick={() => navigate("/my-bookings")}
+                                />
+                                {/* <ProfileMenuItem
                                 icon={Info}
                                 title="About Us"
                                 subtitle="Tap to open"
                                 onClick={() => navigate("/about")}
                             /> */}
-                            {/* <ProfileMenuItem
+                                {/* <ProfileMenuItem
                                 icon={HelpCircle}
                                 title="FAQs & Help Center"
                                 subtitle="Tap to open"
                                 onClick={() => navigate("/help")}
                             /> */}
-                        </div>
-
-                        {/* Logout Section */}
-                        <div className="mt-12 flex flex-col items-center gap-6">
-                            <button
-                                onClick={handleLogout}
-                                className="flex items-center gap-2 px-8 py-3 rounded-full border-2 border-red-100 text-red-500 font-bold bg-white shadow-sm active:scale-95 transition-all"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                Log Out
-                            </button>
-
-                            <div className="flex flex-col items-center opacity-50 pointer-events-none scale-90">
-                                <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png" alt="Emblem" className="w-20 h-20 object-contain mb-2" />
-                                <span className="text-xs font-semibold text-gray-400">ver 2.41</span>
                             </div>
-                        </div>
-                    </motion.div>
-                ) : (
-                            <motion.div
-                                key="edit"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="min-h-screen bg-[#FFF8F3]"
-                            >
-                                {/* Compact Header */}
-                                <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-14 relative">
-                                    <div className="flex items-center gap-3 text-white mb-0">
-                                        <button
-                                            onClick={() => setMode("view")}
-                                            className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
-                                            aria-label="Back to Profile"
-                                        >
-                                            <ChevronLeft className="w-5 h-5" />
-                                        </button>
+
+                            {/* Logout Section */}
+                            <div className="mt-12 flex flex-col items-center gap-6">
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-2 px-8 py-3 rounded-full border-2 border-red-100 text-red-500 font-bold bg-white shadow-sm active:scale-95 transition-all"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                    Log Out
+                                </button>
+
+                                <div className="flex flex-col items-center opacity-50 pointer-events-none scale-90">
+                                    <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png" alt="Emblem" className="w-20 h-20 object-contain mb-2" />
+                                    <span className="text-xs font-semibold text-gray-400">ver 2.41</span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="edit"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="min-h-screen bg-[#FFF8F3]"
+                        >
+                            {/* Compact Header */}
+                            <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-14 relative">
+                                <div className="flex items-center gap-3 text-white mb-0">
+                                    <button
+                                        onClick={() => setMode("view")}
+                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                        aria-label="Back to Profile"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <div>
+                                        <h1 className="text-lg font-bold leading-tight">Edit Profile</h1>
+                                        <p className="text-white/75 text-[10px]">Personal & astro details for accurate Pooja</p>
+                                    </div>
+                                </div>
+
+                                {/* Profile card overlap */}
+                                <div className="absolute left-4 right-4 -bottom-10">
+                                    <div className="bg-white rounded-2xl px-5 py-3 flex items-center gap-4 shadow-lg border border-orange-100">
+                                        <div className="w-14 h-14 rounded-full border-2 border-orange-200 overflow-hidden bg-orange-50 flex-shrink-0">
+                                            <img
+                                                src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
+                                                alt="Profile"
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
                                         <div>
-                                            <h1 className="text-lg font-bold leading-tight">Edit Profile</h1>
-                                            <p className="text-white/75 text-[10px]">Personal & astro details for accurate Pooja</p>
+                                            <h3 className="text-gray-800 font-bold text-sm leading-tight">{user?.given_name} {user?.family_name}</h3>
+                                            <p className="text-orange-400 text-xs">{user?.phone ? `+91 ${user.phone}` : ""}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Form — desktop gets 2-col grid */}
+                            <div className="px-4 mt-12 pb-6 mx-auto">
+                                <div className="grid grid-cols-1 gap-3">
+
+                                    {/* Basic Details */}
+                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
+                                                <User className="w-3.5 h-3.5 text-[#FF7000]" />
+                                            </div>
+                                            <h2 className="font-bold text-gray-800 text-sm">Basic Details</h2>
+                                        </div>
+
+                                        <EditInput
+                                            label="First Name"
+                                            icon={Edit3}
+                                            value={formData.given_name}
+                                            onChange={(v: string) => setFormData({ ...formData, given_name: v })}
+                                        />
+                                        <EditInput
+                                            label="Last Name"
+                                            icon={Edit3}
+                                            value={formData.family_name}
+                                            onChange={(v: string) => setFormData({ ...formData, family_name: v })}
+                                        />
+                                        <EditInput
+                                            label="Mobile Number"
+                                            icon={Phone}
+                                            value={formData.phone}
+                                            disabled={true}
+                                        />
+                                        <p className="text-[10px] text-gray-400 -mt-2 mb-3 ml-1">Mobile number cannot be changed</p>
+
+                                        <div className="space-y-1.5">
+                                            <label className="block text-xs font-semibold text-gray-700 ml-1">Gender</label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {["Male", "Female", "Other"].map((g) => (
+                                                    <button
+                                                        key={g}
+                                                        onClick={() => setFormData({ ...formData, gender: g })}
+                                                        className={`flex items-center justify-center gap-1.5 py-2 rounded-xl border transition-all text-xs font-medium ${formData.gender === g ? 'bg-[#FF7000] border-[#FF7000] text-white shadow-md shadow-orange-100' : 'bg-orange-50/60 border-orange-100 text-gray-500 hover:border-orange-200'}`}
+                                                    >
+                                                        <User className="w-3 h-3" />
+                                                        {g}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* Profile card overlap */}
-                                    <div className="absolute left-4 right-4 -bottom-10">
-                                        <div className="bg-white rounded-2xl px-5 py-3 flex items-center gap-4 shadow-lg border border-orange-100">
-                                            <div className="w-14 h-14 rounded-full border-2 border-orange-200 overflow-hidden bg-orange-50 flex-shrink-0">
-                                                <img
-                                                    src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
-                                                    alt="Profile"
-                                                    className="w-full h-full object-cover"
-                                                />
+                                    {/* Astro Details */}
+                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
+                                                <Bookmark className="w-3.5 h-3.5 text-[#FF7000]" />
                                             </div>
-                                            <div>
-                                                <h3 className="text-gray-800 font-bold text-sm leading-tight">{user?.given_name} {user?.family_name}</h3>
-                                                <p className="text-orange-400 text-xs">{user?.phone ? `+91 ${user.phone}` : ""}</p>
+                                            <h2 className="font-bold text-gray-800 text-sm">Astro Details</h2>
+                                        </div>
+
+                                        <EditInput
+                                            label="Date of Birth"
+                                            icon={Calendar}
+                                            type="date"
+                                            value={formData.dob}
+                                            onChange={(v: string) => setFormData({ ...formData, dob: v })}
+                                        />
+                                        <EditInput
+                                            label="Birth Time"
+                                            icon={Clock}
+                                            type="time"
+                                            value={formData.birthTime}
+                                            onChange={(v: string) => setFormData({ ...formData, birthTime: v })}
+                                        />
+                                        <EditInput
+                                            label="Birth Place"
+                                            icon={MapPin}
+                                            placeholder="Enter birth city"
+                                            value={formData.birthPlace}
+                                            onChange={(v: string) => setFormData({ ...formData, birthPlace: v })}
+                                        />
+                                        <EditInput
+                                            label="Gotra"
+                                            icon={Bookmark}
+                                            placeholder="Enter your gotra"
+                                            value={formData.gotra}
+                                            onChange={(v: string) => setFormData({ ...formData, gotra: v })}
+                                        />
+                                        <p className="text-[10px] text-gray-400 mt-1 ml-1">Helps Purohit perform Sankalp correctly.</p>
+                                    </div>
+
+                                    {/* Contact */}
+                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
+                                                <Mail className="w-3.5 h-3.5 text-[#FF7000]" />
                                             </div>
+                                            <h2 className="font-bold text-gray-800 text-sm">Contact</h2>
+                                        </div>
+                                        <div>
+                                            <EditInput
+                                                label="Email"
+                                                icon={Mail}
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(v: string) => setFormData({ ...formData, email: v })}
+                                            />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Form — desktop gets 2-col grid */}
-                                <div className="px-4 mt-12 pb-6 mx-auto">
-                                    <div className="grid grid-cols-1 gap-3">
-
-                                        {/* Basic Details */}
-                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
-                                                    <User className="w-3.5 h-3.5 text-[#FF7000]" />
-                                                </div>
-                                                <h2 className="font-bold text-gray-800 text-sm">Basic Details</h2>
-                                            </div>
-
-                                            <EditInput
-                                                label="First Name"
-                                                icon={Edit3}
-                                                value={formData.given_name}
-                                                onChange={(v: string) => setFormData({ ...formData, given_name: v })}
-                                            />
-                                            <EditInput
-                                                label="Last Name"
-                                                icon={Edit3}
-                                                value={formData.family_name}
-                                                onChange={(v: string) => setFormData({ ...formData, family_name: v })}
-                                            />
-                                            <EditInput
-                                                label="Mobile Number"
-                                                icon={Phone}
-                                                value={formData.phone}
-                                                disabled={true}
-                                            />
-                                            <p className="text-[10px] text-gray-400 -mt-2 mb-3 ml-1">Mobile number cannot be changed</p>
-
-                                            <div className="space-y-1.5">
-                                                <label className="block text-xs font-semibold text-gray-700 ml-1">Gender</label>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    {["Male", "Female", "Other"].map((g) => (
-                                                        <button
-                                                            key={g}
-                                                            onClick={() => setFormData({ ...formData, gender: g })}
-                                                            className={`flex items-center justify-center gap-1.5 py-2 rounded-xl border transition-all text-xs font-medium ${formData.gender === g ? 'bg-[#FF7000] border-[#FF7000] text-white shadow-md shadow-orange-100' : 'bg-orange-50/60 border-orange-100 text-gray-500 hover:border-orange-200'}`}
-                                                        >
-                                                            <User className="w-3 h-3" />
-                                                            {g}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Astro Details */}
-                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
-                                                    <Bookmark className="w-3.5 h-3.5 text-[#FF7000]" />
-                                                </div>
-                                                <h2 className="font-bold text-gray-800 text-sm">Astro Details</h2>
-                                            </div>
-
-                                            <EditInput
-                                                label="Date of Birth"
-                                                icon={Calendar}
-                                                type="date"
-                                                value={formData.dob}
-                                                onChange={(v: string) => setFormData({ ...formData, dob: v })}
-                                            />
-                                            <EditInput
-                                                label="Birth Time"
-                                                icon={Clock}
-                                                type="time"
-                                                value={formData.birthTime}
-                                                onChange={(v: string) => setFormData({ ...formData, birthTime: v })}
-                                            />
-                                            <EditInput
-                                                label="Birth Place"
-                                                icon={MapPin}
-                                                placeholder="Enter birth city"
-                                                value={formData.birthPlace}
-                                                onChange={(v: string) => setFormData({ ...formData, birthPlace: v })}
-                                            />
-                                            <EditInput
-                                                label="Gotra"
-                                                icon={Bookmark}
-                                                placeholder="Enter your gotra"
-                                                value={formData.gotra}
-                                                onChange={(v: string) => setFormData({ ...formData, gotra: v })}
-                                            />
-                                            <p className="text-[10px] text-gray-400 mt-1 ml-1">Helps Purohit perform Sankalp correctly.</p>
-                                        </div>
-
-                                        {/* Contact */}
-                                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
-                                                    <Mail className="w-3.5 h-3.5 text-[#FF7000]" />
-                                                </div>
-                                                <h2 className="font-bold text-gray-800 text-sm">Contact</h2>
-                                            </div>
-                                            <div>
-                                                <EditInput
-                                                    label="Email"
-                                                    icon={Mail}
-                                                    type="email"
-                                                    value={formData.email}
-                                                    onChange={(v: string) => setFormData({ ...formData, email: v })}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Save Button + note */}
-                                    <div className="mt-3">
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={isSaving}
-                                            className="w-full bg-[#FF7000] hover:bg-[#e56200] disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 transition-all active:scale-[0.98] text-sm"
-                                        >
-                                            {isSaving ? "Saving..." : "Save Changes"}
-                                        </button>
-                                        <p className="text-center text-[10px] text-gray-400 mt-2">
-                                            Your details are used only to perform Pooja correctly and securely.
-                                        </p>
-                                    </div>
+                                {/* Save Button + note */}
+                                <div className="mt-3">
+                                    <button
+                                        onClick={handleSave}
+                                        disabled={isSaving}
+                                        className="w-full bg-[#FF7000] hover:bg-[#e56200] disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 transition-all active:scale-[0.98] text-sm"
+                                    >
+                                        {isSaving ? "Saving..." : "Save Changes"}
+                                    </button>
+                                    <p className="text-center text-[10px] text-gray-400 mt-2">
+                                        Your details are used only to perform Pooja correctly and securely.
+                                    </p>
                                 </div>
-                            </motion.div>
-                )}
+                            </div>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
 
                 {/* Logout Confirmation Modal */}
@@ -523,7 +523,7 @@ const ProfilePage: React.FC = () => {
                             >
                                 {/* Decorative elements */}
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-full translate-x-16 -translate-y-16" />
-                                
+
                                 <div className="relative z-10 flex flex-col items-center text-center">
                                     <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
                                         <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
@@ -563,8 +563,8 @@ const ProfilePage: React.FC = () => {
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                     <div className="bg-white rounded-[32px] p-8 max-w-sm w-full text-center shadow-2xl relative border border-stone-100 animate-in fade-in zoom-in duration-300">
                         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${alertConfig.type === 'error' ? 'bg-red-50 text-red-500' :
-                                alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
-                                    'bg-blue-50 text-blue-500'
+                            alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
+                                'bg-blue-50 text-blue-500'
                             }`}>
                             {alertConfig.type === 'error' && (
                                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -596,8 +596,8 @@ const ProfilePage: React.FC = () => {
                                 if (alertConfig.onConfirm) alertConfig.onConfirm();
                             }}
                             className={`w-full py-4 px-6 rounded-2xl font-bold text-white transition-all shadow-md active:scale-95 ${alertConfig.type === 'error' ? 'bg-red-500 hover:bg-red-600 shadow-red-100' :
-                                    alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
-                                        'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
+                                alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
+                                    'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
                                 }`}
                         >
                             Understand

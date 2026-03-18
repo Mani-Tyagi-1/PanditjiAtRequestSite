@@ -10,7 +10,7 @@ export default function RecomendedForYou() {
     useEffect(() => {
         const fetchPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+                const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
                 const response = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 const allPujas = response.data.poojas || [];
                 const filtered = allPujas.filter(
@@ -90,7 +90,7 @@ export default function RecomendedForYou() {
                                         image={puja.poojaCardImage}
                                         badge="Highly Recommended"
                                         badgeColor="bg-emerald-600"
-                                        onBook={() => {}}
+                                        onBook={() => { }}
                                     />
                                 </div>
                             ))}

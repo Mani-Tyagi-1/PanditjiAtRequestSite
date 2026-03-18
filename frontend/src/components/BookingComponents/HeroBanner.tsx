@@ -25,7 +25,7 @@ const HeroSection = () => {
     useEffect(() => {
         const fetchAllPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://192.168.0.188:8000/api';
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
                 const { data } = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 if (data && data.poojas) {
                     setAllPujas(data.poojas);
@@ -70,7 +70,7 @@ const HeroSection = () => {
         if (phone.length !== 10) return alert("Please enter a valid 10-digit number.");
         setIsSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://192.168.0.188:8000/api';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
             await axios.post(`${apiUrl}/send-otp`, { phone, isNotifyOkay: true });
             setLoginStep(2);
         } catch (err) {
@@ -85,7 +85,7 @@ const HeroSection = () => {
         if (!otp) return alert("Please enter the OTP.");
         setIsSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://192.168.0.188:8000/api';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
             const { data } = await axios.post(`${apiUrl}/verify-otp`, { phone, otp });
             localStorage.setItem('user_token', data.token);
             localStorage.setItem('user_data', JSON.stringify(data.user));
@@ -336,32 +336,32 @@ const HeroSection = () => {
                                     {navLinks
                                         .filter(link => isLoggedIn || (link.label !== "Profile" && link.label !== "My Bookings"))
                                         .map((link) => (
-                                        <li key={link.label}>
-                                            <Link
-                                                to={link.href}
-                                                onClick={() => setIsMenuOpen(false)}
-                                                className="flex items-center gap-3 px-3 py-3 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 transition-colors group"
-                                            >
-                                                <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 group-hover:bg-orange-100 text-base transition-colors flex-shrink-0">
-                                                    {link.icon}
-                                                </span>
-                                                <span className="text-sm font-medium">
-                                                    {link.label}
-                                                </span>
-                                                <svg
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                    className="w-4 h-4 ml-auto text-stone-300 group-hover:text-orange-400 transition-colors"
+                                            <li key={link.label}>
+                                                <Link
+                                                    to={link.href}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 transition-colors group"
                                                 >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </Link>
-                                        </li>
-                                    ))}
+                                                    <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-orange-50 group-hover:bg-orange-100 text-base transition-colors flex-shrink-0">
+                                                        {link.icon}
+                                                    </span>
+                                                    <span className="text-sm font-medium">
+                                                        {link.label}
+                                                    </span>
+                                                    <svg
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                        className="w-4 h-4 ml-auto text-stone-300 group-hover:text-orange-400 transition-colors"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </Link>
+                                            </li>
+                                        ))}
                                 </ul>
                             </nav>
 

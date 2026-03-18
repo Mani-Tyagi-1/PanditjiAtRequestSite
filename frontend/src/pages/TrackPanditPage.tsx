@@ -7,11 +7,11 @@ import {
   Polyline,
 } from "@react-google-maps/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ChevronLeft, 
-  Navigation, 
-  Map as MapIcon, 
-  Maximize, 
+import {
+  ChevronLeft,
+  Navigation,
+  Map as MapIcon,
+  Maximize,
   Focus,
   Loader2,
   Signal,
@@ -134,7 +134,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
   // Routing Logic
   const fetchRoute = useCallback(async (start: { lat: number, lng: number }, end: { lat: number, lng: number }) => {
     // console.log("[Tracking] Attempting route fetch:", start, "->", end);
-    
+
     if (!isLoaded) {
       console.log("[Tracking] API not yet isLoaded... waiting.");
       return;
@@ -144,10 +144,10 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
       console.warn("[Tracking] window.google.maps.DirectionsService not found. API might still be initializing.");
       return;
     }
-    
+
     setRouteLoading(true);
     const service = new window.google.maps.DirectionsService();
-    
+
     try {
       const result = await new Promise<google.maps.DirectionsResult>((resolve, reject) => {
         service.route({
@@ -171,7 +171,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
       if (result.routes[0]) {
         const route = result.routes[0];
         const leg = route.legs[0];
-        
+
         // console.log("[Tracking] Leg data:", { 
         //   dist: leg.distance?.text, 
         //   dur: leg.duration?.text 
@@ -179,12 +179,12 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
 
         setEtaSeconds(leg.duration?.value ?? null);
         setDistanceMeters(leg.distance?.value ?? null);
-        
+
         const path = route.overview_path.map(p => ({
           lat: p.lat(),
           lng: p.lng(),
         }));
-        
+
         setRouteCoords(path);
 
         if (!didFitRef.current && map) {
@@ -213,7 +213,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
 
       const baseCallId = crypto.randomUUID();
       const callId = `${baseCallId}_AC`;
-      const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
       await axios.post(`${apiUrl}/calls/invite`, {
         fromUserId: user._id,
@@ -304,10 +304,10 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
           </motion.button>
 
           <div className="flex flex-col items-end gap-2">
-            <motion.div 
-               initial={{ opacity: 0, y: -20 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 pointer-events-auto"
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 pointer-events-auto"
             >
               {connected ? (
                 <Signal className="w-4 h-4 text-green-400" />
@@ -318,9 +318,9 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
                 {connected ? "Live Connection" : "Reconnecting..."}
               </span>
             </motion.div>
-            
+
             {errorStatus && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="px-4 py-2 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase tracking-tighter"
@@ -357,19 +357,19 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
                 <p className="text-xl font-black text-white">{formatDistance(distanceMeters ?? undefined)}</p>
               </div>
             </div>
-            
+
             <div className="flex-shrink-0">
-               {routeLoading ? (
-                 <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
-               ) : (
-                 <motion.div 
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center"
-                 >
-                   <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
-                 </motion.div>
-               )}
+              {routeLoading ? (
+                <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
+              ) : (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center"
+                >
+                  <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.8)]" />
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
@@ -478,28 +478,28 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
         >
           {/* Route */}
           {routeCoords.length > 0 && (
-              <Polyline
-                path={routeCoords}
-                options={{
-                  strokeColor: "#F97316",
-                  strokeOpacity: 0.3,
-                  strokeWeight: 14,
-                }}
-              />
+            <Polyline
+              path={routeCoords}
+              options={{
+                strokeColor: "#F97316",
+                strokeOpacity: 0.3,
+                strokeWeight: 14,
+              }}
+            />
           )}
           {routeCoords.length > 0 && (
-              <Polyline
-                path={routeCoords}
-                options={{
-                  strokeColor: "#F97316",
-                  strokeOpacity: 1,
-                  strokeWeight: 8,
-                }}
-              />
+            <Polyline
+              path={routeCoords}
+              options={{
+                strokeColor: "#F97316",
+                strokeOpacity: 1,
+                strokeWeight: 8,
+              }}
+            />
           )}
 
           {/* Destination Marker */}
-          <MarkerF 
+          <MarkerF
             position={destination}
             icon={{
               path: "M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z", // House Shape
@@ -544,41 +544,40 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
       {/* Bottom Controls */}
       <div className="absolute bottom-8 left-0 right-0 z-10 px-4 md:px-8 pointer-events-none">
         <div className="max-w-md mx-auto flex items-end justify-between gap-4">
-          
-          <div className="flex flex-col gap-3 pointer-events-auto">
-             <AnimatePresence>
-               {!follow && (
-                 <motion.button
-                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                    onClick={() => setFollow(true)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-orange-500 text-white font-bold shadow-xl shadow-orange-500/20 hover:bg-orange-600 transition-all active:scale-95"
-                 >
-                   <Focus className="w-5 h-5" />
-                   Recenter
-                 </motion.button>
-               )}
-             </AnimatePresence>
 
-             <button
-               onClick={() => setFollow(!follow)}
-               className={`flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-md border border-white/10 font-bold transition-all active:scale-95 ${
-                 follow 
-                 ? "bg-white text-black" 
-                 : "bg-black/40 text-white"
-               }`}
-             >
-               <Navigation className={`w-5 h-5 ${follow ? "animate-pulse" : ""}`} />
-               {follow ? "Following" : "Auto-follow Off"}
-             </button>
+          <div className="flex flex-col gap-3 pointer-events-auto">
+            <AnimatePresence>
+              {!follow && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                  onClick={() => setFollow(true)}
+                  className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-orange-500 text-white font-bold shadow-xl shadow-orange-500/20 hover:bg-orange-600 transition-all active:scale-95"
+                >
+                  <Focus className="w-5 h-5" />
+                  Recenter
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            <button
+              onClick={() => setFollow(!follow)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-md border border-white/10 font-bold transition-all active:scale-95 ${follow
+                  ? "bg-white text-black"
+                  : "bg-black/40 text-white"
+                }`}
+            >
+              <Navigation className={`w-5 h-5 ${follow ? "animate-pulse" : ""}`} />
+              {follow ? "Following" : "Auto-follow Off"}
+            </button>
           </div>
 
           <div className="flex gap-3 pointer-events-auto">
             <button
-               onClick={handleCall}
-               className="w-14 h-14 flex items-center justify-center rounded-2xl bg-green-600 text-white shadow-xl shadow-green-500/20 hover:bg-green-700 transition-all active:scale-95"
-               title="Call Panditji"
+              onClick={handleCall}
+              className="w-14 h-14 flex items-center justify-center rounded-2xl bg-green-600 text-white shadow-xl shadow-green-500/20 hover:bg-green-700 transition-all active:scale-95"
+              title="Call Panditji"
             >
               <Phone className="w-6 h-6 fill-white" />
             </button>
@@ -590,9 +589,9 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
               <Maximize className="w-6 h-6" />
             </button>
             <button
-               onClick={() => map?.setMapTypeId(window.google.maps.MapTypeId.HYBRID)}
-               className="w-14 h-14 flex items-center justify-center rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white hover:bg-black/60 transition-all active:scale-95"
-               title="Satellite View"
+              onClick={() => map?.setMapTypeId(window.google.maps.MapTypeId.HYBRID)}
+              className="w-14 h-14 flex items-center justify-center rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white hover:bg-black/60 transition-all active:scale-95"
+              title="Satellite View"
             >
               <MapIcon className="w-6 h-6" />
             </button>
@@ -600,7 +599,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
 
         </div>
       </div>
-      
+
       {/* Visual Enhancers - Vignette */}
       <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_150px_rgba(0,0,0,0.4)]" />
 
@@ -609,8 +608,8 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full text-center shadow-2xl relative border border-stone-100 animate-in fade-in zoom-in duration-300">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${alertConfig.type === 'error' ? 'bg-red-50 text-red-500' :
-                alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
-                  'bg-blue-50 text-blue-500'
+              alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
+                'bg-blue-50 text-blue-500'
               }`}>
               {alertConfig.type === 'error' && (
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -642,8 +641,8 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
                 if (alertConfig.onConfirm) alertConfig.onConfirm();
               }}
               className={`w-full py-4 px-6 rounded-2xl font-bold text-white transition-all shadow-md active:scale-95 ${alertConfig.type === 'error' ? 'bg-red-500 hover:bg-red-600 shadow-red-100' :
-                  alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
-                    'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
+                alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
+                  'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
                 }`}
             >
               Understand
@@ -668,7 +667,7 @@ export default function TrackPanditPage() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
         const res = await fetch(`${apiUrl}/config/maps`);
         if (res.ok) {
           const data = await res.json();
@@ -697,10 +696,10 @@ export default function TrackPanditPage() {
   }
 
   return (
-    <TrackingMapContent 
-      apiKey={googleMapsApiKey} 
-      panditId={panditId} 
-      destination={destination} 
+    <TrackingMapContent
+      apiKey={googleMapsApiKey}
+      panditId={panditId}
+      destination={destination}
     />
   );
 }

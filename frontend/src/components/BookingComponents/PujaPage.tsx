@@ -127,7 +127,7 @@ export default function PujaDetailPage() {
     useEffect(() => {
         const fetchPooja = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+                const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
                 const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
                 const data = await response.json();
 
@@ -199,172 +199,172 @@ export default function PujaDetailPage() {
 
             <div className="detail-page flex justify-center">
                 <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm pb-32">
-                {/* ── Header ── */}
-                <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
-                    >
-                        <svg
-                            className="w-4 h-4 text-stone-600"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2.2}
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 19l-7-7 7-7"
-                            />
-                        </svg>
-                    </button>
-
-                    <h1
-                        className="text-orange-600 font-extrabold"
-                        style={{
-                            fontFamily: "'Cormorant Garamond', serif",
-                            fontSize: "26px",
-                        }}
-                    >
-                        {title}
-                    </h1>
-                    <p className="text-orange-900/50 text-xs font-medium mt-0.5">
-                        {deity}
-                    </p>
-
-                    <div className="flex items-center justify-center gap-3 mt-2">
-                        <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-orange-400/50" />
-                        <span className="text-orange-500">🕉</span>
-                        <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-orange-400/50" />
-                    </div>
-                </div>
-
-                {/* ── Content ── */}
-                <div className="px-4 space-y-5 fade-up">
-                    {/* Hero Image */}
-                    <div className="img-wrap rounded-2xl overflow-hidden shadow-md border border-orange-100 aspect-square bg-gradient-to-b from-amber-100 to-orange-50 flex items-center justify-center">
-                        <img
-                            src={image}
-                            alt={title}
-                            className="img-zoom w-full h-full object-contain"
-                        />
-                    </div>
-
-                    {/* Stats row */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-orange-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
-                            {deity}
-                        </span>
-                        <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
-                            ★ 4.9
-                            <span className="text-stone-400 font-light ml-0.5">
-                                (312 reviews)
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-1 text-stone-400 text-xs ml-auto">
-                            <svg
-                                className="w-3.5 h-3.5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2}
-                            >
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M12 6v6l4 2" />
-                            </svg>
-                            2-3 hrs
-                        </div>
-                    </div>
-
-                    {/* Includes */}
-                    <div>
-                        <SectionLabel>What's Included</SectionLabel>
-                        <div className="flex flex-wrap gap-2">
-                            {STATIC_INCLUDES.map((inc) => (
-                                <IncludePill key={inc} text={inc} />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Dynamic Accordions */}
-                    <div>
-                        <SectionLabel>More Details</SectionLabel>
-                        <div className="space-y-2">
-                            {pujaData.poojaDescription && pujaData.poojaDescription.length > 0 ? (
-                                pujaData.poojaDescription.map((desc: any, index: number) => (
-                                    <AccordionRow
-                                        key={desc.headingId || desc.heading}
-                                        title={desc.heading}
-                                        defaultOpen={index < 2}
-                                        content={
-                                            <div
-                                                dangerouslySetInnerHTML={{ __html: desc.description }}
-                                            />
-                                        }
-                                    />
-                                ))
-                            ) : (
-                                <p className="text-sm font-medium text-stone-400">
-                                    No additional details available.
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── Sticky Bottom CTA ── */}
-                <div className="fixed bottom-0 left-0 right-0 z-50">
-                    <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3 flex items-center gap-3">
-                        <div>
-                            <p className="text-[10px] text-stone-400 font-light">
-                                Starting at
-                            </p>
-                            <p
-                                className="text-orange-600 font-bold text-lg leading-none"
-                                style={{ fontFamily: "'DM Sans', sans-serif" }}
-                            >
-                                ₹{price.toLocaleString("en-IN")}
-                            </p>
-                        </div>
+                    {/* ── Header ── */}
+                    <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
                         <button
-                            onClick={() => {
-                                if (window.fbq) {
-                                    window.fbq("track", "BookingDetailPageOpened", {
-                                        content_ids: [pujaId],
-                                        content_name: title,
-                                        productname: [title],
-                                        content_type: "product",
-                                        value: price,
-                                        currency: "INR",
-                                    });
-                                }
-                                if (user) {
-                                    setIsBookingModalOpen(true);
-                                } else {
-                                    setPendingBooking(true);
-                                    openLoginModal();
-                                }
-                            }}
-                            className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
+                            onClick={() => navigate(-1)}
+                            className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
                         >
-                            Book Pandit Ji
                             <svg
-                                className="w-4 h-4"
+                                className="w-4 h-4 text-stone-600"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
-                                strokeWidth={2.5}
+                                strokeWidth={2.2}
                             >
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    d="M13 7l5 5-5 5M6 12h12"
+                                    d="M15 19l-7-7 7-7"
                                 />
                             </svg>
                         </button>
+
+                        <h1
+                            className="text-orange-600 font-extrabold"
+                            style={{
+                                fontFamily: "'Cormorant Garamond', serif",
+                                fontSize: "26px",
+                            }}
+                        >
+                            {title}
+                        </h1>
+                        <p className="text-orange-900/50 text-xs font-medium mt-0.5">
+                            {deity}
+                        </p>
+
+                        <div className="flex items-center justify-center gap-3 mt-2">
+                            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-orange-400/50" />
+                            <span className="text-orange-500">🕉</span>
+                            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-orange-400/50" />
+                        </div>
                     </div>
-                </div>
+
+                    {/* ── Content ── */}
+                    <div className="px-4 space-y-5 fade-up">
+                        {/* Hero Image */}
+                        <div className="img-wrap rounded-2xl overflow-hidden shadow-md border border-orange-100 aspect-square bg-gradient-to-b from-amber-100 to-orange-50 flex items-center justify-center">
+                            <img
+                                src={image}
+                                alt={title}
+                                className="img-zoom w-full h-full object-contain"
+                            />
+                        </div>
+
+                        {/* Stats row */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="bg-orange-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
+                                {deity}
+                            </span>
+                            <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
+                                ★ 4.9
+                                <span className="text-stone-400 font-light ml-0.5">
+                                    (312 reviews)
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-stone-400 text-xs ml-auto">
+                                <svg
+                                    className="w-3.5 h-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2}
+                                >
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 6v6l4 2" />
+                                </svg>
+                                2-3 hrs
+                            </div>
+                        </div>
+
+                        {/* Includes */}
+                        <div>
+                            <SectionLabel>What's Included</SectionLabel>
+                            <div className="flex flex-wrap gap-2">
+                                {STATIC_INCLUDES.map((inc) => (
+                                    <IncludePill key={inc} text={inc} />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Dynamic Accordions */}
+                        <div>
+                            <SectionLabel>More Details</SectionLabel>
+                            <div className="space-y-2">
+                                {pujaData.poojaDescription && pujaData.poojaDescription.length > 0 ? (
+                                    pujaData.poojaDescription.map((desc: any, index: number) => (
+                                        <AccordionRow
+                                            key={desc.headingId || desc.heading}
+                                            title={desc.heading}
+                                            defaultOpen={index < 2}
+                                            content={
+                                                <div
+                                                    dangerouslySetInnerHTML={{ __html: desc.description }}
+                                                />
+                                            }
+                                        />
+                                    ))
+                                ) : (
+                                    <p className="text-sm font-medium text-stone-400">
+                                        No additional details available.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── Sticky Bottom CTA ── */}
+                    <div className="fixed bottom-0 left-0 right-0 z-50">
+                        <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3 flex items-center gap-3">
+                            <div>
+                                <p className="text-[10px] text-stone-400 font-light">
+                                    Starting at
+                                </p>
+                                <p
+                                    className="text-orange-600 font-bold text-lg leading-none"
+                                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                                >
+                                    ₹{price.toLocaleString("en-IN")}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    if (window.fbq) {
+                                        window.fbq("track", "BookingDetailPageOpened", {
+                                            content_ids: [pujaId],
+                                            content_name: title,
+                                            productname: [title],
+                                            content_type: "product",
+                                            value: price,
+                                            currency: "INR",
+                                        });
+                                    }
+                                    if (user) {
+                                        setIsBookingModalOpen(true);
+                                    } else {
+                                        setPendingBooking(true);
+                                        openLoginModal();
+                                    }
+                                }}
+                                className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
+                            >
+                                Book Pandit Ji
+                                <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth={2.5}
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M13 7l5 5-5 5M6 12h12"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </>

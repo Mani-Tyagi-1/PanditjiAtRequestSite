@@ -380,25 +380,25 @@ export default function BookingModal({
   const fetchCoupons = async () => {
     setIsLoadingCoupons(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
-      
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+
       // Fetch available coupons
       const response = await fetch(`${apiUrl}/config/fetch-coupons-proxy`);
       const data = await response.json();
-      
+
       const allCoupons = data.coupons || [];
       const activeCoupons = allCoupons.filter((c: any) => c.isActive);
 
       // If user is logged in, check their coupon usage
       if (user?._id || user?.id) {
-          const userId = user?._id || user?.id;
-          try {
-              const usageRes = await fetch(`${apiUrl}/config/check-coupon-usage-proxy/${userId}`);
-              const usageData = await usageRes.json();
-              setCouponUsage(Array.isArray(usageData) ? usageData : (usageData.usages || usageData.usage || []));
-          } catch (usageErr) {
-              console.error("Error fetching coupon usage:", usageErr);
-          }
+        const userId = user?._id || user?.id;
+        try {
+          const usageRes = await fetch(`${apiUrl}/config/check-coupon-usage-proxy/${userId}`);
+          const usageData = await usageRes.json();
+          setCouponUsage(Array.isArray(usageData) ? usageData : (usageData.usages || usageData.usage || []));
+        } catch (usageErr) {
+          console.error("Error fetching coupon usage:", usageErr);
+        }
       }
 
       setCoupons(activeCoupons);
@@ -413,8 +413,8 @@ export default function BookingModal({
 
   const handleApplyCoupon = async (coupon: any) => {
     if (!user) {
-        triggerAlert("Login Required", "Please login to apply coupons.", "info");
-        return;
+      triggerAlert("Login Required", "Please login to apply coupons.", "info");
+      return;
     }
 
     if (coupon.minOrderAmount && currentPoojaPrice < coupon.minOrderAmount) {
@@ -424,35 +424,35 @@ export default function BookingModal({
 
     setIsApplyingCoupon(true);
     try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
-        const response = await fetch(`${apiUrl}/config/apply-coupon-proxy`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                userId: user?._id || user?.id,
-                phone: contactNumber || (user as any).phone || 0,
-                appKey: "par",
-                couponCode: coupon.code,
-                orderAmount: currentPoojaPrice
-            })
-        });
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const response = await fetch(`${apiUrl}/config/apply-coupon-proxy`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user?._id || user?.id,
+          phone: contactNumber || (user as any).phone || 0,
+          appKey: "par",
+          couponCode: coupon.code,
+          orderAmount: currentPoojaPrice
+        })
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok) {
-            setAppliedCoupon(coupon);
-            setCouponCode(coupon.code || "");
-            setCouponDiscountVal(data.discount || 0);
-            setIsCouponsModalOpen(false);
-            triggerAlert("Coupon Applied", `Successfully applied: ${coupon.code}. Discount: ₹${data.discount}`, "success");
-        } else {
-            triggerAlert("Invalid Coupon", data.message || "Failed to apply this coupon.", "error");
-        }
+      if (response.ok) {
+        setAppliedCoupon(coupon);
+        setCouponCode(coupon.code || "");
+        setCouponDiscountVal(data.discount || 0);
+        setIsCouponsModalOpen(false);
+        triggerAlert("Coupon Applied", `Successfully applied: ${coupon.code}. Discount: ₹${data.discount}`, "success");
+      } else {
+        triggerAlert("Invalid Coupon", data.message || "Failed to apply this coupon.", "error");
+      }
     } catch (err) {
-        console.error("Error applying coupon:", err);
-        triggerAlert("Error", "Something went wrong while applying the coupon.", "error");
+      console.error("Error applying coupon:", err);
+      triggerAlert("Error", "Something went wrong while applying the coupon.", "error");
     } finally {
-        setIsApplyingCoupon(false);
+      setIsApplyingCoupon(false);
     }
   };
 
@@ -593,7 +593,7 @@ export default function BookingModal({
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
         const res = await fetch(`${apiUrl}/config/maps`);
 
         if (!res.ok) {
@@ -621,7 +621,7 @@ export default function BookingModal({
       if (!user) return;
       setIsLoadingAddresses(true);
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
         const userId = user?._id || user?.id;
         console.log("Fetching saved addresses for user:", userId);
         const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
@@ -689,8 +689,8 @@ export default function BookingModal({
 
       setIsProcessing(false);
       setAlertConfig({ show: false, title: "", message: "", type: "info" });
-      setHasTrackedDetails(false); 
-      
+      setHasTrackedDetails(false);
+
       if (user) {
         try {
           const storedData = localStorage.getItem("user_data");
@@ -730,19 +730,19 @@ export default function BookingModal({
   const currentPoojaPrice = mode === "online" ? (pooja?.poojaPriceOnline || 0) : (pooja?.poojaPriceOffline || 0);
 
   const totalDiscount = samagriCharge + panditDakshina;
-  
+
   let couponDiscount = 0;
   if (appliedCoupon) {
-      // Use the server-validated discount if available, otherwise fallback to local calculation
-      couponDiscount = couponDiscountVal > 0 ? couponDiscountVal : 0;
-      
-      if (couponDiscountVal === 0) {
-          if (appliedCoupon.discountType === 'PERCENT') {
-            couponDiscount = (currentPoojaPrice * (appliedCoupon.discountValue || 0)) / 100;
-          } else {
-            couponDiscount = appliedCoupon.discountValue || 0;
-          }
+    // Use the server-validated discount if available, otherwise fallback to local calculation
+    couponDiscount = couponDiscountVal > 0 ? couponDiscountVal : 0;
+
+    if (couponDiscountVal === 0) {
+      if (appliedCoupon.discountType === 'PERCENT') {
+        couponDiscount = (currentPoojaPrice * (appliedCoupon.discountValue || 0)) / 100;
+      } else {
+        couponDiscount = appliedCoupon.discountValue || 0;
       }
+    }
   }
 
   const discountedPrice = Math.max(0, currentPoojaPrice - couponDiscount);
@@ -788,15 +788,15 @@ export default function BookingModal({
       });
     }
     // Also dispatch custom event as requested
-    window.dispatchEvent(new CustomEvent("InitiateCheckout", { 
-      detail: { 
-        poojaId: pooja?._id || pooja?.id, 
+    window.dispatchEvent(new CustomEvent("InitiateCheckout", {
+      detail: {
+        poojaId: pooja?._id || pooja?.id,
         amount: discountedPrice,
         productname: pooja?.poojaNameEng || "Pooja Booking"
-      } 
+      }
     }));
 
-    const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
     if (mode === "offline") {
       try {
@@ -1280,7 +1280,7 @@ export default function BookingModal({
 
                 <div className="space-y-3">
                   <input type="text" placeholder="Your full name*" value={bhaktName}
-                    onChange={(e) => setBhaktName(e.target.value)} 
+                    onChange={(e) => setBhaktName(e.target.value)}
                     onBlur={trackCustomerDetails}
                     className="bm-input" />
 
@@ -1288,7 +1288,7 @@ export default function BookingModal({
                     onChange={(e) => setGotra(e.target.value)} className="bm-input" />
 
                   <input type="tel" placeholder="Contact number*" value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)} 
+                    onChange={(e) => setContactNumber(e.target.value)}
                     onBlur={trackCustomerDetails}
                     className="bm-input" />
 
@@ -1424,7 +1424,7 @@ export default function BookingModal({
                   </div>
                   <button
                     onClick={() => {
-                        if (couponCode) triggerAlert("Manual Entry", "Please use 'View All Coupons' to select verified active offers.", "info");
+                      if (couponCode) triggerAlert("Manual Entry", "Please use 'View All Coupons' to select verified active offers.", "info");
                     }}
                     className={`${couponCode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#C9C9C9]'} text-white text-sm font-semibold rounded-lg sm:px-8 py-2.5 sm:w-auto w-full transition-colors opacity-90`}
                   >
@@ -1630,8 +1630,8 @@ export default function BookingModal({
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full text-center shadow-2xl relative slide-up border border-stone-100">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${alertConfig.type === 'error' ? 'bg-red-50 text-red-500' :
-                alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
-                  'bg-blue-50 text-blue-500'
+              alertConfig.type === 'success' ? 'bg-green-50 text-green-500' :
+                'bg-blue-50 text-blue-500'
               }`}>
               {alertConfig.type === 'error' && (
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -1663,8 +1663,8 @@ export default function BookingModal({
                 if (alertConfig.onConfirm) alertConfig.onConfirm();
               }}
               className={`w-full py-4 px-6 rounded-2xl font-bold text-white transition-all shadow-md active:scale-95 ${alertConfig.type === 'error' ? 'bg-red-500 hover:bg-red-600 shadow-red-100' :
-                  alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
-                    'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
+                alertConfig.type === 'success' ? 'bg-green-500 hover:bg-green-600 shadow-green-100' :
+                  'bg-orange-500 hover:bg-orange-600 shadow-orange-100'
                 }`}
             >
               Understand
@@ -1678,9 +1678,9 @@ export default function BookingModal({
             <h3 className="text-stone-800 font-semibold text-sm mb-4">
               Preferred Time
             </h3>
-            
+
             <div className="relative mb-6">
-              <input 
+              <input
                 type="time"
                 value={tempTime}
                 onChange={(e) => setTempTime(e.target.value)}
@@ -1743,39 +1743,37 @@ export default function BookingModal({
               {coupons.length > 0 ? (
                 coupons.map((coupon, idx) => {
                   const usage = couponUsage?.find(u => u.couponCode?.toUpperCase() === coupon.code?.toUpperCase());
-                  const isUsed = (coupon.usageType === 'MONTHLY_LIMITED' && (usage?.monthlyUsed || 0) > 0) || 
-                               (['ONCE', 'ONE_TIME'].includes(coupon.usageType) && (usage?.totalUsed || 0) > 0);
-                  
+                  const isUsed = (coupon.usageType === 'MONTHLY_LIMITED' && (usage?.monthlyUsed || 0) > 0) ||
+                    (['ONCE', 'ONE_TIME'].includes(coupon.usageType) && (usage?.totalUsed || 0) > 0);
+
                   return (
-                    <div 
+                    <div
                       key={idx}
-                      className={`relative overflow-hidden group transition-colors rounded-2xl p-5 border-2 border-dashed ${
-                        isUsed 
-                        ? "bg-stone-100 border-stone-200 opacity-60 grayscale" 
-                        : "bg-orange-50/50 border-orange-200 hover:border-orange-400"
-                      }`}
+                      className={`relative overflow-hidden group transition-colors rounded-2xl p-5 border-2 border-dashed ${isUsed
+                          ? "bg-stone-100 border-stone-200 opacity-60 grayscale"
+                          : "bg-orange-50/50 border-orange-200 hover:border-orange-400"
+                        }`}
                     >
                       {!isUsed && <div className="absolute -right-2 -top-2 w-12 h-12 bg-orange-100 rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity" />}
-                      
+
                       <div className="relative">
                         <div className="flex items-center justify-between mb-2">
-                          <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${
-                            isUsed 
-                            ? "bg-stone-200 text-stone-500 border-stone-300" 
-                            : "bg-white text-orange-600 border-orange-200"
-                          }`}>
+                          <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${isUsed
+                              ? "bg-stone-200 text-stone-500 border-stone-300"
+                              : "bg-white text-orange-600 border-orange-200"
+                            }`}>
                             {coupon.code}
                           </span>
                           <span className={`${isUsed ? "text-stone-500" : "text-stone-800"} font-bold text-lg`}>
-                            {coupon.discountType === 'PERCENT' 
-                               ? `${coupon.discountValue}% OFF` 
-                               : `₹${coupon.discountValue} OFF`}
+                            {coupon.discountType === 'PERCENT'
+                              ? `${coupon.discountValue}% OFF`
+                              : `₹${coupon.discountValue} OFF`}
                           </span>
                         </div>
-                        
+
                         <div className="space-y-1 mb-4">
                           <p className={`${isUsed ? "text-stone-400" : "text-stone-600"} text-xs font-medium leading-relaxed`}>
-                            {isUsed 
+                            {isUsed
                               ? "You have already used this coupon for this period."
                               : `Get ${coupon.discountValue}${coupon.discountType === 'PERCENT' ? '%' : ''} discount on your ritual booking!`}
                           </p>
@@ -1789,11 +1787,10 @@ export default function BookingModal({
                         <button
                           onClick={() => !isUsed && !isApplyingCoupon && handleApplyCoupon(coupon)}
                           disabled={isUsed || isApplyingCoupon}
-                          className={`w-full font-bold py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] shadow-sm ${
-                            isUsed 
-                            ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none" 
-                            : (isApplyingCoupon ? "bg-orange-300" : "bg-orange-500 hover:bg-orange-600") + " text-white shadow-orange-100"
-                          }`}
+                          className={`w-full font-bold py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] shadow-sm ${isUsed
+                              ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none"
+                              : (isApplyingCoupon ? "bg-orange-300" : "bg-orange-500 hover:bg-orange-600") + " text-white shadow-orange-100"
+                            }`}
                         >
                           {isUsed ? "Coupon Used" : (isApplyingCoupon ? "Applying..." : "Apply Coupon")}
                         </button>

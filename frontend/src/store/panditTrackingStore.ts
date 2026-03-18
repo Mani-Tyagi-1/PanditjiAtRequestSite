@@ -27,9 +27,9 @@ export const usePanditTrackingStore = create<State>((set) => ({
 
     // 1) Fetch initial location
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
       const url = `${apiUrl}/pandit/${encodeURIComponent(panditId)}/location`;
-      
+
       const res = await axios.get(url);
       if (res?.data?.latitude && res?.data?.longitude) {
         set({
@@ -86,7 +86,7 @@ export const usePanditTrackingStore = create<State>((set) => ({
     socket.off("user:pandit_location");
     socket.off("connect");
     socket.off("disconnect");
-    
+
     // We don't always want to disconnect the socket if it's used elsewhere, 
     // but mirror the mobile behavior of stopping track.
     set({ panditLocation: null, loading: false, connected: false });

@@ -11,7 +11,7 @@ export default function LoginModal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://192.168.0.188:8000/api';
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
   // Update this path according to your actual logo location
   const logoUrl =
@@ -204,11 +204,10 @@ export default function LoginModal() {
                 <button
                   type="submit"
                   disabled={isProcessing || phone.length !== 10}
-                  className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${
-                    isProcessing || phone.length !== 10
+                  className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${isProcessing || phone.length !== 10
                       ? 'cursor-not-allowed bg-orange-300'
                       : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
-                  }`}
+                    }`}
                 >
                   {isProcessing ? 'Sending OTP...' : 'Get OTP'}
                 </button>
@@ -245,11 +244,10 @@ export default function LoginModal() {
                 <button
                   type="submit"
                   disabled={isProcessing || otp.length < 4}
-                  className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${
-                    isProcessing || otp.length < 4
+                  className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${isProcessing || otp.length < 4
                       ? 'cursor-not-allowed bg-orange-300'
                       : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
-                  }`}
+                    }`}
                 >
                   {isProcessing ? 'Verifying...' : 'Verify & Login'}
                 </button>

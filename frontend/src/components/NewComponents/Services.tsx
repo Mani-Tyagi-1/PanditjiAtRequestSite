@@ -20,14 +20,14 @@ export function Services() {
         const list: Category[] = cached
           ? JSON.parse(cached)
           : await (async () => {
-              const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
-              const res = await fetch(`${apiUrl}/fetch-all-pooja-category`);
-              const data = await res.json();
-              const cats: Category[] = data?.poojaCategory ?? (Array.isArray(data) ? data : []);
-              const active = cats.filter((c) => c.isActive);
-              sessionStorage.setItem("pooja_categories", JSON.stringify(active));
-              return active;
-            })();
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+            const res = await fetch(`${apiUrl}/fetch-all-pooja-category`);
+            const data = await res.json();
+            const cats: Category[] = data?.poojaCategory ?? (Array.isArray(data) ? data : []);
+            const active = cats.filter((c) => c.isActive);
+            sessionStorage.setItem("pooja_categories", JSON.stringify(active));
+            return active;
+          })();
 
         // Build keyword → category _id map
         const map: Record<string, string> = {};

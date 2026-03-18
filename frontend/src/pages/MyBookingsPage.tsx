@@ -59,7 +59,7 @@ const MyBookingsPage: React.FC = () => {
             const user = JSON.parse(userDataString);
             const userPhone = user.phone;
 
-            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
             const response = await axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${userPhone}`);
 
             setBookings(response.data || []);
@@ -84,7 +84,7 @@ const MyBookingsPage: React.FC = () => {
 
             const baseCallId = crypto.randomUUID();
             const callId = type === "audio" ? `${baseCallId}_AC` : `${baseCallId}_VC`;
-            const apiUrl = import.meta.env.VITE_API_URL || "http://192.168.0.188:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
             const status = type === "video" ? "ringing" : "call-ringing";
 
             await axios.post(`${apiUrl}/calls/invite`, {
@@ -194,11 +194,10 @@ const MyBookingsPage: React.FC = () => {
                             <button
                                 key={mode}
                                 onClick={() => setFilterMode(mode)}
-                                className={`relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${
-                                    filterMode === mode
+                                className={`relative flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 ${filterMode === mode
                                         ? "bg-[#FF7000] text-white shadow-md shadow-orange-200"
                                         : "bg-orange-50 text-orange-400 border border-orange-100"
-                                }`}
+                                    }`}
                             >
                                 {filterLabels[mode].icon}
                                 {filterLabels[mode].label}
@@ -279,14 +278,12 @@ const MyBookingsPage: React.FC = () => {
                                             initial={{ opacity: 0, y: 16 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.07, type: "spring", stiffness: 300, damping: 28 }}
-                                            className={`bg-white rounded-3xl overflow-hidden shadow-lg shadow-orange-100/60 border border-orange-100/80 transition-all ${
-                                                isPast ? "opacity-75 grayscale-[30%] scale-[0.98]" : ""
-                                            }`}
+                                            className={`bg-white rounded-3xl overflow-hidden shadow-lg shadow-orange-100/60 border border-orange-100/80 transition-all ${isPast ? "opacity-75 grayscale-[30%] scale-[0.98]" : ""
+                                                }`}
                                         >
                                             {/* ── Card Header Band ── */}
-                                            <div className={`relative px-4 py-3 overflow-hidden ${
-                                                isPast ? "bg-gray-400" : "bg-gradient-to-r from-[#FF7000] to-[#FF9A45]"
-                                            }`}>
+                                            <div className={`relative px-4 py-3 overflow-hidden ${isPast ? "bg-gray-400" : "bg-gradient-to-r from-[#FF7000] to-[#FF9A45]"
+                                                }`}>
                                                 {/* Decorative blobs */}
                                                 <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/10 rounded-full" />
                                                 <div className="absolute -bottom-5 -left-3 w-12 h-12 bg-white/10 rounded-full" />
@@ -299,11 +296,10 @@ const MyBookingsPage: React.FC = () => {
                                                             {isPast && <span className="ml-2 text-[10px] uppercase tracking-wider opacity-80">(Completed)</span>}
                                                         </h3>
                                                     </div>
-                                                    <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold flex-shrink-0 ${
-                                                        isPast
+                                                    <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold flex-shrink-0 ${isPast
                                                             ? "bg-white/20 text-white"
                                                             : (isOnline ? "bg-white text-[#FF7000]" : "bg-white/20 text-white border border-white/30")
-                                                    }`}>
+                                                        }`}>
                                                         {isOnline
                                                             ? <><Wifi className="w-3 h-3" /> Online</>
                                                             : <><WifiOff className="w-3 h-3" /> Offline</>
@@ -391,11 +387,10 @@ const MyBookingsPage: React.FC = () => {
                                                         <button
                                                             disabled={!isActionEnabled}
                                                             onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'video')}
-                                                            className={`w-full py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${
-                                                                isActionEnabled
+                                                            className={`w-full py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${isActionEnabled
                                                                     ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
                                                                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             <Video className="w-4 h-4" />
                                                             {isActionEnabled ? "Join Video Call" : (isOnline && !isToday ? "Video Call Restricted" : "Video Call — Not Available Yet")}
@@ -405,11 +400,10 @@ const MyBookingsPage: React.FC = () => {
                                                             <button
                                                                 disabled={!isAudioCallEnabled}
                                                                 onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'audio')}
-                                                                className={`w-12 h-11 rounded-2xl font-bold flex items-center justify-center transition-all active:scale-[0.98] flex-shrink-0 ${
-                                                                    isAudioCallEnabled
+                                                                className={`w-12 h-11 rounded-2xl font-bold flex items-center justify-center transition-all active:scale-[0.98] flex-shrink-0 ${isAudioCallEnabled
                                                                         ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
                                                                         : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                                }`}
+                                                                    }`}
                                                                 title={isAudioCallEnabled ? "Call Panditji" : (isToday ? "Call Panditji — Awaiting Assignment" : "Call Restricted to Booking Date")}
                                                             >
                                                                 <Phone className="w-4 h-4" />
@@ -422,11 +416,10 @@ const MyBookingsPage: React.FC = () => {
                                                                         navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
                                                                     }
                                                                 }}
-                                                                className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${
-                                                                    isActionEnabled
+                                                                className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-sm transition-all active:scale-[0.98] ${isActionEnabled
                                                                         ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
                                                                         : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                                }`}
+                                                                    }`}
                                                             >
                                                                 <MapPin className="w-4 h-4" />
                                                                 {isActionEnabled ? "Track Panditji" : (isToday ? "Awaiting Departure" : "Tracking Restricted")}
@@ -465,11 +458,10 @@ const MyBookingsPage: React.FC = () => {
                             {/* Drag handle */}
                             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
 
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-                                alertConfig.type === 'error' ? 'bg-red-50' :
-                                alertConfig.type === 'success' ? 'bg-emerald-50' :
-                                'bg-orange-50'
-                            }`}>
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 ${alertConfig.type === 'error' ? 'bg-red-50' :
+                                    alertConfig.type === 'success' ? 'bg-emerald-50' :
+                                        'bg-orange-50'
+                                }`}>
                                 {alertConfig.type === 'error' && <AlertCircle className="w-7 h-7 text-red-400" />}
                                 {alertConfig.type === 'success' && <CheckCircle2 className="w-7 h-7 text-emerald-400" />}
                                 {alertConfig.type === 'info' && <Info className="w-7 h-7 text-orange-400" />}
@@ -483,11 +475,10 @@ const MyBookingsPage: React.FC = () => {
                                     setAlertConfig({ ...alertConfig, show: false });
                                     if (alertConfig.onConfirm) alertConfig.onConfirm();
                                 }}
-                                className={`w-full py-3.5 rounded-2xl font-bold text-white text-sm transition-all active:scale-95 shadow-md ${
-                                    alertConfig.type === 'error' ? 'bg-red-500 shadow-red-100' :
-                                    alertConfig.type === 'success' ? 'bg-emerald-500 shadow-emerald-100' :
-                                    'bg-[#FF7000] shadow-orange-100'
-                                }`}
+                                className={`w-full py-3.5 rounded-2xl font-bold text-white text-sm transition-all active:scale-95 shadow-md ${alertConfig.type === 'error' ? 'bg-red-500 shadow-red-100' :
+                                        alertConfig.type === 'success' ? 'bg-emerald-500 shadow-emerald-100' :
+                                            'bg-[#FF7000] shadow-orange-100'
+                                    }`}
                             >
                                 Got it
                             </button>

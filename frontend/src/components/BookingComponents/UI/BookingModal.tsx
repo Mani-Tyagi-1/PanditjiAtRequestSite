@@ -332,7 +332,7 @@ export default function BookingModal({
 
   const trackCustomerDetails = () => {
     if (bhaktName.trim().length >= 3 && contactNumber.trim().length >= 10 && !hasTrackedDetails) {
-      if (window.fbq && import.meta.env.PROD) {
+      if (window.fbq) {
         window.fbq("track", "CustomerDetailsFilled", {
           content_name: pooja?.poojaNameEng || "Pooja Booking",
           bhaktName: bhaktName,
@@ -764,7 +764,7 @@ export default function BookingModal({
     setIsProcessing(true);
 
     // Track checkout initiation
-    if (window.fbq && import.meta.env.PROD) {
+    if (window.fbq) {
       window.fbq("track", "InitiateCheckout", {
         content_ids: [pooja?._id || pooja?.id],
         productname: [pooja?.poojaNameEng || "Pooja Booking"],
@@ -962,7 +962,7 @@ export default function BookingModal({
             setShowSuccessModal(true);
 
             // Track successful purchase — eventID must match server CAPI event_id for deduplication
-            if (window.fbq && import.meta.env.PROD) {
+            if (window.fbq) {
               const capiEventId = `puja_purchase_${response.razorpay_order_id}`;
               window.fbq("track", "Purchase", {
                 content_ids: [pooja?._id || pooja?.id],

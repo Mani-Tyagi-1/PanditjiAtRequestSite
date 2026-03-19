@@ -14,11 +14,19 @@ export default function LandingPage() {
   const [showAppPopup, setShowAppPopup] = useState(false);
 
   useEffect(() => {
-    // Show popup after a short delay
     const timer = setTimeout(() => {
       setShowAppPopup(true);
     }, 2000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (window.fbq) {
+      window.fbq("track", "ViewContent", {
+        content_name: "Home Page",
+        content_type: "website",
+      });
+    }
   }, []);
 
   return (

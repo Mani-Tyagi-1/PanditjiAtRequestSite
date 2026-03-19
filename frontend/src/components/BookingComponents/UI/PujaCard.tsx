@@ -83,10 +83,9 @@ export default function PujaCard({
 
     const handleCardClick = () => {
         if (window.fbq) {
-            window.fbq("track", "ViewPooja", {
+            window.fbq("track", "ViewContent", {
                 content_ids: [id],
                 content_name: title,
-                productname: [title],
                 content_type: "product",
                 value: price,
                 currency: "INR",

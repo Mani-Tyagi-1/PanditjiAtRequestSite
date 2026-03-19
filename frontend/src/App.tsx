@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Home from "./pages/Home";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteMyAccount from "./pages/DeleteMyAccount";
@@ -19,10 +20,22 @@ import LoginModal from "./components/Auth/LoginModal";
 import PanditPrivacyPolicy from "./pages/PanditPrivacyPolicy";
 import TermsAndConditionPandit from "./pages/TermsAndConditionPandit";
 
+// Fires PageView on every SPA route change so Meta Pixel tracks all pages
+function PixelPageTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    if (window.fbq) {
+      window.fbq("track", "PageView");
+    }
+  }, [location.pathname]);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <LoginModal />
+      <PixelPageTracker />
       <Routes>
         <Route path="/" element={<LandingPage/>} />
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />

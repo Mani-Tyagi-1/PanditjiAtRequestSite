@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 // ── Dummy Data ────────────────────────────────────────────────
 const STATIC_INCLUDES = [
@@ -111,7 +111,16 @@ import BookingModal from "./UI/BookingModal";
 export default function PujaDetailPage() {
     const { pujaId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, openLoginModal } = useAuth();
+
+    const handleBack = () => {
+        if (location.key !== "default") {
+            navigate(-1);
+        } else {
+            navigate("/");
+        }
+    };
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [pendingBooking, setPendingBooking] = useState(false);
 
@@ -202,7 +211,7 @@ export default function PujaDetailPage() {
                     {/* ── Header ── */}
                     <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
                         <button
-                            onClick={() => navigate(-1)}
+                            onClick={handleBack}
                             className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
                         >
                             <svg
@@ -330,10 +339,9 @@ export default function PujaDetailPage() {
                             <button
                                 onClick={() => {
                                     if (window.fbq) {
-                                        window.fbq("track", "BookingDetailPageOpened", {
+                                        window.fbq("track", "AddToCart", {
                                             content_ids: [pujaId],
                                             content_name: title,
-                                            productname: [title],
                                             content_type: "product",
                                             value: price,
                                             currency: "INR",

@@ -150,6 +150,19 @@ export default function CategoryPage() {
     return () => controller.abort();
   }, [categoryId, passedCategory]);
 
+  // Fire ViewContent once category name is known
+  useEffect(() => {
+    if (!categoryDetails) return;
+    if (window.fbq) {
+      window.fbq("track", "ViewContent", {
+        content_ids: [categoryId],
+        content_name: categoryDetails.category_name_en,
+        content_type: "product_group",
+        currency: "INR",
+      });
+    }
+  }, [categoryDetails, categoryId]);
+
   // Re-sync activeCategory when categoryId changes
   useEffect(() => {
     if (categoryId) {

@@ -332,7 +332,7 @@ export default function BookingModal({
 
   const trackCustomerDetails = () => {
     if (bhaktName.trim().length >= 3 && contactNumber.trim().length >= 10 && !hasTrackedDetails) {
-      if (window.fbq) {
+      if (window.fbq && import.meta.env.PROD) {
         window.fbq("track", "CustomerDetailsFilled", {
           content_name: pooja?.poojaNameEng || "Pooja Booking",
           bhaktName: bhaktName,
@@ -732,6 +732,11 @@ export default function BookingModal({
   const discountPercent =
     originalPrice > 0 ? Math.round(((totalDiscount + couponDiscount) / (originalPrice)) * 100) : 0;
 
+  const getCookie = (name: string): string => {
+    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return match ? match[2] : "";
+  };
+
   const handleCheckout = async () => {
     if (!bhaktName || !contactNumber) {
       triggerAlert("Details Required", "Please provide at least your name and contact number to proceed.", "info");
@@ -759,7 +764,7 @@ export default function BookingModal({
     setIsProcessing(true);
 
     // Track checkout initiation
-    if (window.fbq) {
+    if (window.fbq && import.meta.env.PROD) {
       window.fbq("track", "InitiateCheckout", {
         content_ids: [pooja?._id || pooja?.id],
         productname: [pooja?.poojaNameEng || "Pooja Booking"],
@@ -926,7 +931,12 @@ export default function BookingModal({
 
             const compRes = await fetch(`${apiUrl}/bookings/complete-booking`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "x-event-source-url": window.location.href,
+                "x-fbp": getCookie("_fbp"),
+                "x-fbc": getCookie("_fbc"),
+              },
               body: JSON.stringify(encryptedCompletePayload),
             });
 
@@ -951,8 +961,9 @@ export default function BookingModal({
 
             setShowSuccessModal(true);
 
-            // Track successful purchase
-            if (window.fbq) {
+            // Track successful purchase — eventID must match server CAPI event_id for deduplication
+            if (window.fbq && import.meta.env.PROD) {
+              const capiEventId = `puja_purchase_${response.razorpay_order_id}`;
               window.fbq("track", "Purchase", {
                 content_ids: [pooja?._id || pooja?.id],
                 productname: [pooja?.poojaNameEng || "Pooja Booking"],
@@ -960,7 +971,7 @@ export default function BookingModal({
                 content_type: "product",
                 value: discountedPrice,
                 currency: "INR",
-              });
+              }, { eventID: capiEventId });
             }
           } catch (err: any) {
             triggerAlert("Booking Error", err.message || "Failed to complete booking after payment.", "error");

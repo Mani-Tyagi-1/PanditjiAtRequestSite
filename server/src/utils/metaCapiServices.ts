@@ -27,12 +27,12 @@ type MetaUserData = {
 type MetaContent = {
   id: string;
   quantity: number;
-  delivery_category?: "home_delivery" | "in_store";
 };
 
 type MetaCustomData = {
   currency: string;
   value: number;
+  delivery_category?: "home_delivery" | "in_store";
   contents?: MetaContent[];
 };
 
@@ -242,7 +242,7 @@ export async function sendMetaPurchaseEvent(args: {
   // ✅ IMPORTANT: fallback is WEBSITE now (because your source is website)
   const action_source: MetaActionSource = normalizeActionSource(args.actionSource, "website");
 
-  const event_id = `chadhava_purchase_${String(args.orderID)}`;
+  const event_id = `puja_purchase_${String(args.orderID)}`;
 
   const user_data = buildUserData({
     email: args.email || null,
@@ -263,11 +263,11 @@ export async function sendMetaPurchaseEvent(args: {
     custom_data: {
       currency: String(args.currency || "INR"),
       value: Number(args.value || 0),
+      ...(args.deliveryCategory && { delivery_category: args.deliveryCategory }),
       contents: [
         {
-          id: String(args.contentId || "CHADHAVA"),
+          id: String(args.contentId || "PUJA"),
           quantity: 1,
-          delivery_category: args.deliveryCategory,
         },
       ],
     },

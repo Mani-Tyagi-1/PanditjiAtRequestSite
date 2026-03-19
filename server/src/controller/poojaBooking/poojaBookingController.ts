@@ -304,8 +304,12 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     // 6) Remove pending doc
     await pendingPoojaBookingModel.findByIdAndDelete(pendingBookingId);
 
-    // 6a) META CAPI Purchase (fire-and-forget)
+    // 6a) META CAPI Purchase (fire-and-forget) — skipped in test/dev mode
     void (async () => {
+      if (!isProduction) {
+        console.log(`[MetaCAPI][Puja] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+        return;
+      }
       try {
         const forwardedFor = req.headers['x-forwarded-for'];
         const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]) || req.ip || null;

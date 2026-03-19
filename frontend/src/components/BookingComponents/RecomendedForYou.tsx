@@ -69,7 +69,7 @@ export default function RecomendedForYou() {
                 ) : (
                     <div className="fp-scroll overflow-x-auto overflow-y-hidden px-4 sm:px-6 lg:px-10">
                         <div
-                            className="grid gap-8 py-4"
+                            className="grid gap-3 py-4"
                             style={{
                                 gridTemplateRows: "repeat(2, auto)",
                                 gridAutoFlow: "column",

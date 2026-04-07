@@ -27,7 +27,7 @@ const HeroSection = () => {
     useEffect(() => {
         const fetchAllPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+                const apiUrl = import.meta.env.VITE_API_URL || 'https://panditjiatrequest.com/api';
                 const { data } = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 if (data && data.poojas) {
                     setAllPujas(data.poojas);

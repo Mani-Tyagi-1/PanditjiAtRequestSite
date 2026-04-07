@@ -213,7 +213,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
 
       const baseCallId = crypto.randomUUID();
       const callId = `${baseCallId}_AC`;
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
 
       await axios.post(`${apiUrl}/calls/invite`, {
         fromUserId: user._id,
@@ -667,7 +667,7 @@ export default function TrackPanditPage() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const res = await fetch(`${apiUrl}/config/maps`);
         if (res.ok) {
           const data = await res.json();

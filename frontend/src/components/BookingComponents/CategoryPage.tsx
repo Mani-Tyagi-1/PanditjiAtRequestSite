@@ -64,7 +64,7 @@ export default function CategoryPage() {
     const fetchHeaderFallback = async () => {
       // only used when page refreshed directly and state is missing
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const response = await fetch(`${apiUrl}/fetch-all-pooja-category`, {
           signal: controller.signal,
         });
@@ -94,7 +94,7 @@ export default function CategoryPage() {
 
     const fetchPujas = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const cacheKey = `poojas_by_cat_${categoryId}`;
 
         // 1. instant cache load

@@ -25,7 +25,7 @@ export default function PujaServices() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const response = await fetch(`${apiUrl}/fetch-all-pooja-category`);
         const data = await response.json();
 

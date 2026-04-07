@@ -118,7 +118,7 @@ const ProfilePage: React.FC = () => {
             const storedUser = JSON.parse(userDataString);
             const userId = storedUser._id;
 
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
             const response = await axios.get(`${apiUrl}/profile/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -161,7 +161,7 @@ const ProfilePage: React.FC = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem("user_token");
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
 
             // Prepare payload
             const payload = {

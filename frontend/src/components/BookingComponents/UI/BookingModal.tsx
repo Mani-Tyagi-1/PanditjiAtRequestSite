@@ -381,7 +381,7 @@ export default function BookingModal({
   const fetchCoupons = async () => {
     setIsLoadingCoupons(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+      const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
 
       const response = await fetch(`${apiUrl}/config/fetch-coupons-proxy`);
       const data = await response.json();
@@ -573,7 +573,7 @@ export default function BookingModal({
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const res = await fetch(`${apiUrl}/config/maps`);
 
         if (!res.ok) {
@@ -601,7 +601,7 @@ export default function BookingModal({
       if (!user) return;
       setIsLoadingAddresses(true);
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const userId = user?._id || user?.id;
         console.log("Fetching saved addresses for user:", userId);
         const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
@@ -797,7 +797,7 @@ export default function BookingModal({
       }
     }));
 
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+    const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
 
     if (mode === "offline") {
       try {

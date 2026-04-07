@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Request, Response } from "express";
 import Pandit from "../models/PanditModel"; // Import your Pandit model
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 // Function to normalize phone numbers (same logic as before)

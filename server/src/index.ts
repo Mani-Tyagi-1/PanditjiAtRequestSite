@@ -24,6 +24,8 @@ import { generateStreamToken } from "./controller/userApp/StreamTokenController"
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
 import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
 import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
+import PanditModel from "./model/panditApp/panditModel";
+import UserAddressModel from "./model/userApp/userAddressModel";
 
 dotenv.config();
 
@@ -98,8 +100,7 @@ io.on("connection", (socket) => {
 
     // Optionally update database (could be throttled in a real app)
     try {
-      const panditModel = (await import("./model/panditApp/panditModel")).default;
-      await panditModel.findByIdAndUpdate(panditId, {
+      await PanditModel.findByIdAndUpdate(panditId, {
         "location.latitude": latitude,
         "location.longitude": longitude,
       });
@@ -130,7 +131,6 @@ async function startServer() {
 
     // Drop the old unique index to allow multiple addresses in the same category
     try {
-      const UserAddressModel = (await import("./model/userApp/userAddressModel")).default;
       await UserAddressModel.collection.dropIndex("user_1_addressName_1");
       console.log("✅ Successfully dropped old unique address index.");
     } catch (err) {

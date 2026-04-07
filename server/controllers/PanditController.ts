@@ -1,9 +1,8 @@
 import { Request, Response } from "express";
 import Pandit from "../models/PanditModel";
 import crypto from "crypto";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import axios from "axios";
-import { isConditionalExpression } from "typescript";
 
 // Controller to fetch all pandits
 export const getAllPandits = async (

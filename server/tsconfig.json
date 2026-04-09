@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES2021",
-    "module": "node16",
-
-    "lib": ["ES2021", "DOM"],          // <-- gives types for fetch/Request/Response
-    "moduleResolution": "node16",        // <-- modern Node resolution
-    "types": ["node"],                 // <-- Node globals (process, Buffer, etc.)
-
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "lib": ["ES2021"],
+    "types": ["node"],
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "strict": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

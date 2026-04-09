@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
 import { sendWhatsappTemplateMessage } from '../../utils/whatsapp';
+import type { Document } from "mongoose";
 
 // --- helpers ---
 const toAlias10 = (v?: string | number) =>

@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from "express";
-import http from "http";
-import dotenv from "dotenv";
+import * as http from "http";
+import * as dotenv from "dotenv";
 import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -38,7 +38,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
 
-// Mount the Pandit routes
+// Routes
 app.use("/api/pandit", panditRoutes);
 app.use("/api/", poojaRoutes);
 app.use("/api/", pujaCategoryRoutes);
@@ -52,20 +52,21 @@ app.use("/api", userRoutes);
 app.use("/api/calls", callingRoutes);
 app.use("/api", pushRoutes);
 app.use("/api/stream", streamRoutes);
+
 app.get("/gen-stream-token/:userId", generateStreamToken);
 
-// PANDIT ROUTES
-app.use('/', panditAuthRoutes);
-app.use('/', panditAddressRoutes);
+// Pandit routes
+app.use("/", panditAuthRoutes);
+app.use("/", panditAddressRoutes);
 
 const PORT = process.env.PORT || 8000;
 
 const server = http.createServer(app);
+
 const io = new SocketIOServer(server, {
   cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"] },
 });
 
-// expose io to controllers via app locals
 app.set("io", io);
 
 io.on("connection", (socket) => {
@@ -77,7 +78,6 @@ io.on("connection", (socket) => {
     console.log(`👳 Pandit joined ${room}`);
   });
 
-  // ✅ allow pandits to join the global "active" room for timed requests
   socket.on("pandit:join_active_pool", () => {
     socket.join("active_pandits");
     console.log(`👳 Pandit ${socket.id} joined active_pandits`);
@@ -93,21 +93,19 @@ io.on("connection", (socket) => {
     const { panditId, latitude, longitude } = data;
     const room = `pandit:${panditId}`;
 
-    // Emit to all users in the pandit's room
     io.to(room).emit("user:pandit_location", {
       panditId,
       latitude,
       longitude,
     });
 
-    // Optionally update database (could be throttled in a real app)
     try {
       await PanditModel.findByIdAndUpdate(panditId, {
         "location.latitude": latitude,
         "location.longitude": longitude,
       });
     } catch (err) {
-      console.error("Failed to update pandit location in DB:", err);
+      console.error("Failed to update pandit location:", err);
     }
   });
 
@@ -116,14 +114,13 @@ io.on("connection", (socket) => {
   });
 });
 
-// Properly typed error handler so TS picks the right overload
+// Error handler
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next: NextFunction) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ message: "Internal Server Error" });
 };
-app.use(errorHandler);
 
-// const PORT = process.env.PORT || 8000;
+app.use(errorHandler);
 
 async function startServer() {
   try {
@@ -131,30 +128,28 @@ async function startServer() {
     await panditJiAtRequestDB();
     await VVMainConnectDB();
 
-    // Drop the old unique index to allow multiple addresses in the same category
     try {
       await UserAddressModel.collection.dropIndex("user_1_addressName_1");
-      console.log("✅ Successfully dropped old unique address index.");
-    } catch (err) {
-      // Ignore if index doesn't exist
-    }
+      console.log("✅ Old index dropped");
+    } catch {}
 
-    console.log("Starting the server...");
+    console.log("Starting server...");
     server.listen(PORT, () => {
-      console.log(`🌐 Server listening on http://localhost:${PORT}`);
+      console.log(`🌐 Server running on http://localhost:${PORT}`);
     });
 
-    // graceful shutdown
     const shutdown = () => {
       console.log("Shutting down...");
       io.close(() => {
         server.close(() => process.exit(0));
       });
     };
-    process.on("SIGINT", () => shutdown());
-    process.on("SIGTERM", () => shutdown());
+
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
+
   } catch (error) {
-    console.error("Error starting the server:", error);
+    console.error("Startup error:", error);
     process.exit(1);
   }
 }

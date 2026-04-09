@@ -11,7 +11,7 @@ export default function LoginModal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  const apiUrl = import.meta.env.VITE_API_URL || 'https://panditjiatrequest.com/api';
 
   // Update this path according to your actual logo location
   const logoUrl =

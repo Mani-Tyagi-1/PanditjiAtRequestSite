@@ -20,7 +20,7 @@ export function Services() {
         const list: Category[] = cached
           ? JSON.parse(cached)
           : await (async () => {
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
             const res = await fetch(`${apiUrl}/fetch-all-pooja-category`);
             const data = await res.json();
             const cats: Category[] = data?.poojaCategory ?? (Array.isArray(data) ? data : []);

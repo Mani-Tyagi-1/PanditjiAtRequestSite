@@ -56,7 +56,7 @@ app.get("/gen-stream-token/:userId", generateStreamToken);
 app.use("/", panditAuthRoutes);
 app.use("/", panditAddressRoutes);
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8001;
 
 const server = http.createServer(app);
 
@@ -128,7 +128,7 @@ async function startServer() {
     try {
       await UserAddressModel.collection.dropIndex("user_1_addressName_1");
       console.log("✅ Old index dropped");
-    } catch {}
+    } catch { }
 
     console.log("Starting server...");
     server.listen(PORT, () => {

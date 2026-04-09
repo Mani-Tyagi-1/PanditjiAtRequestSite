@@ -13,6 +13,7 @@ import MyBookingsPage from "./pages/MyBookingsPage";
 import VideoCallPage from "./video/VideoCallPage";
 import AudioCallPage from "./video/AudioCallPage";
 import TrackPanditPage from "./pages/TrackPanditPage";
+import BlogDetailPage from "./pages/BlogDetailPage";
 
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
@@ -55,6 +56,7 @@ function App() {
         <Route path="/video-call/:callId/:panditId" element={<VideoCallPage />} />
         <Route path="/audio-call/:callId/:panditId" element={<AudioCallPage />} />
         <Route path="/track-pandit/:panditId/:destLat/:destLng" element={<TrackPanditPage />} />
+        <Route path="/blog/:blogID" element={<BlogDetailPage />} />
 
         {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

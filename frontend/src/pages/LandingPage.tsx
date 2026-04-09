@@ -5,6 +5,8 @@ import RecomendedForYou from "../components/BookingComponents/RecomendedForYou";
 import ServicesSection from "../components/BookingComponents/ServicesSection";
 import WhyChooseUs from "../components/BookingComponents/WhyChoseUs";
 import Footer from "../components/Footer";
+import Testimonials from "../components/BookingComponents/Testimonials";
+import BlogsPage from "../components/BookingComponents/BlogsPage";
 import { Navigation } from "../components/NewComponents/Navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Smartphone } from "lucide-react";
@@ -90,6 +92,8 @@ export default function LandingPage() {
         <HowItWorks />
         <FeaturedPujas />
         <WhyChooseUs />
+        <Testimonials />
+        <BlogsPage />
         <Footer />
       </div>
     </>

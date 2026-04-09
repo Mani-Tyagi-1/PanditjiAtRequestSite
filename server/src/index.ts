@@ -15,6 +15,7 @@ import mobileOtpRoutes from "./routes/userAppRoutes/mobileOtpRoutes";
 import userAddressRoutes from "./routes/userAppRoutes/userAddressRoutes";
 import userRoutes from "./routes/userAppRoutes/userRoutes";
 import configRoutes from "./routes/userAppRoutes/configRoutes";
+import testimonialRoutes from "./routes/userAppRoutes/testimonialRoutes";
 import poojaBookingRoutes from "./routes/poojaBookingRouts/poojaBookingRoutes";
 import callingRoutes from "./routes/pushroutescontroller/callingroutesused";
 import pushRoutes from "./routes/pushroutescontroller/pushnotificationfirebaseroutes";
@@ -44,6 +45,7 @@ app.use("/api/", pujaCategoryRoutes);
 app.use("/api/", mobileOtpRoutes);
 app.use("/api/addresses", userAddressRoutes);
 app.use("/api/config", configRoutes);
+app.use("/api", testimonialRoutes);
 
 app.use("/api", poojaBookingRoutes);
 app.use("/api", userRoutes);

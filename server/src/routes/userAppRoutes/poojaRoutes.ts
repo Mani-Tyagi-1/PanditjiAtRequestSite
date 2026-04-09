@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import { fetchAllPoojas, fetchPoojabycategoryId, fetchPoojaById } from "../../controller/userApp/poojaController";
+import { fetchAllBlogs } from "../../controller/userApp/blogController";
 
 const router = express.Router();
 
@@ -39,5 +40,17 @@ router.get(
       }
     }
   );
+
+
+router.get(
+  "/fetch-all-blogs",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await fetchAllBlogs(req, res);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;

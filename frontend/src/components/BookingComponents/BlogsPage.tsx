@@ -69,7 +69,7 @@ export default function BlogsPage() {
         .blog-card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
       `}</style>
 
-      <section className="blog-body-font bg-[#FFFAF3] px-4 py-10 ">
+      <section className="blog-body-font bg-[#FFFAF3] py-10">
         {/* Header */}
         <div className="text-center mb-8">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-full px-3 py-1 mb-2 shadow-sm">
@@ -84,7 +84,7 @@ export default function BlogsPage() {
         </div>
 
         {/* Cards Auto-Scroll Area */}
-        <div className="blog-scroll overflow-x-auto overflow-y-hidden px-4 max-w-7xl mx-auto pb-12">
+        <div className="blog-scroll overflow-x-auto overflow-y-hidden pl-5 pr-4 pb-12">
           <div
             className="grid gap-4 py-2"
             style={{

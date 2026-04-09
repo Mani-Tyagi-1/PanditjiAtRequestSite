@@ -148,14 +148,6 @@ export default function BlogDetailPage() {
             <span className="flex items-center gap-1 text-xs text-stone-400 bg-stone-100 rounded-full px-2.5 py-1">
               🗓 {formatDate(blog.addedDate)}
             </span>
-            {blog.tags?.map((tag) => (
-              <span
-                key={tag}
-                className="text-xs text-orange-600 bg-orange-50 rounded-full px-2.5 py-1"
-              >
-                #{tag}
-              </span>
-            ))}
           </div>
 
           {/* Title */}

@@ -9,7 +9,7 @@ import {
   getOnePendingBooking,
   updatePendingBookingProgress,
   uploadPoojaCompletionMedia
-} from '../../controller/poojaBooking/poojaBookingController';
+} from '../../controllers/poojaBooking/poojaBookingController';
 
 import { createAnyFileUpload } from '../../utils/createAnyFileUpload';
 import { decryptRequest } from '../../utils/encryption';

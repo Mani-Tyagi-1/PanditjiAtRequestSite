@@ -1,155 +1,113 @@
-import express, { Request, Response, NextFunction, ErrorRequestHandler } from "express";
+import express, { Request, Response } from "express";
 import * as http from "http";
 import * as dotenv from "dotenv";
-import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
 
+// Config & DB
 import { panditJiAtRequestDB } from "../config/connectDB";
 import { VVMainConnectDB } from "../config/vedicVaibhavDB";
 
-// User/Pandit routes
-import panditRoutes from "./routes/panditAppRoutes/panditRoutes";
-import poojaRoutes from "./routes/userAppRoutes/poojaRoutes";
-import pujaCategoryRoutes from "./routes/userAppRoutes/pujaCategoryRoutes";
-import mobileOtpRoutes from "./routes/userAppRoutes/mobileOtpRoutes";
-import userAddressRoutes from "./routes/userAppRoutes/userAddressRoutes";
-import userRoutes from "./routes/userAppRoutes/userRoutes";
-import configRoutes from "./routes/userAppRoutes/configRoutes";
-import testimonialRoutes from "./routes/userAppRoutes/testimonialRoutes";
-import poojaBookingRoutes from "./routes/poojaBookingRouts/poojaBookingRoutes";
-import callingRoutes from "./routes/pushroutescontroller/callingroutesused";
-import pushRoutes from "./routes/pushroutescontroller/pushnotificationfirebaseroutes";
-import { generateStreamToken } from "./controller/userApp/StreamTokenController";
+// Utils
+import { validateEnv } from "./utils/env";
+import { setupSocketHandlers } from "./socketHandler";
 
-// Pandit app auth & address routes
-import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
-import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
-import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
-import PanditModel from "./model/panditApp/panditModel";
-import UserAddressModel from "./model/userApp/userAddressModel";
+// Middlewares
+import { applyCommonMiddlewares } from "./middlewares/commonMiddlewares";
+import { errorMiddleware } from "./middlewares/errorMiddleware";
+
+// Routes
+import apiRoutes from "./routes/index";
+import { generateStreamToken } from "./controllers/userApp/StreamTokenController";
+import UserAddressModel from "./models/userApp/userAddressModel";
 
 dotenv.config();
 
 const app = express();
-app.use(express.json());
-
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-}));
-
-// Routes
-app.use("/api/pandit", panditRoutes);
-app.use("/api/", poojaRoutes);
-app.use("/api/", pujaCategoryRoutes);
-app.use("/api/", mobileOtpRoutes);
-app.use("/api/addresses", userAddressRoutes);
-app.use("/api/config", configRoutes);
-app.use("/api", testimonialRoutes);
-
-app.use("/api", poojaBookingRoutes);
-app.use("/api", userRoutes);
-app.use("/api/calls", callingRoutes);
-app.use("/api", pushRoutes);
-app.use("/api/stream", streamRoutes);
-
-app.get("/gen-stream-token/:userId", generateStreamToken);
-
-// Pandit routes
-app.use("/", panditAuthRoutes);
-app.use("/", panditAddressRoutes);
-
-const PORT = process.env.PORT || 8001;
-
 const server = http.createServer(app);
 
+// 1. Validate Environment
+validateEnv();
+
+// 2. Apply Security & Utility Middlewares
+applyCommonMiddlewares(app);
+
+// 3. Socket.io setup
 const io = new SocketIOServer(server, {
-  cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"] },
+  cors: { 
+    origin: process.env.CORS_ORIGIN || "*", 
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"] 
+  },
 });
 
 app.set("io", io);
+setupSocketHandlers(io);
 
-io.on("connection", (socket) => {
-  console.log("🔌 Socket connected:", socket.id);
+// 4. API Routes
+app.use("/api", apiRoutes);
 
-  socket.on("pandit:join", (panditId: string) => {
-    const room = `pandit:${panditId}`;
-    socket.join(room);
-    console.log(`👳 Pandit joined ${room}`);
-  });
+// Special endpoints (kept as in original)
+app.get("/gen-stream-token/:userId", generateStreamToken);
 
-  socket.on("pandit:join_active_pool", () => {
-    socket.join("active_pandits");
-    console.log(`👳 Pandit ${socket.id} joined active_pandits`);
-  });
-
-  socket.on("user:track_pandit", (panditId: string) => {
-    const room = `pandit:${panditId}`;
-    socket.join(room);
-    console.log(`👤 User tracking pandit in room: ${room}`);
-  });
-
-  socket.on("pandit:location_update", async (data: { panditId: string; latitude: number; longitude: number }) => {
-    const { panditId, latitude, longitude } = data;
-    const room = `pandit:${panditId}`;
-
-    io.to(room).emit("user:pandit_location", {
-      panditId,
-      latitude,
-      longitude,
-    });
-
-    try {
-      await PanditModel.findByIdAndUpdate(panditId, {
-        "location.latitude": latitude,
-        "location.longitude": longitude,
-      });
-    } catch (err) {
-      console.error("Failed to update pandit location:", err);
-    }
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔌 Socket disconnected:", socket.id);
+// Health check
+app.get("/health", (_req: Request, res: Response) => {
+  res.status(200).json({ 
+    status: "ok", 
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
   });
 });
 
-// Error handler
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next: NextFunction) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ message: "Internal Server Error" });
-};
+// 5. Global Error Handler
+app.use(errorMiddleware);
 
-app.use(errorHandler);
+const PORT = Number(process.env.PORT) || 8001;
 
 async function startServer() {
   try {
-    console.log("Connecting to databases...");
-    await panditJiAtRequestDB();
-    await VVMainConnectDB();
+    console.log("🕒 Connecting to databases...");
+    await Promise.all([
+      panditJiAtRequestDB(),
+      VVMainConnectDB()
+    ]);
 
+    // Cleanup old indexes if necessary
     try {
       await UserAddressModel.collection.dropIndex("user_1_addressName_1");
       console.log("✅ Old index dropped");
-    } catch { }
+    } catch { 
+      // Ignored if index doesn't exist
+    }
 
-    console.log("Starting server...");
-    server.listen(PORT, () => {
+    console.log("🚀 Starting server...");
+    server.listen(PORT, "0.0.0.0", () => {
       console.log(`🌐 Server running on http://localhost:${PORT}`);
     });
 
-    const shutdown = () => {
-      console.log("Shutting down...");
+    // Graceful Shutdown
+    const shutdown = async (signal: string) => {
+      console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+      
       io.close(() => {
-        server.close(() => process.exit(0));
+        console.log("🔌 Socket server closed.");
       });
+
+      server.close(() => {
+        console.log("📡 HTTP server closed.");
+        process.exit(0);
+      });
+
+      // Force close after 10s
+      setTimeout(() => {
+        console.error("Could not close connections in time, forcefully shutting down");
+        process.exit(1);
+      }, 10000);
     };
 
-    process.on("SIGINT", shutdown);
-    process.on("SIGTERM", shutdown);
+    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
 
   } catch (error) {
-    console.error("Startup error:", error);
+    console.error("💥 Startup error:", error);
     process.exit(1);
   }
 }

@@ -8,7 +8,7 @@ import {
   deleteAddress,
   checkServiceability,
   checkPincodeServiceability
-} from "../../controller/userApp/userAddressController";
+} from "../../controllers/userApp/userAddressController";
 import { decryptRequest } from "../../utils/encryption";
 
 const router = Router();

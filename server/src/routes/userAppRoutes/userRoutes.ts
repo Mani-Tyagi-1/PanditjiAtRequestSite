@@ -3,7 +3,7 @@ import { Router } from "express";
 import {
   updateUserProfile,
   getUserByUserId,
-} from "../../controller/userApp/userController"; // ⬅️ update path if needed
+} from "../../controllers/userApp/userController"; // ⬅️ update path if needed
 import { decryptRequest } from "../../utils/encryption";
 
 const router = Router();

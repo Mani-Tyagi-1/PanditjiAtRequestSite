@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { fetchAllTestimonials } from "../../controller/userApp/testimonialController";
+import { fetchAllTestimonials } from "../../controllers/userApp/testimonialController";
 
 const router = express.Router();
 

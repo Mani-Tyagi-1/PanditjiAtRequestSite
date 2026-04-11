@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
-// import { fetchAllPoojas, fetchPoojaById } from "../controller/poojaController";
-import { fetchAllPoojaCategory,fetchPoojaCategoryById } from "../../controller/userApp/poojaCategoryController";
+// import { fetchAllPoojas, fetchPoojaById } from "../controllers/poojaController";
+import { fetchAllPoojaCategory,fetchPoojaCategoryById } from "../../controllers/userApp/poojaCategoryController";
 
 const router = express.Router();
 

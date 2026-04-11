@@ -1,4 +1,4 @@
-import DeviceToken from "../../model/firebaseNotification/Devicetoken";
+import DeviceToken from "../../models/firebaseNotification/Devicetoken";
 import { getFirebaseMessagingByAppType } from "../firebase/firebaseamdin";
 
 type AppType = "user" | "pandit";

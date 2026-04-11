@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
-import axios from "axios";
+import apiClient from "../../api/apiClient";
 import AppDownloadTopBar from "./AppDownloadTopBar";
 import LoginModal from "../Auth/LoginModal";
 import { useAuth } from "../../context/AuthContext";
@@ -27,10 +27,9 @@ const HeroSection = () => {
     useEffect(() => {
         const fetchAllPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'https://panditjiatrequest.com/api';
-                const { data } = await axios.get(`${apiUrl}/fetch-all-poojas`);
-                if (data && data.poojas) {
-                    setAllPujas(data.poojas);
+                const response = await apiClient.get("/fetch-all-poojas");
+                if (response.data && response.data.poojas) {
+                    setAllPujas(response.data.poojas);
                 }
             } catch (err) {
                 console.error("Error fetching pujas for search:", err);

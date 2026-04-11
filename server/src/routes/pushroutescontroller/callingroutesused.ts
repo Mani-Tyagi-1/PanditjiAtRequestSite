@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { acceptCall, cancelCall, inviteCall, rejectCall } from "../../controller/notificfirebase/callnotificcontroller";
+import { acceptCall, cancelCall, inviteCall, rejectCall } from "../../controllers/notificfirebase/callnotificcontroller";
 
 const router = Router();
 

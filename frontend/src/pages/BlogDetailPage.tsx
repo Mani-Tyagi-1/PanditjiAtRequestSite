@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import apiClient from "../api/apiClient";
 
 interface Blog {
   _id: string;
@@ -29,17 +30,21 @@ export default function BlogDetailPage() {
   const [imgIndex, setImgIndex] = useState(0);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-    fetch(`${apiUrl}/fetch-all-blogs`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          const found = data.data.find((b: Blog) => b.blogID === blogID);
-          setBlog(found || null);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const fetchBlog = async () => {
+      try {
+        const res = await apiClient.get("/fetch-all-blogs");
+        const data = res.data;
+        // apiClient unwraps the { success, data } format
+        const blogList = Array.isArray(data) ? data : (data?.blogs || []);
+        const found = blogList.find((b: Blog) => b.blogID === blogID);
+        setBlog(found || null);
+      } catch (err) {
+        console.error("Error fetching blog details:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBlog();
   }, [blogID]);
 
   if (loading) {

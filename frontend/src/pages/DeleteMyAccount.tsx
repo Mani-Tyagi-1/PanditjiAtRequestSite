@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 
 const DeleteMyAccount = () => {
   const [phone, setPhone] = useState("");
@@ -26,8 +26,8 @@ const DeleteMyAccount = () => {
 
       try {
         // Send phone number to backend to request OTP
-        const response = await axios.post(
-          "http://localhost:5000/api/delete-account",
+        const response = await apiClient.post(
+          "/delete-account",
           { phone }
         );
         if (response.status === 200) {
@@ -49,8 +49,8 @@ const DeleteMyAccount = () => {
 
       try {
         // Send OTP to backend to verify and delete account
-        const response = await axios.post(
-          "http://localhost:5000/api/verify-otp-and-delete",
+        const response = await apiClient.post(
+          "/verify-otp-and-delete",
           {
             phone,
             otp,

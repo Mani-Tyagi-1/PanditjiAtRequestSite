@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import User, { IUser } from "../model/userApp/userModel"; // Adjust path as needed
+import User, { IUser } from "../models/userApp/userModel"; // Adjust path as needed
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "d73379f59c7be52848105a5fb83fb0e67770bdd8a03ac5fea96903daaf4977ee";
 

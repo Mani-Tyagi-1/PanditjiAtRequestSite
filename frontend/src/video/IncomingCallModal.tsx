@@ -1,4 +1,4 @@
-import axios from "axios";
+import apiClient from "../api/apiClient";
 
 type Props = {
   callId: string;
@@ -14,7 +14,7 @@ export default function IncomingCallModal({
   onClose,
 }: Props) {
   const reject = async () => {
-    await axios.post(`/api/calls/${callId}/reject`);
+    await apiClient.post(`/calls/${callId}/reject`);
     onClose();
   };
 

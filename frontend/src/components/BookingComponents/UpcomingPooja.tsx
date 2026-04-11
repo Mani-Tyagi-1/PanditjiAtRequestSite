@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import PujaCard from "./UI/PujaCard";
-import axios from "axios";
+import apiClient from "../../api/apiClient";
 
 // ─── Upcoming Pujas Section ───────────────────────────────────
 export default function FeaturedPujas() {
@@ -10,8 +10,7 @@ export default function FeaturedPujas() {
     useEffect(() => {
         const fetchPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-                const response = await axios.get(`${apiUrl}/fetch-all-poojas`);
+                const response = await apiClient.get("/fetch-all-poojas");
                 setPujas(response.data.poojas || []);
             } catch (error) {
                 console.error("Error fetching featured pujas:", error);

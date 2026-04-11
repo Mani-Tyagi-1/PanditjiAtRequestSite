@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import apiClient from "../../api/apiClient";
 
 // ── Dummy Data ────────────────────────────────────────────────
 const STATIC_INCLUDES = [
@@ -136,9 +137,8 @@ export default function PujaDetailPage() {
     useEffect(() => {
         const fetchPooja = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-                const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
-                const data = await response.json();
+                const response = await apiClient.get(`/fetch-pooja-by-id/${pujaId}`);
+                const data = response.data;
 
                 if (data && data.pooja) {
                     setPujaData(data.pooja);

@@ -3,7 +3,7 @@ import {
   addReview,
   getReviewsByBookingId,
   getReviewsByPoojaId
-} from "../../controller/userApp/reviewController";
+} from "../../controllers/userApp/reviewController";
 
 const router = express.Router();
 

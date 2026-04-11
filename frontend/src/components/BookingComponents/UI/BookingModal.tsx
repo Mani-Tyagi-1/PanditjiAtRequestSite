@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../../../api/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import { encryptPayload, decryptData } from "../../../utils/encryption";
 import {
@@ -381,10 +382,8 @@ export default function BookingModal({
   const fetchCoupons = async () => {
     setIsLoadingCoupons(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-
-      const response = await fetch(`${apiUrl}/config/fetch-coupons-proxy`);
-      const data = await response.json();
+      const response = await apiClient.get("/config/fetch-coupons-proxy");
+      const data = response.data;
 
       const allCoupons = data.coupons || [];
       const activeCoupons = allCoupons.filter((c: any) => c.isActive);
@@ -392,8 +391,8 @@ export default function BookingModal({
       if (user?._id || user?.id) {
         const userId = user?._id || user?.id;
         try {
-          const usageRes = await fetch(`${apiUrl}/config/check-coupon-usage-proxy/${userId}`);
-          const usageData = await usageRes.json();
+          const usageRes = await apiClient.get(`/config/check-coupon-usage-proxy/${userId}`);
+          const usageData = usageRes.data;
           setCouponUsage(Array.isArray(usageData) ? usageData : (usageData.usages || usageData.usage || []));
         } catch (usageErr) {
           console.error("Error fetching coupon usage:", usageErr);
@@ -573,15 +572,8 @@ export default function BookingModal({
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-        const res = await fetch(`${apiUrl}/config/maps`);
-
-        if (!res.ok) {
-          console.warn("Failed to fetch maps config");
-          return;
-        }
-
-        const data = await res.json();
+        const response = await apiClient.get("/config/maps");
+        const data = response.data;
 
         if (data.apiKey && typeof data.apiKey === "string") {
           setGoogleMapsApiKey(data.apiKey);
@@ -601,20 +593,22 @@ export default function BookingModal({
       if (!user) return;
       setIsLoadingAddresses(true);
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const userId = user?._id || user?.id;
         console.log("Fetching saved addresses for user:", userId);
-        const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
+        const res = await apiClient.get(`/addresses?userId=${userId}`);
 
-        if (res.ok) {
-          const data = await res.json();
-          const decrypted = decryptData(data.encrypted);
+        if (res.status === 200) {
+          // res.data is already unwrapped by apiClient interceptor to the address array
+          const addresses = res.data;
+          console.log("DEBUG: Saved addresses API success. Data:", addresses);
 
-          if (Array.isArray(decrypted)) {
-            setSavedAddresses(decrypted);
+          if (Array.isArray(addresses)) {
+            setSavedAddresses(addresses);
+          } else {
+            console.warn("DEBUG: API returned success but addresses is not an array:", addresses);
           }
         } else {
-          console.error("Failed to fetch saved addresses, status:", res.status);
+          console.error("DEBUG: Failed to fetch saved addresses. Status:", res.status, "Data:", res.data);
         }
       } catch (err) {
         console.error("Failed to fetch saved addresses error:", err);
@@ -808,17 +802,14 @@ export default function BookingModal({
             longitude: markerPosition.lng
           });
 
-        const checkRes = await fetch(`${apiUrl}/addresses/check`, {
-          method: "POST",
+        const checkRes = await apiClient.post("/addresses/check", checkPayload, {
           headers: {
-            "Content-Type": "application/json",
             "x-user-id": user?._id || user?.id || ""
-          },
-          body: JSON.stringify(checkPayload),
+          }
         });
 
-        if (checkRes.ok) {
-          const data = await checkRes.json();
+        if (checkRes.status === 200) {
+          const data = checkRes.data;
 
           if (!data.isServiceable) {
             setNotServiceablePopup(true);
@@ -845,11 +836,7 @@ export default function BookingModal({
 
               const encryptedAddress = encryptPayload(addressPayload);
 
-              fetch(`${apiUrl}/addresses`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(encryptedAddress),
-              }).catch(err => console.error("Auto-save address failed:", err));
+              apiClient.post("/addresses", encryptedAddress).catch(err => console.error("Auto-save address failed:", err));
             } catch (err) {
               console.error("Failed to prepare address saving payload:", err);
             }
@@ -909,18 +896,17 @@ export default function BookingModal({
 
       const encryptedPendingPayload = encryptPayload(pendingPayload);
 
-      const pendingRes = await fetch(`${apiUrl}/bookings/create-pending`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(encryptedPendingPayload),
-      });
+      const pendingRes = await apiClient.post("/bookings/create-pending", encryptedPendingPayload);
 
-      if (!pendingRes.ok) {
-        const errorData = await pendingRes.json();
-        throw new Error(errorData.message || "Failed to initialize booking.");
+      // The backend returns 201 for Created, so we check status correctly
+      if (pendingRes.status !== 200 && pendingRes.status !== 201) {
+        throw new Error(pendingRes.data.message || "Failed to initialize booking.");
       }
 
-      const pendingData = await pendingRes.json();
+      // apiClient auto-unwraps response.data.data if success: true and data field are present.
+      // After backend standardization, pendingData will be the unwrapped object.
+      // But we handle both cases for robustness.
+      const pendingData = pendingRes.data.success === true ? pendingRes.data.data : pendingRes.data;
 
       const options = {
         key: pendingData.razorpayKeyId,
@@ -941,33 +927,26 @@ export default function BookingModal({
 
             const encryptedCompletePayload = encryptPayload(completePayload);
 
-            const compRes = await fetch(`${apiUrl}/bookings/complete-booking`, {
-              method: "POST",
+            const compRes = await apiClient.post("/bookings/complete-booking", encryptedCompletePayload, {
               headers: {
-                "Content-Type": "application/json",
                 "x-event-source-url": window.location.href,
                 "x-fbp": getCookie("_fbp"),
                 "x-fbc": getCookie("_fbc"),
-              },
-              body: JSON.stringify(encryptedCompletePayload),
+              }
             });
 
-            if (!compRes.ok) {
+            if (compRes.status !== 200 && compRes.status !== 201) {
               throw new Error("Payment verification failed on server");
             }
 
             if (appliedCoupon) {
-              fetch(`${apiUrl}/config/apply-coupon-proxy`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+              apiClient.post("/config/apply-coupon-proxy", {
                   userId: user?._id || (user as any)?.id,
                   phone: contactNumber || (user as any)?.phone || 0,
                   appKey: "par",
                   couponCode: appliedCoupon.code,
                   orderAmount: currentPoojaPrice,
-                }),
-              }).catch((err) => console.error("Coupon apply after payment failed:", err));
+                }).catch((err) => console.error("Coupon apply after payment failed:", err));
             }
 
             setShowSuccessModal(true);

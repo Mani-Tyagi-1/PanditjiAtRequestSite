@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 import { getSocket } from "../utils/socketClient";
 
 type LatLng = { latitude: number; longitude: number };
@@ -27,10 +27,7 @@ export const usePanditTrackingStore = create<State>((set) => ({
 
     // 1) Fetch initial location
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-      const url = `${apiUrl}/pandit/${encodeURIComponent(panditId)}/location`;
-
-      const res = await axios.get(url);
+      const res = await apiClient.get(`/pandit/${encodeURIComponent(panditId)}/location`);
       if (res?.data?.latitude && res?.data?.longitude) {
         set({
           panditLocation: {

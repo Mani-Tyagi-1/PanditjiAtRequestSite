@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getGoogleMapsConfig, proxyFetchPromos, proxyFetchCoupons, proxyCheckCouponUsage, proxyApplyCoupon } from "../../controller/userApp/configController";
+import { getGoogleMapsConfig, proxyFetchPromos, proxyFetchCoupons, proxyCheckCouponUsage, proxyApplyCoupon } from "../../controllers/userApp/configController";
 
 const router = Router();
 

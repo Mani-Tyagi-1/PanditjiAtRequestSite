@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sendOtpPandit, verifyOtpPandit } from "../../controller/panditApp/panditAuthController";
+import { sendOtpPandit, verifyOtpPandit } from "../../controllers/panditApp/panditAuthController";
 import { asyncHandler } from "../../utils/helpers";
 
 const router = Router();

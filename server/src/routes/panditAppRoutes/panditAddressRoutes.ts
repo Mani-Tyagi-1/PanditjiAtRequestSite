@@ -4,7 +4,7 @@ import {
   getPanditAddresses,
   updatePanditSecondary,
   deletePanditSecondary,
-} from "../../controller/panditApp/panditAddressController";
+} from "../../controllers/panditApp/panditAddressController";
 import { asyncHandler } from "../../utils/helpers";
 
 const router = Router();

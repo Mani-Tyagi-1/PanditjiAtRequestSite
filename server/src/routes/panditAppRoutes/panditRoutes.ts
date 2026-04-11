@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
-import { createPandit, fetchAllPandit, fetchPanditById, getLocationSuggestions, getPanditLocation } from "../../controller/panditApp/panditController";
+import { createPandit, fetchAllPandit, fetchPanditById, getLocationSuggestions, getPanditLocation } from "../../controllers/panditApp/panditController";
 import { createMultipleFileUpload } from "../../middlewares/panditUploadMiddleware";
-import { getPanditStats } from "../../controller/panditApp/panditStatsController";
+import { getPanditStats } from "../../controllers/panditApp/panditStatsController";
 
 const router = express.Router();
 

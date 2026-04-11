@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Flame, Home, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../../api/apiClient";
 
 interface Category {
   _id: string;
@@ -20,9 +21,8 @@ export function Services() {
         const list: Category[] = cached
           ? JSON.parse(cached)
           : await (async () => {
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-            const res = await fetch(`${apiUrl}/fetch-all-pooja-category`);
-            const data = await res.json();
+            const res = await apiClient.get("/fetch-all-pooja-category");
+            const data = res.data;
             const cats: Category[] = data?.poojaCategory ?? (Array.isArray(data) ? data : []);
             const active = cats.filter((c) => c.isActive);
             sessionStorage.setItem("pooja_categories", JSON.stringify(active));

@@ -4,6 +4,7 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
+import apiClient from "../../api/apiClient";
 import PujaCard from "./UI/PujaCard";
 
 interface PujaData {
@@ -64,11 +65,8 @@ export default function CategoryPage() {
     const fetchHeaderFallback = async () => {
       // only used when page refreshed directly and state is missing
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-        const response = await fetch(`${apiUrl}/fetch-all-pooja-category`, {
-          signal: controller.signal,
-        });
-        const data = await response.json();
+        const response = await apiClient.get("/fetch-all-pooja-category");
+        const data = response.data;
 
         let categoryList: CategoryData[] = [];
 
@@ -84,9 +82,7 @@ export default function CategoryPage() {
         setCategoryDetails(matched);
         setSubCategories(matched?.sub_categories || []);
       } catch (error: any) {
-        if (error?.name !== "AbortError") {
-          console.error("Error fetching category details:", error);
-        }
+        console.error("Error fetching category details:", error);
       } finally {
         setIsLoadingHeader(false);
       }
@@ -94,7 +90,6 @@ export default function CategoryPage() {
 
     const fetchPujas = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
         const cacheKey = `poojas_by_cat_${categoryId}`;
 
         // 1. instant cache load
@@ -109,18 +104,15 @@ export default function CategoryPage() {
         }
 
         // 2. network fetch (fresh data)
-        const response = await fetch(`${apiUrl}/fetch-pooja-by-cat-id/${categoryId}`, {
-          signal: controller.signal,
-        });
-        const data = await response.json();
+        const response = await apiClient.get(`/fetch-pooja-by-cat-id/${categoryId}`);
+        const data = response.data;
 
         let pujasList: PujaData[] = [];
 
+        // Simplified extraction using standardized apiClient unwrapping
         if (Array.isArray(data)) pujasList = data;
         else if (Array.isArray(data?.poojas)) pujasList = data.poojas;
         else if (Array.isArray(data?.data)) pujasList = data.data;
-        else if (Array.isArray(data?.pooja)) pujasList = data.pooja;
-        else if (Array.isArray(data?.poojaDetails)) pujasList = data.poojaDetails;
 
         const safePujas = pujasList.filter(
           (p) =>
@@ -131,9 +123,7 @@ export default function CategoryPage() {
         setAllPujas(safePujas);
         sessionStorage.setItem(cacheKey, JSON.stringify(safePujas));
       } catch (error: any) {
-        if (error?.name !== "AbortError") {
-          console.error("Error fetching pujas:", error);
-        }
+        console.error("Error fetching pujas:", error);
       } finally {
         setIsLoadingPujas(false);
       }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     User,
@@ -118,12 +118,7 @@ const ProfilePage: React.FC = () => {
             const storedUser = JSON.parse(userDataString);
             const userId = storedUser._id;
 
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-            const response = await axios.get(`${apiUrl}/profile/${userId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const response = await apiClient.get(`/profile/${userId}`);
 
             if (response.data && response.data.encrypted) {
                 const decrypted = decryptData(response.data.encrypted);
@@ -160,9 +155,6 @@ const ProfilePage: React.FC = () => {
         if (!user?._id) return;
         setIsSaving(true);
         try {
-            const token = localStorage.getItem("user_token");
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-
             // Prepare payload
             const payload = {
                 firstname: formData.given_name,
@@ -179,14 +171,7 @@ const ProfilePage: React.FC = () => {
             // Use the standard encryptPayload helper
             const encryptedPayload = encryptPayload(payload);
 
-            await axios.put(`${apiUrl}/updateProfile/${user._id}`,
-                encryptedPayload,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
+            await apiClient.put(`/updateProfile/${user._id}`, encryptedPayload);
 
             // Update local state
             await fetchUserProfile();

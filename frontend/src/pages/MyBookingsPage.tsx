@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import apiClient from "../api/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ChevronLeft,
@@ -59,8 +59,7 @@ const MyBookingsPage: React.FC = () => {
             const user = JSON.parse(userDataString);
             const userPhone = user.phone;
 
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-            const response = await axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${userPhone}`);
+            const response = await apiClient.get(`/bookings/get-pending-poojabookings/${userPhone}`);
 
             setBookings(response.data || []);
             setError(null);
@@ -84,10 +83,7 @@ const MyBookingsPage: React.FC = () => {
 
             const baseCallId = crypto.randomUUID();
             const callId = type === "audio" ? `${baseCallId}_AC` : `${baseCallId}_VC`;
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-            const status = type === "video" ? "ringing" : "call-ringing";
-
-            await axios.post(`${apiUrl}/calls/invite`, {
+            await apiClient.post(`/calls/invite`, {
                 fromUserId: user._id,
                 toUserId: panditId,
                 callId,

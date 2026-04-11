@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import apiClient from "../../api/apiClient";
 
 interface Testimonial {
   _id: string;
@@ -63,14 +64,17 @@ export default function Testimonials() {
   const scrollDirection = useRef(1);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-    fetch(`${apiUrl}/fetch-all-testimonials`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setTestimonials(data.data);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    const fetchTestimonials = async () => {
+      try {
+        const res = await apiClient.get("/fetch-all-testimonials");
+        setTestimonials(res.data || []);
+      } catch (err) {
+        console.error("Error fetching testimonials:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTestimonials();
   }, []);
 
   // Auto-scroll ping-pong (matches app behavior)

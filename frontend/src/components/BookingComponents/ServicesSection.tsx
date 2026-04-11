@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../../api/apiClient";
 
 interface Category {
   _id: string;
@@ -25,9 +26,8 @@ export default function PujaServices() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
-        const response = await fetch(`${apiUrl}/fetch-all-pooja-category`);
-        const data = await response.json();
+        const response = await apiClient.get("/fetch-all-pooja-category");
+        const data = response.data;
 
         let categoryList: Category[] = [];
 

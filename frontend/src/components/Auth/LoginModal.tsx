@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import apiClient from '../../api/apiClient';
 
 export default function LoginModal() {
   const { isLoginModalOpen, closeLoginModal, login } = useAuth();
@@ -10,8 +11,6 @@ export default function LoginModal() {
   const [otp, setOtp] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
-
-  const apiUrl = import.meta.env.VITE_API_URL || 'https://panditjiatrequest.com/api';
 
   // Update this path according to your actual logo location
   const logoUrl =
@@ -28,18 +27,16 @@ export default function LoginModal() {
 
     setIsProcessing(true);
     try {
-      const res = await fetch(`${apiUrl}/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, isNotifyOkay: true }),
-      });
+      const res = await apiClient.post('/send-otp', { phone, isNotifyOkay: true });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to send OTP');
+      // If success is false but status is 200 (legacy), handle it
+      if (res.data.success === false) {
+        throw new Error(res.data.message || 'Failed to send OTP');
+      }
 
       setStep('otp');
     } catch (err: any) {
-      setError(err.message || 'An error occurred while sending OTP');
+      setError(err.response?.data?.message || err.message || 'An error occurred while sending OTP');
     } finally {
       setIsProcessing(false);
     }
@@ -56,23 +53,31 @@ export default function LoginModal() {
 
     setIsProcessing(true);
     try {
-      const res = await fetch(`${apiUrl}/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
-      });
+      const res = await apiClient.post('/verify-otp', { phone, otp });
+      const data = res.data;
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Invalid OTP');
+      // apiClient auto-unwraps the 'data' field if present
+      // If it returns { success, message, data: { token, user } }, 
+      // then res.data is { token, user }
+      
+      const token = data.token;
+      const userObj = data.user;
 
-      login(data.token, data.user);
+      if (!token || !userObj) {
+        // Handle case where data wasn't unwrapped as expected or success was false
+        if (data.success === false) {
+          throw new Error(data.message || 'Invalid OTP');
+        }
+      }
+
+      login(token, userObj);
 
       setStep('phone');
       setPhone('');
       setOtp('');
       closeLoginModal();
     } catch (err: any) {
-      setError(err.message || 'An error occurred while verifying OTP');
+      setError(err.response?.data?.message || err.message || 'An error occurred while verifying OTP');
     } finally {
       setIsProcessing(false);
     }

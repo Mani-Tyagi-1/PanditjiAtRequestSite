@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerPushToken } from "../../controller/notificfirebase/pushnotifeecontroller";
+import { registerPushToken } from "../../controllers/notificfirebase/pushnotifeecontroller";
 
 
 const router = Router();

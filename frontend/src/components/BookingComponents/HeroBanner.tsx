@@ -159,8 +159,10 @@ const HeroSection = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="relative w-full rounded-2xl overflow-hidden"
+                        whileTap={{ scale: 0.98 }}
+                        className="relative w-full rounded-2xl overflow-hidden cursor-pointer"
                         style={{ maxHeight: "140px" }}
+                        onClick={() => window.open("https://play.google.com/store/apps/details?id=com.panditJiAtReqapp", "_blank")}
                     >
                         {/* Background Image */}
                         <img

@@ -20,6 +20,7 @@ import poojaBookingRoutes from "./routes/poojaBookingRouts/poojaBookingRoutes";
 import callingRoutes from "./routes/pushroutescontroller/callingroutesused";
 import pushRoutes from "./routes/pushroutescontroller/pushnotificationfirebaseroutes";
 import { generateStreamToken } from "./controller/userApp/StreamTokenController";
+import consultancyLeadRoutes from "../routes/consultancyLeadRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -52,6 +53,7 @@ app.use("/api", userRoutes);
 app.use("/api/calls", callingRoutes);
 app.use("/api", pushRoutes);
 app.use("/api/stream", streamRoutes);
+app.use("/api", consultancyLeadRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 

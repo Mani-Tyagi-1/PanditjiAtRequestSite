@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import BookingModal from "./UI/BookingModal";
+import ConsultancyModal from "./ConsultancyModal";
 
 // ── Dummy Data ────────────────────────────────────────────────
 const STATIC_INCLUDES = [
@@ -105,8 +107,6 @@ function AccordionRow({
     );
 }
 
-import BookingModal from "./UI/BookingModal";
-
 // ── Main Page ──────────────────────────────────────────────────
 export default function PujaDetailPage() {
     const { pujaId } = useParams();
@@ -123,6 +123,7 @@ export default function PujaDetailPage() {
     };
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [pendingBooking, setPendingBooking] = useState(false);
+    const [isConsultancyOpen, setIsConsultancyOpen] = useState(false);
 
     useEffect(() => {
         if (user && pendingBooking) {
@@ -206,6 +207,13 @@ export default function PujaDetailPage() {
                 pooja={pujaData}
             />
 
+            <ConsultancyModal
+                isOpen={isConsultancyOpen}
+                onClose={() => setIsConsultancyOpen(false)}
+                prefillName={user?.name || user?.fullName || ""}
+                prefillPhone={user?.phone || user?.mobileNumber || ""}
+            />
+
             <div className="detail-page flex justify-center">
                 <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm pb-32">
                     {/* ── Header ── */}
@@ -242,11 +250,20 @@ export default function PujaDetailPage() {
                             {deity}
                         </p>
 
-                        <div className="flex items-center justify-center gap-3 mt-2">
-                            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-orange-400/50" />
-                            <span className="text-orange-500">🕉</span>
-                            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-orange-400/50" />
-                        </div>
+                        {/* Free Consultation CTA */}
+                        <button
+                            onClick={() => setIsConsultancyOpen(true)}
+                            className="mt-3 inline-flex items-center gap-2 bg-green-500 text-white font-bold text-xs px-4 py-2 rounded-full shadow-md active:scale-95 transition-all duration-200"
+                            style={{ boxShadow: "0 2px 14px rgba(22,163,74,0.35)" }}
+                        >
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/25 rounded-full shrink-0">
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                                </svg>
+                            </span>
+                            Get FREE Consultation
+                            <span className="bg-white text-green-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">FREE</span>
+                        </button>
                     </div>
 
                     {/* ── Content ── */}

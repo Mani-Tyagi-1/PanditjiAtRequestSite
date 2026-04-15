@@ -167,8 +167,8 @@ const MyBookingsPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#FFF7F0] font-sans flex justify-center">
-            <div className="w-full max-w-md bg-[#FFF7F0] min-h-screen relative pb-8">
+        <div className="min-h-screen bg-[#FFF7F0] font-sans flex justify-center ">
+            <div className="w-full max-w-md bg-[#FFF7F0] min-h-screen shadow-lg border border-gray-200 relative pb-8">
 
                 {/* ── Sticky Header ── */}
                 <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-orange-100/60 shadow-sm">

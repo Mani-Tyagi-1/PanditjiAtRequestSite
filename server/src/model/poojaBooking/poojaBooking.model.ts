@@ -74,6 +74,9 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
 
     assignedPandit: [{ type: Schema.Types.ObjectId, ref: 'Pandit' }],
 
+    // Partner affiliate referral code (from ?ref= URL param, copied from pending booking)
+    referralCode: { type: String, default: undefined },
+
     // ✅ NEW: live location fields
     currentLat: { type: Number, default: null },
     currentLong: { type: Number, default: null },

@@ -32,11 +32,36 @@ function PixelPageTracker() {
   return null;
 }
 
+// Captures ?ref=CODE from URL on any page and stores in localStorage for 2 days
+function ReferralCapture() {
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = params.get("ref");
+    if (ref && /^[A-Za-z0-9_-]{3,40}$/.test(ref)) {
+      localStorage.setItem(
+        "pjar_partner_ref",
+        JSON.stringify({ code: ref, storedAt: Date.now() })
+      );
+      // Remove ?ref from URL without a page reload
+      params.delete("ref");
+      const newSearch = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        location.pathname + (newSearch ? `?${newSearch}` : "") + location.hash
+      );
+    }
+  }, [location.search]);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
       <LoginModal />
       <PixelPageTracker />
+      <ReferralCapture />
       <Routes>
         <Route path="/" element={<LandingPage/>} />
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />

@@ -459,12 +459,6 @@ const ProfilePage: React.FC = () => {
                                                 <p className="text-xs text-gray-400 mt-0.5">Share PanditJi links to earn rewards</p>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={handleNativeShare}
-                                            className="w-9 h-9 rounded-xl border border-orange-100 bg-orange-50 flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
-                                        >
-                                            <Share2 className="w-4 h-4 text-[#FF7000]" />
-                                        </button>
                                     </div>
 
                                     {/* Stats row */}

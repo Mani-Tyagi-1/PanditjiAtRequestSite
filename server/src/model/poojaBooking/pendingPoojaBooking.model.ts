@@ -54,6 +54,9 @@ export interface IPendingPoojaBooking extends Document {
   // Location tracking (initial or live)
   currentLat?: number | null;
   currentLong?: number | null;
+
+  // Partner affiliate referral code (from ?ref= URL param)
+  referralCode?: string;
 }
 
 const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
@@ -109,6 +112,9 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     // Location
     currentLat: { type: Number, default: null },
     currentLong: { type: Number, default: null },
+
+    // Partner affiliate referral code
+    referralCode: { type: String, default: undefined },
   },
   { timestamps: true },
 );

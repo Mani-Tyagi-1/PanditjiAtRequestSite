@@ -876,6 +876,22 @@ export default function BookingModal({
         ? `${selectedDate}T${selectedTime}`
         : selectedDate;
 
+      // Read partner referral code from localStorage (2-day TTL)
+      const partnerRefCode = (() => {
+        try {
+          const raw = localStorage.getItem("pjar_partner_ref");
+          if (!raw) return "";
+          const entry = JSON.parse(raw) as { code: string; storedAt: number };
+          if (Date.now() - entry.storedAt > 2 * 24 * 60 * 60 * 1000) {
+            localStorage.removeItem("pjar_partner_ref");
+            return "";
+          }
+          return entry.code || "";
+        } catch {
+          return "";
+        }
+      })();
+
       const pendingPayload = {
         userId,
         poojaId: pooja?._id || pooja?.id,
@@ -887,6 +903,7 @@ export default function BookingModal({
         gotra,
         contactNumber,
         emailId,
+        ...(partnerRefCode && { referralCode: partnerRefCode }),
         address:
           mode === "offline"
             ? {

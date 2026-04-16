@@ -4,6 +4,7 @@ import pendingPoojaBookingModel from '../../model/poojaBooking/pendingPoojaBooki
 import poojaBookingModel, { IPoojaBooking } from '../../model/poojaBooking/poojaBooking.model';
 import User from '../../model/userApp/userModel';
 import Pooja from '../../model/userApp/poojaModel';
+import UserReferralBooking from '../../model/userApp/userReferralBooking.model';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
@@ -441,6 +442,63 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
       }
     })();
     // ----------------------------------------------------------
+
+    // ── Internal Referral Credit (fire-and-forget) ──────────────
+    void (async () => {
+      try {
+        const bookedUserId = String((finalBooking as any).userId || '');
+        if (!bookedUserId) return;
+
+        const bookedUser = await User.findById(bookedUserId).select(
+          'userReferral name given_name family_name'
+        );
+        if (!bookedUser?.userReferral?.referrerId) return;
+
+        const { referrerId, expiresAt, code } = bookedUser.userReferral;
+
+        // Only honour if the referral window hasn't expired
+        if (!expiresAt || new Date() > new Date(expiresAt)) return;
+
+        const totalAmount = Number((finalBooking as any).amount || amountPaid || 0);
+        const rewardPct = parseFloat(process.env.INTERNAL_REFERRAL_PCT ?? '5');
+        const amountEarned = Math.round((totalAmount * rewardPct) / 100);
+
+        const poojaName = finalBooking.poojaNameEng || 'Puja';
+        const referredUserName =
+          `${bookedUser.given_name || ''} ${bookedUser.family_name || ''}`.trim() ||
+          bookedUser.name ||
+          'User';
+
+        // 1) Record the referral booking
+        await UserReferralBooking.create({
+          referrerId,
+          referredUserId: bookedUser._id,
+          referredUserName,
+          bookingId: (finalBooking as any)._id,
+          poojaName,
+          amountEarned,
+          totalBookingAmount: totalAmount,
+          rewardPercentage: rewardPct,
+        });
+
+        // 2) Credit referrer + increment counter
+        await User.findByIdAndUpdate(referrerId, {
+          $inc: { referralEarnings: amountEarned, totalReferredPujas: 1 },
+        });
+
+        // 3) Clear referral from the referred user so it isn't applied again
+        await User.findByIdAndUpdate(bookedUser._id, {
+          $unset: { userReferral: '' },
+        });
+
+        console.log(
+          `[Referral] ✅ ₹${amountEarned} credited to referrer ${referrerId} for booking ${(finalBooking as any)._id}`
+        );
+      } catch (refErr: any) {
+        console.error('[Referral] ❌ credit failed:', refErr?.message || refErr);
+      }
+    })();
+    // ────────────────────────────────────────────────────────────
 
     res.status(201).json({
       message: 'Pooja booking confirmed and payment verified.',

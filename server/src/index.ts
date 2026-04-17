@@ -22,6 +22,7 @@ import pushRoutes from "./routes/pushroutescontroller/pushnotificationfirebasero
 import { generateStreamToken } from "./controller/userApp/StreamTokenController";
 import consultancyLeadRoutes from "../routes/consultancyLeadRoutes";
 import referralRoutes from "./routes/userAppRoutes/referralRoutes";
+import pujaEnquiryRoutes from "./routes/userAppRoutes/pujaEnquiryRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -56,6 +57,7 @@ app.use("/api", pushRoutes);
 app.use("/api/stream", streamRoutes);
 app.use("/api", consultancyLeadRoutes);
 app.use("/api", referralRoutes);
+app.use("/api", pujaEnquiryRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 

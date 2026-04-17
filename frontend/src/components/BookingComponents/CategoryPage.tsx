@@ -5,6 +5,8 @@ import {
   useLocation,
 } from "react-router-dom";
 import PujaCard from "./UI/PujaCard";
+import ConsultancyModal from "./ConsultancyModal";
+import { useAuth } from "../../context/AuthContext";
 
 interface PujaData {
   _id: string;
@@ -39,6 +41,8 @@ export default function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const [isConsultancyOpen, setIsConsultancyOpen] = useState(false);
 
   const passedCategory = (location.state as LocationState | null)?.category || null;
 
@@ -221,7 +225,30 @@ export default function CategoryPage() {
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-hide: none; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
         .fade-up { animation: fadeUp 0.38s ease both; }
+        @keyframes enquiryPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.7), 0 2px 14px rgba(22,163,74,0.4); transform: scale(1); }
+          50%       { box-shadow: 0 0 0 8px rgba(22,163,74,0), 0 2px 20px rgba(22,163,74,0.6); transform: scale(1.04); }
+        }
+        @keyframes shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        .enquiry-btn {
+          animation: enquiryPulse 1.8s ease-in-out infinite;
+          background: linear-gradient(90deg, #16a34a, #22c55e, #4ade80, #22c55e, #16a34a);
+          background-size: 200% auto;
+        }
+        .enquiry-btn:hover {
+          animation: enquiryPulse 1.8s ease-in-out infinite, shimmer 1.2s linear infinite;
+        }
       `}</style>
+
+      <ConsultancyModal
+        isOpen={isConsultancyOpen}
+        onClose={() => setIsConsultancyOpen(false)}
+        prefillName={user?.name || user?.fullName || ""}
+        prefillPhone={user?.phone || user?.mobileNumber || ""}
+      />
 
       <div className="puja-page flex justify-center">
         <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm">
@@ -265,6 +292,17 @@ export default function CategoryPage() {
               <span className="text-orange-500">🕉</span>
               <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-orange-400/50" />
             </div>
+
+            <button
+              onClick={() => setIsConsultancyOpen(true)}
+              className="enquiry-btn mt-3 inline-flex items-center gap-2 text-white font-bold text-sm px-5 py-2.5 rounded-full active:scale-95"
+            >
+              Get 
+              <span className="bg-white/20 text-white text-[16px] font-bold px-1.5 py-0.5 rounded-full leading-none border border-white/40">
+                FREE
+              </span>
+              Consultation Now
+            </button>
           </div>
 
           {/* Subcategory Tabs */}

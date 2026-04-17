@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import apiClient from "../../api/apiClient";
+import BookingModal from "./UI/BookingModal";
+import ConsultancyModal from "./ConsultancyModal";
+import { decryptData } from "../../utils/encryption";
 
 // ── Dummy Data ────────────────────────────────────────────────
 const STATIC_INCLUDES = [
@@ -106,7 +109,14 @@ function AccordionRow({
     );
 }
 
-import BookingModal from "./UI/BookingModal";
+// ── Helpers ───────────────────────────────────────────────────
+const INTREF_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
+
+function saveIntrefData(code: string, pujaId: string, bookingUrl: string) {
+    const expires = new Date(Date.now() + INTREF_TTL_MS).toUTCString();
+    const entry = { code, pujaId, bookingUrl, storedAt: Date.now() };
+    document.cookie = `pjar_intref_data=${encodeURIComponent(JSON.stringify(entry))}; expires=${expires}; path=/; SameSite=Lax`;
+}
 
 // ── Main Page ──────────────────────────────────────────────────
 export default function PujaDetailPage() {
@@ -124,6 +134,79 @@ export default function PujaDetailPage() {
     };
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [pendingBooking, setPendingBooking] = useState(false);
+    const [isConsultancyOpen, setIsConsultancyOpen] = useState(false);
+
+    // Share state
+    const [isSharingCode, setIsSharingCode] = useState(false);
+    const [shareLinkCopied, setShareLinkCopied] = useState(false);
+
+    // ── Read ?intref=CODE from URL → store in cookie → clean URL ─
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const intref = params.get("intref");
+        if (!intref) return;
+
+        if (/^[A-Z0-9]{3,20}$/.test(intref)) {
+            const bookingUrl = `${window.location.origin}/puja/${pujaId}`;
+            saveIntrefData(intref, pujaId ?? "", bookingUrl);
+        }
+
+        // Remove intref from URL without adding a history entry
+        params.delete("intref");
+        const cleanSearch = params.toString();
+        const cleanPath = location.pathname + (cleanSearch ? `?${cleanSearch}` : "");
+        navigate(cleanPath, { replace: true });
+    }, []); // run only once on mount — the param is in the initial URL
+
+    // ── Share handler ─────────────────────────────────────────
+    const handleShare = async () => {
+        if (isSharingCode) return;
+        const baseUrl = `${window.location.origin}/puja/${pujaId}`;
+
+        // If not logged in, share plain URL
+        if (!user) {
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: pujaData?.poojaNameEng || "Puja", url: baseUrl });
+                } else {
+                    await navigator.clipboard.writeText(baseUrl);
+                    setShareLinkCopied(true);
+                    setTimeout(() => setShareLinkCopied(false), 2500);
+                }
+            } catch { /* user cancelled */ }
+            return;
+        }
+
+        setIsSharingCode(true);
+        try {
+            const token = localStorage.getItem("user_token");
+            const stored = localStorage.getItem("user_data");
+            if (!token || !stored) throw new Error("not logged in");
+
+            const userId = JSON.parse(stored)._id;
+            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const res = await fetch(`${apiUrl}/users/${userId}/my-referral`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const json = await res.json();
+            const decrypted = json?.encrypted ? decryptData(json.encrypted) : null;
+            const code: string | undefined = decrypted?.userReferralCode;
+
+            const shareUrl = code ? `${baseUrl}?intref=${code}` : baseUrl;
+            const shareText = `Book ${pujaData?.poojaNameEng || "this Puja"} with PanditJi At Request!\n${shareUrl}`;
+
+            if (navigator.share) {
+                await navigator.share({ title: pujaData?.poojaNameEng || "Puja", text: shareText, url: shareUrl });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setShareLinkCopied(true);
+                setTimeout(() => setShareLinkCopied(false), 2500);
+            }
+        } catch { /* user cancelled or error */ }
+        finally {
+            setIsSharingCode(false);
+        }
+    };
 
     useEffect(() => {
         if (user && pendingBooking) {
@@ -206,6 +289,13 @@ export default function PujaDetailPage() {
                 pooja={pujaData}
             />
 
+            <ConsultancyModal
+                isOpen={isConsultancyOpen}
+                onClose={() => setIsConsultancyOpen(false)}
+                prefillName={user?.name || user?.fullName || ""}
+                prefillPhone={user?.phone || user?.mobileNumber || ""}
+            />
+
             <div className="detail-page flex justify-center">
                 <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm pb-32">
                     {/* ── Header ── */}
@@ -229,6 +319,36 @@ export default function PujaDetailPage() {
                             </svg>
                         </button>
 
+                        {/* Share button — top right */}
+                        <button
+                            onClick={handleShare}
+                            disabled={isSharingCode}
+                            className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm active:scale-90 transition-all disabled:opacity-60"
+                            title="Share this puja"
+                        >
+                            {isSharingCode ? (
+                                <svg className="w-4 h-4 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                </svg>
+                            ) : shareLinkCopied ? (
+                                <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            ) : (
+                                <svg className="w-4 h-4 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                </svg>
+                            )}
+                        </button>
+
+                        {/* "Link copied" toast */}
+                        {shareLinkCopied && (
+                            <div className="absolute right-2 top-14 bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg z-50 animate-fade-in">
+                                Link copied!
+                            </div>
+                        )}
+
                         <h1
                             className="text-orange-600 font-extrabold"
                             style={{
@@ -242,11 +362,20 @@ export default function PujaDetailPage() {
                             {deity}
                         </p>
 
-                        <div className="flex items-center justify-center gap-3 mt-2">
-                            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-orange-400/50" />
-                            <span className="text-orange-500">🕉</span>
-                            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-orange-400/50" />
-                        </div>
+                        {/* Free Consultation CTA */}
+                        <button
+                            onClick={() => setIsConsultancyOpen(true)}
+                            className="mt-3 inline-flex items-center gap-2 bg-green-500 text-white font-bold text-xs px-4 py-2 rounded-full shadow-md active:scale-95 transition-all duration-200"
+                            style={{ boxShadow: "0 2px 14px rgba(22,163,74,0.35)" }}
+                        >
+                            <span className="flex items-center justify-center w-5 h-5 bg-white/25 rounded-full shrink-0">
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                                </svg>
+                            </span>
+                            Get FREE Consultation
+                            <span className="bg-white text-green-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">FREE</span>
+                        </button>
                     </div>
 
                     {/* ── Content ── */}

@@ -538,6 +538,7 @@
 // }
 
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Scale } from 'lucide-react';
 import { Navigation } from '../components/NewComponents/Navigation';
@@ -583,14 +584,18 @@ const InfoBox = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function TermsAndConditions() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 mt-20">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
 
         {/* Header */}
         <header className="bg-gradient-to-r from-orange-50 via-white to-orange-50 border-b border-orange-200/50">
-          <div className="max-w-4xl mx-auto px-6 py-12">
+          <div className="max-w-4xl mx-auto px-6 py-6">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -993,3 +998,4 @@ export default function TermsAndConditions() {
     </>
   );
 }
+

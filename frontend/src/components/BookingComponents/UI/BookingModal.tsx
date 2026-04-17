@@ -863,6 +863,22 @@ export default function BookingModal({
         ? `${selectedDate}T${selectedTime}`
         : selectedDate;
 
+      // Read partner referral code from localStorage (2-day TTL)
+      const partnerRefCode = (() => {
+        try {
+          const raw = localStorage.getItem("pjar_partner_ref");
+          if (!raw) return "";
+          const entry = JSON.parse(raw) as { code: string; storedAt: number };
+          if (Date.now() - entry.storedAt > 2 * 24 * 60 * 60 * 1000) {
+            localStorage.removeItem("pjar_partner_ref");
+            return "";
+          }
+          return entry.code || "";
+        } catch {
+          return "";
+        }
+      })();
+
       const pendingPayload = {
         userId,
         poojaId: pooja?._id || pooja?.id,
@@ -874,6 +890,7 @@ export default function BookingModal({
         gotra,
         contactNumber,
         emailId,
+        ...(partnerRefCode && { referralCode: partnerRefCode }),
         address:
           mode === "offline"
             ? {
@@ -917,6 +934,41 @@ export default function BookingModal({
         order_id: pendingData.razorpayOrderId,
         handler: async function (response: any) {
           try {
+            // ── Step 1: Apply referral BEFORE completing booking ──
+            // Referral is puja-scoped: only apply if the stored pujaId matches
+            // this booking's puja, and the entry is within the 1-week TTL.
+            const INTREF_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+            let intrefCode = "";
+            try {
+              const raw = decodeURIComponent(getCookie("pjar_intref_data") || "");
+              if (raw) {
+                const entry = JSON.parse(raw) as { code: string; pujaId: string; bookingUrl: string; storedAt: number };
+                const currentPujaId = String(pooja?._id || pooja?.id || "");
+                const notExpired = Date.now() - entry.storedAt < INTREF_TTL_MS;
+                const pujaMatches = entry.pujaId && entry.pujaId === currentPujaId;
+                if (entry.code && notExpired && pujaMatches) {
+                  intrefCode = entry.code;
+                }
+              }
+            } catch (_) {
+              // malformed cookie entry — ignore
+            }
+
+            if (intrefCode && userId) {
+              try {
+                const referralPayload = encryptPayload({ code: intrefCode });
+                await fetch(`${apiUrl}/users/${userId}/apply-referral`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(referralPayload),
+                });
+              } catch (refErr) {
+                // Non-fatal — booking can still proceed without referral
+                console.error("[Referral] apply failed:", refErr);
+              }
+            }
+
+            // ── Step 2: Complete the booking ──
             const completePayload = {
               pendingBookingId: pendingData.bookingId,
               razorpayPaymentId: response.razorpay_payment_id,
@@ -937,6 +989,11 @@ export default function BookingModal({
 
             if (compRes.status !== 200 && compRes.status !== 201) {
               throw new Error("Payment verification failed on server");
+            }
+
+            // ── Step 3: Clear referral cookie — code has been consumed ──
+            if (intrefCode) {
+              document.cookie = "pjar_intref_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax";
             }
 
             if (appliedCoupon) {

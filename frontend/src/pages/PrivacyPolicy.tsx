@@ -528,6 +528,7 @@
 
 
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
 import { Navigation } from '../components/NewComponents/Navigation';
@@ -573,14 +574,18 @@ const InfoBox = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function PrivacyPolicy() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <Navigation />
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 mt-20">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
 
         {/* Header */}
         <header className="bg-gradient-to-r from-orange-50 via-white to-orange-50 border-b border-orange-200/50">
-          <div className="max-w-4xl mx-auto px-6 py-12">
+          <div className="max-w-4xl mx-auto px-6 py-6">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -596,7 +601,7 @@ export default function PrivacyPolicy() {
                 <Shield className="w-5 h-5" />
                 <span className="text-sm font-medium">Your Privacy Matters</span>
               </motion.div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-bold pb-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent">
                 Privacy Policy
               </h1>
               <p className="text-lg text-gray-700 font-medium">Pandit Ji At Request</p>

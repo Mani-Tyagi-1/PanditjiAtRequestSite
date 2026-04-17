@@ -1,9 +1,11 @@
 import { RequestHandler } from 'express';
 import { Server as SocketIOServer } from 'socket.io';
-import pendingPoojaBookingModel from '../../models/poojaBooking/pendingPoojaBooking.model';
-import poojaBookingModel, { IPoojaBooking } from '../../models/poojaBooking/poojaBooking.model';
-import User from '../../models/userApp/userModel';
-import Pooja from '../../models/userApp/poojaModel';
+import axios from 'axios';
+import pendingPoojaBookingModel from '../../model/poojaBooking/pendingPoojaBooking.model';
+import poojaBookingModel, { IPoojaBooking } from '../../model/poojaBooking/poojaBooking.model';
+import User from '../../model/userApp/userModel';
+import Pooja from '../../model/userApp/poojaModel';
+import UserReferralBooking from '../../model/userApp/userReferralBooking.model';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
@@ -111,6 +113,96 @@ async function notifyPanditsNewRequest(req: any, opts: {
 
 
 // -------------------------------------------------------------
+// PARTNER AFFILIATE – fire-and-forget after a puja booking is confirmed
+// Reads referralSourcePJAR from the user's profile (set once at signup/first visit).
+// This fires on every booking; "organic" is sent when no partner referral exists.
+// -------------------------------------------------------------
+const sendOrderToPartnerAffiliate = async (booking: any): Promise<void> => {
+  try {
+    const apiUrl = process.env.PARTNER_AFFILIATE_ORDER_API;
+    if (!apiUrl) {
+      console.warn('[PartnerAffiliate] PARTNER_AFFILIATE_ORDER_API env not set. Skipping.');
+      return;
+    }
+
+    const actualUserId = booking?.userId ? String(booking.userId) : null;
+    if (!actualUserId) {
+      console.warn('[PartnerAffiliate] booking.userId missing. Skipping.');
+      return;
+    }
+
+    // 1️⃣ Prefer the ref code captured from ?ref= URL (stored on the booking itself)
+    // 2️⃣ Fall back to referralSourcePJAR on the user's profile (set at signup/first visit)
+    let referralValue: string | null = null;
+
+    const bookingRefCode = (booking as any).referralCode
+      ? String((booking as any).referralCode).trim()
+      : null;
+
+    if (bookingRefCode) {
+      referralValue = bookingRefCode;
+    } else {
+      try {
+        const u = await User.findById(actualUserId).select('referralSourcePJAR').lean();
+        const src = (u as any)?.referralSourcePJAR ?? null;
+        if (src && String(src).trim() && String(src).trim() !== 'organic') {
+          referralValue = String(src).trim();
+        }
+      } catch (e) {
+        console.warn('[PartnerAffiliate] Failed to fetch user referralSourcePJAR:', e);
+      }
+    }
+
+    // No partner referral — nothing to credit, skip
+    if (!referralValue) {
+      console.log(`[PartnerAffiliate] No partner referral for booking ${booking._id}. Skipping.`);
+      return;
+    }
+
+    // Always use total booking amount (panditDakshina may be undefined on online bookings)
+    const orderAmount = Number(booking.amount ?? booking.panditDakshina ?? 0);
+    if (orderAmount <= 0) {
+      console.warn(`[PartnerAffiliate] orderAmount is 0 for booking ${booking._id}. Skipping.`);
+      return;
+    }
+
+    const payload = {
+      userId: referralValue ,
+      refferal_user_id: actualUserId,
+      orderId: booking.razorpayOrderId,
+      orderPrice: orderAmount,
+      time: new Date(booking.bookingDate).toISOString(),
+      department: 'PANDIT_JI_AT_REQUEST',
+      products: [
+        {
+          productName: booking.poojaNameEng || 'PUJA',
+          productPrice: orderAmount,
+          commissionPercent: [0, 0, 0],
+        },
+      ],
+    };
+
+    console.log(`[PartnerAffiliate] Sending payload for booking ${booking._id}:`, JSON.stringify(payload, null, 2));
+
+    const response = await axios.post(apiUrl, payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000,
+    });
+
+    console.log(`[PartnerAffiliate] ✅ Order sent for booking ${booking._id}. Response:`, response.status, response.data);
+  } catch (error: any) {
+    const httpStatus = error?.response?.status;
+    const responseBody = error?.response?.data;
+    const errMsg = error?.message;
+    console.error(
+      `[PartnerAffiliate] ❌ Failed for booking ${booking?._id}:`,
+      `HTTP ${httpStatus ?? 'N/A'} |`,
+      responseBody ? JSON.stringify(responseBody) : errMsg,
+    );
+  }
+};
+
+// -------------------------------------------------------------
 // TYPES
 type CreatePendingBookingBody = {
   userId: string;
@@ -124,6 +216,7 @@ type CreatePendingBookingBody = {
   gotra?: string;
   contactNumber?: string;
   emailId?: string;
+  referralCode?: string;       // partner affiliate ref code (from ?ref= URL param)
 };
 
 type CompleteBookingBody = {
@@ -154,6 +247,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       gotra,
       contactNumber,
       emailId,
+      referralCode,
     } = req.body as CreatePendingBookingBody;
 
     const [userExists, poojaExists] = await Promise.all([
@@ -219,6 +313,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       gotra,
       contactNumber,
       emailId,
+      ...(referralCode && { referralCode }),
     });
 
     // 🛎️ NEW: Notify pandits on PENDING creation (optional; controlled via env)
@@ -308,7 +403,10 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     // 6) Remove pending doc
     await pendingPoojaBookingModel.findByIdAndDelete(pendingBookingId);
 
-    // 6a) META CAPI Purchase (fire-and-forget) — skipped in test/dev mode
+    // 6a) Partner Affiliate notification (fire-and-forget)
+    void sendOrderToPartnerAffiliate(finalBooking);
+
+    // 6d) META CAPI Purchase (fire-and-forget) — skipped in test/dev mode
     void (async () => {
       if (!isProduction) {
         console.log(`[MetaCAPI][Puja] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
@@ -444,6 +542,63 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
       }
     })();
     // ----------------------------------------------------------
+
+    // ── Internal Referral Credit (fire-and-forget) ──────────────
+    void (async () => {
+      try {
+        const bookedUserId = String((finalBooking as any).userId || '');
+        if (!bookedUserId) return;
+
+        const bookedUser = await User.findById(bookedUserId).select(
+          'userReferral name given_name family_name'
+        );
+        if (!bookedUser?.userReferral?.referrerId) return;
+
+        const { referrerId, expiresAt, code } = bookedUser.userReferral;
+
+        // Only honour if the referral window hasn't expired
+        if (!expiresAt || new Date() > new Date(expiresAt)) return;
+
+        const totalAmount = Number((finalBooking as any).amount || amountPaid || 0);
+        const rewardPct = parseFloat(process.env.INTERNAL_REFERRAL_PCT ?? '5');
+        const amountEarned = Math.round((totalAmount * rewardPct) / 100);
+
+        const poojaName = finalBooking.poojaNameEng || 'Puja';
+        const referredUserName =
+          `${bookedUser.given_name || ''} ${bookedUser.family_name || ''}`.trim() ||
+          bookedUser.name ||
+          'User';
+
+        // 1) Record the referral booking
+        await UserReferralBooking.create({
+          referrerId,
+          referredUserId: bookedUser._id,
+          referredUserName,
+          bookingId: (finalBooking as any)._id,
+          poojaName,
+          amountEarned,
+          totalBookingAmount: totalAmount,
+          rewardPercentage: rewardPct,
+        });
+
+        // 2) Credit referrer + increment counter
+        await User.findByIdAndUpdate(referrerId, {
+          $inc: { referralEarnings: amountEarned, totalReferredPujas: 1 },
+        });
+
+        // 3) Clear referral from the referred user so it isn't applied again
+        await User.findByIdAndUpdate(bookedUser._id, {
+          $unset: { userReferral: '' },
+        });
+
+        console.log(
+          `[Referral] ✅ ₹${amountEarned} credited to referrer ${referrerId} for booking ${(finalBooking as any)._id}`
+        );
+      } catch (refErr: any) {
+        console.error('[Referral] ❌ credit failed:', refErr?.message || refErr);
+      }
+    })();
+    // ────────────────────────────────────────────────────────────
 
     res.status(201).json({
       success: true,

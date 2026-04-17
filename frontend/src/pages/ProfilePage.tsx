@@ -13,11 +13,24 @@ import {
     Clock,
     MapPin,
     Bookmark,
-    Edit3
+    Edit3,
+    Share2,
+    Copy,
+    Check,
+    Gift,
+    X,
+    Users,
+    IndianRupee,
+    Percent,
+    Wallet,
+    CalendarClock,
+    CheckCircle2,
+    MailOpen,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { decryptData, encryptPayload } from "../utils/encryption";
+import axios from "axios";
 
 interface UserData {
     _id: string;
@@ -32,6 +45,23 @@ interface UserData {
     birthPlace?: string;
     gotra?: string;
     picture?: string;
+}
+
+interface ReferralData {
+    userReferralCode: string;
+    referralEarnings: number;
+    totalReferredPujas: number;
+    referralPercentage: number;
+}
+
+interface ReferralBooking {
+    bookingId: string;
+    referredUserName: string;
+    poojaName: string;
+    amountEarned: number;
+    totalBookingAmount: number;
+    rewardPercentage: number;
+    bookedAt: string;
 }
 
 
@@ -76,8 +106,21 @@ const ProfilePage: React.FC = () => {
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [mode, setMode] = useState<"view" | "edit">("view");
+    const [mode, setMode] = useState<"view" | "edit" | "referral-bookings">("view");
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    // Referral state
+    const [referralData, setReferralData] = useState<ReferralData | null>(null);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [copied, setCopied] = useState(false);
+
+    // Referral bookings state
+    const [referralBookings, setReferralBookings] = useState<ReferralBooking[]>([]);
+    const [referralBookingsLoading, setReferralBookingsLoading] = useState(false);
+
+    // Payout state
+    const [payoutModal, setPayoutModal] = useState<"confirm" | "not-allowed" | null>(null);
+    const [payoutDone, setPayoutDone] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState<Partial<UserData>>({});
@@ -105,6 +148,118 @@ const ProfilePage: React.FC = () => {
         setAlertConfig({ show: true, title, message, type, onConfirm });
     };
 
+    const fetchReferralData = async (userId: string) => {
+        try {
+            const token = localStorage.getItem("user_token");
+            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const response = await axios.get(`${apiUrl}/users/${userId}/my-referral`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (response.data?.encrypted) {
+                const decrypted = decryptData(response.data.encrypted);
+                if (decrypted?.success) {
+                    setReferralData({
+                        userReferralCode: decrypted.userReferralCode,
+                        referralEarnings: decrypted.referralEarnings ?? 0,
+                        totalReferredPujas: decrypted.totalReferredPujas ?? 0,
+                        referralPercentage: decrypted.referralPercentage ?? 5,
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching referral data:", err);
+        }
+    };
+
+    const handlePayoutRequest = () => {
+        const today = new Date().getDate();
+        if (today >= 1 && today <= 17) {
+            setPayoutModal("confirm");
+        } else {
+            setPayoutModal("not-allowed");
+        }
+    };
+
+    const openGmailPayout = () => {
+        const stored = localStorage.getItem("user_data");
+        const parsedUser = stored ? JSON.parse(stored) : null;
+
+        const name = user
+            ? `${user.given_name || ""} ${user.family_name || ""}`.trim() || user.name || "User"
+            : parsedUser?.name || "User";
+        const phone = user?.phone || parsedUser?.phone || "N/A";
+        const userId = parsedUser?._id || "N/A";
+        const code = referralData?.userReferralCode || "N/A";
+        const amount = referralData?.referralEarnings ?? 0;
+
+        const subject = encodeURIComponent(`Referral Payout Request – ${name}`);
+        const body = encodeURIComponent(
+            `Hello PanditJi At Request Team,\n\n` +
+            `I would like to request a payout of my referral earnings.\n\n` +
+            `Details:\n` +
+            `  Name        : ${name}\n` +
+            `  Phone       : ${phone}\n` +
+            `  User ID     : ${userId}\n` +
+            `  Referral Code : ${code}\n` +
+            `  Amount      : ₹${amount}\n\n` +
+            `Please process the payout at the earliest convenience.\n\n` +
+            `Thank you.`
+        );
+
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=vedicvaibhav92%40gmail.com&su=${subject}&body=${body}`;
+        window.open(gmailUrl, "_blank", "noopener,noreferrer");
+
+        setPayoutModal(null);
+        setPayoutDone(true);
+        setTimeout(() => setPayoutDone(false), 4000);
+    };
+
+    const fetchReferralBookings = async (userId: string) => {
+        setReferralBookingsLoading(true);
+        try {
+            const token = localStorage.getItem("user_token");
+            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const response = await axios.get(`${apiUrl}/users/${userId}/referral-bookings`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (response.data?.encrypted) {
+                const decrypted = decryptData(response.data.encrypted);
+                if (decrypted?.success) {
+                    setReferralBookings(decrypted.referralBookings || []);
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching referral bookings:", err);
+        } finally {
+            setReferralBookingsLoading(false);
+        }
+    };
+
+    const handleCopyCode = async () => {
+        if (!referralData?.userReferralCode) return;
+        try {
+            await navigator.clipboard.writeText(referralData.userReferralCode);
+        } catch {
+            // clipboard API unavailable — silently ignore
+        }
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleNativeShare = async () => {
+        if (!referralData?.userReferralCode) return;
+        const shareText = `Book a Pandit easily with PanditJi At Request! Use my referral code *${referralData.userReferralCode}* and earn ${referralData.referralPercentage}% rewards. Download now: https://panditjiatrequest.com`;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: "PanditJi At Request", text: shareText });
+                return;
+            } catch {
+                // user cancelled — fall through to modal
+            }
+        }
+        setShowShareModal(true);
+    };
+
     const fetchUserProfile = async () => {
         try {
             const token = localStorage.getItem("user_token");
@@ -118,7 +273,15 @@ const ProfilePage: React.FC = () => {
             const storedUser = JSON.parse(userDataString);
             const userId = storedUser._id;
 
-            const response = await apiClient.get(`/profile/${userId}`);
+            // Fetch referral data in parallel (non-blocking)
+            fetchReferralData(userId);
+
+            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const response = await axios.get(`${apiUrl}/profile/${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
 
             if (response.data && response.data.encrypted) {
                 const decrypted = decryptData(response.data.encrypted);
@@ -209,11 +372,13 @@ const ProfilePage: React.FC = () => {
         );
     }
 
+    const isLockedView = mode === "referral-bookings";
+
     return (
-        <div className="min-h-screen   font-sans flex justify-center">
-            <div className="w-full max-w-md bg-white min-h-screen shadow-sm relative pb-24">
+        <div className={`font-sans flex justify-center ${isLockedView ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+            <div className={`w-full max-w-md bg-white shadow-sm relative ${isLockedView ? "h-screen overflow-hidden" : "min-h-screen pb-24"}`}>
                 <AnimatePresence mode="wait">
-                    {mode === "view" ? (
+                    {mode === "view" && (
                         <motion.div
                             key="view"
                             initial={{ opacity: 0, x: -20 }}
@@ -266,6 +431,42 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Referral Rewards Card */}
+                            {referralData && (
+                                <div className="mb-4 bg-white rounded-2xl shadow-sm border border-orange-50 overflow-hidden">
+                                    {/* Top row */}
+                                    <div className="flex items-center justify-between px-4 pt-4 pb-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+                                                <Gift className="w-5 h-5 text-[#FF7000]" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="font-bold text-gray-800 text-sm">Referral Rewards</span>
+                                                    <span className="bg-[#FF7000] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                        {referralData.referralPercentage}% Reward
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-0.5">Share PanditJi links to earn rewards</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Stats row */}
+                                    <div className="flex items-center border-t border-orange-50">
+                                        <div className="flex-1 flex flex-col items-center py-3">
+                                            <span className="text-lg font-bold text-[#FF7000]">₹{referralData.referralEarnings}</span>
+                                            <span className="text-[11px] text-gray-400 mt-0.5">Total Earned</span>
+                                        </div>
+                                        <div className="w-px h-10 bg-orange-100" />
+                                        <div className="flex-1 flex flex-col items-center py-3">
+                                            <span className="text-lg font-bold text-[#FF7000]">{referralData.totalReferredPujas}</span>
+                                            <span className="text-[11px] text-gray-400 mt-0.5">Pujas Referred</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Menu Items */}
                             <div className="space-y-1">
                                 <ProfileMenuItem
@@ -285,6 +486,16 @@ const ProfilePage: React.FC = () => {
                                     title="My Puja Booking"
                                     subtitle="Tap to open"
                                     onClick={() => navigate("/my-bookings")}
+                                />
+                                <ProfileMenuItem
+                                    icon={Users}
+                                    title="Referral Bookings"
+                                    subtitle="Pujas booked via your referral"
+                                    onClick={() => {
+                                        const stored = localStorage.getItem("user_data");
+                                        if (stored) fetchReferralBookings(JSON.parse(stored)._id);
+                                        setMode("referral-bookings");
+                                    }}
                                 />
                                 {/* <ProfileMenuItem
                                 icon={Info}
@@ -316,7 +527,9 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
                         </motion.div>
-                    ) : (
+                    )}
+
+                    {mode === "edit" && (
                         <motion.div
                             key="edit"
                             initial={{ opacity: 0, x: 20 }}
@@ -483,6 +696,320 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
                         </motion.div>
+                    )}
+
+                    {mode === "referral-bookings" && (
+                        <motion.div
+                            key="referral-bookings"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="h-screen bg-[#FFF8F3] relative flex flex-col overflow-hidden"
+                        >
+                            {/* Background watermark emblem */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                                <img
+                                    src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="w-72 h-72 object-contain opacity-[0.2] select-none"
+                                />
+                            </div>
+
+                            {/* Header — fixed height, never scrolls */}
+                            <div className="relative z-10 flex-shrink-0 bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-6">
+                                <div className="flex items-center gap-3 text-white">
+                                    <button
+                                        onClick={() => setMode("view")}
+                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <div>
+                                        <h1 className="text-lg font-bold leading-tight">Referral Bookings</h1>
+                                        <p className="text-white/75 text-[10px]">Pujas booked via your referral code</p>
+                                    </div>
+                                </div>
+
+                                {/* Summary pills */}
+                                {referralData && (
+                                    <div className="flex gap-3 mt-4">
+                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5">
+                                            <IndianRupee className="w-4 h-4 text-white/80 shrink-0" />
+                                            <div>
+                                                <p className="text-white font-bold text-base leading-none">₹{referralData.referralEarnings}</p>
+                                                <p className="text-white/70 text-[10px] mt-0.5">Total Earned</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5">
+                                            <Users className="w-4 h-4 text-white/80 shrink-0" />
+                                            <div>
+                                                <p className="text-white font-bold text-base leading-none">{referralData.totalReferredPujas}</p>
+                                                <p className="text-white/70 text-[10px] mt-0.5">Pujas Referred</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5">
+                                            <Percent className="w-4 h-4 text-white/80 shrink-0" />
+                                            <div>
+                                                <p className="text-white font-bold text-base leading-none">{referralData.referralPercentage}%</p>
+                                                <p className="text-white/70 text-[10px] mt-0.5">Reward Rate</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* List — scrolls independently, header stays fixed */}
+                            <div className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-28 space-y-3 scrollbar-hide">
+                                {referralBookingsLoading ? (
+                                    <div className="flex justify-center py-16">
+                                        <div className="w-9 h-9 border-4 border-[#FF7000] border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                ) : referralBookings.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                                        <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
+                                            <Gift className="w-8 h-8 text-orange-300" />
+                                        </div>
+                                        <p className="text-gray-700 font-semibold text-sm">No referral bookings yet</p>
+                                        <p className="text-gray-400 text-xs mt-1 max-w-[220px]">
+                                            Share your referral code with friends. When they book a puja, it shows here.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    referralBookings.map((booking) => (
+                                        <div
+                                            key={booking.bookingId}
+                                            className="bg-white rounded-2xl border border-orange-50 shadow-sm overflow-hidden"
+                                        >
+                                            {/* Top row */}
+                                            <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-gray-800 text-sm truncate">{booking.poojaName}</p>
+                                                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                                                        <Users className="w-3 h-3 shrink-0" />
+                                                        {booking.referredUserName}
+                                                    </p>
+                                                </div>
+                                                <span className="shrink-0 bg-green-50 text-green-600 text-xs font-bold px-2.5 py-1 rounded-full border border-green-100">
+                                                    +₹{booking.amountEarned}
+                                                </span>
+                                            </div>
+
+                                            {/* Divider + meta */}
+                                            <div className="flex items-center border-t border-orange-50">
+                                                <div className="flex-1 px-4 py-2">
+                                                    <p className="text-[10px] text-gray-400">Booking Value</p>
+                                                    <p className="text-xs font-semibold text-gray-700">₹{booking.totalBookingAmount}</p>
+                                                </div>
+                                                <div className="w-px h-8 bg-orange-50" />
+                                                <div className="flex-1 px-4 py-2">
+                                                    <p className="text-[10px] text-gray-400">Reward</p>
+                                                    <p className="text-xs font-semibold text-gray-700">{booking.rewardPercentage}%</p>
+                                                </div>
+                                                <div className="w-px h-8 bg-orange-50" />
+                                                <div className="flex-1 px-4 py-2">
+                                                    <p className="text-[10px] text-gray-400">Date</p>
+                                                    <p className="text-xs font-semibold text-gray-700">
+                                                        {new Date(booking.bookedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit" })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Sticky payout button */}
+                            {referralData && referralData.referralEarnings > 0 && (
+                                <div className="fixed bottom-0 left-0 right-0 z-40">
+                                    <div className="w-full max-w-md mx-auto px-4 py-3 bg-white/90 backdrop-blur-md border-t border-orange-100">
+                                        {payoutDone ? (
+                                            <div className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-green-50 border border-green-100 text-green-600 font-bold text-sm">
+                                                <CheckCircle2 className="w-5 h-5" />
+                                                Payout request submitted!
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={handlePayoutRequest}
+                                                className="w-full flex items-center justify-center gap-2 bg-[#FF7000] text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all text-sm"
+                                            >
+                                                <Wallet className="w-4 h-4" />
+                                                Request Payout  •  ₹{referralData.referralEarnings}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Share Referral Modal */}
+                <AnimatePresence>
+                    {showShareModal && referralData && (
+                        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setShowShareModal(false)}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, y: 100 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 100 }}
+                                className="relative w-full max-w-sm bg-white rounded-t-[40px] sm:rounded-[32px] p-6 shadow-2xl"
+                            >
+                                <button
+                                    onClick={() => setShowShareModal(false)}
+                                    className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 text-gray-500 active:scale-90 transition-all"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+
+                                <div className="flex flex-col items-center text-center pt-2">
+                                    <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mb-3">
+                                        <Gift className="w-7 h-7 text-[#FF7000]" />
+                                    </div>
+                                    <h2 className="text-lg font-bold text-gray-800">Your Referral Code</h2>
+                                    <p className="text-xs text-gray-400 mt-1 mb-5">
+                                        Share this code with friends. You earn{" "}
+                                        <span className="text-[#FF7000] font-semibold">{referralData.referralPercentage}%</span> when they book a Puja.
+                                    </p>
+
+                                    {/* Code display */}
+                                    <div className="flex items-center gap-3 w-full bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3 mb-4">
+                                        <span className="flex-1 text-center text-xl font-bold tracking-widest text-[#FF7000]">
+                                            {referralData.userReferralCode}
+                                        </span>
+                                        <button
+                                            onClick={handleCopyCode}
+                                            className="flex items-center gap-1.5 bg-[#FF7000] text-white text-xs font-bold px-3 py-1.5 rounded-xl active:scale-90 transition-all shadow-md shadow-orange-100"
+                                        >
+                                            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                            {copied ? "Copied!" : "Copy"}
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        onClick={handleNativeShare}
+                                        className="w-full flex items-center justify-center gap-2 bg-[#FF7000] text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all"
+                                    >
+                                        <Share2 className="w-4 h-4" />
+                                        Share with Friends
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── Payout Confirm Modal (date 1–6) ── */}
+                <AnimatePresence>
+                    {payoutModal === "confirm" && referralData && (
+                        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setPayoutModal(null)}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, y: 80 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 80 }}
+                                className="relative w-full max-w-sm bg-white rounded-t-[40px] sm:rounded-[32px] p-7 shadow-2xl"
+                            >
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
+                                        <div className="w-11 h-11 bg-orange-100 rounded-full flex items-center justify-center">
+                                            <Wallet className="w-6 h-6 text-[#FF7000]" />
+                                        </div>
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-1">Request Payout</h2>
+                                    <p className="text-gray-400 text-xs mb-5 leading-relaxed">
+                                        This will open Gmail with a pre-filled request to our team.
+                                        Just hit <span className="font-bold text-gray-600">Send</span> and we'll process
+                                        your payout within 3–5 business days.
+                                    </p>
+
+                                    {/* Amount + recipient pill */}
+                                    <div className="w-full bg-orange-50 border border-orange-100 rounded-2xl px-5 py-3 mb-6 space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-gray-400 font-medium">Amount</span>
+                                            <span className="text-base font-bold text-[#FF7000]">₹{referralData.referralEarnings}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-gray-400 font-medium">To</span>
+                                            <span className="text-xs font-semibold text-gray-600">vedicvaibhav92@gmail.com</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col w-full gap-3">
+                                        <button
+                                            onClick={openGmailPayout}
+                                            className="w-full py-3.5 bg-[#FF7000] text-white font-bold rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                        >
+                                            <MailOpen className="w-4 h-4" />
+                                            Open Gmail to Request
+                                        </button>
+                                        <button
+                                            onClick={() => setPayoutModal(null)}
+                                            className="w-full py-3.5 bg-gray-50 text-gray-500 font-bold rounded-2xl active:scale-[0.98] transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── Payout Not-Allowed Modal (outside 1–6) ── */}
+                <AnimatePresence>
+                    {payoutModal === "not-allowed" && (
+                        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center">
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setPayoutModal(null)}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, y: 80 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 80 }}
+                                className="relative w-full max-w-sm bg-white rounded-t-[40px] sm:rounded-[32px] p-7 shadow-2xl"
+                            >
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
+                                        <div className="w-11 h-11 bg-orange-100 rounded-full flex items-center justify-center">
+                                            <CalendarClock className="w-6 h-6 text-[#FF7000]" />
+                                        </div>
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-800 mb-2">Not Available Yet</h2>
+                                    <p className="text-gray-500 text-sm mb-3 leading-relaxed">
+                                        Payout requests are only allowed between the{" "}
+                                        <span className="font-bold text-gray-700">1st and 6th</span> of each month.
+                                    </p>
+
+                                    {/* Next window pill */}
+                                    <div className="w-full flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3 mb-6">
+                                        <CalendarClock className="w-5 h-5 text-[#FF7000] shrink-0" />
+                                        <div className="text-left">
+                                            <p className="text-[10px] text-gray-400 font-medium">Next payout window opens</p>
+                                            <p className="text-sm font-bold text-gray-700">
+                                                1st {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1)
+                                                    .toLocaleString("en-IN", { month: "long", year: "numeric" })}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setPayoutModal(null)}
+                                        className="w-full py-3.5 bg-[#FF7000] text-white font-bold rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all"
+                                    >
+                                        Got it
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
                     )}
                 </AnimatePresence>
 

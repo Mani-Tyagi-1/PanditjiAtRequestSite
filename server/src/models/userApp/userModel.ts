@@ -47,6 +47,22 @@ export interface IUser {
   birthTime?: string;
   birthPlace?: string;
   gotra?: string;
+
+  // ✅ Referral source (external campaigns)
+  referralSourcePJAR?: string; // "organic" or external code like "IQSDLQ7IK4"
+
+  // ✅ Internal referral fields
+  userReferralCode?: string;    // Short hash user shares to refer friends
+  referralEarnings?: number;    // Total earnings credited from referrals
+  totalReferredPujas?: number;  // Count of successful referred bookings
+  userReferral?: {
+    referrerId: Types.ObjectId;
+    code: string;
+    appliedAt: Date;
+    expiresAt: Date;            // 1 day from appliedAt
+  };
+
+  token?: string;               // JWT saved on successful OTP verify
 }
 
 const userSchema = new Schema<IUser>({
@@ -72,6 +88,22 @@ const userSchema = new Schema<IUser>({
   birthTime: { type: String },
   birthPlace: { type: String },
   gotra: { type: String },
+
+  // ✅ Referral source (external campaigns) — default organic, never overwrite a non-organic code
+  referralSourcePJAR: { type: String, default: "organic" },
+
+  // ✅ Internal referral fields
+  userReferralCode: { type: String, unique: true, sparse: true },
+  referralEarnings: { type: Number, default: 0 },
+  totalReferredPujas: { type: Number, default: 0 },
+  userReferral: {
+    referrerId: { type: Schema.Types.ObjectId, ref: "User" },
+    code: { type: String },
+    appliedAt: { type: Date },
+    expiresAt: { type: Date },
+  },
+
+  token: { type: String },
 });
 
 const User: Model<IUser> = VedicVaibhavMongoose.model<IUser>(

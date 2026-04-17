@@ -18,11 +18,45 @@ import { errorMiddleware } from "./middlewares/errorMiddleware";
 // Routes
 import apiRoutes from "./routes/index";
 import { generateStreamToken } from "./controllers/userApp/StreamTokenController";
+import consultancyLeadRoutes from "../routes/consultancyLeadRoutes";
+import referralRoutes from "./routes/userAppRoutes/referralRoutes";
 import UserAddressModel from "./models/userApp/userAddressModel";
 
 dotenv.config();
 
 const app = express();
+app.use(express.json());
+
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
+
+// Routes
+app.use("/api/pandit", panditRoutes);
+app.use("/api/", poojaRoutes);
+app.use("/api/", pujaCategoryRoutes);
+app.use("/api/", mobileOtpRoutes);
+app.use("/api/addresses", userAddressRoutes);
+app.use("/api/config", configRoutes);
+app.use("/api", testimonialRoutes);
+
+app.use("/api", poojaBookingRoutes);
+app.use("/api", userRoutes);
+app.use("/api/calls", callingRoutes);
+app.use("/api", pushRoutes);
+app.use("/api/stream", streamRoutes);
+app.use("/api", consultancyLeadRoutes);
+app.use("/api", referralRoutes);
+
+app.get("/gen-stream-token/:userId", generateStreamToken);
+
+// Pandit routes
+app.use("/", panditAuthRoutes);
+app.use("/", panditAddressRoutes);
+
+const PORT = process.env.PORT || 8001;
+
 const server = http.createServer(app);
 
 // 1. Validate Environment

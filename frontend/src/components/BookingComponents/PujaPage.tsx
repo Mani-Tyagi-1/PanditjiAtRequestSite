@@ -388,12 +388,10 @@ export default function PujaDetailPage() {
 
                         {/* Enquiry CTA */}
                         <button
-                            onClick={() => setIsEnquiryOpen(true)}
+                            onClick={() => navigate(`/puja/${pujaId}/enquiry`)}
                             className="enquiry-btn mt-3 inline-flex items-center gap-2 text-white font-bold text-sm px-5 py-2.5 rounded-full active:scale-95"
                         >
-                            {/* <span className="text-base">🙏</span> */}
                             Enquire Now for {title}
-                            
                         </button>
                     </div>
 

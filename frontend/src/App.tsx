@@ -14,6 +14,7 @@ import VideoCallPage from "./video/VideoCallPage";
 import AudioCallPage from "./video/AudioCallPage";
 import TrackPanditPage from "./pages/TrackPanditPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
+import PujaEnquiryPage from "./pages/PujaEnquiryPage";
 
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
@@ -82,6 +83,7 @@ function App() {
         <Route path="/audio-call/:callId/:panditId" element={<AudioCallPage />} />
         <Route path="/track-pandit/:panditId/:destLat/:destLng" element={<TrackPanditPage />} />
         <Route path="/blog/:blogID" element={<BlogDetailPage />} />
+        <Route path="/puja/:pujaId/enquiry" element={<PujaEnquiryPage />} />
 
         {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

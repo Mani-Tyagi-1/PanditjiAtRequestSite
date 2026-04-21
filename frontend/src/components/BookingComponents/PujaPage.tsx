@@ -134,6 +134,7 @@ export default function PujaDetailPage() {
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [pendingBooking, setPendingBooking] = useState(false);
     const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
+    const [isPromoOpen, setIsPromoOpen] = useState(false);
 
     // Share state
     const [isSharingCode, setIsSharingCode] = useState(false);
@@ -215,7 +216,7 @@ export default function PujaDetailPage() {
     }, [user, pendingBooking]);
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsEnquiryOpen(true), 5000);
+        const timer = setTimeout(() => setIsPromoOpen(true), 5000);
         return () => clearTimeout(timer);
     }, []);
     const [pujaData, setPujaData] = useState<any>(null);
@@ -303,6 +304,84 @@ export default function PujaDetailPage() {
           animation: enquiryPulse 1.8s ease-in-out infinite, shimmer 1.2s linear infinite;
         }
       `}</style>
+
+            {/* ── 30% Off Promo Modal ── */}
+            {isPromoOpen && (
+                <div
+                    className="fixed inset-0 z-[200] flex items-end justify-center"
+                    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                    onClick={() => setIsPromoOpen(false)}
+                >
+                    <style>{`
+                        @keyframes promoSlideUp {
+                            from { transform: translateY(100%); opacity: 0.5; }
+                            to   { transform: translateY(0);    opacity: 1; }
+                        }
+                        @keyframes promoBadgePop {
+                            0%   { transform: scale(0.7) rotate(-6deg); opacity: 0; }
+                            60%  { transform: scale(1.12) rotate(2deg); opacity: 1; }
+                            100% { transform: scale(1) rotate(-3deg);   opacity: 1; }
+                        }
+                        @keyframes promoShimmer {
+                            0%   { background-position: -200% center; }
+                            100% { background-position:  200% center; }
+                        }
+                        .promo-badge { animation: promoBadgePop 0.55s cubic-bezier(.22,1,.36,1) both; }
+                        .promo-cta {
+                            background: linear-gradient(90deg,#ea580c,#f97316,#fb923c,#f97316,#ea580c);
+                            background-size: 200% auto;
+                            animation: promoShimmer 2s linear infinite;
+                        }
+                    `}</style>
+                    <div
+                        className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden"
+                        style={{ animation: "promoSlideUp 0.35s cubic-bezier(0.32,0.72,0,1) both" }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/30%25.png" alt="Promo Image" className="w-full h-auto" />
+                        
+
+                        {/* Body */}
+                        <div className="px-5 py-5 space-y-3">
+                            {/* Perks */}
+                            {[
+                                "Instant booking confirmation",
+                                "Real-time pandit tracking",
+                                "Exclusive in-app discounts",
+                            ].map((perk) => (
+                                <div key={perk} className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                        <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-stone-600 text-sm">{perk}</span>
+                                </div>
+                            ))}
+
+                            {/* Download CTA */}
+                            <a
+                                href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="promo-cta mt-2 w-full flex items-center justify-center gap-2 text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform"
+                            >
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3.18 23.76a2 2 0 0 1-.93-1.76V2a2 2 0 0 1 .93-1.76l.1-.06 11.67 11.67v.28L3.28 23.82l-.1-.06zM15.93 16.02l-3.89-3.89 1.17-1.17 4.63 2.67a1.14 1.14 0 0 1 0 1.96l-4.63 2.67-1.17-1.17 3.89-3.07zM2.61.62l12.65 7.3-2.82 2.82L2.61.62zm0 22.76 9.83-9.84 2.82 2.82L2.61 23.38z"/>
+                                </svg>
+                                Download App & Save 30%
+                            </a>
+
+                            <button
+                                onClick={() => setIsPromoOpen(false)}
+                                className="w-full text-stone-400 text-xs py-2 hover:text-stone-600 transition-colors"
+                            >
+                                No thanks, continue without discount
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <BookingModal
                 isOpen={isBookingModalOpen}

@@ -216,7 +216,7 @@ export default function PujaDetailPage() {
     }, [user, pendingBooking]);
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsPromoOpen(true), 5000);
+        const timer = setTimeout(() => setIsPromoOpen(true), 3000);
         return () => clearTimeout(timer);
     }, []);
     const [pujaData, setPujaData] = useState<any>(null);

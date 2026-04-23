@@ -3,7 +3,17 @@ import ConsultancyLead from "../../model/userApp/consultancyLeadModel";
 
 const createConsultancyLead: RequestHandler = async (req, res) => {
   try {
-    const { fullName, mobileNumber, helpWith, concern, poojaType, city, callbackTime } = req.body;
+    const { 
+      fullName, 
+      mobileNumber, 
+      helpWith, 
+      concern, 
+      poojaType, 
+      otherPoojaText, 
+      city, 
+      callbackTime,
+      isFromSite 
+    } = req.body;
 
     if (!fullName || !mobileNumber || !concern || !city) {
       res.status(400).json({
@@ -19,8 +29,10 @@ const createConsultancyLead: RequestHandler = async (req, res) => {
       helpWith,
       concern,
       poojaType,
+      otherPoojaText,
       city,
       callbackTime,
+      isFromSite
     });
 
     res.status(201).json({

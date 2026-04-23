@@ -11,9 +11,11 @@ import { Navigation } from "../components/NewComponents/Navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [showConsultancyPopup, setShowConsultancyPopup] = useState(false);
   const [showConsultancyModal, setShowConsultancyModal] = useState(false);
 
@@ -58,7 +60,7 @@ export default function LandingPage() {
                 opacity: { duration: 0.3 },
                 y: { duration: 0.3 },
               }}
-              onClick={() => { setShowConsultancyModal(true); setShowConsultancyPopup(false); }}
+              onClick={() => { navigate("/free-consultation"); setShowConsultancyPopup(false); }}
               className="pointer-events-auto bg-white/95 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-2xl p-3 flex items-center gap-3 border border-green-200 max-w-sm w-full cursor-pointer hover:bg-white transition-colors"
             >
               {/* Icon */}

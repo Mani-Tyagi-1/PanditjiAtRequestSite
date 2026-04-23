@@ -7,6 +7,7 @@ export interface IConsultancyLead {
   helpWith: string;
   concern: string;
   poojaType: string;
+  otherPoojaText?: string;
   city: string;
   callbackTime: string;
   isFromSite: boolean;
@@ -19,6 +20,7 @@ const consultancyLeadSchema = new Schema<IConsultancyLead>({
   helpWith: { type: String, trim: true },
   concern: { type: String, required: true, trim: true },
   poojaType: { type: String, trim: true },
+  otherPoojaText: { type: String, trim: true },
   city: { type: String, required: true, trim: true },
   callbackTime: { type: String, trim: true },
   isFromSite: { type: Boolean, default: false },

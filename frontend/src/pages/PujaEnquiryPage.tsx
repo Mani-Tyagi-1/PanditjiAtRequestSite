@@ -79,6 +79,12 @@ export default function PujaEnquiryPage() {
                 }),
             });
             if (!res.ok) throw new Error("Failed");
+
+            // Meta Pixel Tracking
+            if (window.fbq) {
+                window.fbq("track", "Puja Enquiry Form");
+            }
+
             setSubmitted(true);
         } catch {
             setError("Something went wrong. Please try again.");

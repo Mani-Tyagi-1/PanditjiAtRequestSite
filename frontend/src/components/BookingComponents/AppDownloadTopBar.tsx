@@ -63,6 +63,11 @@ export default function AppDownloadTopBar() {
                             href={PLAY_STORE_URL}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={() => {
+                                if (window.fbq) {
+                                    window.fbq("track", "App Download");
+                                }
+                            }}
                             className="shrink-0 flex items-center gap-1.5 bg-white text-orange-700 text-[11px] font-bold px-3 py-1 rounded-full shadow-md hover:shadow-orange-200 transition-shadow z-10"
                             whileHover={{ scale: 1.06 }}
                             whileTap={{ scale: 0.96 }}

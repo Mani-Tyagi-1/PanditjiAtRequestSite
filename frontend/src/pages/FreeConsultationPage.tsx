@@ -92,6 +92,12 @@ export default function FreeConsultationPage() {
                 }),
             });
             if (!res.ok) throw new Error("Failed");
+            
+            // Meta Pixel Tracking
+            if (window.fbq) {
+                window.fbq("track", "Consultation Form");
+            }
+
             setSubmitted(true);
         } catch {
             setError("Something went wrong. Please try again.");

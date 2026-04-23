@@ -364,6 +364,11 @@ export default function PujaDetailPage() {
                                 href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={() => {
+                                    if (window.fbq) {
+                                        window.fbq("track", "App Download");
+                                    }
+                                }}
                                 className="promo-cta mt-2 w-full flex items-center justify-center gap-2 text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">

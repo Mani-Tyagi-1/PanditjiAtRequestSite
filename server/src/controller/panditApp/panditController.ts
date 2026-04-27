@@ -255,3 +255,92 @@ export const createPandit = async (
     });
   }
 };
+
+// Main function to fetch all pandits
+export const fetchAllPandit = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const pandits = await Pandit.find();
+    return res.status(200).json({
+      success: true,
+      data: pandits,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching pandits",
+    });
+  }
+};
+
+// Fetch a single pandit by ID
+export const fetchPanditById = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { id } = req.params;
+    const pandit = await Pandit.findById(id);
+    if (!pandit) {
+      return res.status(404).json({
+        success: false,
+        message: "Pandit not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: pandit,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching pandit",
+    });
+  }
+};
+
+// Get location suggestions (placeholder implementation)
+export const getLocationSuggestions = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    return res.status(200).json({
+      success: true,
+      data: [],
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching location suggestions",
+    });
+  }
+};
+
+// Get a pandit's current location
+export const getPanditLocation = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    const { id } = req.params;
+    const pandit = await Pandit.findById(id).select("location");
+    if (!pandit) {
+      return res.status(404).json({
+        success: false,
+        message: "Pandit not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: pandit.location,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching pandit location",
+    });
+  }
+};

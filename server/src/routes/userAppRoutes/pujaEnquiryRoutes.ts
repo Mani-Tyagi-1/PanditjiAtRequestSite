@@ -7,7 +7,7 @@ router.post(
   "/puja-enquiries",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await createPujaEnquiry(req, res);
+      await createPujaEnquiry(req, res, next);
     } catch (err) {
       next(err);
     }
@@ -18,7 +18,7 @@ router.get(
   "/puja-enquiries",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await getAllPujaEnquiries(req, res);
+      await getAllPujaEnquiries(req, res, next);
     } catch (err) {
       next(err);
     }

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import User from "../src/model/userApp/userModel";
+import User from "../../model/userApp/userModel";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import axios from "axios";

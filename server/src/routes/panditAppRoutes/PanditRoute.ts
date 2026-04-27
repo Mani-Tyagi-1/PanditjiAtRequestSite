@@ -4,7 +4,7 @@ import {
   getAllPandits,
   sendOtp,
   verifyOtpAndDeleteAccount,
-} from "../controllers/PanditController";
+} from "../../controller/panditApp/panditController";
 
 const router = Router();
 

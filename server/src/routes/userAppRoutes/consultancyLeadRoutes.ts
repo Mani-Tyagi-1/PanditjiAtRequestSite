@@ -1,6 +1,5 @@
-// routes/userAppRoutes/consultancyLeadRoutes.ts
 import express from "express";
-import  createConsultancyLead  from "../src/controller/userApp/consultancyLeadController";
+import createConsultancyLead from "../../controller/userApp/consultancyLeadController";
 
 const router = express.Router();
 

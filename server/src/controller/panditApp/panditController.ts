@@ -1,10 +1,171 @@
 import { Request, Response } from "express";
-import panditModel from "../../model/panditApp/panditModel";
+import Pandit from "../../model/panditApp/panditModel";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import axios from "axios";
 
-/**
- * Create a new Pandit
- */
-export const createPandit = async (req: Request, res: Response) => {
+// Controller to fetch all pandits
+export const getAllPandits = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  try {
+    // Fetch all pandits from the database
+    const pandits = await Pandit.find();
+
+    // Return the response with the list of pandits
+    return res.status(200).json({
+      success: true,
+      data: pandits,
+    });
+  } catch (error) {
+    // Handle any error that occurs while fetching
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching pandits",
+    //   error: error.message,
+    });
+  }
+};
+
+
+
+const normalizePhone = (phone: string): string => {
+  return phone.replace(/[^\d]/g, ""); // Remove non-digit characters
+};
+
+// OTP generation
+const generateOtp = (): string => {
+  return crypto.randomInt(100000, 999999).toString(); // 6 digit OTP
+};
+
+// Expiry time for OTP (5 minutes)
+const getExpiry = (minutes: number): Date => {
+  return new Date(Date.now() + minutes * 60000); // Add the specified minutes
+};
+
+// Main function to send OTP for Pandit account deletion
+export const sendOtp = async (req: Request, res: Response) => {
+  try {
+    // Get the phone number from the request body
+    const { phone } = req.body;
+
+    if (!phone || phone.length !== 10) {
+      return res.status(400).json({ message: "Invalid phone number format." });
+    }
+
+    // Normalize the phone number (remove any non-digit characters)
+    const normalizedPhone = normalizePhone(phone);
+
+    // Find the Pandit by the phone number
+    const pandit = await Pandit.findOne({ mobile: normalizedPhone });
+
+    if (!pandit) {
+      return res.status(404).json({
+        success: false,
+        message: "Pandit not found with the provided phone number.",
+      });
+    }
+
+    // Generate OTP and hash it
+    const otp = generateOtp();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // Set OTP expiry time (5 minutes from now)
+    const otpExpiry = getExpiry(5);
+
+    // Store OTP and OTP expiry time in the Pandit document
+    pandit.otp = otpHash;
+    pandit.otpExpiry = otpExpiry;
+
+    // Save the updated Pandit document
+    await pandit.save();
+
+    // Prepare Fast2SMS parameters
+    const authKey = process.env.FAST2SMS_API_KEY;
+    const senderId = process.env.FAST2SMS_SENDER_ID;
+    const templateId = process.env.FAST2SMS_TEMPLATE_ID;
+
+    // Constructing the URL for Fast2SMS API
+    const url =
+      `https://www.fast2sms.com/dev/bulkV2?authorization=${authKey}` +
+      `&route=dlt&sender_id=${senderId}&message=${templateId}` +
+      `&variables_values=${otp}|1&flash=0&numbers=${normalizedPhone}`;
+
+    // Sending OTP via Fast2SMS API
+    await axios.get(url);
+
+    // Return a success message
+    return res.status(200).json({ message: "OTP sent successfully" });
+  } catch (err: any) {
+    console.error("Error sending OTP:", err);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const verifyOtpAndDeleteAccount = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  const { phone, otp } = req.body; // Get phone and OTP from the request body
+
+  try {
+    const normalizedPhone = normalizePhone(phone);
+    const pandit = await Pandit.findOne({ mobile: normalizedPhone });
+
+    if (!pandit) {
+      return res.status(404).json({
+        success: false,
+        message: "Pandit not found with the provided phone number.",
+      });
+    }
+
+    if (!pandit.otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not requested. Please request an OTP first.",
+      });
+    }
+
+    // Compare the received OTP with the stored (hashed) OTP
+    const isOtpValid = await bcrypt.compare(otp, pandit.otp);
+
+    if (!isOtpValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    // Check if OTP has expired
+    if (!pandit.otpExpiry || new Date() > new Date(pandit.otpExpiry)) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired",
+      });
+    }
+
+    // Delete the Pandit account after OTP validation
+    await Pandit.deleteOne({ _id: pandit._id });
+
+    return res.status(200).json({
+      success: true,
+      message: "Account deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error verifying OTP and deleting account:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+
+export const createPandit = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
     const {
       prefix,
@@ -12,193 +173,85 @@ export const createPandit = async (req: Request, res: Response) => {
       lastName,
       age,
       gender,
-      dob,
-      mobile,
-      email,
+      dateOfBirth,
       languages,
-      experienceInYears,
-      serviceModes,
-      mobileType,
-      location, // comes as string from frontend: JSON.stringify(...)
+      introduction,
+      skills,
+      systemKnown,
+      pujaCategory,
+      pujaGods,
+      experience,
+      email,
+      mobile,
+      city,
+      state,
+      country,
+      profileImage,
+      degreeCard,
+      aadharCard,
+      panCard,
+      isVerified,
     } = req.body;
 
-    // Basic validation
+    // Validate required fields
     if (
-      !prefix ||
       !firstName ||
       !lastName ||
-      !age ||
-      !gender ||
-      !dob ||
-      !mobile ||
       !email ||
-      !languages ||
-      !experienceInYears ||
-      !serviceModes
+      !mobile ||
+      !city ||
+      !state ||
+      !country
     ) {
-      return res
-        .status(400)
-        .json({ message: "All required fields must be provided." });
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
     }
 
-    // Parse arrays or objects
-    let parsedLanguages: string[] = [];
-    let parsedServiceModes: string[] = [];
-    let parsedLocation: any = {};
-
-    try {
-      parsedLanguages = JSON.parse(languages);
-    } catch (err) {
-      console.warn("languages parse error, using raw:", languages);
-      if (Array.isArray(languages)) {
-        parsedLanguages = languages;
-      }
-    }
-
-    try {
-      parsedServiceModes = JSON.parse(serviceModes);
-    } catch (err) {
-      console.warn("serviceModes parse error, using raw:", serviceModes);
-      if (Array.isArray(serviceModes)) {
-        parsedServiceModes = serviceModes;
-      }
-    }
-
-    if (location) {
-      try {
-        parsedLocation = JSON.parse(location);
-      } catch (err) {
-        console.warn("location parse error, using raw:", location);
-        parsedLocation = location;
-      }
-    }
-
-    // Grab file paths if present from the upload middleware
-    let finalProfileImage = "";
-    let finalDegreeFile = "";
-    let finalAadharFile = "";
-
-    const files = (req as any).files || {};
-
-    if (files.profile_image && files.profile_image[0]) {
-      finalProfileImage =
-        process.env.cdnEndpoint + files.profile_image[0].key;
-    }
-    if (files.degree_file && files.degree_file[0]) {
-      finalDegreeFile =
-        process.env.cdnEndpoint + files.degree_file[0].key;
-    }
-    if (files.aadhar_file && files.aadhar_file[0]) {
-      finalAadharFile =
-        process.env.cdnEndpoint + files.aadhar_file[0].key;
-    }
-
-    // Create new Pandit document
-    const newPandit = new panditModel({
+    // Create a new Pandit document
+    const newPandit = new Pandit({
       prefix,
       firstName,
       lastName,
       age,
       gender,
-      dob,
-      mobile,
+      dateOfBirth,
+      languages,
+      introduction,
+      skills,
+      systemKnown,
+      selectedSystemKnown: "",
+      pujaCategory,
+      pujaGods,
+      astroCategory: [],
+      experience,
       email,
-      languages: parsedLanguages,
-      experienceInYears,
-      serviceModes: parsedServiceModes,
-      mobileType,
-      location: parsedLocation,
-      profileImage: finalProfileImage,
-      degreeFile: finalDegreeFile,
-      aadharFile: finalAadharFile,
+      mobile,
+      city,
+      state,
+      country,
+      profileImage,
+      degreeCard,
+      aadharCard,
+      panCard,
+      isVerified,
     });
 
+    // Save the new Pandit to the database
     await newPandit.save();
+
+    // Return success response
     return res.status(201).json({
-      message: "Pandit registered successfully",
-      newPandit,
+      success: true,
+      message: "Pandit created successfully",
+      data: newPandit,
     });
   } catch (error) {
-    console.error("Error in createPandit:", error);
-    return res.status(500).json({ message: "Server error", error });
-  }
-};
-
-/**
- * Handle location suggestions (using a mock example)
- */
-export const getLocationSuggestions = async (req: Request, res: Response) => {
-  try {
-    const { query } = req.query;
-    // Replace this with a call to a real geocoding API if desired.
-    const results = [
-      {
-        address: "Connaught Place, New Delhi, India",
-        city: "New Delhi",
-        state: "Delhi",
-        country: "India",
-        pincode: "110001",
-        latitude: 28.6315,
-        longitude: 77.2167,
-      },
-      {
-        address: "Chandni Chowk, New Delhi, India",
-        city: "New Delhi",
-        state: "Delhi",
-        country: "India",
-        pincode: "110006",
-        latitude: 28.6562,
-        longitude: 77.2301,
-      },
-    ];
-
-    return res.status(200).json({ suggestions: results });
-  } catch (error) {
-    console.error("Error in getLocationSuggestions:", error);
-    return res.status(500).json({ message: "Server error", error });
-  }
-};
-
-export const fetchAllPandit = async (req: Request, res: Response) => {
-  try {
-    const pandit = await panditModel.find({ isVerified: true });
-    return res.status(200).json({ pandit });
-  } catch (error) {
-    console.error("Error fetching poojas:", error);
-    return res.status(500).json({ message: "Server error", error });
-  }
-};
-export const fetchPanditById = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const pandit = await panditModel.findOne({ _id: id, isVerified: true });
-
-    if (!pandit) {
-      return res.status(404).json({ message: "Pooja not found or inactive" });
-    }
-
-    return res.status(200).json({ pandit });
-  } catch (error) {
-    console.error("Error fetching pooja by id:", error);
-    return res.status(500).json({ message: "Server error", error });
-  }
-};
-export const getPanditLocation = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const pandit = await panditModel.findById(id).select("location");
-
-    if (!pandit) {
-      return res.status(404).json({ message: "Pandit not found" });
-    }
-
-    return res.status(200).json({
-      latitude: pandit.location?.latitude,
-      longitude: pandit.location?.longitude,
-      address: pandit.location?.address,
+    console.error("Error creating pandit:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error creating Pandit",
     });
-  } catch (error) {
-    console.error("Error fetching pandit location:", error);
-    return res.status(500).json({ message: "Server error", error });
   }
 };

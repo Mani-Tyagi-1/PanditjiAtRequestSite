@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { sendUserOtp, verifyOtpAndDeleteUser } from "../controllers/UserController";
+import { sendUserOtp, verifyOtpAndDeleteUser } from "../../controller/userApp/UserDeleteController";
 
 const router = Router();
 

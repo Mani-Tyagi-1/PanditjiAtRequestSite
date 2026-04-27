@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import API_URL from "../utils/apiConfig";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -213,7 +214,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
 
       const baseCallId = crypto.randomUUID();
       const callId = `${baseCallId}_AC`;
-      const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+      const apiUrl = API_URL;
 
       await axios.post(`${apiUrl}/calls/invite`, {
         fromUserId: user._id,
@@ -667,7 +668,7 @@ export default function TrackPanditPage() {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+        const apiUrl = API_URL;
         const res = await fetch(`${apiUrl}/config/maps`);
         if (res.ok) {
           const data = await res.json();

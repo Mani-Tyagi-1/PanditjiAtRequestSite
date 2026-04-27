@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import API_URL from "../utils/apiConfig";
 
 const INPUT_CLASS =
     "mt-1 w-full border border-stone-200 rounded-xl px-3.5 py-2 text-sm text-stone-700 focus:outline-none focus:border-orange-400 bg-stone-50 transition-colors";
@@ -32,7 +33,7 @@ export default function PujaEnquiryPage() {
         const fetchPuja = async () => {
             if (!pujaId) return;
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+                const apiUrl = API_URL;
                 const res = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
                 const data = await res.json();
                 const pooja = data?.pooja || data;
@@ -60,7 +61,7 @@ export default function PujaEnquiryPage() {
         setError("");
         setSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const timingLabel =
                 form.timing === "immediately" ? "Immediately" :
                 form.timing === "within7days" ? "Within 7 Days" :

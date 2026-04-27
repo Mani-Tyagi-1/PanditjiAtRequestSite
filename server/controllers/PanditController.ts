@@ -110,13 +110,20 @@ export const verifyOtpAndDeleteAccount = async (
   const { phone, otp } = req.body; // Get phone and OTP from the request body
 
   try {
-    // Find the Pandit using the phone number from the request body
-    const pandit = await Pandit.findOne({ mobile: phone });
+    const normalizedPhone = normalizePhone(phone);
+    const pandit = await Pandit.findOne({ mobile: normalizedPhone });
 
     if (!pandit) {
       return res.status(404).json({
         success: false,
         message: "Pandit not found with the provided phone number.",
+      });
+    }
+
+    if (!pandit.otp) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not requested. Please request an OTP first.",
       });
     }
 

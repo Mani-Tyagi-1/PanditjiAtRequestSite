@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import API_URL from "../../utils/apiConfig";
 import { useNavigate } from "react-router-dom";
 
 interface Category {
@@ -25,7 +26,7 @@ export default function PujaServices() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+        const apiUrl = API_URL;
         const response = await fetch(`${apiUrl}/fetch-all-pooja-category`);
         const data = await response.json();
 

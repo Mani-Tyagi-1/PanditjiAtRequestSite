@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import API_URL from "../../utils/apiConfig";
 import { X } from "lucide-react";
 
 const INPUT_CLASS =
@@ -60,7 +61,7 @@ export default function PujaEnquiryModal({
         setError("");
         setSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const timingLabel =
                 form.timing === "immediately" ? "Immediately" :
                 form.timing === "within7days" ? "Within 7 Days" :

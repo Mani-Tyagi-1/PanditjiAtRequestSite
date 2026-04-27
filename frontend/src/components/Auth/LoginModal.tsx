@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import API_URL from '../../utils/apiConfig';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LoginModal() {
@@ -11,7 +12,7 @@ export default function LoginModal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'https://panditjiatrequest.com/api';
+  const apiUrl = API_URL;
 
   // Update this path according to your actual logo location
   const logoUrl =

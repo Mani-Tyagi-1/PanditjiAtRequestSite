@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { encryptPayload, decryptData } from "../../../utils/encryption";
+import API_URL from "../../../utils/apiConfig";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -381,7 +382,7 @@ export default function BookingModal({
   const fetchCoupons = async () => {
     setIsLoadingCoupons(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+      const apiUrl = API_URL;
 
       const response = await fetch(`${apiUrl}/config/fetch-coupons-proxy`);
       const data = await response.json();
@@ -573,7 +574,7 @@ export default function BookingModal({
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+        const apiUrl = API_URL;
         const res = await fetch(`${apiUrl}/config/maps`);
 
         if (!res.ok) {
@@ -601,7 +602,7 @@ export default function BookingModal({
       if (!user) return;
       setIsLoadingAddresses(true);
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+        const apiUrl = API_URL;
         const userId = user?._id || user?.id;
         console.log("Fetching saved addresses for user:", userId);
         const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
@@ -797,7 +798,7 @@ export default function BookingModal({
       }
     }));
 
-    const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+    const apiUrl = API_URL;
 
     if (mode === "offline") {
       try {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../utils/apiConfig";
 
 const HELP_OPTIONS = [
     "Choosing the right pooja",
@@ -75,7 +76,7 @@ export default function FreeConsultationPage() {
         setError("");
         setSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/consultancy-leads`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

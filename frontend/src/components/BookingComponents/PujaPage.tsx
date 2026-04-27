@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import BookingModal from "./UI/BookingModal";
+import API_URL from "../../utils/apiConfig";
 import PujaEnquiryModal from "./PujaEnquiryModal";
 import { decryptData } from "../../utils/encryption";
 
@@ -184,7 +185,7 @@ export default function PujaDetailPage() {
             if (!token || !stored) throw new Error("not logged in");
 
             const userId = JSON.parse(stored)._id;
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/users/${userId}/my-referral`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -225,7 +226,7 @@ export default function PujaDetailPage() {
     useEffect(() => {
         const fetchPooja = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+                const apiUrl = API_URL;
                 const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
                 const data = await response.json();
 

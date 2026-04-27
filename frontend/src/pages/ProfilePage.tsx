@@ -30,6 +30,7 @@ import {
 
 import { useAuth } from "../context/AuthContext";
 import { decryptData, encryptPayload } from "../utils/encryption";
+import API_URL from "../utils/apiConfig";
 
 interface UserData {
     _id: string;
@@ -150,7 +151,7 @@ const ProfilePage: React.FC = () => {
     const fetchReferralData = async (userId: string) => {
         try {
             const token = localStorage.getItem("user_token");
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const response = await axios.get(`${apiUrl}/users/${userId}/my-referral`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -217,7 +218,7 @@ const ProfilePage: React.FC = () => {
         setReferralBookingsLoading(true);
         try {
             const token = localStorage.getItem("user_token");
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const response = await axios.get(`${apiUrl}/users/${userId}/referral-bookings`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -275,7 +276,7 @@ const ProfilePage: React.FC = () => {
             // Fetch referral data in parallel (non-blocking)
             fetchReferralData(userId);
 
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const response = await axios.get(`${apiUrl}/profile/${userId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -318,7 +319,7 @@ const ProfilePage: React.FC = () => {
         setIsSaving(true);
         try {
             const token = localStorage.getItem("user_token");
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
 
             // Prepare payload
             const payload = {

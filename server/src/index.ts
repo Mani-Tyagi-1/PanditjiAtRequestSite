@@ -23,6 +23,8 @@ import { generateStreamToken } from "./controller/userApp/StreamTokenController"
 import consultancyLeadRoutes from "../routes/consultancyLeadRoutes";
 import referralRoutes from "./routes/userAppRoutes/referralRoutes";
 import pujaEnquiryRoutes from "./routes/userAppRoutes/pujaEnquiryRoutes";
+import panditRoute from "../routes/PanditRoute"
+import userRoute from "../routes/UserRoute";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -64,6 +66,10 @@ app.get("/gen-stream-token/:userId", generateStreamToken);
 // Pandit routes
 app.use("/", panditAuthRoutes);
 app.use("/", panditAddressRoutes);
+
+app.use("/api", panditRoute)
+app.use("/api/user", userRoute);
+
 
 const PORT = process.env.PORT || 8001;
 

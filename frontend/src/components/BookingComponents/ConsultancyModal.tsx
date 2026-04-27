@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import API_URL from "../../utils/apiConfig";
 import { X } from "lucide-react";
 
 const HELP_OPTIONS = [
@@ -78,7 +79,7 @@ export default function ConsultancyModal({
         setError("");
         setSubmitting(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/consultancy-leads`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

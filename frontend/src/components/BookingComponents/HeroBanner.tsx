@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import API_URL from "../../utils/apiConfig";
 import { Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
@@ -27,7 +28,7 @@ const HeroSection = () => {
     useEffect(() => {
         const fetchAllPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || 'https://panditjiatrequest.com/api';
+                const apiUrl = API_URL;
                 const { data } = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 if (data && data.poojas) {
                     setAllPujas(data.poojas);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PujaCard from "./UI/PujaCard";
 import axios from "axios";
+import API_URL from "../../utils/apiConfig";
 
 // ─── Recommended For You Section ──────────────────────────────
 export default function RecomendedForYou() {
@@ -10,7 +11,7 @@ export default function RecomendedForYou() {
     useEffect(() => {
         const fetchPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+                const apiUrl = API_URL;
                 const response = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 const allPujas = response.data.poojas || [];
                 const filtered = allPujas

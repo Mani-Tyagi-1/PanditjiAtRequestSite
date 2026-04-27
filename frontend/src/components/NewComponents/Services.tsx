@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Flame, Home, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../../utils/apiConfig";
 
 interface Category {
   _id: string;
@@ -20,7 +21,7 @@ export function Services() {
         const list: Category[] = cached
           ? JSON.parse(cached)
           : await (async () => {
-            const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/fetch-all-pooja-category`);
             const data = await res.json();
             const cats: Category[] = data?.poojaCategory ?? (Array.isArray(data) ? data : []);

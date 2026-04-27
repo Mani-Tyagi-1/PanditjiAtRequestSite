@@ -4,6 +4,7 @@ import cors from "cors";
 
 import connectDB from "./config/db";
 import panditRoutes from "./routes/PanditRoute";
+import userRoutes from "./routes/UserRoute";
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api", panditRoutes);
+app.use("/api", userRoutes);
 
 // Health check (optional but useful)
 app.get("/", (_req: Request, res: Response) => {
@@ -27,6 +29,6 @@ app.get("/", (_req: Request, res: Response) => {
 // Start server
 const PORT = process.env.PORT || 8000;
 
-app.listen(8000, "0.0.0.0", () => {
+app.listen(Number(PORT), "0.0.0.0", () => {
   console.log(`🌐 Server running on http://0.0.0.0:${PORT}`);
 });

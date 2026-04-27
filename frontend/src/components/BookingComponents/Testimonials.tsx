@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import API_URL from "../../utils/apiConfig";
 
 interface Testimonial {
   _id: string;
@@ -63,7 +64,7 @@ export default function Testimonials() {
   const scrollDirection = useRef(1);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+    const apiUrl = API_URL;
     fetch(`${apiUrl}/fetch-all-testimonials`)
       .then((res) => res.json())
       .then((data) => {

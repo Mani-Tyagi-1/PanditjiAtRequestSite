@@ -1,11 +1,12 @@
 import axios from "axios";
 import { StreamVideoClient } from "@stream-io/video-react-sdk";
 import { useStreamClientStore } from "./streamClientStore";
+import API_URL from "../utils/apiConfig";
 
 const apiKey = "s22skkdyjhaf";
 
 export async function initStreamClient(userId: string, name: string) {
-  const apiUrl = import.meta.env.VITE_API_URL || "https://panditjiatrequest.com/api";
+  const apiUrl = API_URL;
   const res = await axios.get(`${apiUrl}/stream/gen-stream-token/${userId}`);
 
   const token = res.data.token || res.data.data.token;

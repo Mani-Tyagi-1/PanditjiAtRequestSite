@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../../utils/apiConfig";
 
 interface Blog {
   _id: string;
@@ -43,7 +44,7 @@ export default function BlogsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+    const apiUrl = API_URL;
     fetch(`${apiUrl}/fetch-all-blogs`)
       .then((res) => res.json())
       .then((data) => {

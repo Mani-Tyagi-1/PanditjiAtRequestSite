@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import Home from "./pages/Home";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import DeleteMyAccount from "./pages/DeleteMyAccount";
+import DeleteUserAccount from "./pages/DeleteUserAccount";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import { BookingFlow } from "./components/NewComponents/BookingFlow";
 import LandingPage from "./pages/LandingPage";
@@ -71,7 +72,8 @@ function App() {
         <Route path="/privacypolicy-pandit" element={<PanditPrivacyPolicy />} />
         <Route path="/termsandconditions-pandit" element={<TermsAndConditionPandit />} />
 
-        <Route path="/delete-my-account" element={<DeleteMyAccount />} />
+        <Route path="/delete-pandit-account" element={<DeleteMyAccount />} />
+        <Route path="/delete-my-account" element={<DeleteUserAccount />} />
         <Route path="/booking-flow" element={<BookingFlow />} />
         <Route path="/join-as-panditji" element={<Home />} />
         <Route path="/category" element={<CategoryPage />} />

@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Allow: /join-as-panditji
+Allow: /free-consultation
+Allow: /category
+Allow: /puja
+Allow: /profile
+Allow: /my-bookings
+Allow: /privacypolicy
+Allow: /termsandconditions
+Allow: /privacypolicy-pandit
+Allow: /termsandconditions-pandit
+Allow: /delete-my-account
+Allow: /delete-pandit-account
+Allow: /blog/
+
+Disallow: /booking-flow
+
+Sitemap: https://panditjiatrequest.com/sitemap.xml

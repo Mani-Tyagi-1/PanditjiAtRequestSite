@@ -551,6 +551,26 @@ export default function PujaDetailPage() {
                                 )}
                             </div>
                         </div>
+                        {/* FAQs */}
+                        {pujaData.faqs && pujaData.faqs.length > 0 && (
+                            <div>
+                                <SectionLabel>Frequently Asked Questions</SectionLabel>
+                                <div className="space-y-4">
+                                    {pujaData.faqs.map((faq: any, index: number) => (
+                                        <div key={index} className="bg-white border border-orange-100 rounded-2xl px-4 py-3.5 shadow-sm">
+                                            <p className="text-stone-700 font-semibold text-sm">
+                                                <span className="text-orange-500 font-bold">Q: </span>
+                                                {faq.question}
+                                            </p>
+                                            <p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">
+                                                <span className="text-orange-400 font-semibold">A: </span>
+                                                {faq.answer}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Sticky Bottom CTA ── */}

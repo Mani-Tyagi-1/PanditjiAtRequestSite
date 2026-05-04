@@ -32,7 +32,25 @@ const PoojaSchema = new mongoose.Schema(
     poojaVideoLink: { type: String },
     poojaDescriptionMain: { type: String },
     poojaSubDescription: { type: String },
-    poojaBenefitsDescription: { type: String }, 
+    poojaBenefitsDescription: { type: String },
+    poojaDescription: [
+      {
+        headingId: { type: String },
+        heading: { type: String },
+        description: { type: String },
+      },
+    ],
+    tags: [{ type: String }],
+    panditDakshina: { type: Number, default: 0 },
+    samagriDetails: [{ type: mongoose.Schema.Types.Mixed }],
+    samagriPrice: { type: Number, default: 0 },
+    specialDate: { type: Date, default: null },
+    faqs: [
+      {
+        question: { type: String },
+        answer: { type: String },
+      },
+    ],
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
     isExclusive: { type: Boolean, default: false },

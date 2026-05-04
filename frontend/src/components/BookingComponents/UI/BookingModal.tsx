@@ -1030,6 +1030,34 @@ export default function BookingModal({
 
             setShowSuccessModal(true);
 
+            // Fire Google Ads conversion on successful booking
+            (() => {
+              const gadsId = '[AW-XXXXXXXXXX]';
+              const fireConversion = () => {
+                (window as any).gtag('event', 'conversion', {
+                  send_to: gadsId,
+                  value: discountedPrice,
+                  currency: 'INR',
+                  transaction_id: response.razorpay_order_id,
+                });
+              };
+              if (typeof (window as any).gtag === 'function') {
+                fireConversion();
+              } else {
+                (window as any).dataLayer = (window as any).dataLayer || [];
+                (window as any).gtag = function (...args: any[]) { (window as any).dataLayer.push(args); };
+                const s = document.createElement('script');
+                s.async = true;
+                s.src = `https://www.googletagmanager.com/gtag/js?id=${gadsId}`;
+                s.onload = () => {
+                  (window as any).gtag('js', new Date());
+                  (window as any).gtag('config', gadsId);
+                  fireConversion();
+                };
+                document.head.appendChild(s);
+              }
+            })();
+
             // Track successful purchase — eventID must match server CAPI event_id for deduplication
             if (window.fbq) {
               const capiEventId = `puja_purchase_${response.razorpay_order_id}`;

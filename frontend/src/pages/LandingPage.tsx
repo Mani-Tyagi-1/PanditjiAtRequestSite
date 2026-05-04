@@ -13,6 +13,7 @@ import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
+import { Helmet } from "react-helmet-async";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -45,6 +46,12 @@ export default function LandingPage() {
 
   return (
     <>
+      <Helmet>
+        <title>Book Pandit Ji Online for Pooja at Home | Pandit Ji At Request</title>
+        <meta name="description" content="Book verified Pandit Ji online for home pooja, havan, rituals, consultation, and online/offline puja services. Pandit Ji At Request makes pooja booking easy, trusted, and convenient." />
+        <meta name="keywords" content="book pandit ji online, pandit ji booking, pandit near me, pooja booking online, book pandit for pooja, pandit for home pooja, online pandit ji consultation, havan booking, griha pravesh pandit, satyanarayan pooja pandit, hindu pooja services, online pooja booking, pandit ji at request" />
+      </Helmet>
+
       {/* Consultancy form modal */}
       <ConsultancyModal isOpen={showConsultancyModal} onClose={() => setShowConsultancyModal(false)} />
 

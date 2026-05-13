@@ -33,6 +33,12 @@ type LatLng = {
   lng: number;
 };
 
+type DeceasedPerson = {
+  name: string;
+  gotra: string;
+  relation: string;
+};
+
 interface OfflineLocationPickerProps {
   googleMapsApiKey: string;
   street: string;
@@ -456,6 +462,12 @@ export default function BookingModal({
   const [gotra, setGotra] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [emailId, setEmailId] = useState("");
+  const [deceasedPersons, setDeceasedPersons] = useState<DeceasedPerson[]>([
+    { name: "", gotra: "", relation: "" },
+  ]);
+  const [ritualPerformerName, setRitualPerformerName] = useState("");
+  const [ritualPerformerGotra, setRitualPerformerGotra] = useState("");
+  const [selectedRitualPlace, setSelectedRitualPlace] = useState("");
 
   const [houseNo, setHouseNo] = useState("");
   const [street, setStreet] = useState("");
@@ -726,7 +738,13 @@ export default function BookingModal({
 
   const samagriCharge = pooja?.samagriPrice || 0;
   const panditDakshina = pooja?.panditDakshina || 0;
-  const currentPoojaPrice = mode === "online" ? (pooja?.poojaPriceOnline || 0) : (pooja?.poojaPriceOffline || 0);
+  const isDeathRitual = pooja?.poojaID === "death-rituals";
+  const basePoojaPrice = mode === "online" ? (pooja?.poojaPriceOnline || 0) : (pooja?.poojaPriceOffline || 0);
+  const deathRitualExtraPrice =
+    isDeathRitual && deceasedPersons.length > 1
+      ? (deceasedPersons.length - 1) * 1100
+      : 0;
+  const currentPoojaPrice = basePoojaPrice + deathRitualExtraPrice;
 
   const totalDiscount = samagriCharge + panditDakshina;
 
@@ -754,7 +772,31 @@ export default function BookingModal({
   };
 
   const handleCheckout = async () => {
-    if (!bhaktName || !contactNumber) {
+    if (isDeathRitual) {
+      const deceasedValid =
+        deceasedPersons.length > 0 &&
+        deceasedPersons.every(
+          (person) =>
+            person.name.trim() &&
+            person.gotra.trim() &&
+            person.relation.trim()
+        );
+
+      if (!contactNumber.trim()) {
+        triggerAlert("Details Required", "Please provide a contact number to proceed.", "info");
+        return;
+      }
+
+      if (!deceasedValid) {
+        triggerAlert("Deceased Details Required", "Please fill name, gotra and relation for each deceased person.", "info");
+        return;
+      }
+
+      if (!ritualPerformerName.trim() || !ritualPerformerGotra.trim() || !selectedRitualPlace) {
+        triggerAlert("Ritual Details Required", "Please fill performer details and select a ritual place.", "info");
+        return;
+      }
+    } else if (!bhaktName || !contactNumber) {
       triggerAlert("Details Required", "Please provide at least your name and contact number to proceed.", "info");
       return;
     }
@@ -904,6 +946,12 @@ export default function BookingModal({
         gotra,
         contactNumber,
         emailId,
+        ...(isDeathRitual && {
+          deceasedPersons,
+          ritualPerformerName,
+          ritualPerformerGotra,
+          ritualPlace: selectedRitualPlace,
+        }),
         ...(partnerRefCode && { referralCode: partnerRefCode }),
         address:
           mode === "offline"
@@ -1374,25 +1422,180 @@ export default function BookingModal({
 
             <div className="px-4 py-6 space-y-6">
               <div>
-                <div className="bm-section-label"><span>Bhakt Details</span><div /></div>
+                {!isDeathRitual ? (
+                  <>
+                    <div className="bm-section-label"><span>Bhakt Details</span><div /></div>
+
+                    <div className="space-y-3">
+                      <input type="text" placeholder="Your full name*" value={bhaktName}
+                        onChange={(e) => setBhaktName(e.target.value)}
+                        onBlur={trackCustomerDetails}
+                        className="bm-input" />
+
+                      <input type="text" placeholder="Gotra (optional)" value={gotra}
+                        onChange={(e) => setGotra(e.target.value)} className="bm-input" />
+
+                      <input type="tel" placeholder="Contact number*" value={contactNumber}
+                        onChange={(e) => setContactNumber(e.target.value)}
+                        onBlur={trackCustomerDetails}
+                        className="bm-input" />
+
+                      <input type="email" placeholder="Email address*" value={emailId}
+                        onChange={(e) => setEmailId(e.target.value)} className="bm-input" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-6">
+                    <div>
+                      <div className="bm-section-label"><span>Deceased Person Details</span><div /></div>
+                      <p className="text-[11px] text-stone-500 -mt-2 mb-3">
+                        Add name, gotra and your relation for each deceased person.
+                      </p>
+                      <div className="space-y-3">
+                        {deceasedPersons.map((person, idx) => (
+                          <div key={idx} className="rounded-2xl border border-orange-100 bg-white/70 p-3 space-y-3">
+                            <input
+                              type="text"
+                              placeholder="Name of deceased*"
+                              value={person.name}
+                              onChange={(e) =>
+                                setDeceasedPersons((prev) =>
+                                  prev.map((item, itemIdx) =>
+                                    itemIdx === idx ? { ...item, name: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className="bm-input"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Gotra of deceased*"
+                              value={person.gotra}
+                              onChange={(e) =>
+                                setDeceasedPersons((prev) =>
+                                  prev.map((item, itemIdx) =>
+                                    itemIdx === idx ? { ...item, gotra: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className="bm-input"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Your relation with deceased*"
+                              value={person.relation}
+                              onChange={(e) =>
+                                setDeceasedPersons((prev) =>
+                                  prev.map((item, itemIdx) =>
+                                    itemIdx === idx ? { ...item, relation: e.target.value } : item
+                                  )
+                                )
+                              }
+                              className="bm-input"
+                            />
+                            {deceasedPersons.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDeceasedPersons((prev) =>
+                                    prev.filter((_, itemIdx) => itemIdx !== idx)
+                                  )
+                                }
+                                className="text-red-500 text-xs font-bold"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDeceasedPersons((prev) => [
+                            ...prev,
+                            { name: "", gotra: "", relation: "" },
+                          ])
+                        }
+                        className="mt-3 text-orange-600 text-sm font-bold"
+                      >
+                        + Add Another Deceased Person
+                      </button>
+                    </div>
+
+                    <div>
+                      <div className="bm-section-label"><span>Ritual Performer Details</span><div /></div>
+                      <p className="text-[11px] text-stone-500 -mt-2 mb-3">
+                        Name and gotra of the person performing the ritual.
+                      </p>
+                      <div className="space-y-3">
+                        <input
+                          type="text"
+                          placeholder="Performer's name*"
+                          value={ritualPerformerName}
+                          onChange={(e) => setRitualPerformerName(e.target.value)}
+                          className="bm-input"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Performer's gotra*"
+                          value={ritualPerformerGotra}
+                          onChange={(e) => setRitualPerformerGotra(e.target.value)}
+                          className="bm-input"
+                        />
+                        <input
+                          type="tel"
+                          placeholder="Contact number*"
+                          value={contactNumber}
+                          onChange={(e) => setContactNumber(e.target.value)}
+                          className="bm-input"
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email address"
+                          value={emailId}
+                          onChange={(e) => setEmailId(e.target.value)}
+                          className="bm-input"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="bm-section-label"><span>Select Ritual Place</span><div /></div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { id: "haridwar", label: "Haridwar", icon: "🏞️" },
+                          { id: "gaya", label: "Gaya", icon: "🪔" },
+                          { id: "prayagraj", label: "Prayagraj", icon: "🌊" },
+                        ].map((place) => {
+                          const selected = selectedRitualPlace === place.id;
+                          return (
+                            <button
+                              key={place.id}
+                              type="button"
+                              onClick={() => setSelectedRitualPlace(place.id)}
+                              className={`relative rounded-2xl border px-2 py-3 text-center transition-all ${
+                                selected
+                                  ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
+                                  : "bg-white border-stone-200 hover:border-orange-200"
+                              }`}
+                            >
+                              <span className="block text-xl mb-1">{place.icon}</span>
+                              <span className={`block text-xs font-bold ${selected ? "text-orange-600" : "text-stone-600"}`}>
+                                {place.label}
+                              </span>
+                              {selected && (
+                                <span className="absolute top-1.5 right-1.5 text-orange-500 text-xs">✓</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-3">
-                  <input type="text" placeholder="Your full name*" value={bhaktName}
-                    onChange={(e) => setBhaktName(e.target.value)}
-                    onBlur={trackCustomerDetails}
-                    className="bm-input" />
-
-                  <input type="text" placeholder="Gotra (optional)" value={gotra}
-                    onChange={(e) => setGotra(e.target.value)} className="bm-input" />
-
-                  <input type="tel" placeholder="Contact number*" value={contactNumber}
-                    onChange={(e) => setContactNumber(e.target.value)}
-                    onBlur={trackCustomerDetails}
-                    className="bm-input" />
-
-                  <input type="email" placeholder="Email address*" value={emailId}
-                    onChange={(e) => setEmailId(e.target.value)} className="bm-input" />
-
                   {mode === "offline" && (
                     <div className="pt-4 space-y-4 border-t border-stone-100 mt-4">
                       {user && (
@@ -1555,12 +1758,18 @@ export default function BookingModal({
               </div>
             </button>
 
-            <div className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-56 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"}`}>
+            <div className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-72 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"}`}>
               <div className="bg-orange-50/60 border border-orange-100 rounded-2xl p-3 space-y-1.5 text-sm">
                 <div className="flex justify-between text-stone-500">
                   <span>Base Puja</span>
-                  <span className="font-medium text-stone-700">₹{discountedPrice}</span>
+                  <span className="font-medium text-stone-700">₹{basePoojaPrice}</span>
                 </div>
+                {isDeathRitual && deceasedPersons.length > 1 && (
+                  <div className="flex justify-between text-stone-500">
+                    <span>Additional Persons ({deceasedPersons.length - 1})</span>
+                    <span className="font-medium text-stone-700">₹{deathRitualExtraPrice}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-stone-400">
                   <span className="line-through">Samagri</span>
                   <span className="line-through">₹{samagriCharge}</span>

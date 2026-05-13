@@ -6,6 +6,7 @@ import API_URL from "../../utils/apiConfig";
 
 interface Category {
   _id: string;
+  category_id?: string;
   category_name_en: string;
   isActive: boolean;
 }
@@ -30,9 +31,11 @@ export function Services() {
             return active;
           })();
 
+        const serviceCategories = list.filter((cat) => cat.category_id !== "cat-9");
+
         // Build keyword → category _id map
         const map: Record<string, string> = {};
-        list.forEach((cat) => {
+        serviceCategories.forEach((cat) => {
           const name = cat.category_name_en.toLowerCase();
           map[name] = cat._id;
         });

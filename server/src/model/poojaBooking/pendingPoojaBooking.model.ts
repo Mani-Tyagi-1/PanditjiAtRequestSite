@@ -1,3 +1,142 @@
+// import { Schema, Document, Types } from 'mongoose';
+// import { panditJiAtRequestMongooose } from '../../../config/connectDB';
+
+// export interface IPendingPoojaBooking extends Document {
+//   userId: Types.ObjectId;
+//   userName: string;
+//   userPhone: string;
+//   userEmail?: string;
+
+//   // For offline puja
+//   address?: Record<string, any>;
+
+//   // Pooja
+//   poojaId: Types.ObjectId;
+//   poojaNameEng: string;
+//   poojaMode: 'online' | 'offline';
+//   poojaPrice: number;          // base price stored (derived if dakshina present)
+//   bookingDate: Date;
+//   callID?: string | null;
+//   userAvailabilityVC?: boolean;
+
+//   // Online puja devotee fields
+//   bhaktName?: string;
+//   gotra?: string;
+//   contactNumber?: string;
+//   emailId?: string;
+
+//   // Payment / amounts
+//   amount: number;              // total amount for the booking (charged)
+//   panditDakshina?: number;     // optional: dakshina component of the total
+//   razorpayOrderId?: string;    // stored after order creation before user payment
+
+//   // Lifecycle
+//   isConfirmed: boolean;        // becomes true when a pandit accepts
+//   isPaymentDone: boolean;      // false initially, set to true in complete-booking
+//   isCompleted: boolean;
+//   isPoojaStarted: boolean;
+//   isReview: boolean;
+//   isPanditReached?: boolean | null;
+
+//   // Times
+//   poojaTotalTime?: number | null; // minutes
+//   poojaStartTime?: Date | null;
+//   poojaEndTime?: Date | null;
+
+//   // Progress (0..4)
+//   stage: number;               // 0=new, 1=journey_start, 2=arrived, 3=start_puja, 4=complete_puja
+//   journeyStartTime?: Date | null;
+//   arrivedAt?: Date | null;
+
+//   // Assignment
+//   assignedPandit: Types.ObjectId[];
+
+//   // Location tracking (initial or live)
+//   currentLat?: number | null;
+//   currentLong?: number | null;
+
+//   // Partner affiliate referral code (from ?ref= URL param)
+//   referralCode?: string;
+// }
+
+// const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
+//   {
+//     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+//     userName: { type: String, required: true },
+//     userPhone: { type: String, required: true },
+//     userEmail: { type: String },
+
+//     address: { type: Object },
+//     callID: { type: String, default: null },
+
+//     poojaId: { type: Schema.Types.ObjectId, ref: 'Pooja', required: true },
+//     poojaNameEng: { type: String, required: true },
+//     poojaMode: { type: String, enum: ['online', 'offline'], required: true },
+//     poojaPrice: { type: Number, required: true },
+//     bookingDate: { type: Date, required: true },
+//     userAvailabilityVC: { type: Boolean, default: true },
+
+//     // Amounts
+//     amount: { type: Number, required: true },
+//     panditDakshina: { type: Number, default: undefined },
+
+//     // Razorpay
+//     razorpayOrderId: { type: String },
+
+//     // Online fields
+//     bhaktName: { type: String },
+//     gotra: { type: String },
+//     contactNumber: { type: String },
+//     emailId: { type: String },
+
+//     // Lifecycle
+//     isConfirmed: { type: Boolean, default: false },
+//     isPaymentDone: { type: Boolean, default: false },
+//     isCompleted: { type: Boolean, default: false },
+//     isPoojaStarted: { type: Boolean, default: false },
+//     isReview: { type: Boolean, default: false },
+//     isPanditReached: { type: Boolean, default: null },
+
+//     // Times
+//     poojaTotalTime: { type: Number, default: null },
+//     poojaStartTime: { type: Date, default: null },
+//     poojaEndTime: { type: Date, default: null },
+
+//     // Progress
+//     stage: { type: Number, default: 0 },
+//     journeyStartTime: { type: Date, default: null },
+//     arrivedAt: { type: Date, default: null },
+
+//     assignedPandit: [{ type: Schema.Types.ObjectId, ref: 'Pandit' }],
+
+//     // Location
+//     currentLat: { type: Number, default: null },
+//     currentLong: { type: Number, default: null },
+
+//     // Partner affiliate referral code
+//     referralCode: { type: String, default: undefined },
+//   },
+//   { timestamps: true },
+// );
+
+// // Virtual string id for cleaner client payloads
+// PendingPoojaBookingSchema.virtual('id').get(function (this: IPendingPoojaBooking) {
+//   return (this as any)._id.toHexString();
+// });
+// PendingPoojaBookingSchema.set('toJSON', { virtuals: true });
+// PendingPoojaBookingSchema.set('toObject', { virtuals: true });
+
+// // Helpful indexes
+// PendingPoojaBookingSchema.index({ bookingDate: 1 });
+// PendingPoojaBookingSchema.index({ assignedPandit: 1, bookingDate: 1 });
+
+// export default panditJiAtRequestMongooose.model<IPendingPoojaBooking>(
+//   'PendingPoojaBooking',
+//   PendingPoojaBookingSchema,
+// );
+
+
+
 import { Schema, Document, Types } from 'mongoose';
 import { panditJiAtRequestMongooose } from '../../../config/connectDB';
 
@@ -9,6 +148,7 @@ export interface IPendingPoojaBooking extends Document {
 
   // For offline puja
   address?: Record<string, any>;
+  callID?: string | null;
 
   // Pooja
   poojaId: Types.ObjectId;
@@ -16,8 +156,6 @@ export interface IPendingPoojaBooking extends Document {
   poojaMode: 'online' | 'offline';
   poojaPrice: number;          // base price stored (derived if dakshina present)
   bookingDate: Date;
-  callID?: string | null;
-  userAvailabilityVC?: boolean;
 
   // Online puja devotee fields
   bhaktName?: string;
@@ -28,6 +166,7 @@ export interface IPendingPoojaBooking extends Document {
   // Payment / amounts
   amount: number;              // total amount for the booking (charged)
   panditDakshina?: number;     // optional: dakshina component of the total
+  couponCode?: string;
   razorpayOrderId?: string;    // stored after order creation before user payment
 
   // Lifecycle
@@ -35,8 +174,8 @@ export interface IPendingPoojaBooking extends Document {
   isPaymentDone: boolean;      // false initially, set to true in complete-booking
   isCompleted: boolean;
   isPoojaStarted: boolean;
-  isReview: boolean;
   isPanditReached?: boolean | null;
+  isReview?:boolean;
 
   // Times
   poojaTotalTime?: number | null; // minutes
@@ -51,12 +190,24 @@ export interface IPendingPoojaBooking extends Document {
   // Assignment
   assignedPandit: Types.ObjectId[];
 
-  // Location tracking (initial or live)
+  isFromApp?: boolean;
+  userAvailabilityVC?: boolean;
   currentLat?: number | null;
   currentLong?: number | null;
 
-  // Partner affiliate referral code (from ?ref= URL param)
-  referralCode?: string;
+  deceasedPersons?: Array<{
+    name: string;
+    gotra: string;
+    relation: string;
+  }>;
+  ritualPerformerName?: string;
+  ritualPerformerGotra?: string;
+  ritualPlace?: string;
+  // ✅ NEW: geospatial location
+  location?: {
+    type: "Point";
+    coordinates: [number, number]; // [lng, lat]
+  };
 }
 
 const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
@@ -74,11 +225,11 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     poojaMode: { type: String, enum: ['online', 'offline'], required: true },
     poojaPrice: { type: Number, required: true },
     bookingDate: { type: Date, required: true },
-    userAvailabilityVC: { type: Boolean, default: true },
 
     // Amounts
     amount: { type: Number, required: true },
     panditDakshina: { type: Number, default: undefined },
+    couponCode: { type: String, trim: true },
 
     // Razorpay
     razorpayOrderId: { type: String },
@@ -92,9 +243,9 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     // Lifecycle
     isConfirmed: { type: Boolean, default: false },
     isPaymentDone: { type: Boolean, default: false },
+    isReview: { type: Boolean, default: false },
     isCompleted: { type: Boolean, default: false },
     isPoojaStarted: { type: Boolean, default: false },
-    isReview: { type: Boolean, default: false },
     isPanditReached: { type: Boolean, default: null },
 
     // Times
@@ -109,12 +260,26 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
 
     assignedPandit: [{ type: Schema.Types.ObjectId, ref: 'Pandit' }],
 
-    // Location
+    isFromApp: { type: Boolean, default: false },
+    userAvailabilityVC: { type: Boolean, default: true },
     currentLat: { type: Number, default: null },
     currentLong: { type: Number, default: null },
 
-    // Partner affiliate referral code
-    referralCode: { type: String, default: undefined },
+    deceasedPersons: [
+      {
+        name: { type: String, trim: true },
+        gotra: { type: String, trim: true },
+        relation: { type: String, trim: true },
+      },
+    ],
+    ritualPerformerName: { type: String, trim: true },
+    ritualPerformerGotra: { type: String, trim: true },
+    ritualPlace: { type: String, trim: true },
+    // ✅ NEW: geospatial location field
+    location: {
+      type: { type: String, enum: ['Point'] },
+      coordinates: { type: [Number] }, // [lng, lat]
+    },
   },
   { timestamps: true },
 );
@@ -129,6 +294,7 @@ PendingPoojaBookingSchema.set('toObject', { virtuals: true });
 // Helpful indexes
 PendingPoojaBookingSchema.index({ bookingDate: 1 });
 PendingPoojaBookingSchema.index({ assignedPandit: 1, bookingDate: 1 });
+PendingPoojaBookingSchema.index({ location: '2dsphere' }, { sparse: true });
 
 export default panditJiAtRequestMongooose.model<IPendingPoojaBooking>(
   'PendingPoojaBooking',

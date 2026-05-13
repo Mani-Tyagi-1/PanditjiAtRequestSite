@@ -1,17 +1,17 @@
-// poojaBooking.model.ts
+// src/model/panditApp/poojaBooking.model.ts
 import { Schema, Document, Types } from 'mongoose';
 import { panditJiAtRequestMongooose } from '../../../config/connectDB';
-import { IPendingPoojaBooking } from './pendingPoojaBooking.model'; // Use the interface for consistency
+import { IPendingPoojaBooking } from './pendingPoojaBooking.model';
 
-// Extends pending model but requires payment/order IDs and ensures confirmation
-export interface IPoojaBooking extends Omit<IPendingPoojaBooking, 'razorpayOrderId' | 'isPaymentDone'> {
+// Extends pending model but requires payment/order IDs
+export interface IPoojaBooking
+  extends Omit<IPendingPoojaBooking, 'razorpayOrderId' | 'isPaymentDone'> {
   _id: Types.ObjectId;
-  callID: string;
+  callID : string;
   razorpayPaymentId: string;
   razorpayOrderId: string;
   razorpaySignature: string;
   userAvailabilityVC: boolean;
-  isReview: boolean;
 
   isPaymentDone: true;
 
@@ -27,6 +27,12 @@ export interface IPoojaBooking extends Omit<IPendingPoojaBooking, 'razorpayOrder
     size?: number;
     uploadedAt: Date;
   }>;
+
+  // ✅ NEW: geospatial location
+  location?: {
+    type: "Point";
+    coordinates: [number, number]; // [lng, lat]
+  };
 }
 
 const PoojaBookingSchema = new Schema<IPoojaBooking>(
@@ -37,7 +43,7 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     userEmail: { type: String },
 
     address: { type: Object },
-    callID: { type: String, default: null, required: false },
+    callID : {type : String  ,  default: null ,required : false},
     poojaId: { type: Schema.Types.ObjectId, ref: 'Pooja', required: true },
     poojaNameEng: { type: String, required: true },
     poojaMode: { type: String, enum: ['online', 'offline'], required: true },
@@ -47,6 +53,7 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
 
     amount: { type: Number, required: true },
     panditDakshina: { type: Number, default: undefined },
+    couponCode: { type: String, trim: true },
 
     bhaktName: { type: String },
     gotra: { type: String },
@@ -74,9 +81,6 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
 
     assignedPandit: [{ type: Schema.Types.ObjectId, ref: 'Pandit' }],
 
-    // Partner affiliate referral code (from ?ref= URL param, copied from pending booking)
-    referralCode: { type: String, default: undefined },
-
     // ✅ NEW: live location fields
     currentLat: { type: Number, default: null },
     currentLong: { type: Number, default: null },
@@ -91,11 +95,29 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
         uploadedAt: { type: Date, default: Date.now, required: true },
       },
     ],
+    isFromApp: { type: Boolean, default: false },
+
+    deceasedPersons: [
+      {
+        name: { type: String, trim: true },
+        gotra: { type: String, trim: true },
+        relation: { type: String, trim: true },
+      },
+    ],
+    ritualPerformerName: { type: String, trim: true },
+    ritualPerformerGotra: { type: String, trim: true },
+    ritualPlace: { type: String, trim: true },
+
+    // geospatial location field (offline bookings only)
+    location: {
+      type: { type: String, enum: ['Point'] },
+      coordinates: { type: [Number] }, // [lng, lat]
+    },
   },
   { timestamps: true },
 );
 
-// Virtual string id
+// Virtual id
 PoojaBookingSchema.virtual('id').get(function (this: IPoojaBooking) {
   return (this as any)._id.toHexString();
 });
@@ -106,6 +128,7 @@ PoojaBookingSchema.set('toObject', { virtuals: true });
 PoojaBookingSchema.index({ bookingDate: 1 });
 PoojaBookingSchema.index({ assignedPandit: 1, bookingDate: 1 });
 PoojaBookingSchema.index({ razorpayOrderId: 1 }, { unique: true });
+PoojaBookingSchema.index({ location: '2dsphere' }, { sparse: true });
 
 export default panditJiAtRequestMongooose.model<IPoojaBooking>(
   'PoojaBooking',

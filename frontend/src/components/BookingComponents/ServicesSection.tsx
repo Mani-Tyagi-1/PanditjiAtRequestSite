@@ -38,7 +38,9 @@ export default function PujaServices() {
           categoryList = data;
         }
 
-        const activeCategories = categoryList.filter((cat) => cat.isActive);
+        const activeCategories = categoryList.filter(
+          (cat) => cat.isActive && cat.category_id !== "cat-9"
+        );
         setCategories(activeCategories);
 
         // optional cache
@@ -48,7 +50,10 @@ export default function PujaServices() {
 
         const cached = sessionStorage.getItem("pooja_categories");
         if (cached) {
-          setCategories(JSON.parse(cached));
+          const cachedCategories: Category[] = JSON.parse(cached);
+          setCategories(
+            cachedCategories.filter((cat) => cat.category_id !== "cat-9")
+          );
         }
       } finally {
         setIsLoading(false);

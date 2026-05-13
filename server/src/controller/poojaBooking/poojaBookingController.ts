@@ -216,6 +216,14 @@ type CreatePendingBookingBody = {
   gotra?: string;
   contactNumber?: string;
   emailId?: string;
+  deceasedPersons?: Array<{
+    name: string;
+    gotra: string;
+    relation: string;
+  }>;
+  ritualPerformerName?: string;
+  ritualPerformerGotra?: string;
+  ritualPlace?: string;
   referralCode?: string;       // partner affiliate ref code (from ?ref= URL param)
 };
 
@@ -247,6 +255,10 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       gotra,
       contactNumber,
       emailId,
+      deceasedPersons,
+      ritualPerformerName,
+      ritualPerformerGotra,
+      ritualPlace,
       referralCode,
     } = req.body as CreatePendingBookingBody;
 
@@ -313,6 +325,10 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       gotra,
       contactNumber,
       emailId,
+      ...(Array.isArray(deceasedPersons) && { deceasedPersons }),
+      ...(ritualPerformerName && { ritualPerformerName }),
+      ...(ritualPerformerGotra && { ritualPerformerGotra }),
+      ...(ritualPlace && { ritualPlace }),
       ...(referralCode && { referralCode }),
     });
 

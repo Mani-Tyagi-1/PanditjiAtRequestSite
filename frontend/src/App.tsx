@@ -23,6 +23,7 @@ import LoginModal from "./components/Auth/LoginModal";
 import PanditPrivacyPolicy from "./pages/PanditPrivacyPolicy";
 import TermsAndConditionPandit from "./pages/TermsAndConditionPandit";
 import FreeConsultationPage from "./pages/FreeConsultationPage";
+import PaidConsultationPage from "./pages/PaidConsultationPage";
 
 // Fires PageView on every SPA route change so Meta Pixel tracks all pages
 function PixelPageTracker() {
@@ -88,6 +89,7 @@ function App() {
         <Route path="/blog/:blogID" element={<BlogDetailPage />} />
         <Route path="/puja/:pujaId/enquiry" element={<PujaEnquiryPage />} />
         <Route path="/free-consultation" element={<FreeConsultationPage />} />
+        <Route path="/paid-consultation" element={<PaidConsultationPage />} />
 
         {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

@@ -7,10 +7,14 @@ export interface IConsultancyLead {
   helpWith: string;
   concern: string;
   poojaType: string;
-  otherPoojaText?: string;
   city: string;
   callbackTime: string;
-  isFromSite: boolean;
+  timeSlot: string;
+  amount: number;
+  isPaymentDone: boolean;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
   addedOn: Date;
 }
 
@@ -20,10 +24,14 @@ const consultancyLeadSchema = new Schema<IConsultancyLead>({
   helpWith: { type: String, trim: true },
   concern: { type: String, required: true, trim: true },
   poojaType: { type: String, trim: true },
-  otherPoojaText: { type: String, trim: true },
   city: { type: String, required: true, trim: true },
   callbackTime: { type: String, trim: true },
-  isFromSite: { type: Boolean, default: false },
+  timeSlot: { type: String, trim: true },
+  amount: { type: Number, default: 0 },
+  isPaymentDone: { type: Boolean, default: false },
+  razorpayOrderId: { type: String, trim: true },
+  razorpayPaymentId: { type: String, trim: true },
+  razorpaySignature: { type: String, trim: true },
   addedOn: { type: Date, default: Date.now },
 });
 

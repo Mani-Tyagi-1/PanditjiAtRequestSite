@@ -23,6 +23,7 @@ import { generateStreamToken } from "./controller/userApp/StreamTokenController"
 import consultancyLeadRoutes from "./routes/userAppRoutes/consultancyLeadRoutes";
 import referralRoutes from "./routes/userAppRoutes/referralRoutes";
 import pujaEnquiryRoutes from "./routes/userAppRoutes/pujaEnquiryRoutes";
+import paidConsultationRoutes from "./routes/userAppRoutes/paidConsultationRoutes";
 import panditRoute from "./routes/panditAppRoutes/PanditRoute"
 import userRoute from "./routes/userAppRoutes/UserDeleteRoute";
 
@@ -60,6 +61,7 @@ app.use("/api/stream", streamRoutes);
 app.use("/api", consultancyLeadRoutes);
 app.use("/api", referralRoutes);
 app.use("/api", pujaEnquiryRoutes);
+app.use("/api", paidConsultationRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 

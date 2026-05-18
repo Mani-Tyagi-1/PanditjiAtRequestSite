@@ -69,7 +69,7 @@ export default function LandingPage() {
                 opacity: { duration: 0.3 },
                 y: { duration: 0.3 },
               }}
-              onClick={() => { navigate("/free-consultation"); setShowConsultancyPopup(false); }}
+              onClick={() => { navigate("/paid-consultation"); setShowConsultancyPopup(false); }}
               className="pointer-events-auto bg-white/95 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-2xl p-3 flex items-center gap-3 border border-green-200 max-w-sm w-full cursor-pointer hover:bg-white transition-colors"
             >
               {/* Icon */}
@@ -81,14 +81,14 @@ export default function LandingPage() {
 
               {/* Text */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-xs font-bold text-gray-800 leading-tight">Get Expert Guidance — It's FREE!</h3>
-                <p className="text-[10px] text-gray-500 mt-0.5 truncate">Talk to our pandit for the right pooja advice</p>
+                <h3 className="text-xs font-bold text-gray-800 leading-tight">Book Personalised Consultation</h3>
+                <p className="text-[10px] text-gray-500 mt-0.5 truncate">Get dedicated guidance from our pandit</p>
               </div>
 
               {/* CTA + close */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="bg-green-500 text-white text-[10px] font-bold px-3 py-2 rounded-lg shadow-sm whitespace-nowrap">
-                  Book FREE Call
+                  Consult Now
                 </span>
                 <button
                   onClick={(e) => {
@@ -117,7 +117,7 @@ export default function LandingPage() {
             className="px-4 pt-2 pb-2 "
           >
             <div
-              onClick={() => navigate("/free-consultation")}
+              onClick={() => navigate("/paid-consultation")}
               className="bg-white border border-green-200 rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.08)] grid grid-cols-[44px_minmax(0,1fr)] gap-3 cursor-pointer hover:bg-green-50/40 transition-colors"
             >
               <div className="w-9 h-8 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
@@ -128,15 +128,15 @@ export default function LandingPage() {
 
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold text-gray-800 leading-snug">
-                  Get Expert Guidance - It's FREE!
+                  Book Your Consultation
                 </h3>
                 <p className="text-xs text-gray-500 mt-1 leading-snug">
-                  Talk to our pandit for the right pooja advice
+                  Get dedicated guidance from our pandit
                 </p>
               </div>
 
               <span className="col-span-2 w-full bg-green-500 text-white text-xs font-bold px-3 py-2.5 rounded-lg shadow-sm text-center">
-                Book FREE Call
+                Book your Personal Consultant Now
               </span>
             </div>
           </motion.section>

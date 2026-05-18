@@ -134,7 +134,7 @@ export function DeathRituals() {
   const singlePuja = deathRitualPoojas.length === 1 ? deathRitualPoojas[0] : null;
 
   return (
-    <section className="relative overflow-hidden bg-[#fffaf3] py-6 md:py-10">
+    <section className="relative overflow-hidden bg-[#fffaf3] py-2 md:py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4">
         {isLoading && (
           <div className="h-64 md:h-80 rounded-2xl bg-orange-100/70 animate-pulse" />
@@ -151,7 +151,8 @@ export function DeathRituals() {
               navigate(`/puja/${singlePuja._id}`);
               window.scrollTo(0, 0);
             }}
-            className="group relative h-[220px] md:h-[360px] rounded-2xl md:rounded-3xl overflow-hidden bg-stone-200 shadow-xl hover:shadow-2xl cursor-pointer"
+            aria-label={`Open ${singlePuja.poojaNameEng} puja details`}
+            className="group relative h-[180px] md:h-[220px] rounded-2xl md:rounded-3xl overflow-hidden bg-stone-200 shadow-xl hover:shadow-2xl cursor-pointer"
           >
             {(singlePuja.poojaMainImage || singlePuja.poojaCardImage) && (
               <img
@@ -160,38 +161,6 @@ export function DeathRituals() {
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             )}
-
-            <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-black/5" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent md:hidden" />
-
-            <div className="relative z-10 flex h-full flex-col justify-end md:justify-center p-4 md:p-10 max-w-2xl">
-              <span className="mb-2 md:mb-3 inline-flex w-fit items-center gap-2 rounded-full bg-orange-100/95 px-3 md:px-4 py-1.5 md:py-2 text-[11px] md:text-sm font-bold text-orange-700 shadow-sm">
-                <Flame className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                Death Rituals
-              </span>
-              <h2 className="text-2xl md:text-5xl font-extrabold leading-tight text-white">
-                {singlePuja.poojaNameEng}
-              </h2>
-              {singlePuja.poojaNameHindi && (
-                <p className="mt-1 text-xs md:text-lg font-semibold text-white/80">
-                  {singlePuja.poojaNameHindi}
-                </p>
-              )}
-              <p className="mt-2 md:mt-3 max-w-xl text-xs md:text-base font-medium text-white/80">
-                Book experienced pandits for sacred final rites with care,
-                dignity, and proper Vedic rituals.
-              </p>
-              <div className="mt-3 md:mt-4 flex flex-wrap items-center gap-2 md:gap-3">
-                <p className="rounded-full bg-black/40 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-base font-bold text-amber-300 backdrop-blur-sm">
-                  <span>&#8377;</span>
-                  {(singlePuja.poojaPriceOnline || singlePuja.poojaPriceOffline || 0).toLocaleString("en-IN")} onwards
-                </p>
-                <button className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm font-bold text-white shadow-lg shadow-orange-900/20 transition-transform group-hover:translate-x-1">
-                  Perform Now
-                  <ArrowRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                </button>
-              </div>
-            </div>
           </motion.article>
         )}
 

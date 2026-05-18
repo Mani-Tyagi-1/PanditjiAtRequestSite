@@ -161,15 +161,14 @@ const HeroSection = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         whileTap={{ scale: 0.98 }}
-                        className="relative w-full rounded-2xl overflow-hidden cursor-pointer"
-                        style={{ maxHeight: "140px" }}
+                        className="relative w-full h-[120px] md:h-[160px] rounded-2xl overflow-hidden cursor-pointer"
                         onClick={() => window.open("https://play.google.com/store/apps/details?id=com.panditJiAtReqapp", "_blank")}
                     >
                         {/* Background Image */}
                         <img
                             src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/PANDIT%20JI%20AT%20REQUEST%20(MOBILE).jpg%20(1).webp"
                             alt="Sacred deity"
-                            className="absolute inset-0 w-fit "
+                            className="absolute inset-0 w-full h-full object-cover"
                         />
 
                         {/* Gradient Overlay — warm fade from left so text is readable */}
@@ -182,7 +181,7 @@ const HeroSection = () => {
                         /> */}
 
                         {/* Text Content */}
-                        <div className="relative z-10 p-3 md:p-3 flex flex-col justify-center min-h-[200px] max-w-[95%] md:max-w-[95%]">
+                        <div className="relative z-10 p-3 md:p-3 flex flex-col justify-center h-full max-w-[95%] md:max-w-[95%]">
                             {/* <h2
                                 className="text-lg md:text-lg lg:text-lg font-extrabold leading-tight mb-2"
                                 style={{ color: "#2d1810" }}

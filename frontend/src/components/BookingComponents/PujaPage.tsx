@@ -216,10 +216,11 @@ export default function PujaDetailPage() {
         }
     }, [user, pendingBooking]);
 
-    useEffect(() => {
-        const timer = setTimeout(() => setIsPromoOpen(true), 3000);
-        return () => clearTimeout(timer);
-    }, []);
+    // App download promo popup disabled.
+    // useEffect(() => {
+    //     const timer = setTimeout(() => setIsPromoOpen(true), 3000);
+    //     return () => clearTimeout(timer);
+    // }, []);
     const [pujaData, setPujaData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -307,7 +308,7 @@ export default function PujaDetailPage() {
       `}</style>
 
             {/* ── 30% Off Promo Modal ── */}
-            {isPromoOpen && (
+            {false && isPromoOpen && (
                 <div
                     className="fixed inset-0 z-[200] flex items-end justify-center"
                     style={{ backgroundColor: "rgba(0,0,0,0.55)" }}

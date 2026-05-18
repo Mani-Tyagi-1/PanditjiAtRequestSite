@@ -25,6 +25,12 @@ interface Puja {
   subCategories?: { id?: string; name?: string }[];
 }
 
+const RITUAL_PLACES = [
+  { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
+  { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
+  { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
+];
+
 function normalizePujas(data: unknown): Puja[] {
   if (Array.isArray(data)) return data as Puja[];
   if (data && typeof data === "object") {
@@ -141,27 +147,67 @@ export function DeathRituals() {
         )}
 
         {!isLoading && singlePuja && (
-          <motion.article
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            whileHover={{ y: -4 }}
-            onClick={() => {
-              navigate(`/puja/${singlePuja._id}`);
-              window.scrollTo(0, 0);
-            }}
-            aria-label={`Open ${singlePuja.poojaNameEng} puja details`}
-            className="group relative h-[180px] md:h-[220px] rounded-2xl md:rounded-3xl overflow-hidden bg-stone-200 shadow-xl hover:shadow-2xl cursor-pointer"
-          >
-            {(singlePuja.poojaMainImage || singlePuja.poojaCardImage) && (
-              <img
-                src={singlePuja.poojaMainImage || singlePuja.poojaCardImage}
-                alt={singlePuja.poojaNameEng}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            )}
-          </motion.article>
+          <div className="space-y-3">
+            <motion.article
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              whileHover={{ y: -4 }}
+              onClick={() => {
+                navigate(`/puja/${singlePuja._id}`);
+                window.scrollTo(0, 0);
+              }}
+              aria-label={`Open ${singlePuja.poojaNameEng} puja details`}
+              className="group relative h-[180px] md:h-[220px] rounded-2xl md:rounded-3xl overflow-hidden bg-stone-200 shadow-xl hover:shadow-2xl cursor-pointer"
+            >
+              {(singlePuja.poojaMainImage || singlePuja.poojaCardImage) && (
+                <img
+                  src={singlePuja.poojaMainImage || singlePuja.poojaCardImage}
+                  alt={singlePuja.poojaNameEng}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              )}
+            </motion.article>
+
+            <motion.div
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45, delay: 0.05 }}
+            >
+
+              <div className="grid grid-cols-3 gap-3">
+                {RITUAL_PLACES.map((place) => (
+                                        <div
+                                            key={place.id}
+                                            className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm"
+                                        >
+                                            <div className="w-30 h-18 bg-orange-50">
+                                                {place.imageUrl ? (
+                                                    <img
+                                                        src={place.imageUrl}
+                                                        alt={place.label}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-orange-300">
+                                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="px-3 py-1">
+                                                <p className="text-xs font-bold text-stone-700">
+                                                    {place.label}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+              </div>
+            </motion.div>
+          </div>
         )}
 
         {!isLoading && !singlePuja && (
@@ -203,7 +249,7 @@ export function DeathRituals() {
                       navigate(`/puja/${puja._id}`);
                       window.scrollTo(0, 0);
                     }}
-                    className="group relative h-72 md:h-80 rounded-2xl overflow-hidden bg-stone-200 shadow-lg hover:shadow-2xl cursor-pointer"
+                    className="group relative h-72 md:h-80 rounded-2xl overflow-hidden hover:shadow-2xl cursor-pointer"
                   >
                     {image && (
                       <img

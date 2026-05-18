@@ -39,6 +39,12 @@ type DeceasedPerson = {
   relation: string;
 };
 
+const RITUAL_PLACES = [
+  { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
+  { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
+  { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
+];
+
 interface OfflineLocationPickerProps {
   googleMapsApiKey: string;
   street: string;
@@ -1447,9 +1453,56 @@ export default function BookingModal({
                 ) : (
                   <div className="space-y-6">
                     <div>
+                      <div className="bm-section-label"><span>Select Ritual Place</span><div /></div>
+                      <div className="grid grid-cols-3 gap-3">
+                        {RITUAL_PLACES.map((place) => {
+                          const selected = selectedRitualPlace === place.id;
+                          return (
+                            <button
+                              key={place.id}
+                              type="button"
+                              onClick={() => setSelectedRitualPlace(place.id)}
+                              className={`relative overflow-hidden rounded-2xl border text-left transition-all ${
+                                selected
+                                  ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
+                                  : "bg-white border-stone-200 hover:border-orange-200"
+                              }`}
+                            >
+                              <div className="w-30 h-18 bg-orange-50">
+                                {place.imageUrl ? (
+                                  <img
+                                    src={place.imageUrl}
+                                    alt={place.label}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-orange-300">
+                                    <svg className="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />
+                                    </svg>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="px-3 py-1">
+                                <span className={`block text-xs font-bold ${selected ? "text-orange-600" : "text-stone-700"}`}>
+                                  {place.label}
+                                </span>
+                              </div>
+                              {selected && (
+                                <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center shadow-sm">
+                                  ✓
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
                       <div className="bm-section-label"><span>Deceased Person Details</span><div /></div>
                       <p className="text-[11px] text-stone-500 -mt-2 mb-3">
-                        Add name, gotra and your relation for each deceased person.
+                        Add name, gotra and your relation for each deceased person. Add another deceased person for ₹1,100.
                       </p>
                       <div className="space-y-3">
                         {deceasedPersons.map((person, idx) => (
@@ -1519,7 +1572,7 @@ export default function BookingModal({
                         }
                         className="mt-3 text-orange-600 text-sm font-bold"
                       >
-                        + Add Another Deceased Person
+                        + Add Another Deceased Person (₹1,100)
                       </button>
                     </div>
 
@@ -1560,7 +1613,7 @@ export default function BookingModal({
                       </div>
                     </div>
 
-                    <div>
+                    <div className="hidden">
                       <div className="bm-section-label"><span>Select Ritual Place</span><div /></div>
                       <div className="grid grid-cols-3 gap-2">
                         {[

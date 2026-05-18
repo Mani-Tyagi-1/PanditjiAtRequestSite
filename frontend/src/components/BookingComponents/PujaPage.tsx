@@ -16,6 +16,13 @@ const STATIC_INCLUDES = [
     "Post-Puja Guidance",
 ];
 
+const DEATH_RITUAL_PUJA_ID = "6a0310c4e78148f7f6e6176b";
+const RITUAL_PLACES = [
+  { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
+  { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
+  { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
+];
+
 // ── Sub-components ─────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -274,6 +281,7 @@ export default function PujaDetailPage() {
     const title = pujaData.poojaNameEng || "";
     const deity = pujaData.poojaGods?.[0] || "Divine Deity";
     const image = pujaData.poojaMainImage || pujaData.poojaCardImage || "";
+    const showRitualPlaces = pujaId === DEATH_RITUAL_PUJA_ID;
 
     return (
         <>
@@ -482,15 +490,49 @@ export default function PujaDetailPage() {
                     </div>
 
                     {/* ── Content ── */}
-                    <div className="px-4 space-y-5 fade-up">
+                    <div className="px-4 space-y-3 fade-up">
                         {/* Hero Image */}
-                        <div className="img-wrap rounded-2xl overflow-hidden shadow-md border border-orange-100 aspect-square bg-gradient-to-b from-amber-100 to-orange-50 flex items-center justify-center">
+                        <div className="img-wrap rounded-2xl overflow-hidden shadow-md border border-orange-100    bg-gradient-to-b from-amber-100 to-orange-50 flex items-center justify-center">
                             <img
                                 src={image}
                                 alt={title}
                                 className="img-zoom w-full h-full object-contain"
                             />
                         </div>
+
+                        {showRitualPlaces && (
+                            <div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {RITUAL_PLACES.map((place) => (
+                                        <div
+                                            key={place.id}
+                                            className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm"
+                                        >
+                                            <div className="w-30 h-18 bg-orange-50">
+                                                {place.imageUrl ? (
+                                                    <img
+                                                        src={place.imageUrl}
+                                                        alt={place.label}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-orange-300">
+                                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="px-3 py-1">
+                                                <p className="text-xs font-bold text-stone-700">
+                                                    {place.label}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Stats row */}
                         <div className="flex items-center gap-2 flex-wrap">

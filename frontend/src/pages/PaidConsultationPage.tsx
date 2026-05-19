@@ -275,11 +275,10 @@ export default function PaidConsultationPage() {
                         key={slot}
                         type="button"
                         onClick={() => setForm((current) => ({ ...current, preferredTimeSlot: slot }))}
-                        className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-bold transition-all ${
-                          selected
+                        className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-bold transition-all ${selected
                             ? "border-orange-500 bg-orange-50 text-orange-700 shadow-sm"
                             : "border-stone-100 bg-stone-50 text-stone-500 hover:bg-stone-100"
-                        }`}
+                          }`}
                       >
                         <Clock className="w-4 h-4" />
                         {slot}

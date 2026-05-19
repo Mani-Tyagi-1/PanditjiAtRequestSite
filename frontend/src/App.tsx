@@ -67,7 +67,7 @@ function App() {
       <PixelPageTracker />
       <ReferralCapture />
       <Routes>
-        <Route path="/" element={<LandingPage/>} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />
         <Route path="/termsandconditions" element={<TermsAndConditions />} />
         <Route path="/privacypolicy-pandit" element={<PanditPrivacyPolicy />} />

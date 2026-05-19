@@ -3,16 +3,16 @@ import ConsultancyLead from "../../model/userApp/consultancyLeadModel";
 
 const createConsultancyLead: RequestHandler = async (req, res) => {
   try {
-    const { 
-      fullName, 
-      mobileNumber, 
-      helpWith, 
-      concern, 
-      poojaType, 
-      otherPoojaText, 
-      city, 
+    const {
+      fullName,
+      mobileNumber,
+      helpWith,
+      concern,
+      poojaType,
+      otherPoojaText,
+      city,
       callbackTime,
-      isFromSite 
+      isFromSite
     } = req.body;
 
     if (!fullName || !mobileNumber || !concern || !city) {

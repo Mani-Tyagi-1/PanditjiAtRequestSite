@@ -80,7 +80,7 @@ export default function FreeConsultationPage() {
             const res = await fetch(`${apiUrl}/consultancy-leads`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     fullName: form.fullName,
                     mobileNumber: form.mobileNumber,
                     helpWith: form.helpWith,
@@ -89,11 +89,11 @@ export default function FreeConsultationPage() {
                     otherPoojaText: form.preferredPooja.includes("Other") ? form.otherPoojaText : "",
                     city: form.city,
                     callbackTime: form.callbackTime,
-                    isFromSite: true 
+                    isFromSite: true
                 }),
             });
             if (!res.ok) throw new Error("Failed");
-            
+
             // Meta Pixel Tracking
             if (window.fbq) {
                 window.fbq("track", "Consultation Form");
@@ -213,15 +213,13 @@ export default function FreeConsultationPage() {
                                                 key={pooja}
                                                 type="button"
                                                 onClick={() => togglePooja(pooja)}
-                                                className={`flex items-center gap-2 p-3 rounded-xl border-2 text-left transition-all duration-200 ${
-                                                    isSelected 
-                                                        ? "border-orange-500 bg-orange-50" 
+                                                className={`flex items-center gap-2 p-3 rounded-xl border-2 text-left transition-all duration-200 ${isSelected
+                                                        ? "border-orange-500 bg-orange-50"
                                                         : "border-stone-100 bg-stone-50 hover:bg-stone-100"
-                                                }`}
+                                                    }`}
                                             >
-                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                                                    isSelected ? "border-orange-500 bg-orange-500" : "border-stone-300 bg-white"
-                                                }`}>
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? "border-orange-500 bg-orange-500" : "border-stone-300 bg-white"
+                                                    }`}>
                                                     {isSelected && <Check className="w-3 h-3 text-white" />}
                                                 </div>
                                                 <span className={`text-[11px] font-semibold tracking-tight leading-none ${isSelected ? "text-orange-700" : "text-stone-600"}`}>

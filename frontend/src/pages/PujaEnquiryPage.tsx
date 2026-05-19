@@ -64,8 +64,8 @@ export default function PujaEnquiryPage() {
             const apiUrl = API_URL;
             const timingLabel =
                 form.timing === "immediately" ? "Immediately" :
-                form.timing === "within7days" ? "Within 7 Days" :
-                "Just Enquiring";
+                    form.timing === "within7days" ? "Within 7 Days" :
+                        "Just Enquiring";
             const res = await fetch(`${apiUrl}/puja-enquiries`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -197,7 +197,7 @@ export default function PujaEnquiryPage() {
                                                 dangerouslySetInnerHTML={{ __html: pujaDescription[0].description }}
                                             />
                                             <button onClick={() => navigate(`/puja/${pujaId}`)} className="w-full underline flex justify-end text-[15px] text-orange-500 hover:text-green-600 font-medium font-sans transition-colors">
-                                               <span className="know-more-btn">Know more</span>
+                                                <span className="know-more-btn">Know more</span>
                                             </button>
                                         </div>
                                     )}
@@ -269,11 +269,10 @@ export default function PujaEnquiryPage() {
                                                         key={val}
                                                         type="button"
                                                         onClick={() => setForm((f) => ({ ...f, astrologerAdvised: val }))}
-                                                        className={`flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${
-                                                            form.astrologerAdvised === val
+                                                        className={`flex-1 py-2 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${form.astrologerAdvised === val
                                                                 ? "border-orange-500 bg-orange-50 text-orange-600"
                                                                 : "border-stone-200 bg-stone-50 text-stone-500"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {val === "yes" ? "✓ Yes" : "✗ No"}
                                                     </button>
@@ -299,11 +298,10 @@ export default function PujaEnquiryPage() {
                                                         key={val}
                                                         type="button"
                                                         onClick={() => setForm((f) => ({ ...f, timing: val }))}
-                                                        className={`w-full py-2 px-4 rounded-xl border-2 text-sm font-semibold text-left transition-all duration-150 ${
-                                                            form.timing === val
+                                                        className={`w-full py-2 px-4 rounded-xl border-2 text-sm font-semibold text-left transition-all duration-150 ${form.timing === val
                                                                 ? "border-orange-500 bg-orange-50 text-orange-600"
                                                                 : "border-stone-200 bg-stone-50 text-stone-500"
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {label}
                                                     </button>

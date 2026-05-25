@@ -22,7 +22,7 @@ const consultancyLeadSchema = new Schema<IConsultancyLead>({
   fullName: { type: String, required: true, trim: true },
   mobileNumber: { type: String, required: true, trim: true },
   helpWith: { type: String, trim: true },
-  concern: { type: String, required: true, trim: true },
+  concern: { type: String, trim: true },
   poojaType: { type: String, trim: true },
   city: { type: String, required: true, trim: true },
   callbackTime: { type: String, trim: true },

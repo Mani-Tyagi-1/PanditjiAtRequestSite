@@ -42,10 +42,10 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
   try {
     const { fullName, mobileNumber, city, concern, preferredTimeSlot } = req.body;
 
-    if (!fullName || !mobileNumber || !city || !concern || !preferredTimeSlot) {
+    if (!fullName || !mobileNumber || !city || !preferredTimeSlot) {
       res.status(400).json({
         success: false,
-        message: "fullName, mobileNumber, city, concern, and preferredTimeSlot are required",
+        message: "fullName, mobileNumber, city, and preferredTimeSlot are required",
       });
       return;
     }

@@ -130,7 +130,7 @@ export default function PujaDetailPage() {
     const { pujaId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, openLoginModal } = useAuth();
+    const { user } = useAuth();
 
     const handleBack = () => {
         if (location.key !== "default") {
@@ -641,12 +641,7 @@ export default function PujaDetailPage() {
                                             currency: "INR",
                                         });
                                     }
-                                    if (user) {
-                                        setIsBookingModalOpen(true);
-                                    } else {
-                                        setPendingBooking(true);
-                                        openLoginModal();
-                                    }
+                                    setIsBookingModalOpen(true);
                                 }}
                                 className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
                             >

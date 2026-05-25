@@ -114,6 +114,47 @@ export const sendOtp = async (
 };
 
 // ✨ Also returns Promise<void>
+export const loginByPhone = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { phone, name } = req.body;
+    const cleaned = String(phone || "").replace(/\D/g, "").slice(-10);
+    if (!cleaned || cleaned.length !== 10) {
+      res.status(400).json({ message: "Invalid phone number" });
+      return;
+    }
+
+    let user = await User.findOne({ phone: cleaned });
+    if (!user) {
+      user = new User({
+        phone: cleaned,
+        name: name || "Guest User",
+        isFromApp: true,
+        isNotifyOkay: true,
+        email_verified: false,
+        isActive: true,
+        addedOn: new Date(),
+      });
+      await user.save();
+    } else if (name && (!user.name || user.name === "Vedic Shop User" || user.name === "Guest User")) {
+      user.name = name;
+      await user.save();
+    }
+
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    });
+
+    res.status(200).json({ token, user });
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 export const verifyOtp = async (
   req: Request,
   res: Response,

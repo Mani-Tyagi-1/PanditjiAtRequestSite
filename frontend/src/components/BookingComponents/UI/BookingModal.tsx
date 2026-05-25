@@ -460,9 +460,10 @@ export default function BookingModal({
 
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
-  const { user, openLoginModal } = useAuth();
+  const { user, login } = useAuth();
 
   const [bhaktName, setBhaktName] = useState("");
   const [gotra, setGotra] = useState("");
@@ -473,7 +474,7 @@ export default function BookingModal({
   ]);
   const [ritualPerformerName, setRitualPerformerName] = useState("");
   const [ritualPerformerGotra, setRitualPerformerGotra] = useState("");
-  const [selectedRitualPlace, setSelectedRitualPlace] = useState("");
+  const [selectedRitualPlace, setSelectedRitualPlace] = useState("haridwar");
 
   const [houseNo, setHouseNo] = useState("");
   const [street, setStreet] = useState("");
@@ -915,9 +916,27 @@ export default function BookingModal({
       const userId = user?._id || user?.id;
 
       if (!userId) {
-        setIsProcessing(false);
-        onClose();
-        openLoginModal();
+        const phone = contactNumber.replace(/\D/g, "").slice(-10);
+        if (!phone || phone.length !== 10) {
+          setIsProcessing(false);
+          triggerAlert("Phone Required", "Please enter a valid 10-digit contact number to proceed.", "info");
+          return;
+        }
+        try {
+          const res = await fetch(`${API_URL}/login-by-phone`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, name: bhaktName.trim() || undefined }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Failed to authenticate");
+          login(data.token, data.user);
+          // re-run handleCheckout now that user is logged in
+          setTimeout(() => handleCheckout(), 50);
+        } catch (err: any) {
+          setIsProcessing(false);
+          triggerAlert("Error", err.message || "Could not authenticate. Please try again.", "error");
+        }
         return;
       }
 
@@ -2180,6 +2199,7 @@ export default function BookingModal({
           </div>
         </div>
       )}
+
     </>
   );
 }

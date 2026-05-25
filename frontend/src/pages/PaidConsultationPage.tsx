@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, Clock, CreditCard } from "lucide-react";
+import { Check, ChevronLeft, Clock, CreditCard, Shield, Lock, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
 
-const TIME_SLOTS = ["9-11", "11-1", "3-5", "5-7"];
+const TIME_SLOTS = [
+  { value: "9-11", display: "9 AM - 11 AM", period: "Morning" },
+  { value: "11-1", display: "11 AM - 1 PM", period: "Morning" },
+  { value: "3-5", display: "3 PM - 5 PM", period: "Afternoon" },
+  { value: "5-7", display: "5 PM - 7 PM", period: "Evening" },
+];
 
 const INPUT_CLASS =
   "mt-1 w-full border border-stone-200 rounded-xl px-3.5 py-2.5 text-sm text-stone-700 focus:outline-none focus:border-orange-400 bg-stone-50 transition-all";
@@ -15,9 +20,9 @@ export default function PaidConsultationPage() {
     fullName: "",
     mobileNumber: "",
     city: "",
-    concern: "",
-    preferredTimeSlot: "",
+    preferredTimeSlot: "5-7", // ← Default is now 5-7 PM
   });
+  const [amount, setAmount] = useState(101);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
@@ -26,7 +31,6 @@ export default function PaidConsultationPage() {
     const existingScript = document.querySelector(
       'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
     );
-
     if (existingScript) return;
 
     const script = document.createElement("script");
@@ -35,24 +39,24 @@ export default function PaidConsultationPage() {
     document.body.appendChild(script);
 
     return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      if (script.parentNode) script.parentNode.removeChild(script);
     };
   }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => setForm((current) => ({ ...current, [e.target.name]: e.target.value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((current) => ({ ...current, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleTimeSlotSelect = (slotValue: string) => {
+    setForm((current) => ({ ...current, preferredTimeSlot: slotValue }));
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     if (
       !form.fullName.trim() ||
       !form.mobileNumber.trim() ||
       !form.city.trim() ||
-      !form.concern.trim() ||
       !form.preferredTimeSlot
     ) {
       setError("Please fill in all required fields.");
@@ -75,7 +79,6 @@ export default function PaidConsultationPage() {
           fullName: form.fullName,
           mobileNumber: form.mobileNumber,
           city: form.city,
-          concern: form.concern,
           preferredTimeSlot: form.preferredTimeSlot,
         }),
       });
@@ -84,6 +87,8 @@ export default function PaidConsultationPage() {
       if (!orderRes.ok) {
         throw new Error(orderData.message || "Failed to initialize payment.");
       }
+
+      setAmount(Number(orderData.amount) || 101);
 
       const RazorpayCtor = (window as any).Razorpay;
       if (!RazorpayCtor) {
@@ -95,15 +100,13 @@ export default function PaidConsultationPage() {
         amount: Number(orderData.amount) * 100,
         currency: orderData.currency || "INR",
         name: "PanditJiAtRequest",
-        description: "Personalised Consultation",
+        description: `Personalised Consultation - ₹${orderData.amount || 101}`,
         order_id: orderData.razorpayOrderId,
         prefill: {
           name: form.fullName,
           contact: form.mobileNumber,
         },
-        theme: {
-          color: "#F97316",
-        },
+        theme: { color: "#F97316" },
         handler: async function (response: any) {
           try {
             const completeRes = await fetch(`${API_URL}/paid-consultations/complete-payment`, {
@@ -164,146 +167,183 @@ export default function PaidConsultationPage() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:wght@300;400;500;700&display=swap');
       `}</style>
 
+      {/* Header */}
       <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 pt-6 pb-6 sticky top-0 z-10 shadow-md">
         <div className="max-w-md mx-auto flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1 rounded-full bg-white/20 text-white">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2
-              className="text-white font-extrabold text-xl"
-              style={{ fontFamily: "'Cormorant Garamond', serif" }}
-            >
+            <h2 className="text-white font-extrabold text-xl" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
               Personalised Consultation
             </h2>
             <p className="text-orange-100 text-xs mt-0.5">
-              Book a dedicated guidance slot with our expert pandit
+              Book a dedicated guidance slot with our expert Pandit Ji
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto mt-2 px-2">
+      <div className="max-w-md mx-auto px-4 pt-4">
         {submitted ? (
           <div className="bg-white rounded-3xl p-10 text-center shadow-xl border border-stone-100 mt-10">
             <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6 mx-auto">
               <Check className="w-10 h-10 text-green-500" />
             </div>
-            <h3
-              className="text-stone-800 font-bold text-2xl"
-              style={{ fontFamily: "'Cormorant Garamond', serif" }}
-            >
-              Details Received
+            <h3 className="text-stone-800 font-bold text-3xl" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              Payment Successful!
             </h3>
             <p className="text-stone-500 text-sm mt-3 leading-relaxed">
-              Your payment is confirmed. Our team will call you at your preferred time slot.
+              Thank you! Our expert Pandit Ji will call you at your preferred time slot (5-7 PM).
             </p>
             <button
               onClick={() => navigate("/")}
-              className="mt-8 bg-orange-500 text-white font-bold px-10 py-4 rounded-2xl text-sm shadow-lg shadow-orange-200 transition-transform active:scale-95"
+              className="mt-8 w-full bg-orange-500 text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-orange-200 transition-transform active:scale-95"
             >
-              Go to Home
+              Back to Home
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl shadow-xl border border-stone-100 overflow-hidden mb-3">
-            <form onSubmit={handleSubmit} className="px-3 py-2 space-y-4">
-              <div>
-                <label className={LABEL_CLASS}>
-                  Full Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  name="fullName"
-                  value={form.fullName}
-                  onChange={handleChange}
-                  placeholder="Your full name"
-                  className={INPUT_CLASS}
-                />
-              </div>
-
-              <div>
-                <label className={LABEL_CLASS}>
-                  Mobile Number <span className="text-red-400">*</span>
-                </label>
-                <input
-                  name="mobileNumber"
-                  value={form.mobileNumber}
-                  onChange={handleChange}
-                  placeholder="10-digit mobile number"
-                  inputMode="numeric"
-                  maxLength={10}
-                  className={INPUT_CLASS}
-                />
-              </div>
-
-              <div>
-                <label className={LABEL_CLASS}>
-                  City <span className="text-red-400">*</span>
-                </label>
-                <input
-                  name="city"
-                  value={form.city}
-                  onChange={handleChange}
-                  placeholder="Enter your city"
-                  className={INPUT_CLASS}
-                />
-              </div>
-
-              <div>
-                <label className={LABEL_CLASS}>
-                  What is your concern? <span className="text-red-400">*</span>
-                </label>
-                <textarea
-                  name="concern"
-                  value={form.concern}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Tell us what you need guidance for..."
-                  className={`${INPUT_CLASS} resize-none`}
-                />
-              </div>
-
-              <div>
-                <label className={LABEL_CLASS}>
-                  Preferred Time Slot <span className="text-red-400">*</span>
-                </label>
-                <div className="mt-2 grid grid-cols-2 gap-3">
-                  {TIME_SLOTS.map((slot) => {
-                    const selected = form.preferredTimeSlot === slot;
-                    return (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setForm((current) => ({ ...current, preferredTimeSlot: slot }))}
-                        className={`flex items-center justify-center gap-2 rounded-xl border-2 px-3 py-3 text-sm font-bold transition-all ${selected
-                            ? "border-orange-500 bg-orange-50 text-orange-700 shadow-sm"
-                            : "border-stone-100 bg-stone-50 text-stone-500 hover:bg-stone-100"
-                          }`}
-                      >
-                        <Clock className="w-4 h-4" />
-                        {slot}
-                      </button>
-                    );
-                  })}
+          <>
+            {/* Special Offer Banner */}
+            <div className="bg-white border border-orange-200 rounded-3xl p-5 mb-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-2xl">
+                    🔥 SPECIAL INTRODUCTORY OFFER
+                  </div>
+                  <p className="text-3xl font-bold text-stone-800 mt-3">Only ₹{amount}</p>
+                  <p className="text-stone-500 text-sm">for 30-minute personalised consultation</p>
                 </div>
+                <div className="text-4xl">🪔</div>
               </div>
+            </div>
 
-              {error && (
-                <p className="text-red-500 text-sm font-medium animate-pulse">{error}</p>
-              )}
+            {/* Form Fields */}
+            <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl border border-stone-100 overflow-hidden mb-28">
+              <div className="px-5 py-6 space-y-6">
+                <div>
+                  <label className={LABEL_CLASS}>
+                    Full Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    name="fullName"
+                    value={form.fullName}
+                    onChange={handleChange}
+                    placeholder="Your full name"
+                    className={INPUT_CLASS}
+                  />
+                </div>
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-95 text-white font-bold py-4 rounded-2xl shadow-xl shadow-orange-100 transition-all duration-200 text-sm disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                <CreditCard className="w-4 h-4" />
-                {submitting ? "Processing..." : "Pay Now"}
-              </button>
+                <div>
+                  <label className={LABEL_CLASS}>
+                    Mobile Number <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    name="mobileNumber"
+                    value={form.mobileNumber}
+                    onChange={handleChange}
+                    placeholder="10-digit mobile number"
+                    inputMode="numeric"
+                    maxLength={10}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+
+                <div>
+                  <label className={LABEL_CLASS}>
+                    City <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    name="city"
+                    value={form.city}
+                    onChange={handleChange}
+                    placeholder="Enter your city"
+                    className={INPUT_CLASS}
+                  />
+                </div>
+
+                <div>
+                  <label className={LABEL_CLASS}>
+                    Preferred Time Slot <span className="text-red-400">*</span>
+                  </label>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    {TIME_SLOTS.map((slot) => {
+                      const selected = form.preferredTimeSlot === slot.value;
+                      return (
+                        <button
+                          key={slot.value}
+                          type="button"
+                          onClick={() => handleTimeSlotSelect(slot.value)}
+                          className={`flex flex-col items-center justify-center gap-1 rounded-2xl border-2 px-4 py-4 text-sm font-medium transition-all ${
+                            selected
+                              ? "border-orange-500 bg-orange-50 text-orange-700 shadow-sm"
+                              : "border-stone-200 bg-stone-50 hover:border-stone-300 text-stone-600"
+                          }`}
+                        >
+                          <Clock className="w-5 h-5" />
+                          <span className="font-semibold">{slot.display}</span>
+                          <span className="text-xs text-stone-500">{slot.period}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* What You'll Get */}
+                <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 text-sm">
+                  <p className="font-semibold text-orange-800 mb-3 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    WHAT YOU'LL GET
+                  </p>
+                  <ul className="space-y-2 text-stone-600 text-[13px]">
+                    <li className="flex items-start gap-2">
+                      <span className="text-orange-500 mt-0.5">✓</span>30-minute dedicated one-on-one call
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-orange-500 mt-0.5">✓</span>Personalised guidance &amp; remedies
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-orange-500 mt-0.5">✓</span>100% private &amp; confidential
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-orange-500 mt-0.5">✓</span>Pandit Ji will call you at chosen slot
+                    </li>
+                  </ul>
+                </div>
+
+                {error && <p className="text-red-500 text-sm font-medium text-center">{error}</p>}
+              </div>
             </form>
-          </div>
+          </>
         )}
       </div>
+
+      {/* Sticky Pay Button - always visible at bottom */}
+      {!submitted && (
+        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t shadow-2xl px-4 py-4 z-50">
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.97] text-white font-bold py-4 rounded-3xl shadow-xl shadow-orange-200 transition-all duration-200 text-base flex items-center justify-center gap-3 disabled:opacity-60"
+          >
+            <CreditCard className="w-5 h-5" />
+            {submitting ? "Processing..." : `Pay ₹${amount} Securely Now`}
+          </button>
+
+          {/* Trust signals */}
+          <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-stone-400">
+            <div className="flex items-center gap-1">
+              <Shield className="w-3 h-3" />
+              <span>Secured by Razorpay</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Lock className="w-3 h-3" />
+              <span>100% Safe</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

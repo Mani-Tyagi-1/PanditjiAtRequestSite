@@ -391,7 +391,7 @@ export default function BookingModal({
   const [couponUsage, setCouponUsage] = useState<any[]>([]);
   const [couponDiscountVal, setCouponDiscountVal] = useState(0);
 
-  const fetchCoupons = async () => {
+  const fetchCoupons = async (openModal = true) => {
     setIsLoadingCoupons(true);
     try {
       const apiUrl = API_URL;
@@ -414,20 +414,22 @@ export default function BookingModal({
       }
 
       setCoupons(activeCoupons);
-      setIsCouponsModalOpen(true);
+      if (openModal) setIsCouponsModalOpen(true);
     } catch (err) {
       console.error("Error fetching coupons:", err);
-      triggerAlert("Error", "Failed to load coupons. Please try again.", "error");
+      if (openModal) triggerAlert("Error", "Failed to load coupons. Please try again.", "error");
     } finally {
       setIsLoadingCoupons(false);
     }
   };
 
+
   const handleApplyCoupon = (coupon: any) => {
-    if (!user) {
-      triggerAlert("Login Required", "Please login to apply coupons.", "info");
-      return;
-    }
+    // Login friction disabled — allow coupon apply without login
+    // if (!user) {
+    //   triggerAlert("Login Required", "Please login to apply coupons.", "info");
+    //   return;
+    // }
 
     if (coupon.minOrderAmount && currentPoojaPrice < coupon.minOrderAmount) {
       triggerAlert("Minimum Amount Required", `This coupon requires a minimum booking amount of ₹${coupon.minOrderAmount.toLocaleString('en-IN')}`, "info");
@@ -463,12 +465,20 @@ export default function BookingModal({
 
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
-  const { user, login } = useAuth();
+  const { user } = useAuth();
 
   const [bhaktName, setBhaktName] = useState("");
   const [gotra, setGotra] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [emailId, setEmailId] = useState("");
+
+  // Auto-fetch coupons in background when contact number reaches 10 digits
+  useEffect(() => {
+    const phone = contactNumber.replace(/\D/g, "").slice(-10);
+    if (phone.length === 10 && coupons.length === 0) {
+      fetchCoupons(false);
+    }
+  }, [contactNumber]); // eslint-disable-line react-hooks/exhaustive-deps
   const [deceasedPersons, setDeceasedPersons] = useState<DeceasedPerson[]>([
     { name: "", gotra: "", relation: "" },
   ]);
@@ -915,30 +925,30 @@ export default function BookingModal({
     try {
       const userId = user?._id || user?.id;
 
-      if (!userId) {
-        const phone = contactNumber.replace(/\D/g, "").slice(-10);
-        if (!phone || phone.length !== 10) {
-          setIsProcessing(false);
-          triggerAlert("Phone Required", "Please enter a valid 10-digit contact number to proceed.", "info");
-          return;
-        }
-        try {
-          const res = await fetch(`${API_URL}/login-by-phone`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ phone, name: bhaktName.trim() || undefined }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.message || "Failed to authenticate");
-          login(data.token, data.user);
-          // re-run handleCheckout now that user is logged in
-          setTimeout(() => handleCheckout(), 50);
-        } catch (err: any) {
-          setIsProcessing(false);
-          triggerAlert("Error", err.message || "Could not authenticate. Please try again.", "error");
-        }
-        return;
-      }
+      // Login friction disabled — proceed without forcing auto-login
+      // if (!userId) {
+      //   const phone = contactNumber.replace(/\D/g, "").slice(-10);
+      //   if (!phone || phone.length !== 10) {
+      //     setIsProcessing(false);
+      //     triggerAlert("Phone Required", "Please enter a valid 10-digit contact number to proceed.", "info");
+      //     return;
+      //   }
+      //   try {
+      //     const res = await fetch(`${API_URL}/login-by-phone`, {
+      //       method: "POST",
+      //       headers: { "Content-Type": "application/json" },
+      //       body: JSON.stringify({ phone, name: bhaktName.trim() || undefined }),
+      //     });
+      //     const data = await res.json();
+      //     if (!res.ok) throw new Error(data.message || "Failed to authenticate");
+      //     login(data.token, data.user);
+      //     setTimeout(() => handleCheckout(), 50);
+      //   } catch (err: any) {
+      //     setIsProcessing(false);
+      //     triggerAlert("Error", err.message || "Could not authenticate. Please try again.", "error");
+      //   }
+      //   return;
+      // }
 
       const combinedDateTime = selectedTime
         ? `${selectedDate}T${selectedTime}`
@@ -1761,7 +1771,7 @@ export default function BookingModal({
                 <div className="flex items-center justify-between mb-3">
                   <div className="bm-section-label mb-0"><span>Have a Coupon?</span><div /></div>
                   <button
-                    onClick={fetchCoupons}
+                    onClick={() => fetchCoupons()}
                     disabled={isLoadingCoupons}
                     className="text-orange-600 text-xs font-bold hover:text-orange-700 disabled:opacity-50 flex items-center gap-1"
                   >
@@ -1796,8 +1806,26 @@ export default function BookingModal({
                     />
                   </div>
                   <button
-                    onClick={() => {
-                      if (couponCode) triggerAlert("Manual Entry", "Please use 'View All Coupons' to select verified active offers.", "info");
+                    onClick={async () => {
+                      if (!couponCode.trim()) return;
+                      let couponList = coupons;
+                      if (couponList.length === 0) {
+                        try {
+                          const response = await fetch(`${API_URL}/config/fetch-coupons-proxy`);
+                          const data = await response.json();
+                          couponList = (data.coupons || []).filter((c: any) => c.isActive);
+                          setCoupons(couponList);
+                        } catch {
+                          triggerAlert("Error", "Failed to verify coupon. Please try again.", "error");
+                          return;
+                        }
+                      }
+                      const found = couponList.find((c: any) => c.code?.toUpperCase() === couponCode.trim().toUpperCase());
+                      if (found) {
+                        handleApplyCoupon(found);
+                      } else {
+                        triggerAlert("Invalid Coupon", "No such coupon exists.", "error");
+                      }
                     }}
                     className={`${couponCode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#C9C9C9]'} text-white text-sm font-semibold rounded-lg sm:px-8 py-2.5 sm:w-auto w-full transition-colors opacity-90`}
                   >

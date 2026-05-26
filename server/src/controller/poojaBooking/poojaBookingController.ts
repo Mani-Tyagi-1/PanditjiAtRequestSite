@@ -11,6 +11,7 @@ import crypto from 'crypto';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
 import { sendWhatsappTemplateMessage } from '../../utils/whatsapp';
+import { sendBookingConfirmationEmail } from '../../utils/emailService';
 import type { Document } from "mongoose";
 
 // --- helpers ---
@@ -303,7 +304,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       userId,
       userName: (userExists as any).name,
       userPhone: (userExists as any).phone,
-      userEmail: (userExists as any).email,
+      userEmail: emailId || (userExists as any).email,
 
       poojaId,
       poojaNameEng,
@@ -552,6 +553,28 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
         console.log(`✅ [PujaBooking] WhatsApp confirmation sent to ${phone}`);
       } catch (e: any) {
         console.error('❌ [PujaBooking] WhatsApp failed:', e?.response?.data || e?.message || e);
+      }
+    })();
+    // ----------------------------------------------------------
+
+    // 🟢 Email booking confirmation (fire-and-forget)
+    void (async () => {
+      try {
+        const email = (finalBooking as any).userEmail;
+        if (!email) return;
+        await sendBookingConfirmationEmail({
+          to: email,
+          bhaktName: (finalBooking as any).bhaktName || (finalBooking as any).userName || "Devotee",
+          poojaName: finalBooking.poojaNameEng || "Puja",
+          bookingDate: String(finalBooking.bookingDate),
+          poojaMode: finalBooking.poojaMode || "online",
+          amount: Number((finalBooking as any).amount || amountPaid || 0),
+          contactNumber: String((finalBooking as any).userPhone || ""),
+          bookingId: String((finalBooking as any)._id),
+        });
+        console.log(`✅ [PujaBooking] Email confirmation sent to ${email}`);
+      } catch (e: any) {
+        console.error("❌ [PujaBooking] Email failed:", e?.message || e);
       }
     })();
     // ----------------------------------------------------------

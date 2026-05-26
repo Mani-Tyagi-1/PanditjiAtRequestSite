@@ -1,6 +1,7 @@
 // controller/Vedic-Vaibhav/userController.ts
 import { RequestHandler } from "express";
 import User from "../../model/userApp/userModel";
+import poojaBookingModel from "../../model/poojaBooking/poojaBooking.model";
 import { sendEncryptedResponse } from "../../utils/encryption"; // ⬅️ encrypt GET responses
 
 /**
@@ -103,5 +104,38 @@ export const getUserByUserId: RequestHandler = async (req, res) => {
     sendEncryptedResponse(res, 500, { message: "Error fetching user details", error });
   }
   // The function implicitly returns Promise<void> here.
+};
+
+/**
+ * Read-only lookup of a user by phone number.
+ * Does NOT create users. Returns user data + completed booking count.
+ * GET /users/lookup-by-phone/:phone
+ */
+export const lookupUserByPhone: RequestHandler = async (req, res) => {
+  const { phone } = req.params as { phone: string };
+  const cleaned = String(phone || "").replace(/\D/g, "").slice(-10);
+
+  if (!cleaned || cleaned.length !== 10) {
+    res.status(400).json({ exists: false, user: null, bookingCount: 0 });
+    return;
+  }
+
+  try {
+    const user = await User.findOne({ phone: cleaned }).select(
+      "name email phone gotra given_name family_name addedOn"
+    );
+
+    if (!user) {
+      res.status(200).json({ exists: false, user: null, bookingCount: 0 });
+      return;
+    }
+
+    const bookingCount = await poojaBookingModel.countDocuments({ userId: user._id });
+
+    res.status(200).json({ exists: true, user, bookingCount });
+  } catch (error) {
+    console.error("Error looking up user by phone:", error);
+    res.status(500).json({ exists: false, user: null, bookingCount: 0 });
+  }
 };
 

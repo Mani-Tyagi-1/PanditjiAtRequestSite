@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   updateUserProfile,
   getUserByUserId,
+  lookupUserByPhone,
 } from "../../controller/userApp/userController"; // ⬅️ update path if needed
 import { decryptRequest } from "../../utils/encryption";
 
@@ -20,5 +21,11 @@ router.put("/updateProfile/:id", decryptRequest ,updateUserProfile);
  * @desc    Get user by Mongo _id
  */
 router.get("/profile/:userId", getUserByUserId);
+
+/**
+ * @route   GET /users/lookup-by-phone/:phone
+ * @desc    Read-only lookup — returns user data + booking count (no user creation)
+ */
+router.get("/lookup-by-phone/:phone", lookupUserByPhone);
 
 export default router;

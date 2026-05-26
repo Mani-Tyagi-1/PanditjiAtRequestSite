@@ -120,18 +120,21 @@ export const loginByPhone = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { phone, name } = req.body;
+    const { phone, name, email } = req.body;
     const cleaned = String(phone || "").replace(/\D/g, "").slice(-10);
     if (!cleaned || cleaned.length !== 10) {
       res.status(400).json({ message: "Invalid phone number" });
       return;
     }
 
+    const cleanedEmail = typeof email === "string" && email.includes("@") ? email.trim() : undefined;
+
     let user = await User.findOne({ phone: cleaned });
     if (!user) {
       user = new User({
         phone: cleaned,
         name: name || "Guest User",
+        ...(cleanedEmail && { email: cleanedEmail }),
         isFromApp: true,
         isNotifyOkay: true,
         email_verified: false,
@@ -139,9 +142,18 @@ export const loginByPhone = async (
         addedOn: new Date(),
       });
       await user.save();
-    } else if (name && (!user.name || user.name === "Vedic Shop User" || user.name === "Guest User")) {
-      user.name = name;
-      await user.save();
+    } else {
+      let changed = false;
+      if (name && (!user.name || user.name === "Vedic Shop User" || user.name === "Guest User")) {
+        user.name = name;
+        changed = true;
+      }
+      // Save email if the user record has none yet
+      if (cleanedEmail && !user.email) {
+        user.email = cleanedEmail;
+        changed = true;
+      }
+      if (changed) await user.save();
     }
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, {

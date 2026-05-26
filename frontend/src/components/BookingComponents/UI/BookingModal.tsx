@@ -391,6 +391,10 @@ export default function BookingModal({
   const [couponUsage, setCouponUsage] = useState<any[]>([]);
   const [couponDiscountVal, setCouponDiscountVal] = useState(0);
 
+  // User fetched by phone number (read-only, no auth context change)
+  const [phoneUserData, setPhoneUserData] = useState<any>(null);
+  const [isFirstBooking, setIsFirstBooking] = useState(false);
+
   const fetchCoupons = async (openModal = true) => {
     setIsLoadingCoupons(true);
     try {
@@ -402,10 +406,11 @@ export default function BookingModal({
       const allCoupons = data.coupons || [];
       const activeCoupons = allCoupons.filter((c: any) => c.isActive);
 
-      if (user?._id || user?.id) {
-        const userId = user?._id || user?.id;
+      // Fetch usage for logged-in user OR phone-fetched user
+      const effectiveUserId = user?._id || user?.id || phoneUserData?._id || phoneUserData?.id;
+      if (effectiveUserId) {
         try {
-          const usageRes = await fetch(`${apiUrl}/config/check-coupon-usage-proxy/${userId}`);
+          const usageRes = await fetch(`${apiUrl}/config/check-coupon-usage-proxy/${effectiveUserId}`);
           const usageData = await usageRes.json();
           setCouponUsage(Array.isArray(usageData) ? usageData : (usageData.usages || usageData.usage || []));
         } catch (usageErr) {
@@ -425,11 +430,22 @@ export default function BookingModal({
 
 
   const handleApplyCoupon = (coupon: any) => {
-    // Login friction disabled — allow coupon apply without login
-    // if (!user) {
-    //   triggerAlert("Login Required", "Please login to apply coupons.", "info");
-    //   return;
-    // }
+    // Check if this coupon has already been used by this user
+    const usage = couponUsage?.find(
+      (u: any) => u.couponCode?.toUpperCase() === coupon.code?.toUpperCase()
+    );
+    const isAlreadyUsed =
+      (coupon.usageType === "MONTHLY_LIMITED" && (usage?.monthlyUsed || 0) > 0) ||
+      (["ONCE", "ONE_TIME"].includes(coupon.usageType) && (usage?.totalUsed || 0) > 0);
+
+    if (isAlreadyUsed) {
+      triggerAlert(
+        "Coupon Already Used",
+        `You have already used coupon "${coupon.code}". Please try a different one.`,
+        "info"
+      );
+      return;
+    }
 
     if (coupon.minOrderAmount && currentPoojaPrice < coupon.minOrderAmount) {
       triggerAlert("Minimum Amount Required", `This coupon requires a minimum booking amount of ₹${coupon.minOrderAmount.toLocaleString('en-IN')}`, "info");
@@ -472,13 +488,55 @@ export default function BookingModal({
   const [contactNumber, setContactNumber] = useState("");
   const [emailId, setEmailId] = useState("");
 
-  // Auto-fetch coupons in background when contact number reaches 10 digits
+  // When phone reaches 10 digits: fetch user details + coupons in background
   useEffect(() => {
     const phone = contactNumber.replace(/\D/g, "").slice(-10);
-    if (phone.length === 10 && coupons.length === 0) {
-      fetchCoupons(false);
-    }
+    if (phone.length !== 10) return;
+
+    // Fetch coupons silently if not loaded yet
+    if (coupons.length === 0) fetchCoupons(false);
+
+    // Read-only user lookup by phone — no user creation
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/lookup-by-phone/${phone}`);
+        const data = await res.json();
+        if (data.exists && data.user) {
+          setPhoneUserData(data.user);
+          setIsFirstBooking(data.bookingCount === 0);
+          // Pre-fill form fields if they are empty
+          if (!bhaktName && (data.user.name || data.user.given_name)) {
+            const fullName = data.user.given_name
+              ? `${data.user.given_name} ${data.user.family_name || ""}`.trim()
+              : data.user.name;
+            setBhaktName(fullName);
+          }
+          if (!emailId && data.user.email) setEmailId(data.user.email);
+          if (!gotra && data.user.gotra) setGotra(data.user.gotra);
+        } else {
+          setPhoneUserData(null);
+          setIsFirstBooking(true); // new user → first booking
+        }
+      } catch {
+        // non-fatal — proceed without pre-fill
+      }
+    })();
   }, [contactNumber]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-apply best coupon for first-time users once coupons load
+  useEffect(() => {
+    if (!isFirstBooking || appliedCoupon || coupons.length === 0) return;
+    const firstTimeCoupon = coupons.find(
+      (c) =>
+        c.isActive &&
+        (!c.minOrderAmount || c.minOrderAmount <= currentPoojaPrice) &&
+        (c.usageType === "FIRST_BOOKING" ||
+          c.code?.toUpperCase().includes("FIRST") ||
+          c.code?.toUpperCase().includes("NEW") ||
+          c.code?.toUpperCase().includes("WELCOME"))
+    );
+    if (firstTimeCoupon) handleApplyCoupon(firstTimeCoupon);
+  }, [isFirstBooking, coupons]); // eslint-disable-line react-hooks/exhaustive-deps
   const [deceasedPersons, setDeceasedPersons] = useState<DeceasedPerson[]>([
     { name: "", gotra: "", relation: "" },
   ]);
@@ -923,32 +981,36 @@ export default function BookingModal({
     }
 
     try {
-      const userId = user?._id || user?.id;
+      // Resolve userId: from auth context, from phone-lookup cache, or create silently
+      let effectiveUserId = user?._id || user?.id || phoneUserData?._id || phoneUserData?.id;
 
-      // Login friction disabled — proceed without forcing auto-login
-      // if (!userId) {
-      //   const phone = contactNumber.replace(/\D/g, "").slice(-10);
-      //   if (!phone || phone.length !== 10) {
-      //     setIsProcessing(false);
-      //     triggerAlert("Phone Required", "Please enter a valid 10-digit contact number to proceed.", "info");
-      //     return;
-      //   }
-      //   try {
-      //     const res = await fetch(`${API_URL}/login-by-phone`, {
-      //       method: "POST",
-      //       headers: { "Content-Type": "application/json" },
-      //       body: JSON.stringify({ phone, name: bhaktName.trim() || undefined }),
-      //     });
-      //     const data = await res.json();
-      //     if (!res.ok) throw new Error(data.message || "Failed to authenticate");
-      //     login(data.token, data.user);
-      //     setTimeout(() => handleCheckout(), 50);
-      //   } catch (err: any) {
-      //     setIsProcessing(false);
-      //     triggerAlert("Error", err.message || "Could not authenticate. Please try again.", "error");
-      //   }
-      //   return;
-      // }
+      // Email = exactly what is in the form field (pre-fill already loaded the profile email into it)
+      const resolvedEmail = emailId.trim();
+
+      if (!effectiveUserId) {
+        const phone = contactNumber.replace(/\D/g, "").slice(-10);
+        if (!phone || phone.length !== 10) {
+          setIsProcessing(false);
+          triggerAlert("Phone Required", "Please enter a valid 10-digit contact number to proceed.", "info");
+          return;
+        }
+        // Silently register / fetch user — no redirect, no friction
+        const authRes = await fetch(`${API_URL}/login-by-phone`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            phone,
+            name: bhaktName.trim() || undefined,
+            email: resolvedEmail || undefined,
+          }),
+        });
+        const authData = await authRes.json();
+        if (!authRes.ok) throw new Error(authData.message || "Could not register for booking");
+        setPhoneUserData(authData.user);
+        effectiveUserId = authData.user?._id || authData.user?.id;
+      }
+
+      if (!effectiveUserId) throw new Error("Unable to identify user. Please try again.");
 
       const combinedDateTime = selectedTime
         ? `${selectedDate}T${selectedTime}`
@@ -971,7 +1033,7 @@ export default function BookingModal({
       })();
 
       const pendingPayload = {
-        userId,
+        userId: effectiveUserId,
         poojaId: pooja?._id || pooja?.id,
         poojaMode: mode,
         bookingDate: combinedDateTime,
@@ -980,7 +1042,7 @@ export default function BookingModal({
         bhaktName,
         gotra,
         contactNumber,
-        emailId,
+        emailId: resolvedEmail,
         ...(isDeathRitual && {
           deceasedPersons,
           ritualPerformerName,
@@ -1052,10 +1114,10 @@ export default function BookingModal({
               // malformed cookie entry — ignore
             }
 
-            if (intrefCode && userId) {
+            if (intrefCode && effectiveUserId) {
               try {
                 const referralPayload = encryptPayload({ code: intrefCode });
-                await fetch(`${apiUrl}/users/${userId}/apply-referral`, {
+                await fetch(`${apiUrl}/users/${effectiveUserId}/apply-referral`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(referralPayload),
@@ -1102,7 +1164,7 @@ export default function BookingModal({
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  userId: user?._id || (user as any)?.id,
+                  userId: effectiveUserId,
                   phone: contactNumber || (user as any)?.phone || 0,
                   appKey: "par",
                   couponCode: appliedCoupon.code,
@@ -1808,6 +1870,8 @@ export default function BookingModal({
                   <button
                     onClick={async () => {
                       if (!couponCode.trim()) return;
+
+                      // 1. Ensure coupon list is loaded
                       let couponList = coupons;
                       if (couponList.length === 0) {
                         try {
@@ -1820,12 +1884,39 @@ export default function BookingModal({
                           return;
                         }
                       }
+
+                      // 2. Check if coupon exists
                       const found = couponList.find((c: any) => c.code?.toUpperCase() === couponCode.trim().toUpperCase());
-                      if (found) {
-                        handleApplyCoupon(found);
-                      } else {
+                      if (!found) {
                         triggerAlert("Invalid Coupon", "No such coupon exists.", "error");
+                        return;
                       }
+
+                      // 3. Live usage check via API
+                      const currentUserId = user?._id || user?.id || phoneUserData?._id || phoneUserData?.id;
+                      if (currentUserId) {
+                        try {
+                          const usageRes = await fetch(`${API_URL}/config/check-coupon-usage-proxy/${currentUserId}`);
+                          const usageData = await usageRes.json();
+                          const freshUsage: any[] = Array.isArray(usageData) ? usageData : (usageData.usages || usageData.usage || []);
+                          setCouponUsage(freshUsage);
+
+                          const usage = freshUsage.find((u: any) => u.couponCode?.toUpperCase() === found.code?.toUpperCase());
+                          const isAlreadyUsed =
+                            (found.usageType === "MONTHLY_LIMITED" && (usage?.monthlyUsed || 0) > 0) ||
+                            (["ONCE", "ONE_TIME"].includes(found.usageType) && (usage?.totalUsed || 0) > 0);
+
+                          if (isAlreadyUsed) {
+                            triggerAlert("Coupon Already Used", `You have already used coupon "${found.code}". Please try a different one.`, "info");
+                            return;
+                          }
+                        } catch {
+                          // non-fatal — proceed to apply without usage check
+                        }
+                      }
+
+                      // 4. All checks passed — apply
+                      handleApplyCoupon(found);
                     }}
                     className={`${couponCode ? 'bg-orange-500 hover:bg-orange-600' : 'bg-[#C9C9C9]'} text-white text-sm font-semibold rounded-lg sm:px-8 py-2.5 sm:w-auto w-full transition-colors opacity-90`}
                   >

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, ChevronLeft, Clock, CreditCard, Shield, Lock, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
+import { useAuth } from "../context/AuthContext";
 
 const TIME_SLOTS = [
   { value: "9-11", display: "9 AM - 11 AM", period: "Morning" },
@@ -16,6 +17,7 @@ const LABEL_CLASS = "text-xs font-semibold text-stone-500 uppercase tracking-wid
 
 export default function PaidConsultationPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [form, setForm] = useState({
     fullName: "",
     mobileNumber: "",
@@ -95,6 +97,8 @@ export default function PaidConsultationPage() {
         throw new Error("Razorpay SDK failed to load. Please refresh and try again.");
       }
 
+      const prefillEmail = user?.email || `user${form.mobileNumber.trim()}@panditjiatrequest.com`;
+
       const rzp = new RazorpayCtor({
         key: orderData.razorpayKeyId,
         amount: Number(orderData.amount) * 100,
@@ -104,7 +108,8 @@ export default function PaidConsultationPage() {
         order_id: orderData.razorpayOrderId,
         prefill: {
           name: form.fullName,
-          contact: form.mobileNumber,
+          contact: user?.phone || form.mobileNumber,
+          email: prefillEmail,
         },
         theme: { color: "#F97316" },
         handler: async function (response: any) {

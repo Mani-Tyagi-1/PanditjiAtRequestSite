@@ -140,7 +140,7 @@ export function DeathRituals() {
   const singlePuja = deathRitualPoojas.length === 1 ? deathRitualPoojas[0] : null;
 
   return (
-    <section className="relative overflow-hidden bg-[#fffaf3] py-2 md:py-4">
+    <section className="relative overflow-hidden py-2 md:py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-4">
         {isLoading && (
           <div className="h-64 md:h-80 rounded-2xl bg-orange-100/70 animate-pulse" />
@@ -170,7 +170,7 @@ export function DeathRituals() {
               )}
             </motion.article>
 
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -206,7 +206,7 @@ export function DeathRituals() {
                                         </div>
                                     ))}
               </div>
-            </motion.div>
+            </motion.div> */}
           </div>
         )}
 

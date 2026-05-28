@@ -552,7 +552,7 @@ export default function BookingModal({
   const [pincode, setPincode] = useState("");
 
   const minDateStr = new Date(
-    new Date().setDate(new Date().getDate() + 3)
+    new Date().setDate(new Date().getDate() + 1)
   )
     .toISOString()
     .split("T")[0];

@@ -9,6 +9,7 @@ import Testimonials from "../components/BookingComponents/Testimonials";
 import BlogsPage from "../components/BookingComponents/BlogsPage";
 import { Navigation } from "../components/NewComponents/Navigation";
 import { DeathRituals } from "../components/NewComponents/DeathRituals";
+import { PanditSection } from "../components/NewComponents/PanditSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -146,6 +147,7 @@ export default function LandingPage() {
         <RecomendedForYou />
         <HowItWorks />
         <FeaturedPujas />
+        <PanditSection />
         <WhyChooseUs />
         <Testimonials />
         <BlogsPage />

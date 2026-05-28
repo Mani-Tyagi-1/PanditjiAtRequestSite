@@ -12,11 +12,11 @@ interface Category {
   isActive: boolean;
 }
 
-const items = [
-  { title: "Verified" },
-  { title: "Trusted" },
-  { title: "5+ Year Experience" },
-];
+// const items = [
+//   { title: "Verified" },
+//   { title: "Trusted" },
+//   { title: "5+ Year Experience" },
+// ];
 
 export default function PujaServices() {
   const navigate = useNavigate();
@@ -126,7 +126,7 @@ export default function PujaServices() {
           </div>
         </div>
       </div>
-
+{/* 
       <div className="w-full flex justify-center">
         <div className="bg-white/80 backdrop-blur-md flex items-center justify-center gap-5 pb-2">
           {items.map((item, i) => (
@@ -152,7 +152,7 @@ export default function PujaServices() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </>
   );
 }

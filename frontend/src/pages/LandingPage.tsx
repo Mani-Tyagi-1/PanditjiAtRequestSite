@@ -1,14 +1,14 @@
-import FeaturedPujas from "../components/BookingComponents/UpcomingPooja";
+// import FeaturedPujas from "../components/BookingComponents/UpcomingPooja";
 import HeroBanner from "../components/BookingComponents/HeroBanner";
 import HowItWorks from "../components/BookingComponents/HowItWorksSection";
 import RecomendedForYou from "../components/BookingComponents/RecomendedForYou";
 import ServicesSection from "../components/BookingComponents/ServicesSection";
-import WhyChooseUs from "../components/BookingComponents/WhyChoseUs";
+// import WhyChooseUs from "../components/BookingComponents/WhyChoseUs";
 import Footer from "../components/Footer";
 import Testimonials from "../components/BookingComponents/Testimonials";
 import BlogsPage from "../components/BookingComponents/BlogsPage";
 import { Navigation } from "../components/NewComponents/Navigation";
-import { DeathRituals } from "../components/NewComponents/DeathRituals";
+// import { DeathRituals } from "../components/NewComponents/DeathRituals";
 import { PanditSection } from "../components/NewComponents/PanditSection";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -16,6 +16,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
 import { Helmet } from "react-helmet-async";
+
+// Import new conversion & trust components
+import { UrgencyBanner } from "../components/NewComponents/UrgencyBanner";
+import { ServiceCitiesSection } from "../components/NewComponents/ServiceCitiesSection";
+import { SamagriIncludedSection } from "../components/NewComponents/SamagriIncludedSection";
+// import { PanditTrustSection } from "../components/NewComponents/PanditTrustSection";
+// import { NRIVirtualPujaSection } from "../components/NewComponents/NRIVirtualPujaSection";
+import { PreviousPujaVideosSection } from "../components/NewComponents/PreviousPujaVideosSection";
+import { FAQSection } from "../components/NewComponents/FAQSection";
+import { StickyMobileCTA } from "../components/NewComponents/StickyMobileCTA";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -107,8 +117,9 @@ export default function LandingPage() {
         )}
       </AnimatePresence>
 
+      <UrgencyBanner />
       <Navigation />
-      <div className="w-full max-w-md mx-auto">
+      <div className="w-full max-w-md relative">
         <HeroBanner />
         {showConsultancySection && (
           <motion.section
@@ -142,16 +153,37 @@ export default function LandingPage() {
             </div>
           </motion.section>
         )}
-        <DeathRituals />
         <ServicesSection />
+        {/* <DeathRituals /> */}
+        <ServiceCitiesSection />
         <RecomendedForYou />
         <HowItWorks />
-        <FeaturedPujas />
+        {/* <FeaturedPujas /> */}
+        {/* <PanditTrustSection /> */}
+        <SamagriIncludedSection />
+        {/* <NRIVirtualPujaSection /> */}
+        <PreviousPujaVideosSection />
         <PanditSection />
-        <WhyChooseUs />
+        {/* <WhyChooseUs /> */}
         <Testimonials />
+        <FAQSection />
         <BlogsPage />
         <Footer />
+        
+        {/* Floating WhatsApp Support Bubble */}
+        <a
+          href="https://wa.me/919310065096?text=Namaste!%20I%20have%20a%20question%20about%20booking%20a%20puja."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-20 right-4 z-[90] bg-[#25D366] hover:bg-[#20ba5a] text-white p-3.5 rounded-full shadow-xl shadow-green-200/50 hover:shadow-green-300 transition-all duration-300 transform hover:scale-105 active:scale-95 animate-bounce md:hidden flex items-center justify-center border border-white"
+        >
+          <svg className="w-5.5 h-5.5 fill-white" viewBox="0 0 24 24">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.713-1.463L0 24zm6.75-2.885c1.62.962 3.21 1.484 4.957 1.485 5.567 0 10.09-4.517 10.093-10.088a9.883 9.883 0 0 0-2.91-7.103 9.873 9.873 0 0 0-7.11-2.909c-5.57 0-10.093 4.518-10.097 10.093-.001 1.868.49 3.698 1.42 5.305L1.31 22.69l6.5-.758.003-.003-.006-.118zM8.618 6.425c.15-.327.306-.333.447-.333.116-.005.249-.005.382-.005.133 0 .349.05.531.25.183.2.73 1.78.796 1.913.067.133.11.29.022.464-.088.174-.133.278-.266.432-.133.154-.279.344-.398.462-.133.133-.272.278-.116.54.156.262.693 1.14 1.485 1.844.974.867 1.792 1.14 2.058 1.273.266.133.42.11.576-.067.156-.178.664-.772.842-1.035.178-.263.354-.22.597-.13.243.088 1.543.727 1.81.859.266.133.443.2.509.31.066.11.066.64-.155 1.263-.221.623-1.284 1.219-1.77 1.265-.487.046-.942-.11-2.993-.91-2.47-.963-4.05-3.522-4.172-3.687-.122-.165-.968-1.284-.968-2.45 0-1.165.61-1.737.828-1.979z"/>
+          </svg>
+        </a>
+
+        {/* Sticky Mobile CTA */}
+        <StickyMobileCTA />
       </div>
     </>
   );

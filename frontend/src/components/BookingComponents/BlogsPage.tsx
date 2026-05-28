@@ -72,16 +72,26 @@ export default function BlogsPage() {
 
       <section className="blog-body-font bg-[#FFFAF3] py-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-full px-3 py-1 mb-2 shadow-sm">
-            Latest Blogs
-          </span>
+        <div className="text-center mb-6 px-4">
+          <div className="flex items-center gap-2 justify-center mb-2">
+            <div className="h-px flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-orange-200" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500 flex items-center gap-1 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">
+              📖 Latest Blogs
+            </span>
+            <div className="h-px flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-orange-200" />
+          </div>
           <h2
-            className="blog-title-font text-stone-800 font-bold leading-tight"
-            style={{ fontSize: 26 }}
+            className="text-xl font-bold text-stone-800"
+            style={{ fontFamily: "'Cormorant Garamond', serif" }}
           >
-            Insights & Stories
+            Insights &{" "}
+            <span className="italic bg-gradient-to-r from-orange-600 to-red-500 bg-clip-text text-transparent">
+              Stories
+            </span>
           </h2>
+          <p className="text-[12px] text-stone-500 text-center mt-1 font-light">
+            Explore Vedic wisdom, spiritual guides, and puja insights from our pandits.
+          </p>
         </div>
 
         {/* Cards Auto-Scroll Area */}

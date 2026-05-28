@@ -40,7 +40,11 @@ export default function PujaEnquiryPage() {
                 if (pooja) {
                     setPujaName(pooja.poojaNameEng || "");
                     setPujaDeity(pooja.poojaGods?.[0] || "");
-                    setPujaImage(pooja.poojaMainImage || pooja.poojaCardImage || "");
+                    const mainImg = pooja.poojaMainImage;
+                    const resolvedImg = Array.isArray(mainImg)
+                        ? (mainImg[0] || pooja.poojaCardImage || "")
+                        : (mainImg || pooja.poojaCardImage || "");
+                    setPujaImage(resolvedImg);
                     setPujaDescription(pooja.poojaDescription || []);
                 }
             } catch {

@@ -17,8 +17,22 @@ const navLinks = [
     { label: "Booking Flow", href: "/join-as-panditji#booking-flow", icon: "📋" },
 ];
 
+const BANNERS = [
+    {
+        image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/PANDIT%20JI%20AT%20REQUEST%20(MOBILE).jpg%20(1).webp",
+        link: "https://play.google.com/store/apps/details?id=com.panditJiAtReqapp",
+        alt: "Pandit Ji At Request Android App"
+    },
+    {
+        image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/poojaMainImage_1779258749947.webp",
+        link: "https://wa.me/919310065096?text=Namaste!%20I%20have%20a%20question%20about%20booking%20a%20puja.",
+        alt: "Vedic Puja Booking Assistance"
+    }
+];
+
 const HeroSection = () => {
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentSlide, setCurrentSlide] = useState(0);
     const [allPujas, setAllPujas] = useState<any[]>([]);
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -52,6 +66,14 @@ const HeroSection = () => {
         );
         setSearchResults(filtered.slice(0, 6)); // Limit to 6 results
     }, [searchQuery, allPujas]);
+
+    // Banner auto-scroll logic
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % BANNERS.length);
+        }, 4500);
+        return () => clearInterval(timer);
+    }, []);
 
     // Login State (via AuthContext)
     const { user, openLoginModal } = useAuth();
@@ -150,63 +172,131 @@ const HeroSection = () => {
             </div>
 
             {/* Spacer to push content below fixed header */}
-            <div className="h-[100px]" />
+            <div className="h-[80px]" />
 
             <div className="w-full" style={{ background: "linear-gradient(to bottom, #f3b287ff, #e8d19cff, #ffffff)" }}>
-                <div className="w-full px-4 md:px-6 max-w-2xl mx-auto pt-8 ">
+                <div className="w-full px-4 md:px-6 max-w-2xl mx-auto pt-4 ">
 
-                    {/* Hero Banner Card */}
+                    {/* Hero Banner Slider - Premium Redesign */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
-                        whileTap={{ scale: 0.98 }}
-                        className="relative w-full h-[120px] md:h-[160px] rounded-2xl overflow-hidden cursor-pointer"
-                        onClick={() => window.open("https://play.google.com/store/apps/details?id=com.panditJiAtReqapp", "_blank")}
+                        className="relative w-full h-[150px] md:h-[180px] rounded-2xl overflow-hidden shadow-lg shadow-orange-100/50"
                     >
-                        {/* Background Image */}
-                        <img
-                            src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/PANDIT%20JI%20AT%20REQUEST%20(MOBILE).jpg%20(1).webp"
-                            alt="Sacred deity"
-                            className="absolute inset-0 w-full h-full object-cover"
-                        />
-
-                        {/* Gradient Overlay — warm fade from left so text is readable */}
-                        {/* <div
-                            className="absolute inset-0"
-                            style={{
-                                background:
-                                    "linear-gradient(to right, #fef3e2 0%, #fef3e2e6 35%, #fde8c8aa 55%, transparent 70%)",
-                            }}
-                        /> */}
-
-                        {/* Text Content */}
-                        <div className="relative z-10 p-3 md:p-3 flex flex-col justify-center h-full max-w-[95%] md:max-w-[95%]">
-                            {/* <h2
-                                className="text-lg md:text-lg lg:text-lg font-extrabold leading-tight mb-2"
-                                style={{ color: "#2d1810" }}
-                            >
-                                BOOK PANDIT JI ONLINE & OFFLINE FOR ALL KIND OF POOJA!
-                            </h2>
-                            <p className="text-xs md:text-xs text-gray-700 mb-4 leading-relaxed">
-                                Pandit Ji At Request — Your Trusted Partner for Vedic & Hindu Puja
-                                Services.
-                            </p>
-                            <div>
-                                <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    // onClick={() => navigate("/booking-flow")}
-                                    className="inline-flex items-center bg-gradient-to-r from-orange-500 to-red-500 text-white text-sm font-bold px-5 py-2 rounded-lg shadow-md hover:shadow-md transition-all"
+                        <div 
+                            className="flex w-full h-full transition-transform duration-700 ease-in-out"
+                            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                        >
+                            {BANNERS.map((banner, index) => (
+                                <div 
+                                    key={index}
+                                    className="w-full h-full shrink-0 cursor-pointer relative"
+                                    onClick={() => window.open(banner.link, "_blank")}
                                 >
-                                    <a href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp" target="_blank" rel="noopener noreferrer">
-                                        Download App Now
-                                    </a>
-
-                                </motion.button>
-                            </div> */}
+                                    <img
+                                        src={banner.image}
+                                        alt={banner.alt}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Dot Indicators */}
+                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+                            {BANNERS.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCurrentSlide(index);
+                                    }}
+                                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                                        index === currentSlide ? "bg-white w-4" : "bg-white/50"
+                                    }`}
+                                />
+                            ))}
                         </div>
                     </motion.div>
+
+                    {/* Trust Badges */}
+                    <div className="flex flex-row justify-between items-center gap-2 mt-4">
+                        <div className="flex-1 bg-white/80 backdrop-blur-md border border-orange-100 rounded-xl p-1 text-center shadow-[0_4px_12px_rgba(249,115,22,0.04)] flex flex-col items-center">
+                            <img 
+                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/puja.webp" 
+                                alt="Samagri" 
+                                className="w-12 h-12 object-contain" 
+                                onError={(e) => {
+                                    // Fallback to emoji if image URL is invalid or not yet pasted
+                                    (e.target as HTMLElement).style.display = 'none';
+                                    const fallback = document.createElement('span');
+                                    fallback.className = 'text-lg mb-0.5';
+                                    fallback.innerText = '🌸';
+                                    (e.target as HTMLElement).parentNode?.insertBefore(fallback, e.target as HTMLElement);
+                                }}
+                            />
+                            <span className="text-[15px] font-bold text-stone-800 leading-none">Samagri</span>
+                            <span className="text-[12px] text-stone-500 mt-0.5 whitespace-nowrap">Arranged by Us</span>
+                        </div>
+                        <div className="flex-1 bg-white/80 backdrop-blur-md border border-orange-100 rounded-xl p-1 text-center shadow-[0_4px_12px_rgba(249,115,22,0.04)] flex flex-col items-center">
+                            <img 
+                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pandit.webp" 
+                                alt="Verified Pandits" 
+                                className="w-12 h-12 object-contain"  
+                                onError={(e) => {
+                                    // Fallback to emoji if image URL is invalid or not yet pasted
+                                    (e.target as HTMLElement).style.display = 'none';
+                                    const fallback = document.createElement('span');
+                                    fallback.className = 'text-lg mb-0.5';
+                                    fallback.innerText = '👥';
+                                    (e.target as HTMLElement).parentNode?.insertBefore(fallback, e.target as HTMLElement);
+                                }}
+                            />
+                            <span className="text-[15px] font-bold text-stone-800 leading-none">Verified Pandits</span>
+                            <span className="text-[12px] text-stone-500 mt-0.5 whitespace-nowrap">Gurukul Certified</span>
+                        </div>
+                        <div className="flex-1 bg-white/80 backdrop-blur-md border border-orange-100 rounded-xl p-1 text-center shadow-[0_4px_12px_rgba(249,115,22,0.04)] flex flex-col items-center">
+                            <img 
+                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pay.webp" 
+                                alt="Pay Later" 
+                                className="w-12 h-12 object-contain" 
+                                onError={(e) => {
+                                    // Fallback to emoji if image URL is invalid or not yet pasted
+                                    (e.target as HTMLElement).style.display = 'none';
+                                    const fallback = document.createElement('span');
+                                    fallback.className = 'text-lg mb-0.5';
+                                    fallback.innerText = '💳';
+                                    (e.target as HTMLElement).parentNode?.insertBefore(fallback, e.target as HTMLElement);
+                                }}
+                            />
+                            <span className="text-[15px] font-bold text-stone-800 leading-none">Pay Later</span>
+                            <span className="text-[12px] text-stone-500 mt-0.5 whitespace-nowrap">100% Post-Puja</span>
+                        </div>
+                    </div>
+
+                    {/* Vedic Headline Section - Premium Redesign */}
+                    <div className="relative text-center mt-4 mb-4 px-4  rounded-2xl overflow-hidden">
+                        {/* Golden Ring Decorative Blurs */}
+                        <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-200/20 rounded-full blur-xl pointer-events-none" />
+                        <div className="absolute -bottom-12 -left-12 w-24 h-24 bg-red-200/20 rounded-full blur-xl pointer-events-none" />
+
+                        {/* Title */}
+                        <h1 
+                            className="text-xl md:text-2xl font-extrabold text-stone-900 tracking-tight leading-snug" 
+                            style={{ fontFamily: "'Outfit', sans-serif" }}
+                        >
+                            Vedic Puja Done{" "}
+                            <span className="bg-gradient-to-r from-orange-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
+                                Right At Home
+                            </span>
+                        </h1>
+
+                        {/* Description */}
+                        <p className="text-[11.5px] text-stone-600 mt-2 max-w-xs mx-auto leading-relaxed font-medium">
+                            Select from 300+ highly customized pujas. Guided by Gurukul-certified Verified Pandits in Delhi NCR & selected cities.
+                        </p>
+                    </div>
                 </div>
             </div>
 

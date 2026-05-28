@@ -7,14 +7,14 @@ import PujaEnquiryModal from "./PujaEnquiryModal";
 import { decryptData } from "../../utils/encryption";
 
 // ── Dummy Data ────────────────────────────────────────────────
-const STATIC_INCLUDES = [
-    "Trusted Pandit Ji",
-    "Verified Background",
-    "Vedic Rituals Followed",
-    "Samagri Included",
-    "Digital Prasad Kit",
-    "Post-Puja Guidance",
-];
+// const STATIC_INCLUDES = [
+//     "Trusted Pandit Ji",
+//     "Verified Background",
+//     "Vedic Rituals Followed",
+//     "Samagri Included",
+//     "Digital Prasad Kit",
+//     "Post-Puja Guidance",
+// ];
 
 const DEATH_RITUAL_PUJA_ID = "6a0310c4e78148f7f6e6176b";
 const RITUAL_PLACES = [
@@ -24,6 +24,80 @@ const RITUAL_PLACES = [
 ];
 
 // ── Sub-components ─────────────────────────────────────────────
+
+function ImageCarousel({ images, title }: { images: string[]; title: string }) {
+    const [active, setActive] = useState(0);
+    const [userScrolling, setUserScrolling] = useState(false);
+    const ref = useState<HTMLDivElement | null>(null);
+    const scrollEl = ref[0];
+    const setScrollEl = ref[1];
+
+    useEffect(() => {
+        if (images.length <= 1 || userScrolling) return;
+        const timer = setInterval(() => {
+            const next = (active + 1) % images.length;
+            setActive(next);
+            if (scrollEl) {
+                scrollEl.scrollTo({ left: next * scrollEl.offsetWidth, behavior: "smooth" });
+            }
+        }, 3500);
+        return () => clearInterval(timer);
+    }, [active, images.length, userScrolling, scrollEl]);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const el = e.currentTarget;
+        const idx = Math.round(el.scrollLeft / el.offsetWidth);
+        setActive(idx);
+    };
+
+    if (images.length === 0) return null;
+
+    return (
+        <div className="relative rounded-2xl overflow-hidden shadow-md border border-orange-100">
+            {/* Scrollable strip */}
+            <div
+                ref={setScrollEl}
+                onScroll={handleScroll}
+                onTouchStart={() => setUserScrolling(true)}
+                onTouchEnd={() => setTimeout(() => setUserScrolling(false), 4000)}
+                className="flex overflow-x-auto snap-x snap-mandatory h-52 bg-gradient-to-b from-amber-100 to-orange-50"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+                <style>{`.carousel-hide::-webkit-scrollbar{display:none}`}</style>
+                {images.map((src, i) => (
+                    <div key={i} className="shrink-0 w-full h-full snap-center flex items-center justify-center">
+                        <img
+                            src={src}
+                            alt={`${title} ${i + 1}`}
+                            className="h-full w-full"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                    </div>
+                ))}
+            </div>
+
+            {/* Dots — only when multiple images */}
+            {images.length > 1 && (
+                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                    {images.map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => {
+                                setActive(i);
+                                setUserScrolling(true);
+                                if (scrollEl) scrollEl.scrollTo({ left: i * scrollEl.offsetWidth, behavior: "smooth" });
+                                setTimeout(() => setUserScrolling(false), 4000);
+                            }}
+                            className={`rounded-full transition-all duration-300 ${
+                                i === active ? "w-4 h-1.5 bg-orange-500" : "w-1.5 h-1.5 bg-white/70"
+                            }`}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
@@ -36,26 +110,26 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     );
 }
 
-function IncludePill({ text }: { text: string }) {
-    return (
-        <span className="flex items-center gap-1.5 bg-white border border-orange-100 text-stone-600 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
-            <svg
-                className="w-3.5 h-3.5 text-orange-400 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-            >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-            </svg>
-            {text}
-        </span>
-    );
-}
+// function IncludePill({ text }: { text: string }) {
+//     return (
+//         <span className="flex items-center gap-1.5 bg-white border border-orange-100 text-stone-600 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+//             <svg
+//                 className="w-3.5 h-3.5 text-orange-400 shrink-0"
+//                 fill="none"
+//                 viewBox="0 0 24 24"
+//                 stroke="currentColor"
+//                 strokeWidth={2.5}
+//             >
+//                 <path
+//                     strokeLinecap="round"
+//                     strokeLinejoin="round"
+//                     d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+//                 />
+//             </svg>
+//             {text}
+//         </span>
+//     );
+// }
 
 function AccordionRow({
     title,
@@ -277,10 +351,26 @@ export default function PujaDetailPage() {
         );
     }
 
-    const price = pujaData.poojaPriceOnline || pujaData.poojaPriceOffline || 0;
+
     const title = pujaData.poojaNameEng || "";
     const deity = pujaData.poojaGods?.[0] || "Divine Deity";
-    const image = pujaData.poojaMainImage || pujaData.poojaCardImage || "";
+    
+    // Support poojaMainImage being either a string, an array of strings, or fall back to poojaCardImage
+    let mainImages: string[] = [];
+    if (Array.isArray(pujaData.poojaMainImage)) {
+        mainImages = pujaData.poojaMainImage;
+    } else if (typeof pujaData.poojaMainImage === "string" && pujaData.poojaMainImage) {
+        mainImages = [pujaData.poojaMainImage];
+    } else if (typeof pujaData.poojaCardImage === "string" && pujaData.poojaCardImage) {
+        mainImages = [pujaData.poojaCardImage];
+    }
+
+    // Collect all images from backend; fall back to resolved main images
+    const images: string[] = (
+        Array.isArray(pujaData.poojaImages) && pujaData.poojaImages.length > 0
+            ? pujaData.poojaImages
+            : mainImages
+    ).filter(Boolean);
     const showRitualPlaces = pujaId === DEATH_RITUAL_PUJA_ID;
 
     return (
@@ -491,14 +581,8 @@ export default function PujaDetailPage() {
 
                     {/* ── Content ── */}
                     <div className="px-4 space-y-3 fade-up">
-                        {/* Hero Image */}
-                        <div className="img-wrap rounded-2xl overflow-hidden shadow-md border border-orange-100    bg-gradient-to-b from-amber-100 to-orange-50 flex items-center justify-center">
-                            <img
-                                src={image}
-                                alt={title}
-                                className="img-zoom w-full h-full object-contain"
-                            />
-                        </div>
+                        {/* Hero Image Carousel */}
+                        <ImageCarousel images={images} title={title} />
 
                         {showRitualPlaces && (
                             <div>
@@ -561,14 +645,14 @@ export default function PujaDetailPage() {
                         </div>
 
                         {/* Includes */}
-                        <div>
+                        {/* <div>
                             <SectionLabel>What's Included</SectionLabel>
                             <div className="flex flex-wrap gap-2">
                                 {STATIC_INCLUDES.map((inc) => (
                                     <IncludePill key={inc} text={inc} />
                                 ))}
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Dynamic Accordions */}
                         <div>
@@ -594,6 +678,30 @@ export default function PujaDetailPage() {
                                 )}
                             </div>
                         </div>
+                        {/* Puja Videos — show only if backend sends videos */}
+                        {pujaData.poojaVideos && pujaData.poojaVideos.length > 0 && (
+                            <div>
+                                <SectionLabel>Puja Videos</SectionLabel>
+                                <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                    {pujaData.poojaVideos.map((videoUrl: string, idx: number) => (
+                                        <div
+                                            key={idx}
+                                            className="shrink-0 w-56 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
+                                        >
+                                            <video
+                                                src={videoUrl}
+                                                controls
+                                                playsInline
+                                                preload="metadata"
+                                                className="w-full h-36 object-cover"
+                                                style={{ background: "#1c1917" }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* FAQs */}
                         {pujaData.faqs && pujaData.faqs.length > 0 && (
                             <div>
@@ -618,18 +726,7 @@ export default function PujaDetailPage() {
 
                     {/* ── Sticky Bottom CTA ── */}
                     <div className="fixed bottom-0 left-0 right-0 z-50">
-                        <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3 flex items-center gap-3">
-                            <div>
-                                <p className="text-[10px] text-stone-400 font-light">
-                                    Starting at
-                                </p>
-                                <p
-                                    className="text-orange-600 font-bold text-lg leading-none"
-                                    style={{ fontFamily: "'DM Sans', sans-serif" }}
-                                >
-                                    ₹{price.toLocaleString("en-IN")}
-                                </p>
-                            </div>
+                        <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3">
                             <button
                                 onClick={() => {
                                     if (window.fbq) {
@@ -637,13 +734,11 @@ export default function PujaDetailPage() {
                                             content_ids: [pujaId],
                                             content_name: title,
                                             content_type: "product",
-                                            value: price,
-                                            currency: "INR",
                                         });
                                     }
                                     setIsBookingModalOpen(true);
                                 }}
-                                className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
+                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
                             >
                                 Book Pandit Ji
                                 <svg

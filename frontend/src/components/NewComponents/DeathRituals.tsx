@@ -19,17 +19,17 @@ interface Puja {
   poojaPriceOnline?: number;
   poojaPriceOffline?: number;
   poojaCardImage?: string;
-  poojaMainImage?: string;
+  poojaMainImage?: string | string[];
   isActive: boolean;
   mainCategories?: { _id?: string; id?: string; name?: string }[];
   subCategories?: { id?: string; name?: string }[];
 }
 
-const RITUAL_PLACES = [
-  { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
-  { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
-  { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
-];
+// const RITUAL_PLACES = [
+//   { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
+//   { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
+//   { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
+// ];
 
 function normalizePujas(data: unknown): Puja[] {
   if (Array.isArray(data)) return data as Puja[];
@@ -163,7 +163,11 @@ export function DeathRituals() {
             >
               {(singlePuja.poojaMainImage || singlePuja.poojaCardImage) && (
                 <img
-                  src={singlePuja.poojaMainImage || singlePuja.poojaCardImage}
+                  src={
+                    Array.isArray(singlePuja.poojaMainImage)
+                      ? (singlePuja.poojaMainImage[0] || singlePuja.poojaCardImage || "")
+                      : (singlePuja.poojaMainImage || singlePuja.poojaCardImage || "")
+                  }
                   alt={singlePuja.poojaNameEng}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
@@ -234,7 +238,9 @@ export function DeathRituals() {
 
         <div className="grid gap-5 md:grid-cols-2">
           {deathRitualPoojas.map((puja, index) => {
-                const image = puja.poojaMainImage || puja.poojaCardImage || "";
+                const image = Array.isArray(puja.poojaMainImage)
+                    ? (puja.poojaMainImage[0] || puja.poojaCardImage || "")
+                    : (puja.poojaMainImage || puja.poojaCardImage || "");
                 const price = puja.poojaPriceOnline || puja.poojaPriceOffline || 0;
 
                 return (

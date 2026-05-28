@@ -3,24 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { encryptPayload, decryptData } from "../../../utils/encryption";
 import API_URL from "../../../utils/apiConfig";
-import {
-  GoogleMap,
-  useJsApiLoader,
-  Marker,
-  Autocomplete,
-} from "@react-google-maps/api";
+// import {
+//   GoogleMap,
+//   useJsApiLoader,
+//   Marker,
+//   Autocomplete,
+// } from "@react-google-maps/api";
 
-const mapContainerStyle = {
-  width: "100%",
-  height: "200px",
-};
+// const mapContainerStyle = {
+//   width: "100%",
+//   height: "200px",
+// };
 
 const defaultCenter = {
   lat: 28.6139,
   lng: 77.2090,
 };
 
-const GOOGLE_LIBRARIES: ("places")[] = ["places"];
+// const GOOGLE_LIBRARIES: ("places")[] = ["places"];
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -45,286 +45,286 @@ const RITUAL_PLACES = [
   { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
 ];
 
-interface OfflineLocationPickerProps {
-  googleMapsApiKey: string;
-  street: string;
-  setStreet: (value: string) => void;
-  houseNo: string;
-  setHouseNo: (value: string) => void;
-  landmark: string;
-  setLandmark: (value: string) => void;
-  city: string;
-  setCity: (value: string) => void;
-  stateVal: string;
-  setStateVal: (value: string) => void;
-  pincode: string;
-  setPincode: (value: string) => void;
-  saveAs: "home" | "work" | "other";
-  setSaveAs: (value: "home" | "work" | "other") => void;
-  isFetchingLocation: boolean;
-  handleFetchLocation: () => void;
-  mapCenter: LatLng;
-  setMapCenter: (value: LatLng) => void;
-  markerPosition: LatLng;
-  setMarkerPosition: (value: LatLng) => void;
-  fetchAddressFromCoords: (lat: number, lng: number) => Promise<void>;
-  updateAddressFieldsFromGoogleAddress: (
-    components: google.maps.GeocoderAddressComponent[]
-  ) => void;
-}
+// interface OfflineLocationPickerProps {
+//   googleMapsApiKey: string;
+//   street: string;
+//   setStreet: (value: string) => void;
+//   houseNo: string;
+//   setHouseNo: (value: string) => void;
+//   landmark: string;
+//   setLandmark: (value: string) => void;
+//   city: string;
+//   setCity: (value: string) => void;
+//   stateVal: string;
+//   setStateVal: (value: string) => void;
+//   pincode: string;
+//   setPincode: (value: string) => void;
+//   saveAs: "home" | "work" | "other";
+//   setSaveAs: (value: "home" | "work" | "other") => void;
+//   isFetchingLocation: boolean;
+//   handleFetchLocation: () => void;
+//   mapCenter: LatLng;
+//   setMapCenter: (value: LatLng) => void;
+//   markerPosition: LatLng;
+//   setMarkerPosition: (value: LatLng) => void;
+//   fetchAddressFromCoords: (lat: number, lng: number) => Promise<void>;
+//   updateAddressFieldsFromGoogleAddress: (
+//     components: google.maps.GeocoderAddressComponent[]
+//   ) => void;
+// }
 
-function OfflineLocationPicker({
-  googleMapsApiKey,
-  street,
-  setStreet,
-  houseNo,
-  setHouseNo,
-  landmark,
-  setLandmark,
-  city,
-  setCity,
-  stateVal,
-  setStateVal,
-  pincode,
-  setPincode,
-  saveAs,
-  setSaveAs,
-  isFetchingLocation,
-  handleFetchLocation,
-  mapCenter,
-  setMapCenter,
-  markerPosition,
-  setMarkerPosition,
-  fetchAddressFromCoords,
-  updateAddressFieldsFromGoogleAddress,
-}: OfflineLocationPickerProps) {
-  const [autocompleteInfo, setAutocompleteInfo] =
-    useState<google.maps.places.Autocomplete | null>(null);
+// function OfflineLocationPicker({
+//   googleMapsApiKey,
+//   street,
+//   setStreet,
+//   houseNo,
+//   setHouseNo,
+//   landmark,
+//   setLandmark,
+//   city,
+//   setCity,
+//   stateVal,
+//   setStateVal,
+//   pincode,
+//   setPincode,
+//   saveAs,
+//   setSaveAs,
+//   isFetchingLocation,
+//   handleFetchLocation,
+//   mapCenter,
+//   setMapCenter,
+//   markerPosition,
+//   setMarkerPosition,
+//   fetchAddressFromCoords,
+//   updateAddressFieldsFromGoogleAddress,
+// }: OfflineLocationPickerProps) {
+//   const [autocompleteInfo, setAutocompleteInfo] =
+//     useState<google.maps.places.Autocomplete | null>(null);
 
-  const loaderOptions = useMemo(
-    () => ({
-      id: "google-map-script",
-      googleMapsApiKey,
-      libraries: GOOGLE_LIBRARIES,
-      language: "en",
-      region: "IN",
-    }),
-    [googleMapsApiKey]
-  );
+//   const loaderOptions = useMemo(
+//     () => ({
+//       id: "google-map-script",
+//       googleMapsApiKey,
+//       libraries: GOOGLE_LIBRARIES,
+//       language: "en",
+//       region: "IN",
+//     }),
+//     [googleMapsApiKey]
+//   );
 
-  const { isLoaded: isMapScriptLoaded, loadError } =
-    useJsApiLoader(loaderOptions);
+//   const { isLoaded: isMapScriptLoaded, loadError } =
+//     useJsApiLoader(loaderOptions);
 
-  const onLoadAutocomplete = useCallback(
-    (autocomplete: google.maps.places.Autocomplete) => {
-      setAutocompleteInfo(autocomplete);
-    },
-    []
-  );
+//   const onLoadAutocomplete = useCallback(
+//     (autocomplete: google.maps.places.Autocomplete) => {
+//       setAutocompleteInfo(autocomplete);
+//     },
+//     []
+//   );
 
-  const onPlaceChanged = useCallback(() => {
-    if (!autocompleteInfo) {
-      console.log("Autocomplete is not loaded yet!");
-      return;
-    }
+//   const onPlaceChanged = useCallback(() => {
+//     if (!autocompleteInfo) {
+//       console.log("Autocomplete is not loaded yet!");
+//       return;
+//     }
 
-    const place = autocompleteInfo.getPlace();
+//     const place = autocompleteInfo.getPlace();
 
-    if (place.geometry?.location) {
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
+//     if (place.geometry?.location) {
+//       const lat = place.geometry.location.lat();
+//       const lng = place.geometry.location.lng();
 
-      setMapCenter({ lat, lng });
-      setMarkerPosition({ lat, lng });
-    }
+//       setMapCenter({ lat, lng });
+//       setMarkerPosition({ lat, lng });
+//     }
 
-    if (place.address_components) {
-      updateAddressFieldsFromGoogleAddress(place.address_components);
-    }
-  }, [
-    autocompleteInfo,
-    setMapCenter,
-    setMarkerPosition,
-    updateAddressFieldsFromGoogleAddress,
-  ]);
+//     if (place.address_components) {
+//       updateAddressFieldsFromGoogleAddress(place.address_components);
+//     }
+//   }, [
+//     autocompleteInfo,
+//     setMapCenter,
+//     setMarkerPosition,
+//     updateAddressFieldsFromGoogleAddress,
+//   ]);
 
-  const handleMapClick = useCallback(
-    async (e: google.maps.MapMouseEvent) => {
-      if (!e.latLng) return;
+//   const handleMapClick = useCallback(
+//     async (e: google.maps.MapMouseEvent) => {
+//       if (!e.latLng) return;
 
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
+//       const lat = e.latLng.lat();
+//       const lng = e.latLng.lng();
 
-      setMarkerPosition({ lat, lng });
-      setMapCenter({ lat, lng });
-      await fetchAddressFromCoords(lat, lng);
-    },
-    [fetchAddressFromCoords, setMapCenter, setMarkerPosition]
-  );
+//       setMarkerPosition({ lat, lng });
+//       setMapCenter({ lat, lng });
+//       await fetchAddressFromCoords(lat, lng);
+//     },
+//     [fetchAddressFromCoords, setMapCenter, setMarkerPosition]
+//   );
 
-  const handleMarkerDragEnd = useCallback(
-    async (e: google.maps.MapMouseEvent) => {
-      if (!e.latLng) return;
+//   const handleMarkerDragEnd = useCallback(
+//     async (e: google.maps.MapMouseEvent) => {
+//       if (!e.latLng) return;
 
-      const lat = e.latLng.lat();
-      const lng = e.latLng.lng();
+//       const lat = e.latLng.lat();
+//       const lng = e.latLng.lng();
 
-      setMarkerPosition({ lat, lng });
-      setMapCenter({ lat, lng });
-      await fetchAddressFromCoords(lat, lng);
-    },
-    [fetchAddressFromCoords, setMapCenter, setMarkerPosition]
-  );
+//       setMarkerPosition({ lat, lng });
+//       setMapCenter({ lat, lng });
+//       await fetchAddressFromCoords(lat, lng);
+//     },
+//     [fetchAddressFromCoords, setMapCenter, setMarkerPosition]
+//   );
 
-  return (
-    <div className="pt-4 pb-2 space-y-4 border-t border-stone-100 mt-4">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="text-stone-800 font-semibold text-[14px]">
-          Address Details
-        </h4>
-        <button
-          onClick={handleFetchLocation}
-          disabled={isFetchingLocation}
-          className="flex items-center gap-1.5 text-orange-600 text-xs font-bold hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-        >
-          {isFetchingLocation ? (
-            <span className="w-3.5 h-3.5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
-          ) : (
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          )}
-          {isFetchingLocation ? "Fetching..." : "Use Current Location"}
-        </button>
-      </div>
+//   return (
+//     <div className="pt-4 pb-2 space-y-4 border-t border-stone-100 mt-4">
+//       <div className="flex items-center justify-between mb-2">
+//         <h4 className="text-stone-800 font-semibold text-[14px]">
+//           Address Details
+//         </h4>
+//         <button
+//           onClick={handleFetchLocation}
+//           disabled={isFetchingLocation}
+//           className="flex items-center gap-1.5 text-orange-600 text-xs font-bold hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+//         >
+//           {isFetchingLocation ? (
+//             <span className="w-3.5 h-3.5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
+//           ) : (
+//             <svg
+//               className="w-3.5 h-3.5"
+//               fill="none"
+//               viewBox="0 0 24 24"
+//               stroke="currentColor"
+//               strokeWidth={2.5}
+//             >
+//               <path
+//                 strokeLinecap="round"
+//                 strokeLinejoin="round"
+//                 d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+//               />
+//               <path
+//                 strokeLinecap="round"
+//                 strokeLinejoin="round"
+//                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+//               />
+//             </svg>
+//           )}
+//           {isFetchingLocation ? "Fetching..." : "Use Current Location"}
+//         </button>
+//       </div>
 
-      <div className="space-y-3">
-        <input
-          type="text"
-          placeholder="House / Flat No.*"
-          value={houseNo}
-          onChange={(e) => setHouseNo(e.target.value)}
-          className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-        />
+//       <div className="space-y-3">
+//         <input
+//           type="text"
+//           placeholder="House / Flat No.*"
+//           value={houseNo}
+//           onChange={(e) => setHouseNo(e.target.value)}
+//           className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//         />
 
-        {loadError ? (
-          <input
-            type="text"
-            placeholder="Street / Area*"
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-            className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-          />
-        ) : isMapScriptLoaded ? (
-          <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
-            <input
-              type="text"
-              placeholder="Search Location or Street / Area*"
-              value={street}
-              onChange={(e) => setStreet(e.target.value)}
-              className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-            />
-          </Autocomplete>
-        ) : (
-          <input
-            type="text"
-            placeholder="Loading Maps..."
-            value={street}
-            onChange={(e) => setStreet(e.target.value)}
-            className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-          />
-        )}
+//         {loadError ? (
+//           <input
+//             type="text"
+//             placeholder="Street / Area*"
+//             value={street}
+//             onChange={(e) => setStreet(e.target.value)}
+//             className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//           />
+//         ) : isMapScriptLoaded ? (
+//           <Autocomplete onLoad={onLoadAutocomplete} onPlaceChanged={onPlaceChanged}>
+//             <input
+//               type="text"
+//               placeholder="Search Location or Street / Area*"
+//               value={street}
+//               onChange={(e) => setStreet(e.target.value)}
+//               className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//             />
+//           </Autocomplete>
+//         ) : (
+//           <input
+//             type="text"
+//             placeholder="Loading Maps..."
+//             value={street}
+//             onChange={(e) => setStreet(e.target.value)}
+//             className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//           />
+//         )}
 
-        {isMapScriptLoaded && !loadError && (
-          <div className="rounded-xl overflow-hidden border border-stone-300 h-[200px]">
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={mapCenter}
-              zoom={14}
-              onClick={handleMapClick}
-              options={{ disableDefaultUI: true, zoomControl: true }}
-            >
-              <Marker
-                position={markerPosition}
-                draggable={true}
-                onDragEnd={handleMarkerDragEnd}
-              />
-            </GoogleMap>
-          </div>
-        )}
+//         {isMapScriptLoaded && !loadError && (
+//           <div className="rounded-xl overflow-hidden border border-stone-300 h-[200px]">
+//             <GoogleMap
+//               mapContainerStyle={mapContainerStyle}
+//               center={mapCenter}
+//               zoom={14}
+//               onClick={handleMapClick}
+//               options={{ disableDefaultUI: true, zoomControl: true }}
+//             >
+//               <Marker
+//                 position={markerPosition}
+//                 draggable={true}
+//                 onDragEnd={handleMarkerDragEnd}
+//               />
+//             </GoogleMap>
+//           </div>
+//         )}
 
-        <input
-          type="text"
-          placeholder="Landmark (Optional)"
-          value={landmark}
-          onChange={(e) => setLandmark(e.target.value)}
-          className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-        />
+//         <input
+//           type="text"
+//           placeholder="Landmark (Optional)"
+//           value={landmark}
+//           onChange={(e) => setLandmark(e.target.value)}
+//           className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//         />
 
-        <div className="flex gap-3">
-          <input
-            type="text"
-            placeholder="City*"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="w-1/2 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-          />
-          <input
-            type="text"
-            placeholder="State*"
-            value={stateVal}
-            onChange={(e) => setStateVal(e.target.value)}
-            className="w-1/2 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-          />
-        </div>
+//         <div className="flex gap-3">
+//           <input
+//             type="text"
+//             placeholder="City*"
+//             value={city}
+//             onChange={(e) => setCity(e.target.value)}
+//             className="w-1/2 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//           />
+//           <input
+//             type="text"
+//             placeholder="State*"
+//             value={stateVal}
+//             onChange={(e) => setStateVal(e.target.value)}
+//             className="w-1/2 bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//           />
+//         </div>
 
-        <input
-          type="text"
-          placeholder="Pincode*"
-          value={pincode}
-          onChange={(e) => setPincode(e.target.value)}
-          className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
-        />
-      </div>
+//         <input
+//           type="text"
+//           placeholder="Pincode*"
+//           value={pincode}
+//           onChange={(e) => setPincode(e.target.value)}
+//           className="w-full bg-white border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 focus:outline-none focus:border-stone-400 focus:ring-1 focus:ring-stone-400 shadow-sm"
+//         />
+//       </div>
 
-      <div className="pt-2">
-        <p className="text-stone-500 text-xs font-semibold uppercase tracking-wider mb-2">
-          Save Address As
-        </p>
-        <div className="flex gap-2">
-          {(["home", "work", "other"] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setSaveAs(type)}
-              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors border ${saveAs === type
-                ? "bg-orange-50 border-orange-200 text-orange-600"
-                : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50"
-                }`}
-            >
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+//       <div className="pt-2">
+//         <p className="text-stone-500 text-xs font-semibold uppercase tracking-wider mb-2">
+//           Save Address As
+//         </p>
+//         <div className="flex gap-2">
+//           {(["home", "work", "other"] as const).map((type) => (
+//             <button
+//               key={type}
+//               type="button"
+//               onClick={() => setSaveAs(type)}
+//               className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors border ${saveAs === type
+//                 ? "bg-orange-50 border-orange-200 text-orange-600"
+//                 : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50"
+//                 }`}
+//             >
+//               {type.charAt(0).toUpperCase() + type.slice(1)}
+//             </button>
+//           ))}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
 
 export default function BookingModal({
   isOpen,
@@ -336,10 +336,10 @@ export default function BookingModal({
   const [mode, setMode] = useState<"online" | "offline">(
     pooja?.poojaMode === "offline" ? "offline" : "online"
   );
-  const [modeInfoType, setModeInfoType] = useState<"online" | "offline" | null>(null);
-  const [saveAs, setSaveAs] = useState<"home" | "work" | "other">("home");
-  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
-  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  // const [modeInfoType, setModeInfoType] = useState<"online" | "offline" | null>(null);
+  const [saveAs, _setSaveAs] = useState<"home" | "work" | "other">("home");
+  // const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  // const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasAutoOpenedSummary, setHasAutoOpenedSummary] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -630,33 +630,33 @@ export default function BookingModal({
     [street, updateAddressFieldsFromGoogleAddress]
   );
 
-  const handleFetchLocation = useCallback(() => {
-    setIsFetchingLocation(true);
+  // const handleFetchLocation = useCallback(() => {
+  //   setIsFetchingLocation(true);
 
-    if (!navigator.geolocation) {
-      setIsFetchingLocation(false);
-      triggerAlert("Location Error", "Your browser doesn't support geolocation.", "error");
-      return;
-    }
+  //   if (!navigator.geolocation) {
+  //     setIsFetchingLocation(false);
+  //     triggerAlert("Location Error", "Your browser doesn't support geolocation.", "error");
+  //     return;
+  //   }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const pos = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
+  //   navigator.geolocation.getCurrentPosition(
+  //     async (position) => {
+  //       const pos = {
+  //         lat: position.coords.latitude,
+  //         lng: position.coords.longitude,
+  //       };
 
-        setMapCenter(pos);
-        setMarkerPosition(pos);
-        setIsFetchingLocation(false);
-        await fetchAddressFromCoords(pos.lat, pos.lng);
-      },
-      () => {
-        setIsFetchingLocation(false);
-        triggerAlert("Location Error", "The Geolocation service failed. Please check your permissions.", "error");
-      }
-    );
-  }, [fetchAddressFromCoords]);
+  //       setMapCenter(pos);
+  //       setMarkerPosition(pos);
+  //       setIsFetchingLocation(false);
+  //       await fetchAddressFromCoords(pos.lat, pos.lng);
+  //     },
+  //     () => {
+  //       setIsFetchingLocation(false);
+  //       triggerAlert("Location Error", "The Geolocation service failed. Please check your permissions.", "error");
+  //     }
+  //   );
+  // }, [fetchAddressFromCoords]);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -724,7 +724,7 @@ export default function BookingModal({
       el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
 
     if (nearBottom) {
-      setIsSummaryOpen(true);
+      // setIsSummaryOpen(true);
       setHasAutoOpenedSummary(true);
     }
   }, [hasAutoOpenedSummary]);
@@ -753,7 +753,7 @@ export default function BookingModal({
       setMounted(true);
       document.body.style.overflow = "hidden";
       setHasAutoOpenedSummary(false);
-      setIsSummaryOpen(false);
+      // setIsSummaryOpen(false);
 
       setIsProcessing(false);
       setAlertConfig({ show: false, title: "", message: "", type: "info" });
@@ -811,7 +811,7 @@ export default function BookingModal({
     };
   }, [showSuccessModal, navigate, onClose]);
 
-  const samagriCharge = pooja?.samagriPrice || 0;
+  // const samagriCharge = pooja?.samagriPrice || 0;
   const panditDakshina = pooja?.panditDakshina || 0;
   const isDeathRitual = pooja?.poojaID === "death-rituals";
   const basePoojaPrice = mode === "online" ? (pooja?.poojaPriceOnline || 0) : (pooja?.poojaPriceOffline || 0);
@@ -821,7 +821,7 @@ export default function BookingModal({
       : 0;
   const currentPoojaPrice = basePoojaPrice + deathRitualExtraPrice;
 
-  const totalDiscount = samagriCharge + panditDakshina;
+  // const totalDiscount = samagriCharge + panditDakshina;
 
   let couponDiscount = 0;
   if (appliedCoupon) {
@@ -837,14 +837,14 @@ export default function BookingModal({
   }
 
   const discountedPrice = Math.max(0, currentPoojaPrice - couponDiscount);
-  const originalPrice = currentPoojaPrice + totalDiscount;
-  const discountPercent =
-    originalPrice > 0 ? Math.round(((totalDiscount + couponDiscount) / (originalPrice)) * 100) : 0;
+  // const originalPrice = currentPoojaPrice + totalDiscount;
+  // const discountPercent =
+  //   originalPrice > 0 ? Math.round(((totalDiscount + couponDiscount) / (originalPrice)) * 100) : 0;
 
-  const getCookie = (name: string): string => {
-    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-    return match ? match[2] : "";
-  };
+  // const getCookie = (name: string): string => {
+  //   const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+  //   return match ? match[2] : "";
+  // };
 
   const handleCheckout = async () => {
     if (isDeathRitual) {
@@ -1083,8 +1083,10 @@ export default function BookingModal({
         throw new Error(errorData.message || "Failed to initialize booking.");
       }
 
-      const pendingData = await pendingRes.json();
+      // const pendingData = await pendingRes.json();
 
+      // ── Razorpay triggers commented out as payments happen via WhatsApp ──
+      /*
       const options = {
         key: pendingData.razorpayKeyId,
         amount: discountedPrice * 100,
@@ -1251,6 +1253,38 @@ export default function BookingModal({
       });
 
       rzp.open();
+      */
+
+      // Directly apply coupon proxy silently if applied
+      if (appliedCoupon) {
+        fetch(`${apiUrl}/config/apply-coupon-proxy`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: effectiveUserId,
+            phone: contactNumber || (user as any)?.phone || 0,
+            appKey: "par",
+            couponCode: appliedCoupon.code,
+            orderAmount: currentPoojaPrice,
+          }),
+        }).catch((err) => console.error("Coupon apply failed:", err));
+      }
+
+      // Track successful submission via pixel
+      if (window.fbq) {
+        window.fbq("track", "Purchase", {
+          content_ids: [pooja?._id || pooja?.id],
+          productname: [pooja?.poojaNameEng || "Pooja Booking"],
+          content_name: pooja?.poojaNameEng || "Pooja Booking",
+          content_type: "product",
+          value: discountedPrice,
+          currency: "INR",
+        });
+      }
+
+      // Directly trigger the success popup modal
+      setShowSuccessModal(true);
+      setIsProcessing(false);
     } catch (error: any) {
       triggerAlert("Unexpected Error", error.message || "An unexpected error occurred while processing your request.", "error");
       setIsProcessing(false);
@@ -1334,145 +1368,6 @@ export default function BookingModal({
             className="flex-1 overflow-y-auto pb-6 bg-[#FFFAF3]"
           >
             <div className="px-4 py-4 ">
-              {modeInfoType && (
-                <div className="fixed inset-0 z-[300] flex items-end justify-center" onClick={() => setModeInfoType(null)}>
-                  <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                  <div
-                    className="relative bg-white w-full max-w-md rounded-t-3xl shadow-2xl overflow-hidden slide-up"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={() => setModeInfoType(null)}
-                      className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 transition-colors"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-
-                    <div className="flex justify-center pt-8 pb-2">
-                      <img
-                        src="https://png.pngtree.com/png-vector/20250731/ourmid/pngtree-indian-pujari-priest-cartoon-illustration-vector-png-image_16949581.webp"
-                        alt="Pandit Ji"
-                        className="w-28 h-28 object-contain drop-shadow-md"
-                        style={{ mixBlendMode: "multiply" }}
-                      />
-                    </div>
-
-                    <div className="text-center px-6 pb-4">
-                      <h3 className="text-2xl font-bold text-stone-800 mb-1"
-                        style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                        About this Puja
-                      </h3>
-                      <p className="text-stone-500 text-sm">
-                        What to expect with{" "}
-                        <strong className="text-orange-600">
-                          {modeInfoType === "online" ? "Online" : "Offline"}
-                        </strong>{" "}
-                        puja
-                      </p>
-                    </div>
-
-                    <div className="px-6 pb-6 space-y-4">
-                      {(modeInfoType === "online" ? [
-                        { icon: "?", text: "The puja will be performed in online mode by our experienced Pandit Ji." },
-                        { icon: "📷", text: "You will receive photos & short video clips after the puja is completed." },
-                        { icon: "?", text: "The selected time will be respected as far as possible; minor adjustments may occur." },
-                        { icon: "?", text: "For online pujas, items are arranged virtually. You will get a samagri list via message." },
-                      ] : [
-                        { icon: "🏠", text: "Pandit Ji will visit your provided address to perform the puja in person." },
-                        { icon: "🪔", text: "Pandit Ji brings all samagri & materials required for the puja." },
-                        { icon: "?", text: "The selected time will be respected as far as possible; minor adjustments may occur." },
-                        { icon: "?", text: "Traditional Vedic rituals will be followed with post-puja blessings & guidance." },
-                      ]).map((pt, i) => (
-                        <div key={i} className="flex items-start gap-3">
-                          <span className="text-orange-500 text-lg shrink-0 leading-snug w-6 text-center">
-                            {pt.icon === "?" ? (
-                              <svg className="w-5 h-5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            ) : pt.icon === "📷" ? (
-                              <svg className="w-5 h-5 mt-0.5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            ) : pt.icon}
-                          </span>
-                          <p className="text-stone-600 text-sm leading-relaxed">{pt.text}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="px-6 pb-8">
-                      <button
-                        onClick={() => setModeInfoType(null)}
-                        className="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-bold py-4 rounded-2xl text-sm transition-all shadow-lg shadow-orange-200"
-                      >
-                        Got it — Continue
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {pooja?.poojaMode !== "online" && pooja?.poojaMode !== "offline" ? (
-                <div className="flex bg-stone-100 p-1 rounded-xl w-full justify-center space-x-4">
-                  <button
-                    onClick={() => setMode("online")}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "online"
-                      ? "bg-white text-orange-600 shadow-sm"
-                      : "text-stone-500 hover:text-stone-700"
-                      }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${mode === "online" ? "bg-orange-500 animate-pulse" : "bg-stone-300"}`} />
-                    Online Mode
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setModeInfoType("online"); }}
-                      className="w-4 h-4 flex items-center justify-center rounded-full text-stone-400 hover:text-orange-500 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-                  </button>
-                  <button
-                    onClick={() => setMode("offline")}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mode === "offline"
-                      ? "bg-white text-orange-600 shadow-sm"
-                      : "text-stone-500 hover:text-stone-700"
-                      }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${mode === "offline" ? "bg-orange-500" : "bg-stone-300"}`} />
-                    Offline Mode
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); setModeInfoType("offline"); }}
-                      className="w-4 h-4 flex items-center justify-center rounded-full text-stone-400 hover:text-orange-500 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </button>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 bg-stone-100 p-1 rounded-xl w-fit">
-                  <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold bg-white text-orange-600 shadow-sm">
-                    <span className={`w-2 h-2 rounded-full bg-orange-500 ${pooja?.poojaMode === "online" ? "animate-pulse" : ""}`} />
-                    {pooja?.poojaMode === "online" ? "Online Mode" : "Offline Mode"}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setModeInfoType(pooja?.poojaMode === "online" ? "online" : "offline")}
-                    className="mr-1 w-6 h-6 flex items-center justify-center rounded-full text-stone-400 hover:text-orange-500 transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-
               <div className="relative">
                 <div className="bm-section-label"><span>Your Preferences</span><div /></div>
 
@@ -1739,7 +1634,7 @@ export default function BookingModal({
                   </div>
                 )}
 
-                <div className="space-y-3">
+                {/* <div className="space-y-3">
                   {mode === "offline" && (
                     <div className="pt-4 space-y-4 border-t border-stone-100 mt-4">
                       {user && (
@@ -1824,12 +1719,12 @@ export default function BookingModal({
                       )}
                     </div>
                   )}
-                </div>
+                </div> */}
               </div>
 
               <div className="h-px w-full bg-gradient-to-r from-transparent via-orange-200 to-transparent -mx-0" />
 
-              <div>
+              {/* <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="bm-section-label mb-0"><span>Have a Coupon?</span><div /></div>
                   <button
@@ -1923,12 +1818,12 @@ export default function BookingModal({
                     Apply
                   </button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
 
           <div className="w-full bg-white/95 backdrop-blur-md shrink-0 border-t border-orange-100 px-4 pt-3 pb-4 shadow-[0_-12px_24px_-8px_rgba(249,115,22,0.12)]">
-            <button
+            {/* <button
               onClick={() => setIsSummaryOpen(!isSummaryOpen)}
               className="w-full flex items-center justify-between mb-2 pb-1 focus:outline-none"
             >
@@ -1947,9 +1842,9 @@ export default function BookingModal({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-            </button>
+            </button> */}
 
-            <div className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-72 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"}`}>
+            {/* <div className={`overflow-hidden transition-all duration-300 ${isSummaryOpen ? "max-h-72 opacity-100 mb-3" : "max-h-0 opacity-0 mb-0"}`}>
               <div className="bg-orange-50/60 border border-orange-100 rounded-2xl p-3 space-y-1.5 text-sm">
                 <div className="flex justify-between text-stone-500">
                   <span>Base Puja</span>
@@ -1985,27 +1880,21 @@ export default function BookingModal({
                   <span className="text-orange-600">₹{discountedPrice}</span>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <button
               onClick={handleCheckout}
               disabled={isProcessing}
-              className={`w-full active:scale-[0.98] text-white rounded-2xl py-3.5 px-5 flex items-center justify-between transition-all shadow-lg shadow-orange-200 mb-1 ${isProcessing ? "bg-orange-400" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"}`}
+              className={`w-full active:scale-[0.98] text-white rounded-2xl py-3.5 px-5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-200 mb-1 ${isProcessing ? "bg-orange-400" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"}`}
             >
-              <div>
-                <p className="text-[10px] text-orange-100 font-medium uppercase tracking-widest leading-none mb-0.5">Total</p>
-                <p className="text-xl font-bold leading-none">₹{discountedPrice}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-wide text-orange-50">
-                  {isProcessing ? "Processing..." : "Schedule Pandit Ji"}
-                </span>
-                {!isProcessing && (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
-                  </svg>
-                )}
-              </div>
+              <span className="text-sm font-bold tracking-wide text-orange-50">
+                {isProcessing ? "Processing..." : "Schedule Pandit Ji"}
+              </span>
+              {!isProcessing && (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
+                </svg>
+              )}
             </button>
           </div>
         </div>

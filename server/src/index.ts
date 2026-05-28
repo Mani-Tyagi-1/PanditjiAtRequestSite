@@ -24,8 +24,9 @@ import consultancyLeadRoutes from "./routes/userAppRoutes/consultancyLeadRoutes"
 import referralRoutes from "./routes/userAppRoutes/referralRoutes";
 import pujaEnquiryRoutes from "./routes/userAppRoutes/pujaEnquiryRoutes";
 import paidConsultationRoutes from "./routes/userAppRoutes/paidConsultationRoutes";
-import panditRoute from "./routes/panditAppRoutes/PanditRoute"
+import panditRoute from "./routes/panditAppRoutes/PanditRoute";
 import userRoute from "./routes/userAppRoutes/UserDeleteRoute";
+import panditDirectBookingEnquiryRoutes from "./routes/userAppRoutes/panditDirectBookingEnquiryRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -62,6 +63,7 @@ app.use("/api", consultancyLeadRoutes);
 app.use("/api", referralRoutes);
 app.use("/api", pujaEnquiryRoutes);
 app.use("/api", paidConsultationRoutes);
+app.use("/api", panditDirectBookingEnquiryRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 
@@ -69,9 +71,8 @@ app.get("/gen-stream-token/:userId", generateStreamToken);
 app.use("/", panditAuthRoutes);
 app.use("/", panditAddressRoutes);
 
-app.use("/api", panditRoute)
+app.use("/api", panditRoute);
 app.use("/api/user", userRoute);
-
 
 const PORT = process.env.PORT || 8001;
 

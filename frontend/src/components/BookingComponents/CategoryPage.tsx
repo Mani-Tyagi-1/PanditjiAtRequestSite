@@ -355,7 +355,6 @@ export default function CategoryPage() {
                     id={p._id}
                     title={p.poojaNameEng}
                     image={p.poojaCardImage}
-                    price={p.poojaPriceOnline || p.poojaPriceOffline || 0}
                     subtitle="Sacred ritual performed by expert pandits."
                     badge="Popular"
                     duration="2-3 hrs"
@@ -403,7 +402,6 @@ export default function CategoryPage() {
                       id={p._id}
                       title={p.poojaNameEng}
                       image={p.poojaCardImage}
-                      price={p.poojaPriceOnline || p.poojaPriceOffline || 0}
                       subtitle="Authentic vedic pooja performed exactly as per shastras."
                     />
                   ))

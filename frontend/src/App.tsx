@@ -16,6 +16,8 @@ import AudioCallPage from "./video/AudioCallPage";
 import TrackPanditPage from "./pages/TrackPanditPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
 import PujaEnquiryPage from "./pages/PujaEnquiryPage";
+import AllPanditsPage from "./pages/AllPanditsPage";
+import PanditDetailPage from "./pages/PanditDetailPage";
 
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
@@ -90,6 +92,10 @@ function App() {
         <Route path="/puja/:pujaId/enquiry" element={<PujaEnquiryPage />} />
         <Route path="/free-consultation" element={<FreeConsultationPage />} />
         <Route path="/paid-consultation" element={<PaidConsultationPage />} />
+        
+        {/* Pandit Listings & Profiles */}
+        <Route path="/all-pandits" element={<AllPanditsPage />} />
+        <Route path="/pandit/:panditId" element={<PanditDetailPage />} />
 
         {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

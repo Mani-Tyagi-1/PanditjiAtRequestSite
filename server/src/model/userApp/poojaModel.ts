@@ -28,7 +28,7 @@ const PoojaSchema = new mongoose.Schema(
     benefits: [{ type: String }],
     poojaGods: [{ type: String }],
     poojaCardImage: { type: String },
-    poojaMainImage: { type: String },
+    poojaMainImage: [{ type: String }],
     poojaVideoLink: { type: String },
     poojaDescriptionMain: { type: String },
     poojaSubDescription: { type: String },

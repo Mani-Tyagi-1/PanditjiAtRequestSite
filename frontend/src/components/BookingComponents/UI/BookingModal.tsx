@@ -393,7 +393,7 @@ export default function BookingModal({
 
   // User fetched by phone number (read-only, no auth context change)
   const [phoneUserData, setPhoneUserData] = useState<any>(null);
-  const [isFirstBooking, setIsFirstBooking] = useState(false);
+  const [_isFirstBooking, setIsFirstBooking] = useState(false);
 
   const fetchCoupons = async (openModal = true) => {
     setIsLoadingCoupons(true);
@@ -524,19 +524,19 @@ export default function BookingModal({
   }, [contactNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-apply best coupon for first-time users once coupons load
-  useEffect(() => {
-    if (!isFirstBooking || appliedCoupon || coupons.length === 0) return;
-    const firstTimeCoupon = coupons.find(
-      (c) =>
-        c.isActive &&
-        (!c.minOrderAmount || c.minOrderAmount <= currentPoojaPrice) &&
-        (c.usageType === "FIRST_BOOKING" ||
-          c.code?.toUpperCase().includes("FIRST") ||
-          c.code?.toUpperCase().includes("NEW") ||
-          c.code?.toUpperCase().includes("WELCOME"))
-    );
-    if (firstTimeCoupon) handleApplyCoupon(firstTimeCoupon);
-  }, [isFirstBooking, coupons]); // eslint-disable-line react-hooks/exhaustive-deps
+  // useEffect(() => {
+  //   if (!isFirstBooking || appliedCoupon || coupons.length === 0) return;
+  //   const firstTimeCoupon = coupons.find(
+  //     (c) =>
+  //       c.isActive &&
+  //       (!c.minOrderAmount || c.minOrderAmount <= currentPoojaPrice) &&
+  //       (c.usageType === "FIRST_BOOKING" ||
+  //         c.code?.toUpperCase().includes("FIRST") ||
+  //         c.code?.toUpperCase().includes("NEW") ||
+  //         c.code?.toUpperCase().includes("WELCOME"))
+  //   );
+  //   if (firstTimeCoupon) handleApplyCoupon(firstTimeCoupon);
+  // }, [isFirstBooking, coupons]); // eslint-disable-line react-hooks/exhaustive-deps
   const [deceasedPersons, setDeceasedPersons] = useState<DeceasedPerson[]>([
     { name: "", gotra: "", relation: "" },
   ]);

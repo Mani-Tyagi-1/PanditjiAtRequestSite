@@ -346,6 +346,41 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       });
     }
 
+    // 🟢 WhatsApp booking confirmation (fire-and-forget)
+    void (async () => {
+      try {
+        const rawPhone = String((newBooking as any).userPhone || '');
+        const cleanedPhone = rawPhone.replace(/\D/g, ''); // keep only digits
+        const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+
+        if (cleanedPhone.length < 10) return;
+
+        const userName = (newBooking as any).userName || 'Devotee';
+        const poojaName = newBooking.poojaNameEng || 'Puja';
+        const poojaMode = newBooking.poojaMode || 'offline';
+        const bookingDateStr = new Date(newBooking.bookingDate).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+        const bookingId = newBooking.razorpayOrderId || newBooking.id;
+
+        const param2 = `Your booking for ${poojaName} has been successfully placed.`;
+        const param3 = `Date: ${bookingDateStr}`;
+        const param4 = `Booking ID: ${bookingId}`;
+
+        await sendWhatsappTemplateMessage({
+          to: phone,
+          templateName: 'pjar_order',
+          parameters: [userName, param2, param3, param4],
+          buttonUrlParam: 'apps/details?id=com.panditJiAtReqapp',
+        });
+        console.log(`✅ [Pending PujaBooking] WhatsApp pjar_order template confirmation sent to ${phone}`);
+      } catch (e: any) {
+        console.error('❌ [Pending PujaBooking] WhatsApp pjar_order failed:', e?.response?.data || e?.message || e);
+      }
+    })();
+
     res.status(201).json({
       message: 'Pre-booking created. Proceed to payment.',
       bookingId: (newBooking as any).id,
@@ -531,30 +566,7 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     } catch (pushErr) {
       console.error('Push send/schedule failed:', pushErr);
     }
-    // ----------------------------------------------------------
-
-    // 🟢 WhatsApp booking confirmation (fire-and-forget)
-    void (async () => {
-      try {
-        const rawPhone = String((finalBooking as any).userPhone || '');
-        const phone = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
-
-        if (rawPhone.length < 10) return;
-
-        const poojaName = finalBooking.poojaNameEng || 'Puja';
-        const poojaMode = finalBooking.poojaMode   || 'offline';
-
-        await sendWhatsappTemplateMessage({
-          to: phone,
-          templateName: 'bookingconfirmed_pjar',
-          headerImageUrl: 'https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/THANYOU%20(1).png',
-          parameters: [poojaName, poojaMode],
-        });
-        console.log(`✅ [PujaBooking] WhatsApp confirmation sent to ${phone}`);
-      } catch (e: any) {
-        console.error('❌ [PujaBooking] WhatsApp failed:', e?.response?.data || e?.message || e);
-      }
-    })();
+    // 🟢 Note: WhatsApp booking confirmation is now sent during pending booking creation.
     // ----------------------------------------------------------
 
     // 🟢 Email booking confirmation (fire-and-forget)

@@ -87,7 +87,6 @@ export default function FeaturedPujas() {
                                         id={puja._id}
                                         title={puja.poojaNameEng}
                                         subtitle={puja.poojaSubDescription || puja.poojaDescriptionMain}
-                                        price={puja.poojaPriceOnline || puja.poojaPriceOffline || 0}
                                         image={puja.poojaCardImage}
                                         badge={puja.isFeatured ? "Featured" : undefined}
                                         onBook={() => { }}

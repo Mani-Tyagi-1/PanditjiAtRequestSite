@@ -18,11 +18,11 @@ const navLinks = [
 ];
 
 const BANNERS = [
-    {
-        image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/PANDIT%20JI%20AT%20REQUEST%20(MOBILE).jpg%20(1).webp",
-        link: "https://play.google.com/store/apps/details?id=com.panditJiAtReqapp",
-        alt: "Pandit Ji At Request Android App"
-    },
+    // {
+    //     image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/PANDIT%20JI%20AT%20REQUEST%20(MOBILE).jpg%20(1).webp",
+    //     link: "https://play.google.com/store/apps/details?id=com.panditJiAtReqapp",
+    //     alt: "Pandit Ji At Request Android App"
+    // },
     {
         image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/poojaMainImage_1779258749947.webp",
         link: "https://wa.me/919310065096?text=Namaste!%20I%20have%20a%20question%20about%20booking%20a%20puja.",
@@ -30,7 +30,7 @@ const BANNERS = [
     }
 ];
 
-const HeroSection = () => {
+const HeroSection = ({ showConsultancySection = false }: { showConsultancySection?: boolean }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [currentSlide, setCurrentSlide] = useState(0);
     const [allPujas, setAllPujas] = useState<any[]>([]);
@@ -184,12 +184,12 @@ const HeroSection = () => {
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className="relative w-full h-[150px] md:h-[180px] rounded-2xl overflow-hidden shadow-lg shadow-orange-100/50"
                     >
-                        <div 
+                        <div
                             className="flex w-full h-full transition-transform duration-700 ease-in-out"
                             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
                         >
                             {BANNERS.map((banner, index) => (
-                                <div 
+                                <div
                                     key={index}
                                     className="w-full h-full shrink-0 cursor-pointer relative"
                                     onClick={() => window.open(banner.link, "_blank")}
@@ -202,7 +202,7 @@ const HeroSection = () => {
                                 </div>
                             ))}
                         </div>
-                        
+
                         {/* Dot Indicators */}
                         <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
                             {BANNERS.map((_, index) => (
@@ -212,21 +212,54 @@ const HeroSection = () => {
                                         e.stopPropagation();
                                         setCurrentSlide(index);
                                     }}
-                                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                                        index === currentSlide ? "bg-white w-4" : "bg-white/50"
-                                    }`}
+                                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${index === currentSlide ? "bg-white w-4" : "bg-white/50"
+                                        }`}
                                 />
                             ))}
                         </div>
                     </motion.div>
 
+                    {/* Consultancy Section */}
+                    {showConsultancySection && (
+                        <motion.section
+                            initial={{ opacity: 0, y: 18 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35 }}
+                            className="mt-2"
+                        >
+                            <div
+                                onClick={() => navigate("/paid-consultation")}
+                                className="rounded-2xl  shadow-[0_8px_30px_rgb(0,0,0,0.06)] grid grid-cols-[44px_minmax(0,1fr)] gap-2 cursor-pointer hover:bg-green-50/40 transition-colors"
+                            >
+                                {/* <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.3}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                                    </svg>
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-sm font-bold text-gray-800 leading-snug">
+                                        Book Your Consultation
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mt-0.5 leading-snug">
+                                        Get dedicated guidance from our pandit
+                                    </p>
+                                </div> */}
+
+                                <span className="col-span-2 w-full bg-green-500 text-white text-xs font-bold px-3 py-2.5 rounded-xl shadow-sm text-center mt-1.5">
+                                    Book your Personal Consultant Now
+                                </span>
+                            </div>
+                        </motion.section>
+                    )}
+
                     {/* Trust Badges */}
                     <div className="flex flex-row justify-between items-center gap-2 mt-4">
                         <div className="flex-1 bg-white/80 backdrop-blur-md border border-orange-100 rounded-xl p-1 text-center shadow-[0_4px_12px_rgba(249,115,22,0.04)] flex flex-col items-center">
-                            <img 
-                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/puja.webp" 
-                                alt="Samagri" 
-                                className="w-12 h-12 object-contain" 
+                            <img
+                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/puja.webp"
+                                alt="Samagri"
+                                className="w-12 h-12 object-contain"
                                 onError={(e) => {
                                     // Fallback to emoji if image URL is invalid or not yet pasted
                                     (e.target as HTMLElement).style.display = 'none';
@@ -240,10 +273,10 @@ const HeroSection = () => {
                             <span className="text-[12px] text-stone-500 mt-0.5 whitespace-nowrap">Arranged by Us</span>
                         </div>
                         <div className="flex-1 bg-white/80 backdrop-blur-md border border-orange-100 rounded-xl p-1 text-center shadow-[0_4px_12px_rgba(249,115,22,0.04)] flex flex-col items-center">
-                            <img 
-                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pandit.webp" 
-                                alt="Verified Pandits" 
-                                className="w-12 h-12 object-contain"  
+                            <img
+                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pandit.webp"
+                                alt="Verified Pandits"
+                                className="w-12 h-12 object-contain"
                                 onError={(e) => {
                                     // Fallback to emoji if image URL is invalid or not yet pasted
                                     (e.target as HTMLElement).style.display = 'none';
@@ -257,10 +290,10 @@ const HeroSection = () => {
                             <span className="text-[12px] text-stone-500 mt-0.5 whitespace-nowrap">Gurukul Certified</span>
                         </div>
                         <div className="flex-1 bg-white/80 backdrop-blur-md border border-orange-100 rounded-xl p-1 text-center shadow-[0_4px_12px_rgba(249,115,22,0.04)] flex flex-col items-center">
-                            <img 
-                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pay.webp" 
-                                alt="Pay Later" 
-                                className="w-12 h-12 object-contain" 
+                            <img
+                                src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pay.webp"
+                                alt="Pay Later"
+                                className="w-12 h-12 object-contain"
                                 onError={(e) => {
                                     // Fallback to emoji if image URL is invalid or not yet pasted
                                     (e.target as HTMLElement).style.display = 'none';
@@ -276,14 +309,11 @@ const HeroSection = () => {
                     </div>
 
                     {/* Vedic Headline Section - Premium Redesign */}
-                    <div className="relative text-center mt-2  px-4  rounded-2xl overflow-hidden">
-                        {/* Golden Ring Decorative Blurs */}
-                        <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-200/20 rounded-full blur-xl pointer-events-none" />
-                        <div className="absolute -bottom-12 -left-12 w-24 h-24 bg-red-200/20 rounded-full blur-xl pointer-events-none" />
+                    <div className="relative text-center mt-3    rounded-2xl overflow-hidden">
 
                         {/* Title */}
-                        <h1 
-                            className="text-xl md:text-2xl font-extrabold text-stone-900 tracking-tight leading-snug" 
+                        <h1
+                            className="text-xl md:text-2xl font-extrabold text-stone-900 tracking-tight leading-snug "
                             style={{ fontFamily: "'Outfit', sans-serif" }}
                         >
                             Vedic Puja Done{" "}
@@ -293,9 +323,22 @@ const HeroSection = () => {
                         </h1>
 
                         {/* Description */}
-                        <p className="text-[11.5px] text-stone-600 mt-2 max-w-xs mx-auto leading-relaxed font-medium">
+                        <p className="text-[11.5px] text-stone-600 mt-2 max-w-xl mx-auto leading-relaxed font-medium">
                             Select from 300+ highly customized pujas. Guided by Gurukul-certified Verified Pandits in Delhi NCR & selected cities.
                         </p>
+
+                        {/* Animated Beautiful Vedic Divider */}
+                                <div className="relative flex items-center justify-center mt-3 mb-2 px-4 select-none">
+  {/* Horizontal line with moving shimmer glow */}
+  <div className="absolute inset-x-4 h-[2px] bg-gradient-to-r from-transparent via-orange-300/60 to-transparent overflow-hidden">
+    <motion.div
+      animate={{ x: ["-100%", "100%"] }}
+      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+      className="w-1/2 h-full bg-gradient-to-r from-transparent via-amber-500 to-transparent"
+    />
+  </div>
+
+</div>
                     </div>
                 </div>
             </div>

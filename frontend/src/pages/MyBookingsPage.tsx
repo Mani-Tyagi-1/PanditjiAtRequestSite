@@ -161,11 +161,11 @@ const MyBookingsPage: React.FC = () => {
         );
     }
 
-    const filterLabels: Record<string, { label: string; icon: React.ReactNode }> = {
-        all: { label: "All", icon: <Calendar className="w-3.5 h-3.5" /> },
-        online: { label: "Online", icon: <Wifi className="w-3.5 h-3.5" /> },
-        offline: { label: "Offline", icon: <WifiOff className="w-3.5 h-3.5" /> },
-    };
+    // const filterLabels: Record<string, { label: string; icon: React.ReactNode }> = {
+    //     all: { label: "All", icon: <Calendar className="w-3.5 h-3.5" /> },
+    //     online: { label: "Online", icon: <Wifi className="w-3.5 h-3.5" /> },
+    //     offline: { label: "Offline", icon: <WifiOff className="w-3.5 h-3.5" /> },
+    // };
 
     return (
         <div className="min-h-screen bg-[#FFF7F0] font-sans flex justify-center ">
@@ -190,7 +190,7 @@ const MyBookingsPage: React.FC = () => {
                     </div>
 
                     {/* Filter Pills */}
-                    <div className="px-4 pb-3 flex gap-2">
+                    {/* <div className="px-4 pb-3 flex gap-2">
                         {(["all", "online", "offline"] as const).map((mode) => (
                             <button
                                 key={mode}
@@ -210,7 +210,7 @@ const MyBookingsPage: React.FC = () => {
                                 )}
                             </button>
                         ))}
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* ── Content ── */}
@@ -227,14 +227,14 @@ const MyBookingsPage: React.FC = () => {
                                 <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-50 rounded-full flex items-center justify-center mb-5 shadow-inner">
                                     <span className="text-3xl">🪔</span>
                                 </div>
-                                <h2 className="text-base font-bold text-gray-800 mb-1">
+                                {/* <h2 className="text-base font-bold text-gray-800 mb-1">
                                     {filterMode === "all" ? "No Bookings Yet" : `No ${filterLabels[filterMode].label} Bookings`}
-                                </h2>
-                                <p className="text-gray-400 text-xs leading-relaxed">
+                                </h2> */}
+                                {/* <p className="text-gray-400 text-xs leading-relaxed">
                                     {filterMode === "all"
                                         ? "You haven't booked any pujas yet. Explore our services to get started!"
                                         : `You don't have any ${filterMode} bookings at the moment.`}
-                                </p>
+                                </p> */}
                                 {filterMode === "all" && (
                                     <button
                                         onClick={() => navigate("/")}
@@ -297,7 +297,7 @@ const MyBookingsPage: React.FC = () => {
                                                             {isPast && <span className="ml-2 text-[10px] uppercase tracking-wider opacity-80">(Completed)</span>}
                                                         </h3>
                                                     </div>
-                                                    <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold flex-shrink-0 ${isPast
+                                                    {/* <span className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold flex-shrink-0 ${isPast
                                                             ? "bg-white/20 text-white"
                                                             : (isOnline ? "bg-white text-[#FF7000]" : "bg-white/20 text-white border border-white/30")
                                                         }`}>
@@ -305,7 +305,7 @@ const MyBookingsPage: React.FC = () => {
                                                             ? <><Wifi className="w-3 h-3" /> Online</>
                                                             : <><WifiOff className="w-3 h-3" /> Offline</>
                                                         }
-                                                    </span>
+                                                    </span> */}
                                                 </div>
                                             </div>
 

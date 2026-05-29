@@ -671,12 +671,23 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
     }
 
     const alias10 = toAlias10(userPhone);
-    const bookings = await poojaBookingModel
-      .find({ userPhone: alias10, isCompleted: false })
-      .sort({ bookingDate: -1 })
-      .populate('poojaId', 'poojaNameEng poojaCardImage')
-      .populate('assignedPandit', 'firstName lastName rating profileImage')
-      .lean();
+
+    const [pendingBookings, finalBookings] = await Promise.all([
+      pendingPoojaBookingModel
+        .find({ userPhone: alias10, isCompleted: false })
+        .populate('poojaId', 'poojaNameEng poojaCardImage')
+        .populate('assignedPandit', 'firstName lastName rating profileImage')
+        .lean(),
+      poojaBookingModel
+        .find({ userPhone: alias10, isCompleted: false })
+        .populate('poojaId', 'poojaNameEng poojaCardImage')
+        .populate('assignedPandit', 'firstName lastName rating profileImage')
+        .lean()
+    ]);
+
+    const bookings = [...pendingBookings, ...finalBookings].sort(
+      (a: any, b: any) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
+    );
 
     res.status(200).json(bookings || []);
   } catch (error) {

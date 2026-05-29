@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { encryptPayload, decryptData } from "../../../utils/encryption";
@@ -385,9 +385,9 @@ export default function BookingModal({
 
   const [coupons, setCoupons] = useState<any[]>([]);
   const [isCouponsModalOpen, setIsCouponsModalOpen] = useState(false);
-  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
+  const [_isLoadingCoupons, setIsLoadingCoupons] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
-  const [couponCode, setCouponCode] = useState("");
+  const [_couponCode, setCouponCode] = useState("");
   const [couponUsage, setCouponUsage] = useState<any[]>([]);
   const [couponDiscountVal, setCouponDiscountVal] = useState(0);
 
@@ -468,18 +468,18 @@ export default function BookingModal({
     triggerAlert("Coupon Applied", `Coupon ${coupon.code} applied. You save ₹${discount}. Discount will be confirmed on payment.`, "success");
   };
 
-  const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
-  const [mapCenter, setMapCenter] = useState<LatLng>(defaultCenter);
-  const [markerPosition, setMarkerPosition] = useState<LatLng>(defaultCenter);
+  // const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
+  // const [mapCenter, setMapCenter] = useState<LatLng>(defaultCenter);
+  const [markerPosition, _setMarkerPosition] = useState<LatLng>(defaultCenter);
   const [notServiceablePopup, setNotServiceablePopup] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
 
-  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [_savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, _setSelectedAddressId] = useState<string | null>(null);
 
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [_isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
   const { user } = useAuth();
 
@@ -544,12 +544,12 @@ export default function BookingModal({
   const [ritualPerformerGotra, setRitualPerformerGotra] = useState("");
   const [selectedRitualPlace, setSelectedRitualPlace] = useState("haridwar");
 
-  const [houseNo, setHouseNo] = useState("");
-  const [street, setStreet] = useState("");
-  const [landmark, setLandmark] = useState("");
-  const [city, setCity] = useState("");
-  const [stateVal, setStateVal] = useState("");
-  const [pincode, setPincode] = useState("");
+  // const [houseNo, setHouseNo] = useState("");
+  // const [street, setStreet] = useState("");
+  // const [landmark, setLandmark] = useState("");
+  // const [city, setCity] = useState("");
+  // const [stateVal, setStateVal] = useState("");
+  // const [pincode, setPincode] = useState("");
 
   const minDateStr = new Date(
     new Date().setDate(new Date().getDate() + 1)
@@ -560,75 +560,75 @@ export default function BookingModal({
   const [selectedDate, setSelectedDate] = useState<string>(minDateStr);
   const [selectedTime, setSelectedTime] = useState("");
 
-  const updateAddressFieldsFromGoogleAddress = useCallback(
-    (components: google.maps.GeocoderAddressComponent[]) => {
-      let newStreet = "";
-      let newCity = "";
-      let newState = "";
-      let newPincode = "";
+  // const updateAddressFieldsFromGoogleAddress = useCallback(
+  //   (components: google.maps.GeocoderAddressComponent[]) => {
+  //     let newStreet = "";
+  //     let newCity = "";
+  //     let newState = "";
+  //     let newPincode = "";
+  // 
+  //     components.forEach((component) => {
+  //       const types = component.types;
+  // 
+  //       if (
+  //         types.includes("route") ||
+  //         types.includes("sublocality") ||
+  //         types.includes("sublocality_level_1") ||
+  //         types.includes("neighborhood")
+  //       ) {
+  //         newStreet += (newStreet ? ", " : "") + component.long_name;
+  //       }
+  // 
+  //       if (
+  //         types.includes("locality") ||
+  //         types.includes("administrative_area_level_2")
+  //       ) {
+  //         if (!newCity) newCity = component.long_name;
+  //       }
+  // 
+  //       if (types.includes("administrative_area_level_1")) {
+  //         newState = component.long_name;
+  //       }
+  // 
+  //       if (types.includes("postal_code")) {
+  //         newPincode = component.long_name;
+  //       }
+  //     });
+  // 
+  //     if (newStreet) setStreet(newStreet);
+  //     if (newCity) setCity(newCity);
+  //     if (newState) setStateVal(newState);
+  //     if (newPincode) setPincode(newPincode);
+  //   },
+  //   []
+  // );
 
-      components.forEach((component) => {
-        const types = component.types;
-
-        if (
-          types.includes("route") ||
-          types.includes("sublocality") ||
-          types.includes("sublocality_level_1") ||
-          types.includes("neighborhood")
-        ) {
-          newStreet += (newStreet ? ", " : "") + component.long_name;
-        }
-
-        if (
-          types.includes("locality") ||
-          types.includes("administrative_area_level_2")
-        ) {
-          if (!newCity) newCity = component.long_name;
-        }
-
-        if (types.includes("administrative_area_level_1")) {
-          newState = component.long_name;
-        }
-
-        if (types.includes("postal_code")) {
-          newPincode = component.long_name;
-        }
-      });
-
-      if (newStreet) setStreet(newStreet);
-      if (newCity) setCity(newCity);
-      if (newState) setStateVal(newState);
-      if (newPincode) setPincode(newPincode);
-    },
-    []
-  );
-
-  const fetchAddressFromCoords = useCallback(
-    async (lat: number, lng: number) => {
-      if (!(window as any).google?.maps) return;
-
-      try {
-        const geocoder = new google.maps.Geocoder();
-
-        const response = await geocoder.geocode({
-          location: { lat, lng },
-        });
-
-        if (response.results && response.results.length > 0) {
-          const result = response.results[0];
-
-          updateAddressFieldsFromGoogleAddress(result.address_components || []);
-
-          if (!street && result.formatted_address) {
-            setStreet(result.formatted_address);
-          }
-        }
-      } catch (error) {
-        console.error("Reverse geocoding failed:", error);
-      }
-    },
-    [street, updateAddressFieldsFromGoogleAddress]
-  );
+  // const fetchAddressFromCoords = useCallback(
+  //   async (lat: number, lng: number) => {
+  //     if (!(window as any).google?.maps) return;
+  // 
+  //     try {
+  //       const geocoder = new google.maps.Geocoder();
+  // 
+  //       const response = await geocoder.geocode({
+  //         location: { lat, lng },
+  //       });
+  // 
+  //       if (response.results && response.results.length > 0) {
+  //         const result = response.results[0];
+  // 
+  //         updateAddressFieldsFromGoogleAddress(result.address_components || []);
+  // 
+  //         if (!street && result.formatted_address) {
+  //           setStreet(result.formatted_address);
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error("Reverse geocoding failed:", error);
+  //     }
+  //   },
+  //   [street, updateAddressFieldsFromGoogleAddress]
+  // );
 
   // const handleFetchLocation = useCallback(() => {
   //   setIsFetchingLocation(true);
@@ -658,31 +658,31 @@ export default function BookingModal({
   //   );
   // }, [fetchAddressFromCoords]);
 
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        const apiUrl = API_URL;
-        const res = await fetch(`${apiUrl}/config/maps`);
-
-        if (!res.ok) {
-          console.warn("Failed to fetch maps config");
-          return;
-        }
-
-        const data = await res.json();
-
-        if (data.apiKey && typeof data.apiKey === "string") {
-          setGoogleMapsApiKey(data.apiKey);
-        } else {
-          console.warn("Maps API key missing in response.");
-        }
-      } catch (err) {
-        console.error("Failed to fetch maps config", err);
-      }
-    };
-
-    fetchConfig();
-  }, []);
+  // useEffect(() => {
+  //   const fetchConfig = async () => {
+  //     try {
+  //       const apiUrl = API_URL;
+  //       const res = await fetch(`${apiUrl}/config/maps`);
+  // 
+  //       if (!res.ok) {
+  //         console.warn("Failed to fetch maps config");
+  //         return;
+  //       }
+  // 
+  //       const data = await res.json();
+  // 
+  //       if (data.apiKey && typeof data.apiKey === "string") {
+  //         setGoogleMapsApiKey(data.apiKey);
+  //       } else {
+  //         console.warn("Maps API key missing in response.");
+  //       }
+  //     } catch (err) {
+  //       console.error("Failed to fetch maps config", err);
+  //     }
+  //   };
+  // 
+  //   fetchConfig();
+  // }, []);
 
   useEffect(() => {
     const fetchSavedAddresses = async () => {
@@ -886,13 +886,13 @@ export default function BookingModal({
       return;
     }
 
-    if (
-      mode === "offline" &&
-      (!houseNo || !street || !city || !stateVal || !pincode)
-    ) {
-      triggerAlert("Address Required", "Please fill all required address fields for offline pooja.", "info");
-      return;
-    }
+    // if (
+    //   mode === "offline" &&
+    //   (!houseNo || !street || !city || !stateVal || !pincode)
+    // ) {
+    //   triggerAlert("Address Required", "Please fill all required address fields for offline pooja.", "info");
+    //   return;
+    // }
 
     setIsProcessing(true);
 
@@ -948,15 +948,15 @@ export default function BookingModal({
             try {
               const addressPayload = {
                 userId: user?._id || user?.id,
-                addressLine1: houseNo,
-                addressLine2: landmark,
-                street: street,
-                city: city,
-                state: stateVal,
-                pincode: pincode,
+                // addressLine1: houseNo,
+                // addressLine2: landmark,
+                // street: street,
+                // city: city,
+                // state: stateVal,
+                // pincode: pincode,
                 latitude: markerPosition.lat,
                 longitude: markerPosition.lng,
-                addressName: `${saveAs.charAt(0).toUpperCase() + saveAs.slice(1)} (${street.split(',')[0].trim()})`,
+                // addressName: `${saveAs.charAt(0).toUpperCase() + saveAs.slice(1)} (${street.split(',')[0].trim()})`,
                 country: "India",
                 isPrimary: false
               };
@@ -1053,12 +1053,12 @@ export default function BookingModal({
         address:
           mode === "offline"
             ? {
-              houseFlatNo: houseNo,
-              streetArea: street,
-              landmark: landmark,
-              city: city,
-              state: stateVal,
-              pincode: pincode,
+              // houseFlatNo: houseNo,
+              // streetArea: street,
+              // landmark: landmark,
+              // city: city,
+              // state: stateVal,
+              // pincode: pincode,
               saveAs: saveAs,
               latitude: markerPosition.lat,
               longitude: markerPosition.lng,
@@ -1942,7 +1942,7 @@ export default function BookingModal({
               Location Not Serviceable
             </h3>
             <p className="text-stone-500 text-sm mb-6">
-              We are not currently serviceable at this pincode ({pincode}), but we
+              We are not currently serviceable at this pincode, but we
               will be available soon!
             </p>
 

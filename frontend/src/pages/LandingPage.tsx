@@ -18,7 +18,7 @@ import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
 import { Helmet } from "react-helmet-async";
 
 // Import new conversion & trust components
-import { UrgencyBanner } from "../components/NewComponents/UrgencyBanner";
+// import { UrgencyBanner } from "../components/NewComponents/UrgencyBanner";
 import { ServiceCitiesSection } from "../components/NewComponents/ServiceCitiesSection";
 import { SamagriIncludedSection } from "../components/NewComponents/SamagriIncludedSection";
 // import { PanditTrustSection } from "../components/NewComponents/PanditTrustSection";
@@ -117,9 +117,8 @@ export default function LandingPage() {
         )}
       </AnimatePresence>
 
-      <UrgencyBanner />
       <Navigation />
-      <div className="w-full max-w-md relative">
+      <div className="w-full max-w-md relative mx-auto">
         <HeroBanner />
         {showConsultancySection && (
           <motion.section

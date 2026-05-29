@@ -30,6 +30,7 @@ const PoojaSchema = new mongoose.Schema(
     poojaCardImage: { type: String },
     poojaMainImage: [{ type: String }],
     poojaVideoLink: { type: String },
+    poojaVideos: [{ type: String }],
     poojaDescriptionMain: { type: String },
     poojaSubDescription: { type: String },
     poojaBenefitsDescription: { type: String },

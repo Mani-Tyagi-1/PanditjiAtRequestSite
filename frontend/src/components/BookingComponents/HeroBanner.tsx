@@ -172,7 +172,7 @@ const HeroSection = () => {
             </div>
 
             {/* Spacer to push content below fixed header */}
-            <div className="h-[80px]" />
+            <div className="h-[100px]" />
 
             <div className="w-full" style={{ background: "linear-gradient(to bottom, #f3b287ff, #e8d19cff, #ffffff)" }}>
                 <div className="w-full px-4 md:px-6 max-w-2xl mx-auto pt-4 ">
@@ -276,7 +276,7 @@ const HeroSection = () => {
                     </div>
 
                     {/* Vedic Headline Section - Premium Redesign */}
-                    <div className="relative text-center mt-4 mb-4 px-4  rounded-2xl overflow-hidden">
+                    <div className="relative text-center mt-2  px-4  rounded-2xl overflow-hidden">
                         {/* Golden Ring Decorative Blurs */}
                         <div className="absolute -top-12 -right-12 w-24 h-24 bg-amber-200/20 rounded-full blur-xl pointer-events-none" />
                         <div className="absolute -bottom-12 -left-12 w-24 h-24 bg-red-200/20 rounded-full blur-xl pointer-events-none" />

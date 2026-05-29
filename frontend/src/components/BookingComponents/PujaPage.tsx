@@ -679,28 +679,71 @@ export default function PujaDetailPage() {
                             </div>
                         </div>
                         {/* Puja Videos — show only if backend sends videos */}
-                        {pujaData.poojaVideos && pujaData.poojaVideos.length > 0 && (
-                            <div>
-                                <SectionLabel>Puja Videos</SectionLabel>
-                                <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                                    {pujaData.poojaVideos.map((videoUrl: string, idx: number) => (
-                                        <div
-                                            key={idx}
-                                            className="shrink-0 w-56 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
-                                        >
-                                            <video
-                                                src={videoUrl}
-                                                controls
-                                                playsInline
-                                                preload="metadata"
-                                                className="w-full h-36 object-cover"
-                                                style={{ background: "#1c1917" }}
-                                            />
-                                        </div>
-                                    ))}
+                        {(() => {
+                            const finalVideos: string[] = [];
+                            if (Array.isArray(pujaData.poojaVideos)) {
+                                finalVideos.push(...pujaData.poojaVideos.filter(Boolean));
+                            }
+                            if (typeof pujaData.poojaVideoLink === "string" && pujaData.poojaVideoLink) {
+                                if (!finalVideos.includes(pujaData.poojaVideoLink)) {
+                                    finalVideos.push(pujaData.poojaVideoLink);
+                                }
+                            }
+
+                            if (finalVideos.length === 0) return null;
+
+                            const getYouTubeEmbedUrl = (url: string) => {
+                                if (!url) return null;
+                                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                const match = url.match(regExp);
+                                if (match && match[2].length === 11) {
+                                    return `https://www.youtube.com/embed/${match[2]}`;
+                                }
+                                return null;
+                            };
+
+                            return (
+                                <div>
+                                    <SectionLabel>Puja Videos</SectionLabel>
+                                    <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                        {finalVideos.map((videoUrl: string, idx: number) => {
+                                            const embedUrl = getYouTubeEmbedUrl(videoUrl);
+                                            if (embedUrl) {
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
+                                                    >
+                                                        <iframe
+                                                            src={embedUrl}
+                                                            title={`Puja Video ${idx + 1}`}
+                                                            className="w-full h-full border-0"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                        />
+                                                    </div>
+                                                );
+                                            }
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
+                                                >
+                                                    <video
+                                                        src={videoUrl}
+                                                        controls
+                                                        playsInline
+                                                        preload="metadata"
+                                                        className="w-full h-full object-cover"
+                                                        style={{ background: "#1c1917" }}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {/* FAQs */}
                         {pujaData.faqs && pujaData.faqs.length > 0 && (

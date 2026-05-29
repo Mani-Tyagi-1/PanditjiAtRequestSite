@@ -49,10 +49,10 @@ export default function RecomendedForYou() {
         }
       `}</style>
 
-            <section className="fp-section bg-[#FFFAF3] py-10 font-medium">
+            <section className="fp-section bg-[#FFFAF3] py-4 font-medium">
 
                 {/* ── Section Header ── */}
-                <div className="text-center mb-6 px-4">
+                <div className="text-center mb-2 px-4">
                     <div className="flex items-center gap-2 justify-center mb-2">
                         <div className="h-px flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-orange-200" />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500 flex items-center gap-1 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">

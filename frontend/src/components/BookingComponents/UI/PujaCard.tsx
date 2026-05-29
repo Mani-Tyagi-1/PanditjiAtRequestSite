@@ -71,8 +71,8 @@ export default function PujaCard({
     id,
     image,
     title,
-    badge,
-    badgeColor = "bg-orange-500",
+    // badge,
+    // badgeColor = "bg-orange-500",
     onBook,
     duration,
 }: PujaCardProps) {

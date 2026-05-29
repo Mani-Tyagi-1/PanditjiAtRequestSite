@@ -78,13 +78,13 @@ export default function RecomendedForYou() {
                 {pujas.length === 0 ? (
                     <p className="text-center text-stone-400 text-sm py-16">No recommendations available.</p>
                 ) : (
-                    <div className="fp-scroll overflow-x-auto overflow-y-hidden px-4 sm:px-6 lg:px-10">
+                    <div className="fp-scroll overflow-x-auto overflow-y-hidden pl-2 pr-4 sm:pl-3 sm:pr-6 lg:pl-4 lg:pr-10">
                         <div
                             className="grid gap-3 py-4"
                             style={{
                                 gridTemplateRows: "repeat(2, auto)",
                                 gridAutoFlow: "column",
-                                gridAutoColumns: "calc(47% - 6px)",
+                                gridAutoColumns: "calc(41% - 6px)",
                             }}
                         >
                             {pujas.map((puja, i) => (

@@ -56,6 +56,21 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
   );
 }
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
 function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="px-4 py-3 flex items-start gap-3">
@@ -287,7 +302,7 @@ export default function PanditDetailPage() {
           <div className="bg-white rounded-2xl border border-orange-100/70 shadow-sm divide-y divide-stone-100">
             
             {pandit.dob && (
-              <DetailRow icon={<Calendar className="w-4 h-4 text-orange-500 shrink-0" />} label="Date of Birth" value={pandit.dob} />
+              <DetailRow icon={<Calendar className="w-4 h-4 text-orange-500 shrink-0" />} label="Date of Birth" value={formatDate(pandit.dob)} />
             )}
 
             {pandit.languages?.length > 0 && (
@@ -408,7 +423,7 @@ export default function PanditDetailPage() {
                 </span>
 
                 <h3 className="text-lg font-bold text-stone-800">
-                  Select {pandit.prefix} {pandit.firstName}
+                  BOOK {pandit.prefix} {pandit.firstName}
                 </h3>
 
                 <p className="mt-1 text-xs text-stone-500 leading-snug max-w-[280px]">

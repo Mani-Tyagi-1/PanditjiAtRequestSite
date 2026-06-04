@@ -1,31 +1,47 @@
-// import FeaturedPujas from "../components/BookingComponents/UpcomingPooja";
+import React, { Suspense } from "react";
 import HeroBanner from "../components/BookingComponents/HeroBanner";
-import HowItWorks from "../components/BookingComponents/HowItWorksSection";
-import RecomendedForYou from "../components/BookingComponents/RecomendedForYou";
-import ServicesSection from "../components/BookingComponents/ServicesSection";
-// import WhyChooseUs from "../components/BookingComponents/WhyChoseUs";
-import Footer from "../components/Footer";
-import Testimonials from "../components/BookingComponents/Testimonials";
-import BlogsPage from "../components/BookingComponents/BlogsPage";
 import { Navigation } from "../components/NewComponents/Navigation";
-// import { DeathRituals } from "../components/NewComponents/DeathRituals";
-import { PanditSection } from "../components/NewComponents/PanditSection";
+import { StickyMobileCTA } from "../components/NewComponents/StickyMobileCTA";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
 import { Helmet } from "react-helmet-async";
 
-// Import new conversion & trust components
-// import { UrgencyBanner } from "../components/NewComponents/UrgencyBanner";
+import RecomendedForYou from "../components/BookingComponents/RecomendedForYou";
+import { PanditSection } from "../components/NewComponents/PanditSection";
+import ServicesSection from "../components/BookingComponents/ServicesSection";
 import { ServiceCitiesSection } from "../components/NewComponents/ServiceCitiesSection";
+import HowItWorks from "../components/BookingComponents/HowItWorksSection";
 import { SamagriIncludedSection } from "../components/NewComponents/SamagriIncludedSection";
-// import { PanditTrustSection } from "../components/NewComponents/PanditTrustSection";
-// import { NRIVirtualPujaSection } from "../components/NewComponents/NRIVirtualPujaSection";
 import { PreviousPujaVideosSection } from "../components/NewComponents/PreviousPujaVideosSection";
 import { FAQSection } from "../components/NewComponents/FAQSection";
-import { StickyMobileCTA } from "../components/NewComponents/StickyMobileCTA";
+import Testimonials from "../components/BookingComponents/Testimonials";
+import BlogsPage from "../components/BookingComponents/BlogsPage";
+import Footer from "../components/Footer";
+import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
+
+// Wrapper to prevent rendering and loading until the section is near the viewport
+function LazySection({ children, height = "400px" }: { children: React.ReactNode, height?: string }) {
+  const [isVisible, setIsVisible] = useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" } // Load slightly before it comes into view
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return <div ref={ref} style={{ minHeight: isVisible ? 'auto' : height }}>{isVisible && children}</div>;
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -34,11 +50,15 @@ export default function LandingPage() {
   const [showConsultancyModal, setShowConsultancyModal] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowConsultancyPopup(true);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    const handleScroll = () => {
+      if (window.scrollY > 200 && !showConsultancyPopup) {
+        setShowConsultancyPopup(true);
+        window.removeEventListener("scroll", handleScroll);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [showConsultancyPopup]);
 
   /* ── App install popup (disabled) ────────────────────────────
   const [showAppPopup, setShowAppPopup] = useState(false);
@@ -66,7 +86,9 @@ export default function LandingPage() {
       </Helmet>
 
       {/* Consultancy form modal */}
-      <ConsultancyModal isOpen={showConsultancyModal} onClose={() => setShowConsultancyModal(false)} />
+      <Suspense fallback={null}>
+        <ConsultancyModal isOpen={showConsultancyModal} onClose={() => setShowConsultancyModal(false)} />
+      </Suspense>
 
       <AnimatePresence>
         {showConsultancyPopup && (
@@ -120,28 +142,79 @@ export default function LandingPage() {
       <Navigation />
       <div className="w-full max-w-md relative mx-auto">
         <HeroBanner showConsultancySection={_showConsultancySection} />
-        <RecomendedForYou />
-        <PanditSection />
-        <ServicesSection />
-        {/* <DeathRituals /> */}
-        <ServiceCitiesSection />
-        <HowItWorks />
-        {/* <FeaturedPujas /> */}
-        {/* <PanditTrustSection /> */}
-        <SamagriIncludedSection />
-        {/* <NRIVirtualPujaSection /> */}
-        <PreviousPujaVideosSection />
-        {/* <WhyChooseUs /> */}
-        <Testimonials />
-        <FAQSection />
-        <BlogsPage />
-        <Footer />
         
-        {/* Floating WhatsApp Support Bubble */}
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <RecomendedForYou />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <PanditSection />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="300px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <ServicesSection />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="300px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <ServiceCitiesSection />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <HowItWorks />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <SamagriIncludedSection />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <PreviousPujaVideosSection />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <Testimonials />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <FAQSection />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="400px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <BlogsPage />
+          </Suspense>
+        </LazySection>
+
+        <LazySection height="200px">
+          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+            <Footer />
+          </Suspense>
+        </LazySection>
+        
+        Floating WhatsApp Support Bubble
         <a
           href="https://wa.me/919310065096?text=Namaste!%20I%20have%20a%20question%20about%20booking%20a%20puja."
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Chat with us on WhatsApp"
           className="fixed bottom-20 right-4 z-[90] bg-[#25D366] hover:bg-[#20ba5a] text-white p-3.5 rounded-full shadow-xl shadow-green-200/50 hover:shadow-green-300 transition-all duration-300 transform hover:scale-105 active:scale-95 animate-bounce md:hidden flex items-center justify-center border border-white"
         >
           <svg className="w-5.5 h-5.5 fill-white" viewBox="0 0 24 24">

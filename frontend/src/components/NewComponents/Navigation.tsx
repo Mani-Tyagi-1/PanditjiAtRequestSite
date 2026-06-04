@@ -179,6 +179,7 @@ export function Navigation() {
 
           {/* Mobile Menu Button */}
           <button
+            aria-label="Toggle navigation menu"
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden text-gray-700 hover:text-orange-600 transition-colors"
           >

@@ -12,8 +12,8 @@ import {
     MapPin,
     Star,
     Phone,
-    Wifi,
-    WifiOff,
+    // Wifi,
+    // WifiOff,
     CheckCircle2,
     AlertCircle,
     Info,
@@ -25,7 +25,7 @@ const MyBookingsPage: React.FC = () => {
     const [bookings, setBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [filterMode, setFilterMode] = useState<"all" | "online" | "offline">("all");
+    const [filterMode, _setFilterMode] = useState<"all" | "online" | "offline">("all");
 
     const [alertConfig, setAlertConfig] = useState<{
         show: boolean;

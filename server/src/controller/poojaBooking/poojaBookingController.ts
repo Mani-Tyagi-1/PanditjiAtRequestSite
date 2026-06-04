@@ -5,6 +5,7 @@ import pendingPoojaBookingModel from '../../model/poojaBooking/pendingPoojaBooki
 import poojaBookingModel, { IPoojaBooking } from '../../model/poojaBooking/poojaBooking.model';
 import User from '../../model/userApp/userModel';
 import Pooja from '../../model/userApp/poojaModel';
+import Pandit from '../../model/panditApp/panditModel';
 import UserReferralBooking from '../../model/userApp/userReferralBooking.model';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
@@ -365,7 +366,58 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
         });
         const bookingId = newBooking.razorpayOrderId || newBooking.id;
 
-        const param2 = `Your booking for ${poojaName} has been successfully placed.`;
+        // Fetch nearby pandit or use default
+        let assignedPanditName = "";
+        
+        try {
+          const pandits = await Pandit.find({}).lean();
+
+          if (poojaMode === 'offline' && address) {
+            let userLat = Number(address.lat || address.latitude || address.location?.lat);
+            let userLng = Number(address.lng || address.longitude || address.location?.lng);
+            
+            if (userLat && userLng) {
+               let nearestPandit = null;
+               let minDistance = Infinity;
+               
+               for (const p of pandits) {
+                 if (p.location?.latitude && p.location?.longitude) {
+                   const plat = p.location.latitude;
+                   const plng = p.location.longitude;
+                   const dLat = (plat - userLat) * Math.PI / 180;
+                   const dLng = (plng - userLng) * Math.PI / 180;
+                   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                             Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
+                             Math.sin(dLng/2) * Math.sin(dLng/2);
+                   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                   const distance = 6371 * c; // km
+                   
+                   if (distance < minDistance && distance <= 50) { // within 50km
+                     minDistance = distance;
+                     nearestPandit = p;
+                   }
+                 }
+               }
+               if (nearestPandit) {
+                 assignedPanditName = `${nearestPandit.prefix || ''} ${nearestPandit.firstName || ''} ${nearestPandit.lastName || ''}`.trim();
+               }
+            }
+          }
+          
+          if (!assignedPanditName && pandits.length > 0) {
+            // Pick a random pandit from active pandits
+            const randomPandit = pandits[Math.floor(Math.random() * pandits.length)];
+            assignedPanditName = `${randomPandit.prefix || ''} ${randomPandit.firstName || ''} ${randomPandit.lastName || ''}`.trim();
+          }
+        } catch(err) {
+          console.error('Error fetching nearby pandit for whatsapp msg:', err);
+        }
+        
+        if (!assignedPanditName) {
+           assignedPanditName = "Acharya Ramlok Sharma ji"; // Ultimate fallback if DB is empty
+        }
+
+        const param2 = `Your booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏`;
         const param3 = `Date: ${bookingDateStr}`;
         const param4 = `Booking ID: ${bookingId}`;
 

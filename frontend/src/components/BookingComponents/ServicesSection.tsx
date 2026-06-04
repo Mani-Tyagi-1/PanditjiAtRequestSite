@@ -23,7 +23,7 @@ export default function PujaServices() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchCategories = async () => {
       try {
         const apiUrl = API_URL;
@@ -60,7 +60,11 @@ export default function PujaServices() {
       }
     };
 
-    fetchCategories();
+    const timer = setTimeout(() => {
+        fetchCategories();
+    }, 3500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (

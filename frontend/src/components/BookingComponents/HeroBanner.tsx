@@ -25,7 +25,7 @@ const BANNERS = [
     // },
     {
         image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/poojaMainImage_1779258749947.webp",
-        link: "https://wa.me/919310065096?text=Namaste!%20I%20have%20a%20question%20about%20booking%20a%20puja.",
+        link: "/puja/6a0310c4e78148f7f6e6176b",
         alt: "Vedic Puja Booking Assistance"
     }
 ];
@@ -138,6 +138,8 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                                             src={puja.poojaCardImage}
                                                             alt={puja.poojaNameEng}
                                                             className="w-full h-full object-cover"
+                                                            loading="lazy"
+                                                            fetchPriority="low"
                                                         />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
@@ -192,12 +194,20 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                 <div
                                     key={index}
                                     className="w-full h-full shrink-0 cursor-pointer relative"
-                                    onClick={() => window.open(banner.link, "_blank")}
+                                    onClick={() => {
+                                        if (banner.link.startsWith('/')) {
+                                            navigate(banner.link);
+                                        } else {
+                                            window.open(banner.link, "_blank");
+                                        }
+                                    }}
                                 >
                                     <img
                                         src={banner.image}
                                         alt={banner.alt}
                                         className="w-full h-full object-cover"
+                                        fetchPriority={index === 0 ? "high" : "auto"}
+                                        loading={index === 0 ? "eager" : "lazy"}
                                     />
                                 </div>
                             ))}
@@ -208,6 +218,7 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                             {BANNERS.map((_, index) => (
                                 <button
                                     key={index}
+                                    aria-label={`Go to slide ${index + 1}`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setCurrentSlide(index);
@@ -231,21 +242,6 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                 onClick={() => navigate("/paid-consultation")}
                                 className="rounded-2xl  shadow-[0_8px_30px_rgb(0,0,0,0.06)] grid grid-cols-[44px_minmax(0,1fr)] gap-2 cursor-pointer hover:bg-green-50/40 transition-colors"
                             >
-                                {/* <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center flex-shrink-0">
-                                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.3}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-                                    </svg>
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="text-sm font-bold text-gray-800 leading-snug">
-                                        Book Your Consultation
-                                    </h3>
-                                    <p className="text-xs text-gray-500 mt-0.5 leading-snug">
-                                        Get dedicated guidance from our pandit
-                                    </p>
-                                </div> */}
-
                                 <span className="col-span-2 w-full bg-green-500 text-white text-xs font-bold px-3 py-2.5 rounded-xl shadow-sm text-center mt-1.5">
                                     Book your Personal Consultant Now
                                 </span>
@@ -260,6 +256,8 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                 src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/puja.webp"
                                 alt="Samagri"
                                 className="w-12 h-12 object-contain"
+                                loading="lazy"
+                                fetchPriority="low"
                                 onError={(e) => {
                                     // Fallback to emoji if image URL is invalid or not yet pasted
                                     (e.target as HTMLElement).style.display = 'none';
@@ -277,6 +275,8 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                 src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pandit.webp"
                                 alt="Verified Pandits"
                                 className="w-12 h-12 object-contain"
+                                loading="lazy"
+                                fetchPriority="low"
                                 onError={(e) => {
                                     // Fallback to emoji if image URL is invalid or not yet pasted
                                     (e.target as HTMLElement).style.display = 'none';
@@ -294,6 +294,8 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                 src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pay.webp"
                                 alt="Pay Later"
                                 className="w-12 h-12 object-contain"
+                                loading="lazy"
+                                fetchPriority="low"
                                 onError={(e) => {
                                     // Fallback to emoji if image URL is invalid or not yet pasted
                                     (e.target as HTMLElement).style.display = 'none';
@@ -383,6 +385,7 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                         src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
                                         alt="Logo"
                                         className="w-12 h-12 object-contain rounded-xl bg-white/20 p-1"
+                                        loading="lazy"
                                     />
                                     <div>
                                         <h2 className="text-base font-bold text-white leading-tight">
@@ -462,6 +465,7 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                             src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/image%201520.png"
                                             alt="App preview"
                                             className="h-16 object-contain"
+                                            loading="lazy"
                                         />
                                     </a>
                                     <p className="text-[11px] text-stone-500 text-center font-medium">

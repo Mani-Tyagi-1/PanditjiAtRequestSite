@@ -121,6 +121,8 @@ export default function PujaCard({
                         src={image}
                         alt={title}
                         className="puja-img w-full h-full"
+                        loading="lazy"
+                        fetchPriority="low"
                     />
                     {/* Gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />

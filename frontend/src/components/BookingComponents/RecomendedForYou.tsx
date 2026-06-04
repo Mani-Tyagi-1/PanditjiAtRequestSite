@@ -24,7 +24,13 @@ export default function RecomendedForYou() {
                 setLoading(false);
             }
         };
-        fetchPujas();
+
+        // Delay network request to allow LCP image to load first
+        const timer = setTimeout(() => {
+            fetchPujas();
+        }, 3500);
+
+        return () => clearTimeout(timer);
     }, []);
 
     if (loading) {

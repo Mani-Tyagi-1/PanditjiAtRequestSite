@@ -27,6 +27,7 @@ import paidConsultationRoutes from "./routes/userAppRoutes/paidConsultationRoute
 import panditRoute from "./routes/panditAppRoutes/PanditRoute";
 import userRoute from "./routes/userAppRoutes/UserDeleteRoute";
 import panditDirectBookingEnquiryRoutes from "./routes/userAppRoutes/panditDirectBookingEnquiryRoutes";
+import whatsappRoutes from "./routes/whatsapp/whatsapp.routes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -64,6 +65,7 @@ app.use("/api", referralRoutes);
 app.use("/api", pujaEnquiryRoutes);
 app.use("/api", paidConsultationRoutes);
 app.use("/api", panditDirectBookingEnquiryRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 

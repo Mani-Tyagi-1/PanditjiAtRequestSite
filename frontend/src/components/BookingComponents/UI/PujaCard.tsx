@@ -156,7 +156,7 @@ export default function PujaCard({
                             }}
                             onMouseDown={(e) => { e.stopPropagation(); setPressed(true); }}
                             onMouseUp={(e) => { e.stopPropagation(); setPressed(false); }}
-                            className="book-btn w-full bg-orange-500 hover:bg-orange-600 text-white text-[17px] font-medium px-2 py-1 rounded-xl shadow-md shadow-orange-200 flex items-center justify-center gap-1.5"
+                            className="book-btn w-full bg-orange-500 hover:bg-orange-600 text-white text-[17px] font-medium px-1 py-1 rounded-xl shadow-md shadow-orange-200 flex items-center justify-center gap-1.5"
                         >
                             Book Now
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

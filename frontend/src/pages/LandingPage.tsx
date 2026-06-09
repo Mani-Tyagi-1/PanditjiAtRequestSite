@@ -48,17 +48,18 @@ export default function LandingPage() {
   const [showConsultancyPopup, setShowConsultancyPopup] = useState(false);
   const [_showConsultancySection, setShowConsultancySection] = useState(false);
   const [showConsultancyModal, setShowConsultancyModal] = useState(false);
+  const popupDismissed = React.useRef(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 200 && !showConsultancyPopup) {
+      if (window.scrollY > 200 && !popupDismissed.current) {
         setShowConsultancyPopup(true);
         window.removeEventListener("scroll", handleScroll);
       }
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [showConsultancyPopup]);
+  }, []);
 
   /* ── App install popup (disabled) ────────────────────────────
   const [showAppPopup, setShowAppPopup] = useState(false);
@@ -126,6 +127,7 @@ export default function LandingPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    popupDismissed.current = true;
                     setShowConsultancyPopup(false);
                     setShowConsultancySection(true);
                   }}

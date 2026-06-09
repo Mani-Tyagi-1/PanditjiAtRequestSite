@@ -306,7 +306,7 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                 }}
                             />
                             <span className="text-[15px] font-bold text-stone-800 leading-none">Pay Later</span>
-                            <span className="text-[12px] text-stone-500 mt-0.5 whitespace-nowrap">100% Post-Puja</span>
+                            <span className="text-[12px] text-stone-500 mt-0.5 whitespace-nowrap">After pandit assign</span>
                         </div>
                     </div>
 

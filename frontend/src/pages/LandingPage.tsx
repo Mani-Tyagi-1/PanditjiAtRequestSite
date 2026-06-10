@@ -1,24 +1,24 @@
 import React, { Suspense } from "react";
-import HeroBanner from "../components/BookingComponents/HeroBanner";
-import { Navigation } from "../components/NewComponents/Navigation";
-import { StickyMobileCTA } from "../components/NewComponents/StickyMobileCTA";
+import HeroBanner from "../components/booking/HeroBanner";
+import { Navigation } from "../components/landing/Navigation";
+import { StickyMobileCTA } from "../components/landing/StickyMobileCTA";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
-import RecomendedForYou from "../components/BookingComponents/RecomendedForYou";
-import { PanditSection } from "../components/NewComponents/PanditSection";
-import ServicesSection from "../components/BookingComponents/ServicesSection";
-import { ServiceCitiesSection } from "../components/NewComponents/ServiceCitiesSection";
-import HowItWorks from "../components/BookingComponents/HowItWorksSection";
-import { SamagriIncludedSection } from "../components/NewComponents/SamagriIncludedSection";
-import { PreviousPujaVideosSection } from "../components/NewComponents/PreviousPujaVideosSection";
-import { FAQSection } from "../components/NewComponents/FAQSection";
-import Testimonials from "../components/BookingComponents/Testimonials";
-import BlogsPage from "../components/BookingComponents/BlogsPage";
-import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
+import RecomendedForYou from "../components/booking/RecomendedForYou";
+import { PanditSection } from "../components/landing/PanditSection";
+import ServicesSection from "../components/booking/ServicesSection";
+import { ServiceCitiesSection } from "../components/landing/ServiceCitiesSection";
+import HowItWorks from "../components/booking/HowItWorksSection";
+import { SamagriIncludedSection } from "../components/landing/SamagriIncludedSection";
+import { PreviousPujaVideosSection } from "../components/landing/PreviousPujaVideosSection";
+import { FAQSection } from "../components/landing/FAQSection";
+import Testimonials from "../components/booking/Testimonials";
+import BlogsPage from "../components/booking/BlogsPage";
+import ConsultancyModal from "../components/booking/ConsultancyModal";
 
 // Wrapper to prevent rendering and loading until the section is near the viewport
 function LazySection({ children, height = "400px" }: { children: React.ReactNode, height?: string }) {

@@ -1,5 +1,5 @@
 import { Schema, Types } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export type CallStatus =
   | "ringing"

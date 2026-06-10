@@ -1,5 +1,5 @@
 import { Schema, Model } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export interface IConsultancyLead {
   fullName: string;

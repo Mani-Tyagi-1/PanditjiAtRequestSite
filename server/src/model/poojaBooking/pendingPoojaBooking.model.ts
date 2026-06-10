@@ -1,5 +1,5 @@
 // import { Schema, Document, Types } from 'mongoose';
-// import { panditJiAtRequestMongooose } from '../../../config/connectDB';
+// import { panditJiAtRequestMongooose } from '../../config/connectDB';
 
 // export interface IPendingPoojaBooking extends Document {
 //   userId: Types.ObjectId;
@@ -138,7 +138,7 @@
 
 
 import { Schema, Document, Types } from 'mongoose';
-import { panditJiAtRequestMongooose } from '../../../config/connectDB';
+import { panditJiAtRequestMongooose } from '../../config/connectDB';
 
 export interface IPendingPoojaBooking extends Document {
   userId: Types.ObjectId;

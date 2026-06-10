@@ -1,5 +1,5 @@
 import { Document, Schema } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export interface IPanditDirectBookingEnquiry extends Document {
   name: string;

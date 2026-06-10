@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import axios from "axios";
 import AppDownloadTopBar from "./AppDownloadTopBar";
-import LoginModal from "../Auth/LoginModal";
+import LoginModal from "../auth/LoginModal";
 import { useAuth } from "../../context/AuthContext";
 
 const navLinks = [

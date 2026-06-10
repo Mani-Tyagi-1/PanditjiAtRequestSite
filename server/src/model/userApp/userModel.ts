@@ -1,6 +1,6 @@
 // src/model/Vedic-Vaibhav/userModel.ts (updated)
 import { Schema, Model, Types } from "mongoose";
-import { VedicVaibhavMongoose } from "../../../config/vedicVaibhavDB";
+import { VedicVaibhavMongoose } from "../../config/vedicVaibhavDB";
 
 // ✅ Added: Address interface + schema
 export interface IAddress {

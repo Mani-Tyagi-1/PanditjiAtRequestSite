@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const configController_1 = require("../../controller/userApp/configController");
+const router = (0, express_1.Router)();
+router.get("/maps", configController_1.getGoogleMapsConfig);
+router.get("/fetch-promo-proxy", configController_1.proxyFetchPromos);
+router.get("/fetch-coupons-proxy", configController_1.proxyFetchCoupons);
+router.get("/check-coupon-usage-proxy/:userId", configController_1.proxyCheckCouponUsage);
+router.post("/apply-coupon-proxy", configController_1.proxyApplyCoupon);
+exports.default = router;

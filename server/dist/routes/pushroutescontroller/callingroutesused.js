@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const callnotificcontroller_1 = require("../../controller/notificfirebase/callnotificcontroller");
+const router = (0, express_1.Router)();
+router.post("/invite", callnotificcontroller_1.inviteCall);
+router.post("/:callId/accept", callnotificcontroller_1.acceptCall);
+router.post("/:callId/reject", callnotificcontroller_1.rejectCall);
+router.post("/:callId/cancel", callnotificcontroller_1.cancelCall);
+exports.default = router;

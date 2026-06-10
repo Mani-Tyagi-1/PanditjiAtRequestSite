@@ -1,7 +1,7 @@
 // src/model/userApp/userAddressModel.ts
 
 import { Schema, Document, Types, Model } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export interface IAddress extends Document {
   user: Types.ObjectId;         // reference → User collection

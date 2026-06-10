@@ -1,5 +1,5 @@
 import { Schema, Document } from 'mongoose';
-import { panditJiAtRequestMongooose } from '../../../config/connectDB';
+import { panditJiAtRequestMongooose } from '../../config/connectDB';
 
 export interface IWhatsappBooking extends Document {
   source: 'whatsapp';

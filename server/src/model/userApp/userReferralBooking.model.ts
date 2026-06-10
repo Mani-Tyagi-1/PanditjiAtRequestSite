@@ -1,5 +1,5 @@
 import { Schema, Model, Types } from "mongoose";
-import { VedicVaibhavMongoose } from "../../../config/vedicVaibhavDB";
+import { VedicVaibhavMongoose } from "../../config/vedicVaibhavDB";
 
 /**
  * Tracks every puja booking that was triggered by an internal user referral.

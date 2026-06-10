@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { panditJiAtRequestMongooose } from "../../../config/connectDB"; // Using your custom connection
+import { panditJiAtRequestMongooose } from "../../config/connectDB"; // Using your custom connection
 
 // Interface for a serviceable city document
 export interface IServiceableCity extends Document {

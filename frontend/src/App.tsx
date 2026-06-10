@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
-import LoginModal from "./components/Auth/LoginModal";
+import LoginModal from "./components/auth/LoginModal";
 
 // Eagerly load the critical path pages
 import LandingPage from "./pages/LandingPage";
@@ -13,8 +13,8 @@ const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const DeleteMyAccount = React.lazy(() => import("./pages/DeleteMyAccount"));
 const DeleteUserAccount = React.lazy(() => import("./pages/DeleteUserAccount"));
 const TermsAndConditions = React.lazy(() => import("./pages/TermsAndConditions"));
-const CategoryPage = React.lazy(() => import("./components/BookingComponents/CategoryPage"));
-const PujaDetailPage = React.lazy(() => import("./components/BookingComponents/PujaPage"));
+const CategoryPage = React.lazy(() => import("./components/booking/CategoryPage"));
+const PujaDetailPage = React.lazy(() => import("./components/booking/PujaPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
 const MyBookingsPage = React.lazy(() => import("./pages/MyBookingsPage"));
 const VideoCallPage = React.lazy(() => import("./video/VideoCallPage"));

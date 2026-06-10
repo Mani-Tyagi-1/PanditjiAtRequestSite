@@ -4,8 +4,8 @@ import * as dotenv from "dotenv";
 import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
 
-import { panditJiAtRequestDB } from "../config/connectDB";
-import { VVMainConnectDB } from "../config/vedicVaibhavDB";
+import { panditJiAtRequestDB } from "./config/connectDB";
+import { VVMainConnectDB } from "./config/vedicVaibhavDB";
 
 // User/Pandit routes
 import panditRoutes from "./routes/panditAppRoutes/panditRoutes";

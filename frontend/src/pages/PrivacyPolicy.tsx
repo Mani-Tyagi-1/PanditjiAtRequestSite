@@ -1,6 +1,6 @@
 // import { motion } from 'framer-motion';
 // import { Shield } from 'lucide-react';
-// import { Navigation } from '../components/NewComponents/Navigation';
+// import { Navigation } from '../components/landing/Navigation';
 
 // const SectionCard = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
 //   <motion.div
@@ -531,7 +531,7 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
-import { Navigation } from '../components/NewComponents/Navigation';
+import { Navigation } from '../components/landing/Navigation';
 
 const SectionCard = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
   <motion.div

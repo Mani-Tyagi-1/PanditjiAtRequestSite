@@ -1,6 +1,6 @@
 // src/model/panditApp/poojaBooking.model.ts
 import { Schema, Document, Types } from 'mongoose';
-import { panditJiAtRequestMongooose } from '../../../config/connectDB';
+import { panditJiAtRequestMongooose } from '../../config/connectDB';
 import { IPendingPoojaBooking } from './pendingPoojaBooking.model';
 
 // Extends pending model but requires payment/order IDs

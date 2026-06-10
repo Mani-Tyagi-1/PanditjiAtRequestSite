@@ -9,12 +9,10 @@ import LoginModal from "./components/Auth/LoginModal";
 import LandingPage from "./pages/LandingPage";
 
 // Lazy load all other pages
-const Home = React.lazy(() => import("./pages/Home"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const DeleteMyAccount = React.lazy(() => import("./pages/DeleteMyAccount"));
 const DeleteUserAccount = React.lazy(() => import("./pages/DeleteUserAccount"));
 const TermsAndConditions = React.lazy(() => import("./pages/TermsAndConditions"));
-const BookingFlow = React.lazy(() => import("./components/NewComponents/BookingFlow").then(module => ({ default: module.BookingFlow })));
 const CategoryPage = React.lazy(() => import("./components/BookingComponents/CategoryPage"));
 const PujaDetailPage = React.lazy(() => import("./components/BookingComponents/PujaPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
@@ -79,11 +77,8 @@ function App() {
           <Route path="/termsandconditions" element={<TermsAndConditions />} />
           <Route path="/privacypolicy-pandit" element={<PanditPrivacyPolicy />} />
           <Route path="/termsandconditions-pandit" element={<TermsAndConditionPandit />} />
-
           <Route path="/delete-pandit-account" element={<DeleteMyAccount />} />
           <Route path="/delete-my-account" element={<DeleteUserAccount />} />
-          <Route path="/booking-flow" element={<BookingFlow />} />
-          <Route path="/join-as-panditji" element={<Home />} />
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/category/:categoryId" element={<CategoryPage />} />
           <Route path="/puja" element={<PujaDetailPage />} />
@@ -97,7 +92,6 @@ function App() {
           <Route path="/puja/:pujaId/enquiry" element={<PujaEnquiryPage />} />
           <Route path="/free-consultation" element={<FreeConsultationPage />} />
           <Route path="/paid-consultation" element={<PaidConsultationPage />} />
-          
           {/* Pandit Listings & Profiles */}
           <Route path="/all-pandits" element={<AllPanditsPage />} />
           <Route path="/pandit/:panditId" element={<PanditDetailPage />} />

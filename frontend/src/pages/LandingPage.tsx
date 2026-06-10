@@ -18,7 +18,6 @@ import { PreviousPujaVideosSection } from "../components/NewComponents/PreviousP
 import { FAQSection } from "../components/NewComponents/FAQSection";
 import Testimonials from "../components/BookingComponents/Testimonials";
 import BlogsPage from "../components/BookingComponents/BlogsPage";
-import Footer from "../components/Footer";
 import ConsultancyModal from "../components/BookingComponents/ConsultancyModal";
 
 // Wrapper to prevent rendering and loading until the section is near the viewport
@@ -202,12 +201,6 @@ export default function LandingPage() {
         <LazySection height="400px">
           <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
             <BlogsPage />
-          </Suspense>
-        </LazySection>
-
-        <LazySection height="200px">
-          <Suspense fallback={<div className="w-full flex justify-center py-10"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
-            <Footer />
           </Suspense>
         </LazySection>
         

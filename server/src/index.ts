@@ -28,6 +28,10 @@ import panditRoute from "./routes/panditAppRoutes/PanditRoute";
 import userRoute from "./routes/userAppRoutes/UserDeleteRoute";
 import panditDirectBookingEnquiryRoutes from "./routes/userAppRoutes/panditDirectBookingEnquiryRoutes";
 import whatsappRoutes from "./routes/whatsapp/whatsapp.routes";
+import liveMandirRoutes from "./routes/userAppRoutes/liveMandirRoutes";
+import chadhavaRoutes from "./routes/userAppRoutes/chadhavaRoutes";
+import shopRoutes from "./routes/userAppRoutes/shopRoutes";
+import holyPanditRoutes from "./routes/userAppRoutes/holyPanditRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -35,6 +39,7 @@ import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
 import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
 import PanditModel from "./model/panditApp/panditModel";
 import UserAddressModel from "./model/userApp/userAddressModel";
+import { autoSeedCatalog } from "./utils/seeder";
 
 dotenv.config();
 
@@ -66,6 +71,10 @@ app.use("/api", pujaEnquiryRoutes);
 app.use("/api", paidConsultationRoutes);
 app.use("/api", panditDirectBookingEnquiryRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api", liveMandirRoutes);
+app.use("/api", chadhavaRoutes);
+app.use("/api", shopRoutes);
+app.use("/api", holyPanditRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 
@@ -143,6 +152,7 @@ async function startServer() {
   try {
     console.log("Connecting to databases...");
     await panditJiAtRequestDB();
+    await autoSeedCatalog();
     await VVMainConnectDB();
 
     try {

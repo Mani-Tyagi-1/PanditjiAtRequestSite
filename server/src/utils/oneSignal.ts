@@ -53,7 +53,7 @@ async function postOneSignal(body: Record<string, any>) {
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      console.error("OneSignal error:", res.status, json);
+      // console.error("OneSignal error:", res.status, json);
       return { success: false as const, status: res.status, json };
     }
 

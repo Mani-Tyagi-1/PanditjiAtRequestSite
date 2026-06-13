@@ -1,18 +1,103 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import BookingModal from "./UI/BookingModal";
+import API_URL from "../../utils/apiConfig";
+import PujaEnquiryModal from "./PujaEnquiryModal";
+import { decryptData } from "../../utils/encryption";
 
 // ── Dummy Data ────────────────────────────────────────────────
-const STATIC_INCLUDES = [
-    "Trusted Pandit Ji",
-    "Verified Background",
-    "Vedic Rituals Followed",
-    "Samagri Included",
-    "Digital Prasad Kit",
-    "Post-Puja Guidance",
+// const STATIC_INCLUDES = [
+//     "Trusted Pandit Ji",
+//     "Verified Background",
+//     "Vedic Rituals Followed",
+//     "Samagri Included",
+//     "Digital Prasad Kit",
+//     "Post-Puja Guidance",
+// ];
+
+const DEATH_RITUAL_PUJA_ID = "6a0310c4e78148f7f6e6176b";
+const RITUAL_PLACES = [
+  { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
+  { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
+  { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
 ];
 
 // ── Sub-components ─────────────────────────────────────────────
+
+function ImageCarousel({ images, title }: { images: string[]; title: string }) {
+    const [active, setActive] = useState(0);
+    const [userScrolling, setUserScrolling] = useState(false);
+    const ref = useState<HTMLDivElement | null>(null);
+    const scrollEl = ref[0];
+    const setScrollEl = ref[1];
+
+    useEffect(() => {
+        if (images.length <= 1 || userScrolling) return;
+        const timer = setInterval(() => {
+            const next = (active + 1) % images.length;
+            setActive(next);
+            if (scrollEl) {
+                scrollEl.scrollTo({ left: next * scrollEl.offsetWidth, behavior: "smooth" });
+            }
+        }, 3500);
+        return () => clearInterval(timer);
+    }, [active, images.length, userScrolling, scrollEl]);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const el = e.currentTarget;
+        const idx = Math.round(el.scrollLeft / el.offsetWidth);
+        setActive(idx);
+    };
+
+    if (images.length === 0) return null;
+
+    return (
+        <div className="relative rounded-2xl overflow-hidden shadow-md border border-orange-100">
+            {/* Scrollable strip */}
+            <div
+                ref={setScrollEl}
+                onScroll={handleScroll}
+                onTouchStart={() => setUserScrolling(true)}
+                onTouchEnd={() => setTimeout(() => setUserScrolling(false), 4000)}
+                className="flex overflow-x-auto snap-x snap-mandatory h-52 bg-gradient-to-b from-amber-100 to-orange-50"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+                <style>{`.carousel-hide::-webkit-scrollbar{display:none}`}</style>
+                {images.map((src, i) => (
+                    <div key={i} className="shrink-0 w-full h-full snap-center flex items-center justify-center">
+                        <img
+                            src={src}
+                            alt={`${title} ${i + 1}`}
+                            className="h-full w-full"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                    </div>
+                ))}
+            </div>
+
+            {/* Dots — only when multiple images */}
+            {images.length > 1 && (
+                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                    {images.map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => {
+                                setActive(i);
+                                setUserScrolling(true);
+                                if (scrollEl) scrollEl.scrollTo({ left: i * scrollEl.offsetWidth, behavior: "smooth" });
+                                setTimeout(() => setUserScrolling(false), 4000);
+                            }}
+                            className={`rounded-full transition-all duration-300 ${
+                                i === active ? "w-4 h-1.5 bg-orange-500" : "w-1.5 h-1.5 bg-white/70"
+                            }`}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
@@ -25,26 +110,26 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     );
 }
 
-function IncludePill({ text }: { text: string }) {
-    return (
-        <span className="flex items-center gap-1.5 bg-white border border-orange-100 text-stone-600 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
-            <svg
-                className="w-3.5 h-3.5 text-orange-400 shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-            >
-                <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-            </svg>
-            {text}
-        </span>
-    );
-}
+// function IncludePill({ text }: { text: string }) {
+//     return (
+//         <span className="flex items-center gap-1.5 bg-white border border-orange-100 text-stone-600 text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+//             <svg
+//                 className="w-3.5 h-3.5 text-orange-400 shrink-0"
+//                 fill="none"
+//                 viewBox="0 0 24 24"
+//                 stroke="currentColor"
+//                 strokeWidth={2.5}
+//             >
+//                 <path
+//                     strokeLinecap="round"
+//                     strokeLinejoin="round"
+//                     d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+//                 />
+//             </svg>
+//             {text}
+//         </span>
+//     );
+// }
 
 function AccordionRow({
     title,
@@ -105,15 +190,105 @@ function AccordionRow({
     );
 }
 
-import BookingModal from "./UI/BookingModal";
+// ── Helpers ───────────────────────────────────────────────────
+const INTREF_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
+
+function saveIntrefData(code: string, pujaId: string, bookingUrl: string) {
+    const expires = new Date(Date.now() + INTREF_TTL_MS).toUTCString();
+    const entry = { code, pujaId, bookingUrl, storedAt: Date.now() };
+    document.cookie = `pjar_intref_data=${encodeURIComponent(JSON.stringify(entry))}; expires=${expires}; path=/; SameSite=Lax`;
+}
 
 // ── Main Page ──────────────────────────────────────────────────
 export default function PujaDetailPage() {
     const { pujaId } = useParams();
     const navigate = useNavigate();
-    const { user, openLoginModal } = useAuth();
+    const location = useLocation();
+    const { user } = useAuth();
+
+    const handleBack = () => {
+        if (location.key !== "default") {
+            navigate(-1);
+        } else {
+            navigate("/");
+        }
+    };
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [pendingBooking, setPendingBooking] = useState(false);
+    const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
+    const [isPromoOpen, setIsPromoOpen] = useState(false);
+
+    // Share state
+    const [isSharingCode, setIsSharingCode] = useState(false);
+    const [shareLinkCopied, setShareLinkCopied] = useState(false);
+
+    // ── Read ?intref=CODE from URL → store in cookie → clean URL ─
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const intref = params.get("intref");
+        if (!intref) return;
+
+        if (/^[A-Z0-9]{3,20}$/.test(intref)) {
+            const bookingUrl = `${window.location.origin}/puja/${pujaId}`;
+            saveIntrefData(intref, pujaId ?? "", bookingUrl);
+        }
+
+        // Remove intref from URL without adding a history entry
+        params.delete("intref");
+        const cleanSearch = params.toString();
+        const cleanPath = location.pathname + (cleanSearch ? `?${cleanSearch}` : "");
+        navigate(cleanPath, { replace: true });
+    }, []); // run only once on mount — the param is in the initial URL
+
+    // ── Share handler ─────────────────────────────────────────
+    const handleShare = async () => {
+        if (isSharingCode) return;
+        const baseUrl = `${window.location.origin}/puja/${pujaId}`;
+
+        // If not logged in, share plain URL
+        if (!user) {
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: pujaData?.poojaNameEng || "Puja", url: baseUrl });
+                } else {
+                    await navigator.clipboard.writeText(baseUrl);
+                    setShareLinkCopied(true);
+                    setTimeout(() => setShareLinkCopied(false), 2500);
+                }
+            } catch { /* user cancelled */ }
+            return;
+        }
+
+        setIsSharingCode(true);
+        try {
+            const token = localStorage.getItem("user_token");
+            const stored = localStorage.getItem("user_data");
+            if (!token || !stored) throw new Error("not logged in");
+
+            const userId = JSON.parse(stored)._id;
+            const apiUrl = API_URL;
+            const res = await fetch(`${apiUrl}/users/${userId}/my-referral`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const json = await res.json();
+            const decrypted = json?.encrypted ? decryptData(json.encrypted) : null;
+            const code: string | undefined = decrypted?.userReferralCode;
+
+            const shareUrl = code ? `${baseUrl}?intref=${code}` : baseUrl;
+            const shareText = `Book ${pujaData?.poojaNameEng || "this Puja"} with PanditJi At Request!\n${shareUrl}`;
+
+            if (navigator.share) {
+                await navigator.share({ title: pujaData?.poojaNameEng || "Puja", text: shareText, url: shareUrl });
+            } else {
+                await navigator.clipboard.writeText(shareUrl);
+                setShareLinkCopied(true);
+                setTimeout(() => setShareLinkCopied(false), 2500);
+            }
+        } catch { /* user cancelled or error */ }
+        finally {
+            setIsSharingCode(false);
+        }
+    };
 
     useEffect(() => {
         if (user && pendingBooking) {
@@ -121,13 +296,19 @@ export default function PujaDetailPage() {
             setIsBookingModalOpen(true);
         }
     }, [user, pendingBooking]);
+
+    // App download promo popup disabled.
+    // useEffect(() => {
+    //     const timer = setTimeout(() => setIsPromoOpen(true), 3000);
+    //     return () => clearTimeout(timer);
+    // }, []);
     const [pujaData, setPujaData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchPooja = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+                const apiUrl = API_URL;
                 const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
                 const data = await response.json();
 
@@ -170,10 +351,27 @@ export default function PujaDetailPage() {
         );
     }
 
-    const price = pujaData.poojaPriceOnline || pujaData.poojaPriceOffline || 0;
+
     const title = pujaData.poojaNameEng || "";
     const deity = pujaData.poojaGods?.[0] || "Divine Deity";
-    const image = pujaData.poojaMainImage || pujaData.poojaCardImage || "";
+    
+    // Support poojaMainImage being either a string, an array of strings, or fall back to poojaCardImage
+    let mainImages: string[] = [];
+    if (Array.isArray(pujaData.poojaMainImage)) {
+        mainImages = pujaData.poojaMainImage;
+    } else if (typeof pujaData.poojaMainImage === "string" && pujaData.poojaMainImage) {
+        mainImages = [pujaData.poojaMainImage];
+    } else if (typeof pujaData.poojaCardImage === "string" && pujaData.poojaCardImage) {
+        mainImages = [pujaData.poojaCardImage];
+    }
+
+    // Collect all images from backend; fall back to resolved main images
+    const images: string[] = (
+        Array.isArray(pujaData.poojaImages) && pujaData.poojaImages.length > 0
+            ? pujaData.poojaImages
+            : mainImages
+    ).filter(Boolean);
+    const showRitualPlaces = pujaId === DEATH_RITUAL_PUJA_ID;
 
     return (
         <>
@@ -189,7 +387,106 @@ export default function PujaDetailPage() {
         .fade-up { animation: fadeUp 0.45s ease both; }
         .img-zoom { transition: transform 0.5s cubic-bezier(.22,1,.36,1); }
         .img-wrap:hover .img-zoom { transform: scale(1.04); }
+        @keyframes enquiryPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.7), 0 2px 14px rgba(22,163,74,0.4); transform: scale(1); }
+          50%       { box-shadow: 0 0 0 8px rgba(22,163,74,0), 0 2px 20px rgba(22,163,74,0.6); transform: scale(1.04); }
+        }
+        @keyframes shimmer {
+          0%   { background-position: -200% center; }
+          100% { background-position:  200% center; }
+        }
+        .enquiry-btn {
+          animation: enquiryPulse 1.8s ease-in-out infinite;
+          background: linear-gradient(90deg, #16a34a, #22c55e, #4ade80, #22c55e, #16a34a);
+          background-size: 200% auto;
+        }
+        .enquiry-btn:hover {
+          animation: enquiryPulse 1.8s ease-in-out infinite, shimmer 1.2s linear infinite;
+        }
       `}</style>
+
+            {/* ── 30% Off Promo Modal ── */}
+            {false && isPromoOpen && (
+                <div
+                    className="fixed inset-0 z-[200] flex items-end justify-center"
+                    style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+                    onClick={() => setIsPromoOpen(false)}
+                >
+                    <style>{`
+                        @keyframes promoSlideUp {
+                            from { transform: translateY(100%); opacity: 0.5; }
+                            to   { transform: translateY(0);    opacity: 1; }
+                        }
+                        @keyframes promoBadgePop {
+                            0%   { transform: scale(0.7) rotate(-6deg); opacity: 0; }
+                            60%  { transform: scale(1.12) rotate(2deg); opacity: 1; }
+                            100% { transform: scale(1) rotate(-3deg);   opacity: 1; }
+                        }
+                        @keyframes promoShimmer {
+                            0%   { background-position: -200% center; }
+                            100% { background-position:  200% center; }
+                        }
+                        .promo-badge { animation: promoBadgePop 0.55s cubic-bezier(.22,1,.36,1) both; }
+                        .promo-cta {
+                            background: linear-gradient(90deg,#ea580c,#f97316,#fb923c,#f97316,#ea580c);
+                            background-size: 200% auto;
+                            animation: promoShimmer 2s linear infinite;
+                        }
+                    `}</style>
+                    <div
+                        className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden"
+                        style={{ animation: "promoSlideUp 0.35s cubic-bezier(0.32,0.72,0,1) both" }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/30%25.png" alt="Promo Image" className="w-full h-auto" />
+                        
+
+                        {/* Body */}
+                        <div className="px-5 py-5 space-y-3">
+                            {/* Perks */}
+                            {[
+                                "Instant booking confirmation",
+                                "Real-time pandit tracking",
+                                "Exclusive in-app discounts",
+                            ].map((perk) => (
+                                <div key={perk} className="flex items-center gap-3">
+                                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                        <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <span className="text-stone-600 text-sm">{perk}</span>
+                                </div>
+                            ))}
+
+                            {/* Download CTA */}
+                            <a
+                                href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => {
+                                    if (window.fbq) {
+                                        window.fbq("track", "App Download");
+                                    }
+                                }}
+                                className="promo-cta mt-2 w-full flex items-center justify-center gap-2 text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform"
+                            >
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M3.18 23.76a2 2 0 0 1-.93-1.76V2a2 2 0 0 1 .93-1.76l.1-.06 11.67 11.67v.28L3.28 23.82l-.1-.06zM15.93 16.02l-3.89-3.89 1.17-1.17 4.63 2.67a1.14 1.14 0 0 1 0 1.96l-4.63 2.67-1.17-1.17 3.89-3.07zM2.61.62l12.65 7.3-2.82 2.82L2.61.62zm0 22.76 9.83-9.84 2.82 2.82L2.61 23.38z"/>
+                                </svg>
+                                Download App & Save 30%
+                            </a>
+
+                            <button
+                                onClick={() => setIsPromoOpen(false)}
+                                className="w-full text-stone-400 text-xs py-2 hover:text-stone-600 transition-colors"
+                            >
+                                No thanks, continue without discount
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <BookingModal
                 isOpen={isBookingModalOpen}
@@ -197,12 +494,22 @@ export default function PujaDetailPage() {
                 pooja={pujaData}
             />
 
+            <PujaEnquiryModal
+                isOpen={isEnquiryOpen}
+                onClose={() => setIsEnquiryOpen(false)}
+                pujaId={pujaId || ""}
+                pujaName={pujaData?.poojaNameEng || ""}
+                prefillName={user?.name || user?.fullName || ""}
+                prefillPhone={user?.phone || user?.mobileNumber || ""}
+                prefillCity={user?.city || ""}
+            />
+
             <div className="detail-page flex justify-center">
                 <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm pb-32">
                     {/* ── Header ── */}
                     <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
                         <button
-                            onClick={() => navigate(-1)}
+                            onClick={handleBack}
                             className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
                         >
                             <svg
@@ -220,6 +527,36 @@ export default function PujaDetailPage() {
                             </svg>
                         </button>
 
+                        {/* Share button — top right */}
+                        <button
+                            onClick={handleShare}
+                            disabled={isSharingCode}
+                            className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm active:scale-90 transition-all disabled:opacity-60"
+                            title="Share this puja"
+                        >
+                            {isSharingCode ? (
+                                <svg className="w-4 h-4 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                </svg>
+                            ) : shareLinkCopied ? (
+                                <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            ) : (
+                                <svg className="w-4 h-4 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                </svg>
+                            )}
+                        </button>
+
+                        {/* "Link copied" toast */}
+                        {shareLinkCopied && (
+                            <div className="absolute right-2 top-14 bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg z-50 animate-fade-in">
+                                Link copied!
+                            </div>
+                        )}
+
                         <h1
                             className="text-orange-600 font-extrabold"
                             style={{
@@ -233,23 +570,53 @@ export default function PujaDetailPage() {
                             {deity}
                         </p>
 
-                        <div className="flex items-center justify-center gap-3 mt-2">
-                            <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-orange-400/50" />
-                            <span className="text-orange-500">🕉</span>
-                            <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-orange-400/50" />
-                        </div>
+                        {/* Enquiry CTA */}
+                        <button
+                            onClick={() => navigate(`/puja/${pujaId}/enquiry`)}
+                            className="enquiry-btn mt-3 inline-flex items-center gap-2 text-white font-bold text-sm px-5 py-2.5 rounded-full active:scale-95"
+                        >
+                            Enquire Now for {title}
+                        </button>
                     </div>
 
                     {/* ── Content ── */}
-                    <div className="px-4 space-y-5 fade-up">
-                        {/* Hero Image */}
-                        <div className="img-wrap rounded-2xl overflow-hidden shadow-md border border-orange-100 aspect-square bg-gradient-to-b from-amber-100 to-orange-50 flex items-center justify-center">
-                            <img
-                                src={image}
-                                alt={title}
-                                className="img-zoom w-full h-full object-contain"
-                            />
-                        </div>
+                    <div className="px-4 space-y-3 fade-up">
+                        {/* Hero Image Carousel */}
+                        <ImageCarousel images={images} title={title} />
+
+                        {showRitualPlaces && (
+                            <div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {RITUAL_PLACES.map((place) => (
+                                        <div
+                                            key={place.id}
+                                            className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm"
+                                        >
+                                            <div className="w-30 h-18 bg-orange-50">
+                                                {place.imageUrl ? (
+                                                    <img
+                                                        src={place.imageUrl}
+                                                        alt={place.label}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-orange-300">
+                                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="px-3 py-1">
+                                                <p className="text-xs font-bold text-stone-700">
+                                                    {place.label}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Stats row */}
                         <div className="flex items-center gap-2 flex-wrap">
@@ -278,14 +645,14 @@ export default function PujaDetailPage() {
                         </div>
 
                         {/* Includes */}
-                        <div>
+                        {/* <div>
                             <SectionLabel>What's Included</SectionLabel>
                             <div className="flex flex-wrap gap-2">
                                 {STATIC_INCLUDES.map((inc) => (
                                     <IncludePill key={inc} text={inc} />
                                 ))}
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Dynamic Accordions */}
                         <div>
@@ -311,42 +678,110 @@ export default function PujaDetailPage() {
                                 )}
                             </div>
                         </div>
+                        {/* Puja Videos — show only if backend sends videos */}
+                        {(() => {
+                            const finalVideos: string[] = [];
+                            if (Array.isArray(pujaData.poojaVideos)) {
+                                finalVideos.push(...pujaData.poojaVideos.filter(Boolean));
+                            }
+                            if (typeof pujaData.poojaVideoLink === "string" && pujaData.poojaVideoLink) {
+                                if (!finalVideos.includes(pujaData.poojaVideoLink)) {
+                                    finalVideos.push(pujaData.poojaVideoLink);
+                                }
+                            }
+
+                            if (finalVideos.length === 0) return null;
+
+                            const getYouTubeEmbedUrl = (url: string) => {
+                                if (!url) return null;
+                                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                const match = url.match(regExp);
+                                if (match && match[2].length === 11) {
+                                    return `https://www.youtube.com/embed/${match[2]}`;
+                                }
+                                return null;
+                            };
+
+                            return (
+                                <div>
+                                    <SectionLabel>Puja Videos</SectionLabel>
+                                    <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                        {finalVideos.map((videoUrl: string, idx: number) => {
+                                            const embedUrl = getYouTubeEmbedUrl(videoUrl);
+                                            if (embedUrl) {
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
+                                                    >
+                                                        <iframe
+                                                            src={embedUrl}
+                                                            title={`Puja Video ${idx + 1}`}
+                                                            className="w-full h-full border-0"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                        />
+                                                    </div>
+                                                );
+                                            }
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
+                                                >
+                                                    <video
+                                                        src={videoUrl}
+                                                        controls
+                                                        playsInline
+                                                        preload="metadata"
+                                                        className="w-full h-full object-cover"
+                                                        style={{ background: "#1c1917" }}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* FAQs */}
+                        {pujaData.faqs && pujaData.faqs.length > 0 && (
+                            <div>
+                                <SectionLabel>Frequently Asked Questions</SectionLabel>
+                                <div className="space-y-4">
+                                    {pujaData.faqs.map((faq: any, index: number) => (
+                                        <div key={index} className="bg-white border border-orange-100 rounded-2xl px-4 py-3.5 shadow-sm">
+                                            <p className="text-stone-700 font-semibold text-sm">
+                                                <span className="text-orange-500 font-bold">Q: </span>
+                                                {faq.question}
+                                            </p>
+                                            <p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">
+                                                <span className="text-orange-400 font-semibold">A: </span>
+                                                {faq.answer}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* ── Sticky Bottom CTA ── */}
                     <div className="fixed bottom-0 left-0 right-0 z-50">
-                        <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3 flex items-center gap-3">
-                            <div>
-                                <p className="text-[10px] text-stone-400 font-light">
-                                    Starting at
-                                </p>
-                                <p
-                                    className="text-orange-600 font-bold text-lg leading-none"
-                                    style={{ fontFamily: "'DM Sans', sans-serif" }}
-                                >
-                                    ₹{price.toLocaleString("en-IN")}
-                                </p>
-                            </div>
+                        <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3">
                             <button
                                 onClick={() => {
                                     if (window.fbq) {
-                                        window.fbq("track", "BookingDetailPageOpened", {
+                                        window.fbq("track", "AddToCart", {
                                             content_ids: [pujaId],
                                             content_name: title,
-                                            productname: [title],
                                             content_type: "product",
-                                            value: price,
-                                            currency: "INR",
                                         });
                                     }
-                                    if (user) {
-                                        setIsBookingModalOpen(true);
-                                    } else {
-                                        setPendingBooking(true);
-                                        openLoginModal();
-                                    }
+                                    setIsBookingModalOpen(true);
                                 }}
-                                className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
+                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
                             >
                                 Book Pandit Ji
                                 <svg

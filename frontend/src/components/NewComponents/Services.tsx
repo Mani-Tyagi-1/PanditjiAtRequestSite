@@ -2,9 +2,11 @@ import { motion } from "framer-motion";
 import { Flame, Home, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../../utils/apiConfig";
 
 interface Category {
   _id: string;
+  category_id?: string;
   category_name_en: string;
   isActive: boolean;
 }
@@ -20,7 +22,7 @@ export function Services() {
         const list: Category[] = cached
           ? JSON.parse(cached)
           : await (async () => {
-            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+            const apiUrl = API_URL;
             const res = await fetch(`${apiUrl}/fetch-all-pooja-category`);
             const data = await res.json();
             const cats: Category[] = data?.poojaCategory ?? (Array.isArray(data) ? data : []);
@@ -29,9 +31,11 @@ export function Services() {
             return active;
           })();
 
+        const serviceCategories = list.filter((cat) => cat.category_id !== "cat-9");
+
         // Build keyword → category _id map
         const map: Record<string, string> = {};
-        list.forEach((cat) => {
+        serviceCategories.forEach((cat) => {
           const name = cat.category_name_en.toLowerCase();
           map[name] = cat._id;
         });

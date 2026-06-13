@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import API_URL from "../../utils/apiConfig";
 import { useNavigate } from "react-router-dom";
 
 interface Category {
@@ -11,21 +12,21 @@ interface Category {
   isActive: boolean;
 }
 
-const items = [
-  { title: "Verified" },
-  { title: "Trusted" },
-  { title: "5+ Year Experience" },
-];
+// const items = [
+//   { title: "Verified" },
+//   { title: "Trusted" },
+//   { title: "5+ Year Experience" },
+// ];
 
 export default function PujaServices() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+        const apiUrl = API_URL;
         const response = await fetch(`${apiUrl}/fetch-all-pooja-category`);
         const data = await response.json();
 
@@ -37,7 +38,9 @@ export default function PujaServices() {
           categoryList = data;
         }
 
-        const activeCategories = categoryList.filter((cat) => cat.isActive);
+        const activeCategories = categoryList.filter(
+          (cat) => cat.isActive && cat.category_id !== "cat-9"
+        );
         setCategories(activeCategories);
 
         // optional cache
@@ -47,19 +50,26 @@ export default function PujaServices() {
 
         const cached = sessionStorage.getItem("pooja_categories");
         if (cached) {
-          setCategories(JSON.parse(cached));
+          const cachedCategories: Category[] = JSON.parse(cached);
+          setCategories(
+            cachedCategories.filter((cat) => cat.category_id !== "cat-9")
+          );
         }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCategories();
+    const timer = setTimeout(() => {
+        fetchCategories();
+    }, 3500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <>
-      <div className="w-full flex justify-center bg-gradient-to-b from-white via-orange-200 via-orange-300 via-orange-300 pt-7 pb-5">
+      <div className="w-full flex justify-center bg-gradient-to-b from-white via-orange-200 via-orange-300 via-orange-300  b-5">
         <div className="w-full max-w-md px-4">
           <div className="flex items-center justify-center mb-4">
             <div className="flex-1 h-[2px] bg-yellow-500"></div>
@@ -120,7 +130,7 @@ export default function PujaServices() {
           </div>
         </div>
       </div>
-
+{/* 
       <div className="w-full flex justify-center">
         <div className="bg-white/80 backdrop-blur-md flex items-center justify-center gap-5 pb-2">
           {items.map((item, i) => (
@@ -146,7 +156,7 @@ export default function PujaServices() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
     </>
   );
 }

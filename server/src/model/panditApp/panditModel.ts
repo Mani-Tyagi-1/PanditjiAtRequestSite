@@ -75,3 +75,7 @@ export default panditJiAtRequestMongooose.model<IPandit>(
   "Pandit",
   PanditSchema
 );
+
+export function findByIdAndUpdate(panditId: string, arg1: { "location.latitude": number; "location.longitude": number; }) {
+  throw new Error("Function not implemented.");
+}

@@ -2,8 +2,8 @@ import dns from 'node:dns';
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from "express";
-import http from "http";
-import dotenv from "dotenv";
+import * as http from "http";
+import * as dotenv from "dotenv";
 import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -18,15 +18,25 @@ import mobileOtpRoutes from "./routes/userAppRoutes/mobileOtpRoutes";
 import userAddressRoutes from "./routes/userAppRoutes/userAddressRoutes";
 import userRoutes from "./routes/userAppRoutes/userRoutes";
 import configRoutes from "./routes/userAppRoutes/configRoutes";
+import testimonialRoutes from "./routes/userAppRoutes/testimonialRoutes";
 import poojaBookingRoutes from "./routes/poojaBookingRouts/poojaBookingRoutes";
 import callingRoutes from "./routes/pushroutescontroller/callingroutesused";
 import pushRoutes from "./routes/pushroutescontroller/pushnotificationfirebaseroutes";
 import { generateStreamToken } from "./controller/userApp/StreamTokenController";
+import consultancyLeadRoutes from "./routes/userAppRoutes/consultancyLeadRoutes";
+import referralRoutes from "./routes/userAppRoutes/referralRoutes";
+import pujaEnquiryRoutes from "./routes/userAppRoutes/pujaEnquiryRoutes";
+import paidConsultationRoutes from "./routes/userAppRoutes/paidConsultationRoutes";
+import panditRoute from "./routes/panditAppRoutes/PanditRoute";
+import userRoute from "./routes/userAppRoutes/UserDeleteRoute";
+import panditDirectBookingEnquiryRoutes from "./routes/userAppRoutes/panditDirectBookingEnquiryRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
 import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
 import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
+import PanditModel from "./model/panditApp/panditModel";
+import UserAddressModel from "./model/userApp/userAddressModel";
 
 dotenv.config();
 
@@ -38,33 +48,43 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }));
 
-// Mount the Pandit routes
+// Routes
 app.use("/api/pandit", panditRoutes);
 app.use("/api/", poojaRoutes);
 app.use("/api/", pujaCategoryRoutes);
 app.use("/api/", mobileOtpRoutes);
 app.use("/api/addresses", userAddressRoutes);
 app.use("/api/config", configRoutes);
+app.use("/api", testimonialRoutes);
 
 app.use("/api", poojaBookingRoutes);
 app.use("/api", userRoutes);
 app.use("/api/calls", callingRoutes);
 app.use("/api", pushRoutes);
 app.use("/api/stream", streamRoutes);
+app.use("/api", consultancyLeadRoutes);
+app.use("/api", referralRoutes);
+app.use("/api", pujaEnquiryRoutes);
+app.use("/api", paidConsultationRoutes);
+app.use("/api", panditDirectBookingEnquiryRoutes);
+
 app.get("/gen-stream-token/:userId", generateStreamToken);
 
-// PANDIT ROUTES
-app.use('/', panditAuthRoutes);
-app.use('/', panditAddressRoutes);
+// Pandit routes
+app.use("/", panditAuthRoutes);
+app.use("/", panditAddressRoutes);
 
-const PORT = process.env.PORT || 8000;
+app.use("/api", panditRoute);
+app.use("/api/user", userRoute);
+
+const PORT = process.env.PORT || 8001;
 
 const server = http.createServer(app);
+
 const io = new SocketIOServer(server, {
   cors: { origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"] },
 });
 
-// expose io to controllers via app locals
 app.set("io", io);
 
 io.on("connection", (socket) => {
@@ -76,7 +96,6 @@ io.on("connection", (socket) => {
     console.log(`👳 Pandit joined ${room}`);
   });
 
-  // ✅ allow pandits to join the global "active" room for timed requests
   socket.on("pandit:join_active_pool", () => {
     socket.join("active_pandits");
     console.log(`👳 Pandit ${socket.id} joined active_pandits`);
@@ -92,22 +111,19 @@ io.on("connection", (socket) => {
     const { panditId, latitude, longitude } = data;
     const room = `pandit:${panditId}`;
 
-    // Emit to all users in the pandit's room
     io.to(room).emit("user:pandit_location", {
       panditId,
       latitude,
       longitude,
     });
 
-    // Optionally update database (could be throttled in a real app)
     try {
-      const panditModel = (await import("./model/panditApp/panditModel")).default;
-      await panditModel.findByIdAndUpdate(panditId, {
+      await PanditModel.findByIdAndUpdate(panditId, {
         "location.latitude": latitude,
         "location.longitude": longitude,
       });
     } catch (err) {
-      console.error("Failed to update pandit location in DB:", err);
+      console.error("Failed to update pandit location:", err);
     }
   });
 
@@ -116,14 +132,13 @@ io.on("connection", (socket) => {
   });
 });
 
-// Properly typed error handler so TS picks the right overload
+// Error handler
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next: NextFunction) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ message: "Internal Server Error" });
 };
-app.use(errorHandler);
 
-// const PORT = process.env.PORT || 8000;
+app.use(errorHandler);
 
 async function startServer() {
   try {
@@ -131,31 +146,28 @@ async function startServer() {
     await panditJiAtRequestDB();
     await VVMainConnectDB();
 
-    // Drop the old unique index to allow multiple addresses in the same category
     try {
-      const UserAddressModel = (await import("./model/userApp/userAddressModel")).default;
       await UserAddressModel.collection.dropIndex("user_1_addressName_1");
-      console.log("✅ Successfully dropped old unique address index.");
-    } catch (err) {
-      // Ignore if index doesn't exist
-    }
+      console.log("✅ Old index dropped");
+    } catch { }
 
-    console.log("Starting the server...");
+    console.log("Starting server...");
     server.listen(PORT, () => {
-      console.log(`🌐 Server listening on http://localhost:${PORT}`);
+      console.log(`🌐 Server running on http://localhost:${PORT}`);
     });
 
-    // graceful shutdown
     const shutdown = () => {
       console.log("Shutting down...");
       io.close(() => {
         server.close(() => process.exit(0));
       });
     };
-    process.on("SIGINT", () => shutdown());
-    process.on("SIGTERM", () => shutdown());
+
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
+
   } catch (error) {
-    console.error("Error starting the server:", error);
+    console.error("Startup error:", error);
     process.exit(1);
   }
 }

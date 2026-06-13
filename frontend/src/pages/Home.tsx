@@ -12,6 +12,7 @@ import Footer from "../components/Footer";
 // import {Navigation} from "../components/NewComponents/Navigation";
 // import { Hero } from "../components/NewComponents/Hero";
 import { Services } from "../components/NewComponents/Services";
+import { DeathRituals } from "../components/NewComponents/DeathRituals";
 import { JoinPandit } from "../components/NewComponents/JoinPandit";
 import { AboutUs } from "../components/NewComponents/About";
 import { BookingFlow } from "../components/NewComponents/BookingFlow";
@@ -34,6 +35,7 @@ export default function Home() {
     <>
       <Navbar/>
       <HeroSection />
+      <DeathRituals />
       <Services />
       <BookingFlow />
       <JoinPandit />

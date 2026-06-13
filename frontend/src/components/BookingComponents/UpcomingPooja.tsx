@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PujaCard from "./UI/PujaCard";
 import axios from "axios";
+import API_URL from "../../utils/apiConfig";
 
 // ─── Upcoming Pujas Section ───────────────────────────────────
 export default function FeaturedPujas() {
@@ -10,7 +11,7 @@ export default function FeaturedPujas() {
     useEffect(() => {
         const fetchPujas = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+                const apiUrl = API_URL;
                 const response = await axios.get(`${apiUrl}/fetch-all-poojas`);
                 setPujas(response.data.poojas || []);
             } catch (error) {
@@ -86,7 +87,6 @@ export default function FeaturedPujas() {
                                         id={puja._id}
                                         title={puja.poojaNameEng}
                                         subtitle={puja.poojaSubDescription || puja.poojaDescriptionMain}
-                                        price={puja.poojaPriceOnline || puja.poojaPriceOffline || 0}
                                         image={puja.poojaCardImage}
                                         badge={puja.isFeatured ? "Featured" : undefined}
                                         onBook={() => { }}

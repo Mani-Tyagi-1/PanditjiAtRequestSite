@@ -1,14 +1,19 @@
 import { RequestHandler } from 'express';
 import { Server as SocketIOServer } from 'socket.io';
+import axios from 'axios';
 import pendingPoojaBookingModel from '../../model/poojaBooking/pendingPoojaBooking.model';
 import poojaBookingModel, { IPoojaBooking } from '../../model/poojaBooking/poojaBooking.model';
 import User from '../../model/userApp/userModel';
 import Pooja from '../../model/userApp/poojaModel';
+import Pandit from '../../model/panditApp/panditModel';
+import UserReferralBooking from '../../model/userApp/userReferralBooking.model';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
 import { sendWhatsappTemplateMessage } from '../../utils/whatsapp';
+import { sendBookingConfirmationEmail } from '../../utils/emailService';
+import type { Document } from "mongoose";
 
 // --- helpers ---
 const toAlias10 = (v?: string | number) =>
@@ -110,6 +115,96 @@ async function notifyPanditsNewRequest(req: any, opts: {
 
 
 // -------------------------------------------------------------
+// PARTNER AFFILIATE – fire-and-forget after a puja booking is confirmed
+// Reads referralSourcePJAR from the user's profile (set once at signup/first visit).
+// This fires on every booking; "organic" is sent when no partner referral exists.
+// -------------------------------------------------------------
+const sendOrderToPartnerAffiliate = async (booking: any): Promise<void> => {
+  try {
+    const apiUrl = process.env.PARTNER_AFFILIATE_ORDER_API;
+    if (!apiUrl) {
+      console.warn('[PartnerAffiliate] PARTNER_AFFILIATE_ORDER_API env not set. Skipping.');
+      return;
+    }
+
+    const actualUserId = booking?.userId ? String(booking.userId) : null;
+    if (!actualUserId) {
+      console.warn('[PartnerAffiliate] booking.userId missing. Skipping.');
+      return;
+    }
+
+    // 1️⃣ Prefer the ref code captured from ?ref= URL (stored on the booking itself)
+    // 2️⃣ Fall back to referralSourcePJAR on the user's profile (set at signup/first visit)
+    let referralValue: string | null = null;
+
+    const bookingRefCode = (booking as any).referralCode
+      ? String((booking as any).referralCode).trim()
+      : null;
+
+    if (bookingRefCode) {
+      referralValue = bookingRefCode;
+    } else {
+      try {
+        const u = await User.findById(actualUserId).select('referralSourcePJAR').lean();
+        const src = (u as any)?.referralSourcePJAR ?? null;
+        if (src && String(src).trim() && String(src).trim() !== 'organic') {
+          referralValue = String(src).trim();
+        }
+      } catch (e) {
+        console.warn('[PartnerAffiliate] Failed to fetch user referralSourcePJAR:', e);
+      }
+    }
+
+    // No partner referral — nothing to credit, skip
+    if (!referralValue) {
+      console.log(`[PartnerAffiliate] No partner referral for booking ${booking._id}. Skipping.`);
+      return;
+    }
+
+    // Always use total booking amount (panditDakshina may be undefined on online bookings)
+    const orderAmount = Number(booking.amount ?? booking.panditDakshina ?? 0);
+    if (orderAmount <= 0) {
+      console.warn(`[PartnerAffiliate] orderAmount is 0 for booking ${booking._id}. Skipping.`);
+      return;
+    }
+
+    const payload = {
+      userId: referralValue ,
+      refferal_user_id: actualUserId,
+      orderId: booking.razorpayOrderId,
+      orderPrice: orderAmount,
+      time: new Date(booking.bookingDate).toISOString(),
+      department: 'PANDIT_JI_AT_REQUEST',
+      products: [
+        {
+          productName: booking.poojaNameEng || 'PUJA',
+          productPrice: orderAmount,
+          commissionPercent: [0, 0, 0],
+        },
+      ],
+    };
+
+    console.log(`[PartnerAffiliate] Sending payload for booking ${booking._id}:`, JSON.stringify(payload, null, 2));
+
+    const response = await axios.post(apiUrl, payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000,
+    });
+
+    console.log(`[PartnerAffiliate] ✅ Order sent for booking ${booking._id}. Response:`, response.status, response.data);
+  } catch (error: any) {
+    const httpStatus = error?.response?.status;
+    const responseBody = error?.response?.data;
+    const errMsg = error?.message;
+    console.error(
+      `[PartnerAffiliate] ❌ Failed for booking ${booking?._id}:`,
+      `HTTP ${httpStatus ?? 'N/A'} |`,
+      responseBody ? JSON.stringify(responseBody) : errMsg,
+    );
+  }
+};
+
+// -------------------------------------------------------------
 // TYPES
 type CreatePendingBookingBody = {
   userId: string;
@@ -123,6 +218,15 @@ type CreatePendingBookingBody = {
   gotra?: string;
   contactNumber?: string;
   emailId?: string;
+  deceasedPersons?: Array<{
+    name: string;
+    gotra: string;
+    relation: string;
+  }>;
+  ritualPerformerName?: string;
+  ritualPerformerGotra?: string;
+  ritualPlace?: string;
+  referralCode?: string;       // partner affiliate ref code (from ?ref= URL param)
 };
 
 type CompleteBookingBody = {
@@ -153,6 +257,11 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       gotra,
       contactNumber,
       emailId,
+      deceasedPersons,
+      ritualPerformerName,
+      ritualPerformerGotra,
+      ritualPlace,
+      referralCode,
     } = req.body as CreatePendingBookingBody;
 
     const [userExists, poojaExists] = await Promise.all([
@@ -196,7 +305,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       userId,
       userName: (userExists as any).name,
       userPhone: (userExists as any).phone,
-      userEmail: (userExists as any).email,
+      userEmail: emailId || (userExists as any).email,
 
       poojaId,
       poojaNameEng,
@@ -218,6 +327,11 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       gotra,
       contactNumber,
       emailId,
+      ...(Array.isArray(deceasedPersons) && { deceasedPersons }),
+      ...(ritualPerformerName && { ritualPerformerName }),
+      ...(ritualPerformerGotra && { ritualPerformerGotra }),
+      ...(ritualPlace && { ritualPlace }),
+      ...(referralCode && { referralCode }),
     });
 
     // 🛎️ NEW: Notify pandits on PENDING creation (optional; controlled via env)
@@ -232,6 +346,92 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
         },
       });
     }
+
+    // 🟢 WhatsApp booking confirmation (fire-and-forget)
+    void (async () => {
+      try {
+        const rawPhone = String((newBooking as any).userPhone || '');
+        const cleanedPhone = rawPhone.replace(/\D/g, ''); // keep only digits
+        const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+
+        if (cleanedPhone.length < 10) return;
+
+        const userName = (newBooking as any).userName || 'Devotee';
+        const poojaName = newBooking.poojaNameEng || 'Puja';
+        const poojaMode = newBooking.poojaMode || 'offline';
+        const bookingDateStr = new Date(newBooking.bookingDate).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+        const bookingId = newBooking.razorpayOrderId || newBooking.id;
+
+        // Fetch nearby pandit or use default
+        let assignedPanditName = "";
+        
+        try {
+          const pandits = await Pandit.find({}).lean();
+
+          if (poojaMode === 'offline' && address) {
+            let userLat = Number(address.lat || address.latitude || address.location?.lat);
+            let userLng = Number(address.lng || address.longitude || address.location?.lng);
+            
+            if (userLat && userLng) {
+               let nearestPandit = null;
+               let minDistance = Infinity;
+               
+               for (const p of pandits) {
+                 if (p.location?.latitude && p.location?.longitude) {
+                   const plat = p.location.latitude;
+                   const plng = p.location.longitude;
+                   const dLat = (plat - userLat) * Math.PI / 180;
+                   const dLng = (plng - userLng) * Math.PI / 180;
+                   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                             Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
+                             Math.sin(dLng/2) * Math.sin(dLng/2);
+                   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                   const distance = 6371 * c; // km
+                   
+                   if (distance < minDistance && distance <= 50) { // within 50km
+                     minDistance = distance;
+                     nearestPandit = p;
+                   }
+                 }
+               }
+               if (nearestPandit) {
+                 assignedPanditName = `${nearestPandit.prefix || ''} ${nearestPandit.firstName || ''} ${nearestPandit.lastName || ''}`.trim();
+               }
+            }
+          }
+          
+          if (!assignedPanditName && pandits.length > 0) {
+            // Pick a random pandit from active pandits
+            const randomPandit = pandits[Math.floor(Math.random() * pandits.length)];
+            assignedPanditName = `${randomPandit.prefix || ''} ${randomPandit.firstName || ''} ${randomPandit.lastName || ''}`.trim();
+          }
+        } catch(err) {
+          console.error('Error fetching nearby pandit for whatsapp msg:', err);
+        }
+        
+        if (!assignedPanditName) {
+           assignedPanditName = "Acharya Ramlok Sharma ji"; // Ultimate fallback if DB is empty
+        }
+
+        const param2 = `Your booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏`;
+        const param3 = `Date: ${bookingDateStr}`;
+        const param4 = `Booking ID: ${bookingId}`;
+
+        await sendWhatsappTemplateMessage({
+          to: phone,
+          templateName: 'pjar_order',
+          parameters: [userName, param2, param3, param4],
+          buttonUrlParam: 'apps/details?id=com.panditJiAtReqapp',
+        });
+        console.log(`✅ [Pending PujaBooking] WhatsApp pjar_order template confirmation sent to ${phone}`);
+      } catch (e: any) {
+        console.error('❌ [Pending PujaBooking] WhatsApp pjar_order failed:', e?.response?.data || e?.message || e);
+      }
+    })();
 
     res.status(201).json({
       message: 'Pre-booking created. Proceed to payment.',
@@ -304,8 +504,15 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     // 6) Remove pending doc
     await pendingPoojaBookingModel.findByIdAndDelete(pendingBookingId);
 
-    // 6a) META CAPI Purchase (fire-and-forget)
+    // 6a) Partner Affiliate notification (fire-and-forget)
+    void sendOrderToPartnerAffiliate(finalBooking);
+
+    // 6d) META CAPI Purchase (fire-and-forget) — skipped in test/dev mode
     void (async () => {
+      if (!isProduction) {
+        console.log(`[MetaCAPI][Puja] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+        return;
+      }
       try {
         const forwardedFor = req.headers['x-forwarded-for'];
         const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]) || req.ip || null;
@@ -411,31 +618,87 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     } catch (pushErr) {
       console.error('Push send/schedule failed:', pushErr);
     }
+    // 🟢 Note: WhatsApp booking confirmation is now sent during pending booking creation.
     // ----------------------------------------------------------
 
-    // 🟢 WhatsApp booking confirmation (fire-and-forget)
+    // 🟢 Email booking confirmation (fire-and-forget)
     void (async () => {
       try {
-        const rawPhone = String((finalBooking as any).userPhone || '');
-        const phone = rawPhone.startsWith('91') ? rawPhone : `91${rawPhone}`;
-
-        if (rawPhone.length < 10) return;
-
-        const poojaName = finalBooking.poojaNameEng || 'Puja';
-        const poojaMode = finalBooking.poojaMode   || 'offline';
-
-        await sendWhatsappTemplateMessage({
-          to: phone,
-          templateName: 'bookingconfirmed_pjar',
-          headerImageUrl: 'https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/THANYOU%20(1).png',
-          parameters: [poojaName, poojaMode],
+        const email = (finalBooking as any).userEmail;
+        if (!email) return;
+        await sendBookingConfirmationEmail({
+          to: email,
+          bhaktName: (finalBooking as any).bhaktName || (finalBooking as any).userName || "Devotee",
+          poojaName: finalBooking.poojaNameEng || "Puja",
+          bookingDate: String(finalBooking.bookingDate),
+          poojaMode: finalBooking.poojaMode || "online",
+          amount: Number((finalBooking as any).amount || amountPaid || 0),
+          contactNumber: String((finalBooking as any).userPhone || ""),
+          bookingId: String((finalBooking as any)._id),
         });
-        console.log(`✅ [PujaBooking] WhatsApp confirmation sent to ${phone}`);
+        console.log(`✅ [PujaBooking] Email confirmation sent to ${email}`);
       } catch (e: any) {
-        console.error('❌ [PujaBooking] WhatsApp failed:', e?.response?.data || e?.message || e);
+        console.error("❌ [PujaBooking] Email failed:", e?.message || e);
       }
     })();
     // ----------------------------------------------------------
+
+    // ── Internal Referral Credit (fire-and-forget) ──────────────
+    void (async () => {
+      try {
+        const bookedUserId = String((finalBooking as any).userId || '');
+        if (!bookedUserId) return;
+
+        const bookedUser = await User.findById(bookedUserId).select(
+          'userReferral name given_name family_name'
+        );
+        if (!bookedUser?.userReferral?.referrerId) return;
+
+        const { referrerId, expiresAt, code } = bookedUser.userReferral;
+
+        // Only honour if the referral window hasn't expired
+        if (!expiresAt || new Date() > new Date(expiresAt)) return;
+
+        const totalAmount = Number((finalBooking as any).amount || amountPaid || 0);
+        const rewardPct = parseFloat(process.env.INTERNAL_REFERRAL_PCT ?? '5');
+        const amountEarned = Math.round((totalAmount * rewardPct) / 100);
+
+        const poojaName = finalBooking.poojaNameEng || 'Puja';
+        const referredUserName =
+          `${bookedUser.given_name || ''} ${bookedUser.family_name || ''}`.trim() ||
+          bookedUser.name ||
+          'User';
+
+        // 1) Record the referral booking
+        await UserReferralBooking.create({
+          referrerId,
+          referredUserId: bookedUser._id,
+          referredUserName,
+          bookingId: (finalBooking as any)._id,
+          poojaName,
+          amountEarned,
+          totalBookingAmount: totalAmount,
+          rewardPercentage: rewardPct,
+        });
+
+        // 2) Credit referrer + increment counter
+        await User.findByIdAndUpdate(referrerId, {
+          $inc: { referralEarnings: amountEarned, totalReferredPujas: 1 },
+        });
+
+        // 3) Clear referral from the referred user so it isn't applied again
+        await User.findByIdAndUpdate(bookedUser._id, {
+          $unset: { userReferral: '' },
+        });
+
+        console.log(
+          `[Referral] ✅ ₹${amountEarned} credited to referrer ${referrerId} for booking ${(finalBooking as any)._id}`
+        );
+      } catch (refErr: any) {
+        console.error('[Referral] ❌ credit failed:', refErr?.message || refErr);
+      }
+    })();
+    // ────────────────────────────────────────────────────────────
 
     res.status(201).json({
       message: 'Pooja booking confirmed and payment verified.',
@@ -460,12 +723,23 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
     }
 
     const alias10 = toAlias10(userPhone);
-    const bookings = await poojaBookingModel
-      .find({ userPhone: alias10, isCompleted: false })
-      .sort({ bookingDate: -1 })
-      .populate('poojaId', 'poojaNameEng poojaCardImage')
-      .populate('assignedPandit', 'firstName lastName rating profileImage')
-      .lean();
+
+    const [pendingBookings, finalBookings] = await Promise.all([
+      pendingPoojaBookingModel
+        .find({ userPhone: alias10, isCompleted: false })
+        .populate('poojaId', 'poojaNameEng poojaCardImage')
+        .populate('assignedPandit', 'firstName lastName rating profileImage')
+        .lean(),
+      poojaBookingModel
+        .find({ userPhone: alias10, isCompleted: false })
+        .populate('poojaId', 'poojaNameEng poojaCardImage')
+        .populate('assignedPandit', 'firstName lastName rating profileImage')
+        .lean()
+    ]);
+
+    const bookings = [...pendingBookings, ...finalBookings].sort(
+      (a: any, b: any) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
+    );
 
     res.status(200).json(bookings || []);
   } catch (error) {

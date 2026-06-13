@@ -1,11 +1,12 @@
 import { io, Socket } from "socket.io-client";
+import API_URL from "./apiConfig";
 
 let socket: Socket | null = null;
 
 export const getSocket = (): Socket => {
   if (!socket) {
-    const apiURL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-    // Convert e.g. http://localhost:8000/api -> http://192.168.0.188:8000
+    const apiURL = API_URL;
+    // Convert e.g. https://panditjiatrequest.com/api -> http://192.168.0.188:8000
     const socketURL = apiURL.replace(/\/api\/?$/, "");
 
     socket = io(socketURL, {

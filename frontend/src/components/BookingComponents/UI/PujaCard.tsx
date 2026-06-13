@@ -61,7 +61,6 @@ interface PujaCardProps {
     image: string;
     title: string;
     subtitle: string;
-    price: number;
     badge?: string;
     badgeColor?: string;
     onBook?: () => void;
@@ -72,9 +71,8 @@ export default function PujaCard({
     id,
     image,
     title,
-    price,
-    badge,
-    badgeColor = "bg-orange-500",
+    // badge,
+    // badgeColor = "bg-orange-500",
     onBook,
     duration,
 }: PujaCardProps) {
@@ -83,13 +81,10 @@ export default function PujaCard({
 
     const handleCardClick = () => {
         if (window.fbq) {
-            window.fbq("track", "ViewPooja", {
+            window.fbq("track", "ViewContent", {
                 content_ids: [id],
                 content_name: title,
-                productname: [title],
                 content_type: "product",
-                value: price,
-                currency: "INR",
             });
         }
         navigate(id ? `/puja/${id}` : '/puja');
@@ -106,17 +101,6 @@ export default function PujaCard({
         .puja-card:hover .puja-img { transform: scale(1.06); }
         .book-btn { transition: all 0.2s ease; }
         .book-btn:active { transform: scale(0.96); }
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-        .puja-card:hover .price-text {
-          background: linear-gradient(90deg, #c2410c, #f97316, #c2410c);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          animation: shimmer 1.8s linear infinite;
-        }
       `}</style>
 
             <div
@@ -125,18 +109,20 @@ export default function PujaCard({
             >
 
                 {/* Badge — sits half-outside the card */}
-                {badge && (
+                {/* {badge && (
                     <span className={`absolute -top-2 left-3 z-10 ${badgeColor} text-white text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full shadow`}>
                         {badge}
                     </span>
-                )}
+                )} */}
 
                 {/* Image */}
-                <div className="relative overflow-hidden aspect-square bg-amber-50 rounded-t-2xl flex items-center justify-center">
+                <div className="relative h-[120px] overflow-hidden bg-amber-50 rounded-t-2xl flex items-center justify-center ">
                     <img
                         src={image}
                         alt={title}
-                        className="puja-img w-full h-full object-contain"
+                        className="puja-img w-full h-full"
+                        loading="lazy"
+                        fetchPriority="low"
                     />
                     {/* Gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
@@ -155,21 +141,13 @@ export default function PujaCard({
                 </div>
 
                 {/* Body */}
-                <div className="flex flex-col flex-1 p-1 gap-1.5">
-                    <h3 className="puja-title text-stone-800 font-semibold leading-snug" style={{ fontSize: "16px" }}>
+                <div className="flex flex-col flex-1 p-1.5 gap-1.5">
+                    <h3 className="puja-title text-stone-800 font-semibold leading-snug line-clamp-1" style={{ fontSize: "16px" }}>
                         {title}
                     </h3>
-                    {/* <p className="text-stone-400 text-xs font-light leading-relaxed line-clamp-2">{subtitle}</p> */}
 
-                    {/* Price + CTA row */}
-                    <div className="flex items-center justify-between mt-auto px-1">
-                        <div>
-                            <p className="text-[10px] text-stone-400 font-light">Starting at</p>
-                            <p className="price-text text-orange-600 font-semibold text-base" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                                ₹{price.toLocaleString("en-IN")}
-                            </p>
-                        </div>
-
+                    {/* CTA row */}
+                    <div className="flex items-center w-full mt-auto px-1 pb-2">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -178,7 +156,7 @@ export default function PujaCard({
                             }}
                             onMouseDown={(e) => { e.stopPropagation(); setPressed(true); }}
                             onMouseUp={(e) => { e.stopPropagation(); setPressed(false); }}
-                            className="book-btn bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium px-2 py-2 rounded-xl shadow-md shadow-orange-200 flex items-center gap-1.5"
+                            className="book-btn w-full bg-orange-500 hover:bg-orange-600 text-white text-[17px] font-medium px-2 py-1 rounded-xl shadow-md shadow-orange-200 flex items-center justify-center gap-1.5"
                         >
                             Book Now
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

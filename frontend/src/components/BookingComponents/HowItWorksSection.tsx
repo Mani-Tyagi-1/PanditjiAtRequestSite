@@ -1,30 +1,30 @@
 import { useState, useEffect } from "react";
-import { Flame, UserCheck, BadgeCheck, PhoneCall, Sparkles } from "lucide-react";
+import { Flame, CalendarCheck, Wallet, Sparkles } from "lucide-react";
 
 const steps = [
     {
         number: "01",
         icon: Flame,
         title: "Select Puja",
-        desc: "Pick from 100+ pujas curated for every occasion.",
+        desc: "Choose from 300+ highly customized Vedic pujas curated for every sacred occasion.",
     },
     {
         number: "02",
-        icon: UserCheck,
-        title: "Book Pandit Ji",
-        desc: "Choose a verified pandit by ratings & availability.",
+        icon: CalendarCheck,
+        title: "Reserve Slot",
+        desc: "Fill in your preferred date and time instantly. No upfront payment required.",
     },
     {
         number: "03",
-        icon: BadgeCheck,
-        title: "Get Confirmation",
-        desc: "Instant SMS & email confirmation with all details.",
+        icon: Wallet,
+        title: "Pandit Assigned",
+        desc: "Once a verified Gurukul Pandit Ji is assigned, we send the payment link directly to your WhatsApp. Complete the secure payment after assignment.",
     },
     {
         number: "04",
-        icon: PhoneCall,
-        title: "Pandit Calls You",
-        desc: "Pandit Ji personally connects to discuss the ritual.",
+        icon: Sparkles,
+        title: "Puja Performed",
+        desc: "Pandit Ji arrives at your home with pure, fresh samagri and performs the sacred Vedic ritual.",
     },
 ];
 
@@ -49,15 +49,25 @@ export default function HowItWorks() {
 
             {/* Header */}
             <div className="text-center mb-6">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium tracking-widest uppercase text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full px-3 py-1 mb-3 shadow-sm">
-                    <Sparkles className="w-3.5 h-3.5" /> How It Works
-                </span>
+                <div className="flex items-center gap-2 justify-center mb-2">
+                    <div className="h-px flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-orange-200" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500 flex items-center gap-1.5 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">
+                        <Sparkles className="w-3 h-3" /> How It Works
+                    </span>
+                    <div className="h-px flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-orange-200" />
+                </div>
                 <h2
-                    className="text-[15px] text-stone-800 leading-snug"
+                    className="text-xl font-bold text-stone-800"
                     style={{ fontFamily: "'Cormorant Garamond', serif" }}
                 >
-                    See how it works and simplify your puja booking experience
+                    Book your puja in{" "}
+                    <span className="italic bg-gradient-to-r from-orange-600 to-red-500 bg-clip-text text-transparent">
+                        4 simple steps
+                    </span>
                 </h2>
+                <p className="text-[12px] text-stone-500 text-center mt-1 font-light">
+                    See how it works and simplify your puja booking experience.
+                </p>
             </div>
 
             {/* Stepper row */}

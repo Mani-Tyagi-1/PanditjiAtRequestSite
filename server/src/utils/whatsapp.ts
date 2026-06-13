@@ -47,6 +47,7 @@ type SendTemplateArgs = {
   templateId?: string; // not used in payload (kept optional)
   parameters: string[]; // body params
   headerImageUrl?: string; // ✅ add this
+  buttonUrlParam?: string; // ✅ dynamic button suffix
   languageCode?: string; // default "en"
 };
 
@@ -55,6 +56,7 @@ export const sendWhatsappTemplateMessage = async ({
   templateName,
   parameters,
   headerImageUrl,
+  buttonUrlParam,
   languageCode = "en",
 }: SendTemplateArgs) => {
   try {
@@ -83,6 +85,21 @@ export const sendWhatsappTemplateMessage = async ({
           type: "text",
           text: String(text ?? ""),
         })),
+      });
+    }
+
+    // ✅ Dynamic Button parameter
+    if (buttonUrlParam) {
+      components.push({
+        type: "button",
+        sub_type: "url",
+        index: "0",
+        parameters: [
+          {
+            type: "text",
+            text: buttonUrlParam,
+          },
+        ],
       });
     }
 

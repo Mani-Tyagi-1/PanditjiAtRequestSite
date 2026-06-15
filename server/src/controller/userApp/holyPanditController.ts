@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
 import HolyPandit from "../../model/userApp/holyPanditModel";
 import HolyPanditBooking from "../../model/userApp/holyPanditBookingModel";
-import { HOLY_PANDIT_SEED } from "../../data/holyPanditSeed";
 
 // Shape a DB doc to the frontend `HolyPandit` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -104,20 +103,5 @@ export const getHolyPanditBookings: RequestHandler = async (_req, res) => {
     res.status(200).json({ success: true, data: bookings });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch bookings" });
-  }
-};
-
-// POST /holy-pandits/seed — idempotent upsert of the catalog
-export const seedHolyPandits: RequestHandler = async (_req, res) => {
-  try {
-    await Promise.all(
-      HOLY_PANDIT_SEED.map((p) =>
-        HolyPandit.updateOne({ slug: p.slug }, { $set: p }, { upsert: true })
-      )
-    );
-    const count = await HolyPandit.countDocuments();
-    res.status(200).json({ success: true, message: `Seeded holy pandits. Total: ${count}` });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to seed pandits" });
   }
 };

@@ -4,7 +4,6 @@ import {
   getHolyPanditBySlug,
   createHolyPanditBooking,
   getHolyPanditBookings,
-  seedHolyPandits,
 } from "../../controller/userApp/holyPanditController";
 
 const router = express.Router();
@@ -22,7 +21,6 @@ const wrap =
 // Catalog
 router.get("/holy-pandits", wrap(getHolyPandits));
 router.get("/holy-pandits/:slug", wrap(getHolyPanditBySlug));
-router.post("/holy-pandits/seed", wrap(seedHolyPandits));
 
 // Bookings
 router.post("/holy-pandit-bookings", wrap(createHolyPanditBooking));

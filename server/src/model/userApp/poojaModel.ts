@@ -60,5 +60,8 @@ const PoojaSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Speeds up the active-poojas list query.
+PoojaSchema.index({ isActive: 1 });
+
 // IMPORTANT: Use your custom connection instance.
 export default panditJiAtRequestMongooose.model("Pooja", PoojaSchema);

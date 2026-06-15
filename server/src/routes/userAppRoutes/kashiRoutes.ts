@@ -1,10 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import {
-  getShopProducts,
-  getShopProductBySlug,
-  createShopOrder,
-  getShopOrders,
-} from "../../controller/userApp/shopController";
+import { createKashiRequest, getKashiRequests } from "../../controller/userApp/kashiController";
 
 const router = express.Router();
 
@@ -18,12 +13,7 @@ const wrap =
     }
   };
 
-// Catalog
-router.get("/shop-products", wrap(getShopProducts));
-router.get("/shop-products/:slug", wrap(getShopProductBySlug));
-
-// Orders
-router.post("/shop-orders", wrap(createShopOrder));
-router.get("/shop-orders", wrap(getShopOrders));
+router.post("/kashi-requests", wrap(createKashiRequest));
+router.get("/kashi-requests", wrap(getKashiRequests));
 
 export default router;

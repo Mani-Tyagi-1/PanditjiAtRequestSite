@@ -122,7 +122,7 @@ export default function FreeConsultationPage() {
                         </button>
                         <div>
                             <h2
-                                className="text-white font-extrabold text-xl"
+                                className="text-white font-bold text-xl"
                                 style={{ fontFamily: "'Cormorant Garamond', serif" }}
                             >
                                 Free Consultation

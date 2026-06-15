@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import ShopProduct from "../../model/userApp/shopProductModel";
 import ShopOrder, { IShopOrderItem } from "../../model/userApp/shopOrderModel";
-import { SHOP_SEED, FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "../../data/shopSeed";
+import { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE } from "../../data/shopConfig";
 
 // Shape a DB doc to the frontend `ShopProduct` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -116,20 +116,5 @@ export const getShopOrders: RequestHandler = async (_req, res) => {
     res.status(200).json({ success: true, data: orders });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch orders" });
-  }
-};
-
-// POST /shop-products/seed — idempotent upsert of the catalog
-export const seedShopProducts: RequestHandler = async (_req, res) => {
-  try {
-    await Promise.all(
-      SHOP_SEED.map((p) =>
-        ShopProduct.updateOne({ slug: p.slug }, { $set: p }, { upsert: true })
-      )
-    );
-    const count = await ShopProduct.countDocuments();
-    res.status(200).json({ success: true, message: `Seeded shop products. Total: ${count}` });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to seed products" });
   }
 };

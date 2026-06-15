@@ -114,7 +114,7 @@ export default function PujaEnquiryModal({
                                 Quick Enquiry
                             </p>
                             <h2
-                                className="text-white font-extrabold leading-tight"
+                                className="text-white font-bold leading-tight"
                                 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "20px" }}
                             >
                                 {pujaName || "Puja Enquiry"}

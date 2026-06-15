@@ -73,7 +73,7 @@ export default function HolyPanditDetailPage() {
                 <button onClick={() => navigate("/")} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-indigo-200/50 shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
-                <h1 className="text-sm font-extrabold text-stone-850 truncate">{pandit.name} Details</h1>
+                <h1 className="text-sm font-bold text-stone-850 truncate">{pandit.name} Details</h1>
             </div>
 
             {/* Profile banner block */}
@@ -100,7 +100,7 @@ export default function HolyPanditDetailPage() {
             <div className="p-4 space-y-4">
                 {/* About Pt. Ji */}
                 <div className="bg-white border border-indigo-100 rounded-2xl p-4 shadow-sm">
-                    <h3 className="text-[12px] font-extrabold uppercase tracking-wider text-indigo-500 mb-1.5">About Pandit Ji</h3>
+                    <h3 className="text-[12px] font-bold uppercase tracking-wider text-indigo-500 mb-1.5">About Pandit Ji</h3>
                     <p className="text-[12.5px] text-stone-600 leading-relaxed font-light">{pandit.about}</p>
                     
                     <div className="h-px bg-stone-100 my-3.5" />
@@ -123,12 +123,12 @@ export default function HolyPanditDetailPage() {
 
                 {/* Rituals at Home list */}
                 <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-400 mb-2">Pujas & Rituals pt. Ji performs</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Pujas & Rituals pt. Ji performs</h3>
                     <div className="space-y-3">
                         {pandit.services.map((svc) => (
                             <div key={svc.id} className={`bg-white rounded-2xl border-2 p-4 transition-all relative ${svc.popular ? "border-indigo-500 bg-indigo-50/20" : "border-stone-200"}`}>
                                 {svc.popular && (
-                                    <span className="absolute -top-2.5 right-4 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                    <span className="absolute -top-2.5 right-4 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
                                         ★ Most Booked
                                     </span>
                                 )}
@@ -137,7 +137,7 @@ export default function HolyPanditDetailPage() {
                                         <h4 className="font-bold text-[14px] text-stone-850">{svc.name}</h4>
                                         <p className="text-[12px] text-stone-500 leading-snug">{svc.description}</p>
                                     </div>
-                                    <span className="font-extrabold text-[16px] text-stone-900 shrink-0">₹{svc.price.toLocaleString("en-IN")}</span>
+                                    <span className="font-bold text-[16px] text-stone-900 shrink-0">₹{svc.price.toLocaleString("en-IN")}</span>
                                 </div>
                                 <p className="text-[11px] text-stone-400 mt-2 flex items-center gap-1">
                                     <Clock className="w-3.5 h-3.5" /> approx {svc.durationHours} hours duration
@@ -160,7 +160,7 @@ export default function HolyPanditDetailPage() {
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-100 px-4 py-3 flex items-center justify-between max-w-md mx-auto shadow-lg">
                 <div>
                     <span className="text-[10px] text-stone-400 font-semibold uppercase block">Starting at</span>
-                    <span className="text-[20px] font-extrabold text-indigo-600">₹{pandit.startingPrice.toLocaleString("en-IN")}</span>
+                    <span className="text-[20px] font-bold text-indigo-600">₹{pandit.startingPrice.toLocaleString("en-IN")}</span>
                 </div>
                 <button onClick={() => setIsModalOpen(true)} className="bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold px-8 py-3 rounded-xl shadow-md active:scale-95 transition-all">
                     Request Pt. Ji

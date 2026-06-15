@@ -41,7 +41,7 @@ export default function LiveMandirPujaCard({ puja }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/25" />
 
                 {/* Status badge */}
-                <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider ${status.chip}`}>
+                <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider ${status.chip}`}>
                     <span className="relative flex h-1.5 w-1.5">
                         {puja.status === "live" && (
                             <span className={`absolute inline-flex h-full w-full rounded-full ${status.dot} opacity-75 animate-ping`} />
@@ -53,7 +53,7 @@ export default function LiveMandirPujaCard({ puja }: Props) {
 
                 {/* Discount ribbon */}
                 {discount > 0 && (
-                    <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-[10px] font-extrabold text-amber-950 shadow-md">
+                    <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-[10px] font-bold text-amber-950 shadow-md">
                         {discount}% OFF
                     </div>
                 )}
@@ -116,7 +116,7 @@ export default function LiveMandirPujaCard({ puja }: Props) {
                             Starting at
                         </span>
                         <div className="flex items-baseline gap-1.5">
-                            <span className="text-[19px] font-extrabold text-stone-900">
+                            <span className="text-[19px] font-bold text-stone-900">
                                 ₹{puja.price.toLocaleString("en-IN")}
                             </span>
                             {puja.originalPrice && (

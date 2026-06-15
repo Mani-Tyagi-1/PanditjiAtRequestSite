@@ -30,14 +30,14 @@ export default function ChadhavaCard({ chadhava }: Props) {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/25" />
 
                 {/* Chadhava badge */}
-                <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider bg-rose-600/95 text-white">
+                <div className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider bg-rose-600/95 text-white">
                     <Flower2 className="w-3 h-3" />
                     CHADHAVA
                 </div>
 
                 {/* Discount ribbon */}
                 {discount > 0 && (
-                    <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-[10px] font-extrabold text-amber-950 shadow-md">
+                    <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-[10px] font-bold text-amber-950 shadow-md">
                         {discount}% OFF
                     </div>
                 )}
@@ -93,7 +93,7 @@ export default function ChadhavaCard({ chadhava }: Props) {
                             Starting at
                         </span>
                         <div className="flex items-baseline gap-1.5">
-                            <span className="text-[19px] font-extrabold text-stone-900">
+                            <span className="text-[19px] font-bold text-stone-900">
                                 ₹{chadhava.startingPrice.toLocaleString("en-IN")}
                             </span>
                             {chadhava.originalPrice && (

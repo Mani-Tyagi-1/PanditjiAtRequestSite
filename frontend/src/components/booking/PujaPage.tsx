@@ -558,7 +558,7 @@ export default function PujaDetailPage() {
                         )}
 
                         <h1
-                            className="text-orange-600 font-extrabold"
+                            className="text-orange-600 font-bold"
                             style={{
                                 fontFamily: "'Cormorant Garamond', serif",
                                 fontSize: "26px",

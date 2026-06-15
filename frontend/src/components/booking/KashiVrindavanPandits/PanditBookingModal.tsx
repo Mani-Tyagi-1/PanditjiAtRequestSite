@@ -197,7 +197,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                                         className={`relative w-full text-left rounded-2xl border-2 p-3.5 transition-all ${active ? "border-indigo-500 bg-indigo-50/60 shadow-md shadow-indigo-100" : "border-stone-200 bg-white"}`}
                                                     >
                                                         {svc.popular && (
-                                                            <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wide">★ Most Booked</span>
+                                                            <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">★ Most Booked</span>
                                                         )}
                                                         <div className="flex items-start justify-between gap-3">
                                                             <div className="flex-1">
@@ -212,7 +212,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                                                     <Clock className="w-3 h-3" /> approx {svc.durationHours} hrs
                                                                 </p>
                                                             </div>
-                                                            <span className="font-extrabold text-stone-900 text-[16px] shrink-0">₹{svc.price.toLocaleString("en-IN")}</span>
+                                                            <span className="font-bold text-stone-900 text-[16px] shrink-0">₹{svc.price.toLocaleString("en-IN")}</span>
                                                         </div>
                                                     </button>
                                                 );
@@ -299,7 +299,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                             <div className="my-2.5 h-px bg-indigo-100" />
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-stone-800">Total Payable</span>
-                                                <span className="font-extrabold text-indigo-600 text-[20px]">₹{amount.toLocaleString("en-IN")}</span>
+                                                <span className="font-bold text-indigo-600 text-[20px]">₹{amount.toLocaleString("en-IN")}</span>
                                             </div>
                                         </div>
 
@@ -351,7 +351,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                 <div className="flex-1 flex items-center justify-between">
                                     <div className="leading-none">
                                         <span className="text-[10px] text-stone-400 font-semibold uppercase">Total</span>
-                                        <p className="text-[18px] font-extrabold text-stone-900">₹{amount.toLocaleString("en-IN")}</p>
+                                        <p className="text-[18px] font-bold text-stone-900">₹{amount.toLocaleString("en-IN")}</p>
                                     </div>
                                     {step === "review" ? (
                                         <button onClick={handleConfirm} disabled={submitting} className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform disabled:opacity-60">
@@ -379,7 +379,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
     return (
         <div>
-            <span className="text-[10px] font-extrabold tracking-[0.18em] uppercase text-indigo-500">{eyebrow}</span>
+            <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-indigo-500">{eyebrow}</span>
             <h3 className="kvp-serif font-bold text-stone-800 leading-tight" style={{ fontSize: "23px" }}>{title}</h3>
         </div>
     );

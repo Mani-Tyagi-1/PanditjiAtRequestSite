@@ -1351,7 +1351,7 @@ export default function BookingModal({
               </svg>
             </button>
             <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-orange-500 mb-0.5">Book Your Puja</p>
-            <h2 className="text-orange-700 font-extrabold leading-tight truncate px-10"
+            <h2 className="text-orange-700 font-bold leading-tight truncate px-10"
               style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "22px" }}>
               {pooja?.poojaNameEng}
             </h2>

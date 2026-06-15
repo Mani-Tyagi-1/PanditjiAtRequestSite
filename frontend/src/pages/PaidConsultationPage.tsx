@@ -179,7 +179,7 @@ export default function PaidConsultationPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-white font-extrabold text-xl" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            <h2 className="text-white font-bold text-xl" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
               Personalised Consultation
             </h2>
             <p className="text-orange-100 text-xs mt-0.5">

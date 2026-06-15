@@ -125,7 +125,7 @@ export default function PujaEnquiryPage() {
                             </svg>
                         </button> */}
                         {/* <h1
-                            className="text-stone-800 font-extrabold leading-tight truncate"
+                            className="text-stone-800 font-bold leading-tight truncate"
                             style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "20px" }}
                         >
                             {loadingPuja ? "Loading..." : pujaName || "Puja Enquiry"}
@@ -174,7 +174,7 @@ export default function PujaEnquiryPage() {
 
                                         <div className="flex-1 pt-1">
                                             <h2
-                                                className="text-stone-800 font-extrabold leading-snug"
+                                                className="text-stone-800 font-bold leading-snug"
                                                 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "20px" }}
                                             >
                                                 {loadingPuja ? "Loading..." : pujaName || "Puja"}

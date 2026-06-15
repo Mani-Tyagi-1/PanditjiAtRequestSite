@@ -2,9 +2,11 @@ import express, { Request, Response, NextFunction } from "express";
 import {
   getChadhavas,
   getChadhavaBySlug,
-  createChadhavaBooking,
+  getChadhavaQuote,
+  createChadhavaOrder,
+  completeChadhavaPayment,
+  chadhavaWebhook,
   getChadhavaBookings,
-  seedChadhavas,
 } from "../../controller/userApp/chadhavaController";
 
 const router = express.Router();
@@ -21,11 +23,15 @@ const wrap =
 
 // Catalog
 router.get("/chadhavas", wrap(getChadhavas));
+router.post("/chadhavas/:slug/quote", wrap(getChadhavaQuote));
 router.get("/chadhavas/:slug", wrap(getChadhavaBySlug));
-router.post("/chadhavas/seed", wrap(seedChadhavas));
+
+// Payment flow
+router.post("/chadhava-bookings/create-order", wrap(createChadhavaOrder));
+router.post("/chadhava-bookings/complete-payment", wrap(completeChadhavaPayment));
+router.post("/chadhava-bookings/webhook", wrap(chadhavaWebhook));
 
 // Bookings
-router.post("/chadhava-bookings", wrap(createChadhavaBooking));
 router.get("/chadhava-bookings", wrap(getChadhavaBookings));
 
 export default router;

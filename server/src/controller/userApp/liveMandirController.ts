@@ -1,7 +1,6 @@
 import { RequestHandler } from "express";
 import LiveMandirPuja from "../../model/userApp/liveMandirPujaModel";
 import LiveMandirBooking from "../../model/userApp/liveMandirBookingModel";
-import { LIVE_MANDIR_SEED } from "../../data/liveMandirSeed";
 
 // Shape a DB doc to the frontend `LiveMandirPuja` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -100,24 +99,5 @@ export const getLiveBookings: RequestHandler = async (_req, res) => {
     res.status(200).json({ success: true, data: bookings });
   } catch (error) {
     res.status(500).json({ success: false, message: "Failed to fetch bookings" });
-  }
-};
-
-// POST /live-mandir-pujas/seed — idempotent upsert of the catalog
-export const seedLivePujas: RequestHandler = async (_req, res) => {
-  try {
-    await Promise.all(
-      LIVE_MANDIR_SEED.map((puja) =>
-        LiveMandirPuja.updateOne(
-          { slug: puja.slug },
-          { $set: puja },
-          { upsert: true }
-        )
-      )
-    );
-    const count = await LiveMandirPuja.countDocuments();
-    res.status(200).json({ success: true, message: `Seeded live pujas. Total: ${count}` });
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to seed live pujas" });
   }
 };

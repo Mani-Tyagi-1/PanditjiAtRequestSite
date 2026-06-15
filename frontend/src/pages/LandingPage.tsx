@@ -8,32 +8,6 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
 import ConsultancyModal from "../components/booking/ConsultancyModal";
-import LiveMandirPujasSection from "../components/booking/LiveMandirPujas/LiveMandirPujasSection";
-import ChadhavaSection from "../components/booking/ChadhavaBooking/ChadhavaSection";
-import KashiVrindavanSection from "../components/booking/KashiVrindavanPandits/KashiVrindavanSection";
-import ShopSection from "../components/booking/Shop/ShopSection";
-
-// Wrapper to prevent rendering and loading until the section is near the viewport
-// function LazySection({ children, height = "400px" }: { children: React.ReactNode, height?: string }) {
-//   const [isVisible, setIsVisible] = useState(false);
-//   const ref = React.useRef<HTMLDivElement>(null);
-
-//   useEffect(() => {
-//     const observer = new IntersectionObserver(
-//       ([entry]) => {
-//         if (entry.isIntersecting) {
-//           setIsVisible(true);
-//           observer.disconnect();
-//         }
-//       },
-//       { rootMargin: "200px" } // Load slightly before it comes into view
-//     );
-//     if (ref.current) observer.observe(ref.current);
-//     return () => observer.disconnect();
-//   }, []);
-
-//   return <div ref={ref} style={{ minHeight: isVisible ? 'auto' : height }}>{isVisible && children}</div>;
-// }
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -128,15 +102,7 @@ export default function LandingPage() {
       <Navigation />
       <div className="w-full max-w-md relative mx-auto">
         <HeroBanner showConsultancySection={_showConsultancySection} />
-
-        <LiveMandirPujasSection />
-
-        <ChadhavaSection />
-
-        <KashiVrindavanSection />
-
-        <ShopSection />
-
+        
       </div>
     </>
   );

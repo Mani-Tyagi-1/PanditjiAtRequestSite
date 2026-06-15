@@ -110,7 +110,7 @@ export default function ConsultancyModal({
                     <div className="flex items-center justify-between">
                         <div>
                             <h2
-                                className="text-white font-extrabold text-xl"
+                                className="text-white font-bold text-xl"
                                 style={{ fontFamily: "'Cormorant Garamond', serif" }}
                             >
                                 Free Consultation

@@ -73,7 +73,7 @@ export default function LiveMandirPujaDetailPage() {
                 <button onClick={() => navigate("/")} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
-                <h1 className="text-sm font-extrabold text-stone-850 truncate">{puja.pujaName} Details</h1>
+                <h1 className="text-sm font-bold text-stone-850 truncate">{puja.pujaName} Details</h1>
             </div>
 
             {/* Hero Image */}
@@ -82,7 +82,7 @@ export default function LiveMandirPujaDetailPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                 
                 <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="bg-red-500 text-[10px] font-extrabold tracking-wider px-2 py-0.5 rounded-full uppercase mb-2 inline-block">
+                    <span className="bg-red-500 text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full uppercase mb-2 inline-block">
                         {puja.status === "live" ? "LIVE NOW" : puja.status === "upcoming" ? "UPCOMING" : "DAILY SEVA"}
                     </span>
                     <h2 className="text-2xl font-bold font-serif leading-tight">{puja.pujaName}</h2>
@@ -116,7 +116,7 @@ export default function LiveMandirPujaDetailPage() {
 
                 {/* Benefits */}
                 <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-400 mb-2">Benefits of this Puja</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Benefits of this Puja</h3>
                     <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm space-y-2.5">
                         {puja.benefits.map((benefit, idx) => (
                             <div key={idx} className="flex items-start gap-2 text-[12.5px] text-stone-700">
@@ -129,12 +129,12 @@ export default function LiveMandirPujaDetailPage() {
 
                 {/* Seva Packages */}
                 <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-400 mb-2">Select Seva Package</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Select Seva Package</h3>
                     <div className="space-y-3">
                         {puja.packages.map((pkg) => (
                             <div key={pkg.id} className={`bg-white rounded-2xl border-2 p-4 transition-all relative ${pkg.popular ? "border-orange-500 bg-orange-50/20" : "border-stone-200"}`}>
                                 {pkg.popular && (
-                                    <span className="absolute -top-2.5 right-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
+                                    <span className="absolute -top-2.5 right-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
                                         ★ Most Chosen
                                     </span>
                                 )}
@@ -143,7 +143,7 @@ export default function LiveMandirPujaDetailPage() {
                                         <h4 className="font-bold text-[14px] text-stone-850">{pkg.name}</h4>
                                         <p className="text-[12px] text-stone-500 leading-snug">{pkg.description}</p>
                                     </div>
-                                    <span className="font-extrabold text-[16px] text-stone-900 shrink-0">₹{pkg.price.toLocaleString("en-IN")}</span>
+                                    <span className="font-bold text-[16px] text-stone-900 shrink-0">₹{pkg.price.toLocaleString("en-IN")}</span>
                                 </div>
                                 <ul className="mt-3 space-y-1.5 border-t border-stone-100 pt-3">
                                     {pkg.perks.map((perk) => (
@@ -177,7 +177,7 @@ export default function LiveMandirPujaDetailPage() {
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-100 px-4 py-3 flex items-center justify-between max-w-md mx-auto shadow-lg">
                 <div>
                     <span className="text-[10px] text-stone-400 font-semibold uppercase block">Starting at</span>
-                    <span className="text-[20px] font-extrabold text-orange-600">₹{puja.price.toLocaleString("en-IN")}</span>
+                    <span className="text-[20px] font-bold text-orange-600">₹{puja.price.toLocaleString("en-IN")}</span>
                 </div>
                 <button onClick={() => setIsModalOpen(true)} className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold px-8 py-3 rounded-xl shadow-md active:scale-95 transition-all">
                     Book Puja Now

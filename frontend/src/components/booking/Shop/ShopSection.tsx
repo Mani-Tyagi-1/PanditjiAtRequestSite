@@ -134,7 +134,7 @@ export default function ShopSection() {
                 >
                     <ShoppingBag className="w-5 h-5 text-amber-600" />
                     {itemCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-extrabold">
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
                             {itemCount}
                         </span>
                     )}
@@ -205,10 +205,10 @@ export default function ShopSection() {
                             className="w-full flex items-center justify-between bg-stone-900 text-white rounded-2xl px-4 py-3 shadow-lg active:scale-[0.99] transition-transform"
                         >
                             <span className="flex items-center gap-2 text-[13px] font-semibold">
-                                <span className="w-7 h-7 flex items-center justify-center rounded-full bg-white/15 text-[12px] font-extrabold">{itemCount}</span>
+                                <span className="w-7 h-7 flex items-center justify-center rounded-full bg-white/15 text-[12px] font-bold">{itemCount}</span>
                                 items in cart
                             </span>
-                            <span className="flex items-center gap-2 text-[14px] font-extrabold">
+                            <span className="flex items-center gap-2 text-[14px] font-bold">
                                 ₹{total.toLocaleString("en-IN")}
                                 <span className="text-amber-300 text-[12px] font-bold">View Cart →</span>
                             </span>

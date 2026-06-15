@@ -4,7 +4,6 @@ import {
   getLivePujaBySlug,
   createLiveBooking,
   getLiveBookings,
-  seedLivePujas,
 } from "../../controller/userApp/liveMandirController";
 
 const router = express.Router();
@@ -22,7 +21,6 @@ const wrap =
 // Catalog
 router.get("/live-mandir-pujas", wrap(getLivePujas));
 router.get("/live-mandir-pujas/:slug", wrap(getLivePujaBySlug));
-router.post("/live-mandir-pujas/seed", wrap(seedLivePujas));
 
 // Bookings
 router.post("/live-mandir-bookings", wrap(createLiveBooking));

@@ -1,19 +1,24 @@
 import { Schema, Model } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
+export interface IChadhavaSelection {
+  code: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
 export interface IChadhavaBooking {
   chadhavaSlug: string;
   deity: string;
   templeName: string;
-  offeringId: string;
-  offeringName: string;
-  offeringPrice: number;
-  // Upsells
+  selections: IChadhavaSelection[];
+  // Prasad add-on
   addPrasadBox: boolean;
   prasadBoxPrice: number;
-  addSpiritualProduct: boolean;
-  spiritualProductName: string;
-  spiritualProductPrice: number;
+  // Totals
+  itemsTotal: number;
   totalAmount: number;
   // Devotee
   devoteeName: string;
@@ -21,22 +26,34 @@ export interface IChadhavaBooking {
   phone: string;
   wish: string;
   status: "pending" | "confirmed" | "completed" | "cancelled";
+  // Payment (Razorpay)
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
   isFromSite: boolean;
   addedOn: Date;
 }
+
+const selectionSchema = new Schema<IChadhavaSelection>(
+  {
+    code: { type: String, required: true },
+    name: { type: String, required: true },
+    unitPrice: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+    lineTotal: { type: Number, required: true },
+  },
+  { _id: false }
+);
 
 const chadhavaBookingSchema = new Schema<IChadhavaBooking>({
   chadhavaSlug: { type: String, required: true, trim: true },
   deity: { type: String, default: "" },
   templeName: { type: String, default: "" },
-  offeringId: { type: String, default: "" },
-  offeringName: { type: String, default: "" },
-  offeringPrice: { type: Number, required: true },
+  selections: { type: [selectionSchema], required: true },
   addPrasadBox: { type: Boolean, default: false },
   prasadBoxPrice: { type: Number, default: 0 },
-  addSpiritualProduct: { type: Boolean, default: false },
-  spiritualProductName: { type: String, default: "" },
-  spiritualProductPrice: { type: Number, default: 0 },
+  itemsTotal: { type: Number, required: true },
   totalAmount: { type: Number, required: true },
   devoteeName: { type: String, required: true, trim: true },
   gotra: { type: String, default: "" },
@@ -47,6 +64,14 @@ const chadhavaBookingSchema = new Schema<IChadhavaBooking>({
     enum: ["pending", "confirmed", "completed", "cancelled"],
     default: "pending",
   },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "paid", "failed", "refunded"],
+    default: "pending",
+  },
+  razorpayOrderId: { type: String, index: true },
+  razorpayPaymentId: { type: String },
+  razorpaySignature: { type: String },
   isFromSite: { type: Boolean, default: true },
   addedOn: { type: Date, default: Date.now },
 });

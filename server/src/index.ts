@@ -30,6 +30,7 @@ import panditDirectBookingEnquiryRoutes from "./routes/userAppRoutes/panditDirec
 import whatsappRoutes from "./routes/whatsapp/whatsapp.routes";
 import liveMandirRoutes from "./routes/userAppRoutes/liveMandirRoutes";
 import chadhavaRoutes from "./routes/userAppRoutes/chadhavaRoutes";
+import kashiRoutes from "./routes/userAppRoutes/kashiRoutes";
 import shopRoutes from "./routes/userAppRoutes/shopRoutes";
 import holyPanditRoutes from "./routes/userAppRoutes/holyPanditRoutes";
 
@@ -39,12 +40,18 @@ import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
 import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
 import PanditModel from "./model/panditApp/panditModel";
 import UserAddressModel from "./model/userApp/userAddressModel";
-import { autoSeedCatalog } from "./utils/seeder";
 
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+// Capture the raw request body so webhook handlers can verify HMAC signatures.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  })
+);
 
 app.use(cors({
   origin: "*",
@@ -73,6 +80,7 @@ app.use("/api", panditDirectBookingEnquiryRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api", liveMandirRoutes);
 app.use("/api", chadhavaRoutes);
+app.use("/api", kashiRoutes);
 app.use("/api", shopRoutes);
 app.use("/api", holyPanditRoutes);
 
@@ -152,7 +160,6 @@ async function startServer() {
   try {
     console.log("Connecting to databases...");
     await panditJiAtRequestDB();
-    await autoSeedCatalog();
     await VVMainConnectDB();
 
     try {

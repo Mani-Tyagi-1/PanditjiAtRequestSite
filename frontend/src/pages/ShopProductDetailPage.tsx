@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Plus, Minus, Check, ShieldCheck, Truck, RotateCcw, ShoppingBag } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
-import { type ShopProduct, type CartLine, calcShipping } from "../components/booking/Shop/shopData";
+import { type ShopProduct, type CartLine } from "../components/booking/Shop/shopData";
 import ShopCartModal from "../components/booking/Shop/ShopCartModal";
 
 export default function ShopProductDetailPage() {
@@ -13,7 +13,6 @@ export default function ShopProductDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
-    
     // Cart state synced with localStorage
     const [cart, setCart] = useState<CartLine[]>(() => {
         try {
@@ -146,7 +145,7 @@ export default function ShopProductDetailPage() {
                     <button onClick={() => navigate("/")} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-amber-200/50 shadow-sm active:scale-90 transition-transform">
                         <ArrowLeft className="w-4 h-4 text-stone-700" />
                     </button>
-                    <h1 className="text-sm font-extrabold text-stone-850 truncate">Product Details</h1>
+                    <h1 className="text-sm font-bold text-stone-850 truncate">Product Details</h1>
                 </div>
                 
                 {/* Cart button */}
@@ -156,7 +155,7 @@ export default function ShopProductDetailPage() {
                 >
                     <ShoppingBag className="w-4.5 h-4.5 text-amber-600" />
                     {itemCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-extrabold">
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold">
                             {itemCount}
                         </span>
                     )}
@@ -171,12 +170,12 @@ export default function ShopProductDetailPage() {
                     className={`w-full h-full object-cover ${soldOut ? "grayscale opacity-70" : ""}`}
                 />
                 {product.badge && !soldOut && (
-                    <span className="absolute top-3 left-3 bg-stone-900/85 text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full">
+                    <span className="absolute top-3 left-3 bg-stone-900/85 text-white text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full">
                         {product.badge}
                     </span>
                 )}
                 {discount > 0 && !soldOut && (
-                    <span className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-md">
+                    <span className="absolute top-3 right-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
                         {discount}% OFF
                     </span>
                 )}
@@ -211,7 +210,7 @@ export default function ShopProductDetailPage() {
                 {/* Price block */}
                 <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-extrabold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
+                        <span className="text-3xl font-bold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
                         {product.originalPrice && (
                             <>
                                 <span className="text-[16px] text-stone-400 line-through">₹{product.originalPrice.toLocaleString("en-IN")}</span>
@@ -230,7 +229,7 @@ export default function ShopProductDetailPage() {
                             <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-stone-600 active:scale-90 transition-transform shadow-sm">
                                 <Minus className="w-4 h-4" strokeWidth={3} />
                             </button>
-                            <span className="text-[15px] font-extrabold text-stone-800 min-w-[26px] text-center">{qty}</span>
+                            <span className="text-[15px] font-bold text-stone-800 min-w-[26px] text-center">{qty}</span>
                             <button onClick={() => setQty((q) => Math.min(10, q + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500 text-white active:scale-90 transition-transform shadow-sm">
                                 <Plus className="w-4 h-4" strokeWidth={3} />
                             </button>
@@ -254,7 +253,7 @@ export default function ShopProductDetailPage() {
 
                 {/* Highlights */}
                 <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-400 mb-2">Highlights</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Highlights</h3>
                     <ul className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm space-y-2.5">
                         {product.highlights.map((h) => (
                             <li key={h} className="flex items-start gap-2 text-[12.5px] text-stone-700">
@@ -267,7 +266,7 @@ export default function ShopProductDetailPage() {
 
                 {/* About this Item */}
                 <div>
-                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-stone-400 mb-2">About this item</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">About this item</h3>
                     <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm text-[12.5px] text-stone-600 leading-relaxed space-y-2">
                         <p>
                             {product.shortDesc}. Each {product.name} is carefully sourced, purified, and energised by our pandits with appropriate Vedic mantras before it reaches you — ready to be placed in your home mandir or worn for daily worship.

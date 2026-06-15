@@ -84,12 +84,12 @@ export default function ShopProductModal({
                                     className={`w-full h-full object-cover ${soldOut ? "grayscale opacity-70" : ""}`}
                                 />
                                 {product.badge && !soldOut && (
-                                    <span className="absolute top-3 left-3 bg-stone-900/85 text-white text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1 rounded-full">
+                                    <span className="absolute top-3 left-3 bg-stone-900/85 text-white text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full">
                                         {product.badge}
                                     </span>
                                 )}
                                 {discount > 0 && !soldOut && (
-                                    <span className="absolute top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-md">
+                                    <span className="absolute top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md">
                                         {discount}% OFF
                                     </span>
                                 )}
@@ -121,7 +121,7 @@ export default function ShopProductModal({
 
                                 {/* Price */}
                                 <div className="flex items-baseline gap-2 mt-3">
-                                    <span className="text-[26px] font-extrabold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
+                                    <span className="text-[26px] font-bold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
                                     {product.originalPrice && (
                                         <>
                                             <span className="text-[15px] text-stone-400 line-through">₹{product.originalPrice.toLocaleString("en-IN")}</span>
@@ -139,7 +139,7 @@ export default function ShopProductModal({
                                             <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-50 text-stone-600 active:scale-90 transition-transform">
                                                 <Minus className="w-4 h-4" strokeWidth={3} />
                                             </button>
-                                            <span className="text-[15px] font-extrabold text-stone-800 min-w-[26px] text-center">{qty}</span>
+                                            <span className="text-[15px] font-bold text-stone-800 min-w-[26px] text-center">{qty}</span>
                                             <button onClick={() => setQty((q) => Math.min(10, q + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500 text-white active:scale-90 transition-transform">
                                                 <Plus className="w-4 h-4" strokeWidth={3} />
                                             </button>
@@ -163,7 +163,7 @@ export default function ShopProductModal({
 
                                 {/* Highlights */}
                                 <div className="mt-5">
-                                    <h3 className="text-[13px] font-extrabold text-stone-800 uppercase tracking-wide mb-2">Highlights</h3>
+                                    <h3 className="text-[13px] font-bold text-stone-800 uppercase tracking-wide mb-2">Highlights</h3>
                                     <ul className="space-y-2">
                                         {product.highlights.map((h) => (
                                             <li key={h} className="flex items-start gap-2 text-[13px] text-stone-600">
@@ -176,7 +176,7 @@ export default function ShopProductModal({
 
                                 {/* About */}
                                 <div className="mt-5">
-                                    <h3 className="text-[13px] font-extrabold text-stone-800 uppercase tracking-wide mb-1.5">About this item</h3>
+                                    <h3 className="text-[13px] font-bold text-stone-800 uppercase tracking-wide mb-1.5">About this item</h3>
                                     <p className="text-[13px] text-stone-500 leading-relaxed">
                                         {product.shortDesc}. Each {product.name} is carefully sourced, purified and energised by our pandits with the appropriate mantras before it reaches you — ready to be placed in your home mandir or worn for daily worship.
                                     </p>

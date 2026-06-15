@@ -200,7 +200,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                                         className={`relative w-full text-left rounded-2xl border-2 p-3.5 transition-all ${active ? "border-orange-500 bg-orange-50/60 shadow-md shadow-orange-100" : "border-stone-200 bg-white"}`}
                                                     >
                                                         {pkg.popular && (
-                                                            <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                                            <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
                                                                 ★ Most Chosen
                                                             </span>
                                                         )}
@@ -214,7 +214,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                                                 </div>
                                                                 <p className="text-[12px] text-stone-500 mt-1 ml-6.5 leading-snug">{pkg.description}</p>
                                                             </div>
-                                                            <span className="font-extrabold text-stone-900 text-[16px] shrink-0">₹{pkg.price.toLocaleString("en-IN")}</span>
+                                                            <span className="font-bold text-stone-900 text-[16px] shrink-0">₹{pkg.price.toLocaleString("en-IN")}</span>
                                                         </div>
                                                         <ul className="mt-2.5 ml-6.5 space-y-1">
                                                             {pkg.perks.map((perk) => (
@@ -307,7 +307,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                             <div className="my-2.5 h-px bg-orange-100" />
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-stone-800">Total Payable</span>
-                                                <span className="font-extrabold text-orange-600 text-[20px]">₹{selectedPkg.price.toLocaleString("en-IN")}</span>
+                                                <span className="font-bold text-orange-600 text-[20px]">₹{selectedPkg.price.toLocaleString("en-IN")}</span>
                                             </div>
                                         </div>
 
@@ -367,7 +367,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                 <div className="flex-1 flex items-center justify-between">
                                     <div className="leading-none">
                                         <span className="text-[10px] text-stone-400 font-semibold uppercase">Total</span>
-                                        <p className="text-[18px] font-extrabold text-stone-900">₹{(selectedPkg?.price || 0).toLocaleString("en-IN")}</p>
+                                        <p className="text-[18px] font-bold text-stone-900">₹{(selectedPkg?.price || 0).toLocaleString("en-IN")}</p>
                                     </div>
                                     {step === "review" ? (
                                         <button onClick={handleConfirm} disabled={submitting} className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform disabled:opacity-60">
@@ -396,7 +396,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
     return (
         <div>
-            <span className="text-[10px] font-extrabold tracking-[0.18em] uppercase text-orange-500">{eyebrow}</span>
+            <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-orange-500">{eyebrow}</span>
             <h3 className="lmb-serif font-bold text-stone-800 leading-tight" style={{ fontSize: "23px" }}>{title}</h3>
         </div>
     );

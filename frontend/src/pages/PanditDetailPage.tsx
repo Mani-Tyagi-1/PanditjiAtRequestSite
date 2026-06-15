@@ -254,7 +254,7 @@ export default function PanditDetailPage() {
           <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
             <div className="flex items-end justify-between">
               <div>
-                <h1 className="text-white font-extrabold text-2xl leading-tight drop-shadow">{fullName}</h1>
+                <h1 className="text-white font-bold text-2xl leading-tight drop-shadow">{fullName}</h1>
                 {location && (
                   <div className="flex items-center gap-1.5 mt-1">
                     <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
@@ -265,7 +265,7 @@ export default function PanditDetailPage() {
               {pandit.isVerified && (
                 <div className="flex items-center gap-1 bg-white/95 rounded-full px-3 py-1 shadow border border-orange-100/60">
                   <BadgeCheck className="w-4 h-4 text-orange-500" />
-                  <span className="text-[10px] font-extrabold text-orange-600 tracking-wider">Verified</span>
+                  <span className="text-[10px] font-bold text-orange-600 tracking-wider">Verified</span>
                 </div>
               )}
             </div>
@@ -288,12 +288,12 @@ export default function PanditDetailPage() {
             </div>
             <div className="w-px h-8 bg-stone-100" />
             <div className="text-center">
-              <p className="text-sm font-extrabold text-stone-700 leading-none">{pandit.age || "—"}</p>
+              <p className="text-sm font-bold text-stone-700 leading-none">{pandit.age || "—"}</p>
               <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Age</p>
             </div>
             <div className="w-px h-8 bg-stone-100" />
             <div className="text-center">
-              <p className="text-sm font-extrabold text-stone-700 leading-none capitalize">{pandit.gender || "—"}</p>
+              <p className="text-sm font-bold text-stone-700 leading-none capitalize">{pandit.gender || "—"}</p>
               <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Gender</p>
             </div>
           </div>
@@ -362,13 +362,13 @@ export default function PanditDetailPage() {
         <div className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-orange-100/80 px-4 py-3.5 flex items-center justify-between shadow-lg">
           <div className="flex-1 pr-4">
             <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider leading-none">Specialist Assigned</p>
-            <p className="text-[13px] text-stone-800 font-extrabold mt-1.5 truncate">
+            <p className="text-[13px] text-stone-800 font-bold mt-1.5 truncate">
               {pandit.prefix} {pandit.firstName}
             </p>
           </div>
           <button
             onClick={handleOpenModal}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-extrabold text-xs py-3 rounded-2xl shadow-md shadow-orange-100 active:scale-[0.98] transition-transform text-center uppercase tracking-wider"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs py-3 rounded-2xl shadow-md shadow-orange-100 active:scale-[0.98] transition-transform text-center uppercase tracking-wider"
           >
             Select Pandit Ji
           </button>
@@ -535,7 +535,7 @@ export default function PanditDetailPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full rounded-xl py-3.5 text-xs font-extrabold text-white uppercase tracking-wider shadow-md transition-all active:scale-[0.98] ${
+                  className={`w-full rounded-xl py-3.5 text-xs font-bold text-white uppercase tracking-wider shadow-md transition-all active:scale-[0.98] ${
                     isSubmitting
                       ? "bg-stone-300 cursor-not-allowed shadow-none"
                       : "bg-gradient-to-r from-orange-500 to-red-500 shadow-orange-100 hover:scale-[1.01]"
@@ -610,7 +610,7 @@ export default function PanditDetailPage() {
                 href={`https://wa.me/919310065096?text=Namaste!%20I%20have%20just%20submitted%20a%20direct%20booking%20enquiry%20for%20Pt.%20${pandit?.firstName}%20${pandit?.lastName}.%20My%20name%20is%20${bhaktName}.`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full text-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-extrabold text-xs py-3.5 rounded-xl shadow-md shadow-orange-100 hover:scale-[1.01] active:scale-[0.98] transition-transform uppercase tracking-wider"
+                className="block w-full text-center bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs py-3.5 rounded-xl shadow-md shadow-orange-100 hover:scale-[1.01] active:scale-[0.98] transition-transform uppercase tracking-wider"
               >
                 Chat on WhatsApp
               </a>
@@ -619,7 +619,7 @@ export default function PanditDetailPage() {
                   setIsBookingConfirmed(false);
                   navigate("/category/685b290c922c7df97c114213");
                 }}
-                className="w-full bg-white border border-stone-200 text-stone-600 font-extrabold text-xs py-3 rounded-xl hover:bg-stone-50 active:scale-95 transition-all uppercase tracking-wider"
+                className="w-full bg-white border border-stone-200 text-stone-600 font-bold text-xs py-3 rounded-xl hover:bg-stone-50 active:scale-95 transition-all uppercase tracking-wider"
               >
                 Select Puja Category
               </button>

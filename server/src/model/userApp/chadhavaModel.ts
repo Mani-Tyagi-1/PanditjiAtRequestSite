@@ -1,23 +1,28 @@
 import { Schema, Model } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
-export interface IChadhavaOffering {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  icon: string;
+export interface IChadhavaItem {
+  code: string;
+  itemName: string;
+  itemDesc: string;
+  itemImage: string;
+  itemPrice: number;
+  maxQuantity: number;
   popular?: boolean;
+  isActive: boolean;
 }
 
-export interface IAddOnProduct {
-  id: string;
-  name: string;
-  tagline: string;
-  image: string;
+export interface IChadhavaSection {
+  sectionName: string;
+  items: IChadhavaItem[];
+}
+
+export interface IChadhavaPrasad {
+  enabled: boolean;
   price: number;
-  originalPrice: number;
-  items: string[];
+  name: string;
+  desc: string;
+  image: string;
 }
 
 export interface IChadhava {
@@ -34,34 +39,42 @@ export interface IChadhava {
   devoteesOffered: number;
   benefits: string[];
   tags: string[];
-  offerings: IChadhavaOffering[];
-  spiritualProduct: IAddOnProduct;
+  sections: IChadhavaSection[];
+  prasad: IChadhavaPrasad;
   isActive: boolean;
   sortOrder: number;
   createdAt: Date;
 }
 
-const offeringSchema = new Schema<IChadhavaOffering>(
+const itemSchema = new Schema<IChadhavaItem>(
   {
-    id: { type: String, required: true },
-    name: { type: String, required: true },
-    description: { type: String, default: "" },
-    price: { type: Number, required: true },
-    icon: { type: String, default: "🪔" },
+    code: { type: String, required: true },
+    itemName: { type: String, required: true },
+    itemDesc: { type: String, default: "" },
+    itemImage: { type: String, default: "" },
+    itemPrice: { type: Number, required: true, min: 0 },
+    maxQuantity: { type: Number, default: 10 },
     popular: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
   },
   { _id: false }
 );
 
-const addOnProductSchema = new Schema<IAddOnProduct>(
+const sectionSchema = new Schema<IChadhavaSection>(
   {
-    id: { type: String, required: true },
-    name: { type: String, required: true },
-    tagline: { type: String, default: "" },
+    sectionName: { type: String, required: true },
+    items: { type: [itemSchema], default: [] },
+  },
+  { _id: false }
+);
+
+const prasadSchema = new Schema<IChadhavaPrasad>(
+  {
+    enabled: { type: Boolean, default: false },
+    price: { type: Number, default: 0, min: 0 },
+    name: { type: String, default: "Blessed Prasad Box" },
+    desc: { type: String, default: "" },
     image: { type: String, default: "" },
-    price: { type: Number, required: true },
-    originalPrice: { type: Number, required: true },
-    items: { type: [String], default: [] },
   },
   { _id: false }
 );
@@ -80,8 +93,8 @@ const chadhavaSchema = new Schema<IChadhava>({
   devoteesOffered: { type: Number, default: 0 },
   benefits: { type: [String], default: [] },
   tags: { type: [String], default: [] },
-  offerings: { type: [offeringSchema], default: [] },
-  spiritualProduct: { type: addOnProductSchema, required: true },
+  sections: { type: [sectionSchema], default: [] },
+  prasad: { type: prasadSchema, default: () => ({}) },
   isActive: { type: Boolean, default: true },
   sortOrder: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },

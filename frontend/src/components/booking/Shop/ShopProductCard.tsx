@@ -27,12 +27,12 @@ export default function ShopProductCard({ product }: Props) {
                     className={`w-full h-full object-cover transition-transform duration-700 ${soldOut ? "grayscale opacity-70" : "group-hover:scale-105"}`}
                 />
                 {product.badge && !soldOut && (
-                    <span className="absolute top-2 left-2 bg-stone-900/85 text-white text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full">
+                    <span className="absolute top-2 left-2 bg-stone-900/85 text-white text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">
                         {product.badge}
                     </span>
                 )}
                 {discount > 0 && !soldOut && (
-                    <span className="absolute top-2 right-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                    <span className="absolute top-2 right-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                         {discount}% OFF
                     </span>
                 )}
@@ -57,7 +57,7 @@ export default function ShopProductCard({ product }: Props) {
                 </h3>
 
                 <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <span className="text-[16px] font-extrabold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
+                    <span className="text-[16px] font-bold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
                     {product.originalPrice && (
                         <span className="text-[11px] text-stone-400 line-through">₹{product.originalPrice.toLocaleString("en-IN")}</span>
                     )}

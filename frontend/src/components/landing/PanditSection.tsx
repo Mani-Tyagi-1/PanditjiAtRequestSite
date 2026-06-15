@@ -74,7 +74,7 @@ function PanditCard({ pandit, index, onClick }: { pandit: Pandit; index: number;
         {pandit.isVerified && (
           <div className="absolute top-1.5 right-1.5 bg-white/90 rounded-full px-1.5 py-0.5 flex items-center gap-0.5 shadow-sm border border-orange-100/50">
             <BadgeCheck className="w-3 h-3 text-orange-500" />
-            <span className="text-[9px] font-extrabold text-orange-600">Verified</span>
+            <span className="text-[9px] font-bold text-orange-600">Verified</span>
           </div>
         )}
       </div>

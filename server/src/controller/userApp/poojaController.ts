@@ -1,10 +1,18 @@
 import { Request, Response } from "express";
 import poojaModel from "../../model/userApp/poojaModel";
 
-// Get all active poojas
+// Lightweight projection for list/card views — excludes heavy fields like
+// descriptions, image/video arrays, samagri and FAQs (huge payload otherwise).
+const POOJA_LIST_FIELDS =
+  "poojaID poojaNameEng poojaNameHindi poojaMode poojaPriceOnline poojaPriceOffline mainCategories subCategories poojaCardImage isFeatured isExclusive isActive";
+
+// Get all active poojas (list view — projected & lean for speed)
 export const fetchAllPoojas = async (req: Request, res: Response) => {
   try {
-    const poojas = await poojaModel.find({ isActive: true });
+    const poojas = await poojaModel
+      .find({ isActive: true })
+      .select(POOJA_LIST_FIELDS)
+      .lean();
     return res.status(200).json({ poojas });
   } catch (error) {
     console.error("Error fetching poojas:", error);

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import ChadhavaCard from "./ChadhavaCard";
-import ChadhavaBookingModal from "./ChadhavaBookingModal";
 import { type Chadhava } from "./chadhavaData";
 import API_URL from "../../../utils/apiConfig";
 
@@ -12,8 +11,6 @@ import API_URL from "../../../utils/apiConfig";
 // ─────────────────────────────────────────────────────────────
 
 export default function ChadhavaSection() {
-    const [selected, _setSelected] = useState<Chadhava | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [chadhavas, setChadhavas] = useState<Chadhava[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -107,13 +104,6 @@ export default function ChadhavaSection() {
                     <div className="shrink-0 w-1" />
                 </div>
             </div>
-
-            {/* ── Booking flow ── */}
-            <ChadhavaBookingModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                chadhava={selected}
-            />
         </section>
     );
 }

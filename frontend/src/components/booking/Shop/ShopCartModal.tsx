@@ -167,7 +167,7 @@ export default function ShopCartModal({
                                                         <div className="flex-1 min-w-0">
                                                             <h4 className="font-bold text-stone-800 text-[13px] leading-tight line-clamp-2">{line.product.name}</h4>
                                                             <div className="flex items-center gap-1.5 mt-0.5">
-                                                                <span className="text-[14px] font-extrabold text-stone-900">₹{line.product.price.toLocaleString("en-IN")}</span>
+                                                                <span className="text-[14px] font-bold text-stone-900">₹{line.product.price.toLocaleString("en-IN")}</span>
                                                                 {line.product.originalPrice && (
                                                                     <span className="text-[11px] text-stone-400 line-through">₹{line.product.originalPrice.toLocaleString("en-IN")}</span>
                                                                 )}
@@ -177,7 +177,7 @@ export default function ShopCartModal({
                                                                     <button onClick={() => onRemove(line.product)} className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-amber-600">
                                                                         <Minus className="w-3 h-3" strokeWidth={3} />
                                                                     </button>
-                                                                    <span className="text-[13px] font-extrabold text-stone-800 min-w-[18px] text-center">{line.qty}</span>
+                                                                    <span className="text-[13px] font-bold text-stone-800 min-w-[18px] text-center">{line.qty}</span>
                                                                     <button onClick={() => onAdd(line.product)} className="w-6 h-6 flex items-center justify-center rounded-md bg-amber-500 text-white">
                                                                         <Plus className="w-3 h-3" strokeWidth={3} />
                                                                     </button>
@@ -245,7 +245,7 @@ export default function ShopCartModal({
                                             <div className="my-2.5 h-px bg-stone-100" />
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-stone-800">Total</span>
-                                                <span className="font-extrabold text-amber-600 text-[20px]">₹{total.toLocaleString("en-IN")}</span>
+                                                <span className="font-bold text-amber-600 text-[20px]">₹{total.toLocaleString("en-IN")}</span>
                                             </div>
                                         </div>
 
@@ -284,7 +284,7 @@ export default function ShopCartModal({
                             <div className="shrink-0 bg-white/90 backdrop-blur-sm border-t border-stone-100 px-5 py-3.5 flex items-center gap-3">
                                 <div className="leading-none">
                                     <span className="text-[10px] text-stone-400 font-semibold uppercase">Total</span>
-                                    <p className="text-[18px] font-extrabold text-stone-900">₹{total.toLocaleString("en-IN")}</p>
+                                    <p className="text-[18px] font-bold text-stone-900">₹{total.toLocaleString("en-IN")}</p>
                                 </div>
                                 {step === "cart" ? (
                                     <button onClick={goCheckout} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform">

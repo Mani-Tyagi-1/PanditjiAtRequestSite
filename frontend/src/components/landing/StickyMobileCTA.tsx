@@ -19,14 +19,14 @@ export function StickyMobileCTA() {
         <div className="flex items-center gap-1.5 justify-center">
           <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
           <p className="text-[9px] text-stone-500 font-bold uppercase tracking-wider flex items-center gap-1">
-            🔥 Slots filling fast in Delhi NCR <span className="text-orange-500 font-extrabold">• No Payment Upfront</span>
+            🔥 Slots filling fast in Delhi NCR <span className="text-orange-500 font-bold">• No Payment Upfront</span>
           </p>
         </div>
 
         {/* CTA Button */}
         <button
           onClick={handleScrollToPujas}
-          className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 active:scale-[0.98] text-white font-extrabold text-xs py-3 rounded-xl shadow-md shadow-orange-100 flex items-center justify-center gap-2 uppercase tracking-wider transition-all"
+          className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 active:scale-[0.98] text-white font-bold text-xs py-3 rounded-xl shadow-md shadow-orange-100 flex items-center justify-center gap-2 uppercase tracking-wider transition-all"
         >
           <Calendar className="w-4 h-4 shrink-0" />
           <span>Reserve Your Puja Slot</span>

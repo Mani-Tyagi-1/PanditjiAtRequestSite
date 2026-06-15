@@ -119,6 +119,8 @@ import LoginModal from "./components/auth/LoginModal";
 
 // Eagerly load the critical path pages
 import LandingPage from "./pages/LandingPage";
+import AppLayout from "./components/layout/AppLayout";
+import ComingSoonTab from "./pages/ComingSoonTab";
 
 // Lazy load all other pages
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
@@ -144,6 +146,10 @@ const LiveMandirPujaDetailPage = React.lazy(() => import("./pages/LiveMandirPuja
 const HolyPanditDetailPage = React.lazy(() => import("./pages/HolyPanditDetailPage"));
 const ChadhavaDetailPage = React.lazy(() => import("./pages/ChadhavaDetailPage"));
 const ShopProductDetailPage = React.lazy(() => import("./pages/ShopProductDetailPage"));
+const HomePage = React.lazy(() => import("./pages/HomePage"));
+const BookPujaPage = React.lazy(() => import("./pages/BookPujaPage"));
+const ChadhavaPage = React.lazy(() => import("./pages/ChadhavaPage"));
+const KashiPage = React.lazy(() => import("./pages/KashiPage"));
 
 // Fires PageView on every SPA route change so Meta Pixel tracks all pages
 function PixelPageTracker() {
@@ -189,6 +195,16 @@ function App() {
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+
+          {/* App shell with persistent bottom nav */}
+          <Route element={<AppLayout />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/book-puja" element={<BookPujaPage />} />
+            <Route path="/chadhava" element={<ChadhavaPage />} />
+            <Route path="/kashi" element={<KashiPage />} />
+            <Route path="/account" element={<ComingSoonTab title="Account" emoji="👤" />} />
+          </Route>
+
           <Route path="/privacypolicy" element={<PrivacyPolicy />} />
           <Route path="/termsandconditions" element={<TermsAndConditions />} />
           <Route path="/privacypolicy-pandit" element={<PanditPrivacyPolicy />} />

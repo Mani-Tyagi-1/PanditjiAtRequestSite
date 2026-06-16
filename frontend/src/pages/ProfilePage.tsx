@@ -26,6 +26,10 @@ import {
     CalendarClock,
     CheckCircle2,
     MailOpen,
+    Video,
+    Star,
+    AlertCircle,
+    Loader2,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -106,7 +110,7 @@ const ProfilePage: React.FC = () => {
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [mode, setMode] = useState<"view" | "edit" | "referral-bookings">("view");
+    const [mode, setMode] = useState<"view" | "edit" | "referral-bookings" | "bookings">("view");
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
     // Referral state
@@ -117,6 +121,14 @@ const ProfilePage: React.FC = () => {
     // Referral bookings state
     const [referralBookings, setReferralBookings] = useState<ReferralBooking[]>([]);
     const [referralBookingsLoading, setReferralBookingsLoading] = useState(false);
+
+    // User bookings state
+    const [poojaBookings, setPoojaBookings] = useState<any[]>([]);
+    const [liveBookings, setLiveBookings] = useState<any[]>([]);
+    const [chadhavaBookings, setChadhavaBookings] = useState<any[]>([]);
+    const [directBookings, setDirectBookings] = useState<any[]>([]);
+    const [bookingsLoading, setBookingsLoading] = useState(false);
+    const [activeBookingTab, setActiveBookingTab] = useState<"pooja" | "direct" | "live" | "chadhava">("pooja");
 
     // Payout state
     const [payoutModal, setPayoutModal] = useState<"confirm" | "not-allowed" | null>(null);
@@ -235,6 +247,68 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    const fetchUserBookings = async (phone: string) => {
+        setBookingsLoading(true);
+        try {
+            const apiUrl = API_URL;
+            const cleanPhone = String(phone).replace(/\D/g, "");
+
+            const [poojaRes, chadhavaRes, directRes] = await Promise.all([
+                axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${cleanPhone}`),
+                axios.get(`${apiUrl}/chadhava-bookings/user/${cleanPhone}`),
+                axios.get(`${apiUrl}/pandit-direct-bookings/user/${cleanPhone}`)
+            ]);
+
+            const allPoojaBookings: any[] = poojaRes.data || [];
+            // Split: regular puja bookings vs live mandir bookings (isLiveMandir: true)
+            const regularBookings = allPoojaBookings.filter((b: any) => !b.isLiveMandir);
+            const liveMandirBookings = allPoojaBookings.filter((b: any) => b.isLiveMandir === true);
+
+            setPoojaBookings(regularBookings);
+            setLiveBookings(liveMandirBookings);
+            setChadhavaBookings(chadhavaRes.data?.data || []);
+            setDirectBookings(directRes.data?.data || []);
+        } catch (err) {
+            console.error("Error fetching user bookings:", err);
+        } finally {
+            setBookingsLoading(false);
+        }
+    };
+
+    const startCall = async (panditId: string, type: 'video' | 'audio' = 'video') => {
+        try {
+            const userDataString = localStorage.getItem("user_data");
+            if (!userDataString) return;
+            const user = JSON.parse(userDataString);
+
+            const baseCallId = crypto.randomUUID();
+            const callId = type === "audio" ? `${baseCallId}_AC` : `${baseCallId}_VC`;
+            const apiUrl = API_URL;
+            const status = type === "video" ? "ringing" : "call-ringing";
+
+            await axios.post(`${apiUrl}/calls/invite`, {
+                fromUserId: user._id,
+                toUserId: panditId,
+                callId,
+                callerName: user.name || user.userName || "User",
+                callerId: user._id,
+                fromAppType: "user",
+                toAppType: "pandit",
+                callType: type,
+                status: status,
+            });
+
+            if (type === 'video') {
+                navigate(`/video-call/${callId}/${panditId}`, { replace: true });
+            } else {
+                navigate(`/audio-call/${callId}/${panditId}`, { replace: true });
+            }
+        } catch (err) {
+            console.error("Error starting call:", err);
+            triggerAlert("Call Error", "Failed to start call. Please try again.", "error");
+        }
+    };
+
     const handleCopyCode = async () => {
         if (!referralData?.userReferralCode) return;
         try {
@@ -272,9 +346,13 @@ const ProfilePage: React.FC = () => {
 
             const storedUser = JSON.parse(userDataString);
             const userId = storedUser._id;
+            const phone = storedUser.phone;
 
             // Fetch referral data in parallel (non-blocking)
             fetchReferralData(userId);
+            if (phone) {
+                fetchUserBookings(phone);
+            }
 
             const apiUrl = API_URL;
             const response = await axios.get(`${apiUrl}/profile/${userId}`, {
@@ -382,7 +460,7 @@ const ProfilePage: React.FC = () => {
         );
     }
 
-    const isLockedView = mode === "referral-bookings";
+    const isLockedView = mode === "referral-bookings" || mode === "bookings";
 
     return (
         <div className={`font-sans flex justify-center ${isLockedView ? "h-screen overflow-hidden" : "min-h-screen"}`}>
@@ -399,7 +477,7 @@ const ProfilePage: React.FC = () => {
                             {/* Navigation Header */}
                             <div className="flex items-center gap-4 pt-6 pb-2">
                                 <button
-                                    onClick={() => navigate("/landing-page")}
+                                    onClick={() => navigate("/home")}
                                     className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000]"
                                 >
                                     <ChevronLeft className="w-6 h-6" />
@@ -493,9 +571,15 @@ const ProfilePage: React.FC = () => {
                             /> */}
                                 <ProfileMenuItem
                                     icon={Calendar}
-                                    title="My Puja Booking"
-                                    subtitle="Tap to open"
-                                    onClick={() => navigate("/my-bookings")}
+                                    title="My Bookings"
+                                    subtitle="Pujas, Live Mandir & Chadhavas"
+                                    onClick={() => {
+                                        setMode("bookings");
+                                        const stored = localStorage.getItem("user_data");
+                                        if (stored) {
+                                            fetchUserBookings(JSON.parse(stored).phone);
+                                        }
+                                    }}
                                 />
                                 <ProfileMenuItem
                                     icon={Users}
@@ -852,6 +936,128 @@ const ProfilePage: React.FC = () => {
                             )}
                         </motion.div>
                     )}
+
+                    {mode === "bookings" && (
+                        <motion.div
+                            key="bookings"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="h-screen bg-[#FFF8F3] relative flex flex-col overflow-hidden"
+                        >
+                            {/* Background watermark emblem */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                                <img
+                                    src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="w-72 h-72 object-contain opacity-[0.2] select-none"
+                                />
+                            </div>
+
+                            {/* Header */}
+                            <div className="relative z-10 flex-shrink-0 bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-5">
+                                <div className="flex items-center gap-3 text-white">
+                                    <button
+                                        onClick={() => setMode("view")}
+                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <div>
+                                        <h1 className="text-lg font-bold leading-tight">My Bookings</h1>
+                                        <p className="text-white/75 text-[10px]">Track and view all your sacred bookings</p>
+                                    </div>
+                                </div>
+
+                                {/* Custom Tab Switcher */}
+                                <div className="flex bg-white/10 p-1 rounded-2xl mt-4 border border-white/10 overflow-x-auto scrollbar-hide">
+                                    <button
+                                        onClick={() => setActiveBookingTab("pooja")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "pooja"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Puja ({poojaBookings.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("direct")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "direct"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Direct Pandit ({directBookings.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("live")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "live"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Live Puja ({liveBookings.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("chadhava")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "chadhava"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Chadhava ({chadhavaBookings.length})
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Bookings List Container */}
+                            <div className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-28 space-y-3.5 scrollbar-hide">
+                                {bookingsLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                        <Loader2 className="w-9 h-9 text-[#FF7000] animate-spin" />
+                                        <p className="text-xs text-orange-400 font-semibold">Loading bookings...</p>
+                                    </div>
+                                ) : activeBookingTab === "pooja" ? (
+                                    poojaBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Puja" />
+                                    ) : (
+                                        poojaBookings.map((booking, idx) => (
+                                            <PoojaBookingCard key={booking._id || idx} booking={booking} index={idx} startCall={startCall} navigate={navigate} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "direct" ? (
+                                    directBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Direct Pandit" />
+                                    ) : (
+                                        directBookings.map((booking, idx) => (
+                                            <DirectBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "live" ? (
+                                    liveBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Live Puja" />
+                                    ) : (
+                                        liveBookings.map((booking, idx) => (
+                                            <LiveBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                        ))
+                                    )
+                                ) : (
+                                    chadhavaBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Chadhava" />
+                                    ) : (
+                                        chadhavaBookings.map((booking, idx) => (
+                                            <ChadhavaBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                        ))
+                                    )
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
 
                 {/* Share Referral Modal */}
@@ -1132,3 +1338,441 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
+
+// Helper component for Empty Bookings
+const EmptyBookingsState = ({ type }: { type: string }) => (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-16 h-16 bg-orange-50/50 rounded-full flex items-center justify-center mb-4">
+            <Calendar className="w-7 h-7 text-orange-300" />
+        </div>
+        <p className="text-gray-700 font-bold text-sm">No {type} bookings found</p>
+        <p className="text-gray-400 text-xs mt-1 max-w-[240px] leading-relaxed">
+            You haven't placed any bookings for {type} yet. Explore our services to book!
+        </p>
+    </div>
+);
+
+// Helper component for Pooja Booking Card
+const PoojaBookingCard = ({
+    booking,
+    index,
+    startCall,
+    navigate
+}: {
+    booking: any;
+    index: number;
+    startCall: (panditId: string, type: 'video' | 'audio') => void;
+    navigate: any;
+}) => {
+    const date = new Date(booking.bookingDate);
+    const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formattedTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const bookingDateOnly = new Date(date);
+    bookingDateOnly.setHours(0, 0, 0, 0);
+
+    const isToday = bookingDateOnly.getTime() === now.getTime();
+    const isPast = bookingDateOnly.getTime() < now.getTime();
+
+    const isOnline = booking.poojaMode === 'online';
+    const isOffline = booking.poojaMode === 'offline';
+    const hasStartedJourney = !!booking.journeyStartTime;
+    const hasAssignedPandit = booking.assignedPandit && booking.assignedPandit.length > 0;
+
+    const isActionEnabled = isOnline ? (isToday && hasAssignedPandit) : (isOffline && isToday && hasStartedJourney && hasAssignedPandit);
+    const isAudioCallEnabled = isOffline && hasAssignedPandit && isToday;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className={`bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-50/70 transition-all ${
+                isPast ? "opacity-75 grayscale-[20%] scale-[0.99]" : ""
+            }`}
+        >
+            {/* Header band */}
+            <div className={`relative px-4 py-3 overflow-hidden ${isPast ? "bg-gray-400" : "bg-gradient-to-r from-[#FF7000] to-[#FF9A45]"}`}>
+                <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                        <span className="text-base">{isPast ? "✅" : "🪔"}</span>
+                        <h3 className="text-white font-bold text-sm leading-tight truncate">
+                            {booking.poojaNameEng || "Puja Service"}
+                            {isPast && <span className="ml-2 text-[10px] uppercase tracking-wider opacity-90">(Completed)</span>}
+                        </h3>
+                    </div>
+                    <span className="bg-white/20 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
+                        {isOnline ? "Online" : "At Home"}
+                    </span>
+                </div>
+            </div>
+
+            {/* Card Body */}
+            <div className="p-3 space-y-2.5">
+                <div className="grid grid-cols-3 gap-2">
+                    {/* Devotee */}
+                    <div className="bg-[#FFF8F2] rounded-2xl p-2 flex flex-col items-center justify-center border border-orange-50/50 text-center">
+                        <User className="w-4 h-4 text-[#FF7000] mb-0.5" />
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider">Devotee</p>
+                        <p className="text-gray-800 font-bold text-xs truncate w-full">
+                            {booking.bhaktName || booking.userName || "Devotee"}
+                        </p>
+                    </div>
+
+                    {/* Date */}
+                    <div className="bg-[#FFF8F2] rounded-2xl p-2 flex flex-col items-center justify-center border border-orange-50/50 text-center">
+                        <Calendar className="w-4 h-4 text-[#FF7000] mb-0.5" />
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider">Date</p>
+                        <p className="text-gray-800 font-bold text-[10px] whitespace-nowrap">{formattedDate}</p>
+                    </div>
+
+                    {/* Time */}
+                    <div className="bg-[#FFF8F2] rounded-2xl p-2 flex flex-col items-center justify-center border border-orange-50/50 text-center">
+                        <Clock className="w-4 h-4 text-[#FF7000] mb-0.5" />
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider">Time</p>
+                        <p className="text-gray-800 font-bold text-[10px] whitespace-nowrap">{formattedTime}</p>
+                    </div>
+                </div>
+
+                {/* Pandit assignment */}
+                <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50/50 to-[#FFF8F2]/50 rounded-2xl px-3 py-2 border border-orange-100/50">
+                    <div className="w-9 h-9 rounded-full bg-orange-100 border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        {booking.assignedPandit?.[0]?.profileImage ? (
+                            <img
+                                src={booking.assignedPandit[0].profileImage}
+                                alt="Pandit Ji"
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User className="w-4 h-4 text-[#FF7000]" />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider leading-none mb-0.5">
+                            {hasAssignedPandit ? "Pandit Ji Assigned" : "Awaiting Assignment"}
+                        </p>
+                        <p className="text-gray-800 font-bold text-xs truncate">
+                            {hasAssignedPandit
+                                ? `Pandit ${booking.assignedPandit[0].firstName} ${booking.assignedPandit[0].lastName}`
+                                : "Not assigned yet"}
+                        </p>
+                    </div>
+                    {hasAssignedPandit && (
+                        <div className="flex items-center gap-0.5 bg-emerald-500 text-white px-2 py-0.5 rounded-lg flex-shrink-0">
+                            <Star className="w-2.5 h-2.5 fill-white text-white" />
+                            <span className="text-[10px] font-bold">{booking.assignedPandit[0].rating?.toFixed(1) || "5.0"}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Call/Track buttons */}
+                {hasAssignedPandit && (
+                    isOnline ? (
+                        <button
+                            disabled={!isActionEnabled}
+                            onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'video')}
+                            className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition-all active:scale-[0.98] ${
+                                isActionEnabled
+                                    ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            }`}
+                        >
+                            <Video className="w-3.5 h-3.5" />
+                            {isActionEnabled ? "Join Video Call" : "Video Call — Not Available Yet"}
+                        </button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <button
+                                disabled={!isAudioCallEnabled}
+                                onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'audio')}
+                                className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center transition-all active:scale-[0.98] flex-shrink-0 ${
+                                    isAudioCallEnabled
+                                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
+                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                }`}
+                            >
+                                <Phone className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                disabled={!isActionEnabled}
+                                onClick={() => {
+                                    if (hasAssignedPandit && booking.address?.coordinates) {
+                                        const { lat, lng } = booking.address.coordinates;
+                                        navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
+                                    }
+                                }}
+                                className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition-all active:scale-[0.98] ${
+                                    isActionEnabled
+                                        ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
+                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                }`}
+                            >
+                                <MapPin className="w-3.5 h-3.5" />
+                            {isActionEnabled ? "Track Panditji" : "Awaiting Departure"}
+                            </button>
+                        </div>
+                    )
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
+// Helper component for Live Booking Card
+const LiveBookingCard = ({ booking, index }: { booking: any; index: number }) => {
+    const dateVal = booking.bookingDate || booking.addedOn || booking.createdAt;
+    const formattedDate = dateVal
+        ? new Date(dateVal).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    // Unified field resolution: PoojaBooking (new) vs old LiveMandirBooking
+    const pujaName = booking.poojaNameEng || booking.pujaName || "Live Mandir Puja";
+    const temple = booking.templeName || "";
+    const devoteeName = booking.bhaktName || booking.devoteeName || booking.userName || "—";
+    const gotra = booking.gotra || "";
+    const members = booking.members || "";
+    const wish = booking.wish || booking.concern || "";
+    const amount = booking.amount || booking.poojaPrice || 0;
+
+    const rawStatus = booking.status || (booking.isPaymentDone ? "confirmed" : "pending");
+    const displayStatus = rawStatus === "confirmed" ? "Confirmed" : rawStatus === "completed" ? "Completed" : rawStatus === "cancelled" ? "Cancelled" : "Pending";
+
+    const statusStyle =
+        rawStatus === "confirmed" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+        rawStatus === "completed" ? "bg-blue-50 text-blue-600 border border-blue-100" :
+        rawStatus === "cancelled" ? "bg-red-50 text-red-600 border border-red-100" :
+        "bg-orange-50 text-orange-500 border border-orange-100";
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl shadow-sm border border-orange-50/70 relative overflow-hidden"
+        >
+            {/* Decorative gradient accent */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-red-400 to-amber-400" />
+
+            <div className="p-4">
+                {/* Top row: puja name + status */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-base">📺</span>
+                            <h3 className="font-bold text-gray-800 text-sm truncate">{pujaName}</h3>
+                        </div>
+                        {temple && (
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-orange-400 shrink-0" />
+                                <span className="truncate">{temple}</span>
+                            </p>
+                        )}
+                    </div>
+                    <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${statusStyle}`}>
+                        {displayStatus}
+                    </span>
+                </div>
+
+                {/* Devotee details */}
+                <div className="mt-3.5 pt-3 border-t border-orange-50/60 grid grid-cols-2 gap-3">
+                    <div>
+                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wide mb-0.5">Devotee</p>
+                        <p className="text-xs font-bold text-gray-700 truncate">{devoteeName}</p>
+                        {gotra && <p className="text-[10px] text-gray-400">Gotra: {gotra}</p>}
+                        {members && <p className="text-[10px] text-gray-400">{members} member(s)</p>}
+                    </div>
+                    <div>
+                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wide mb-0.5">Date</p>
+                        <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                            <span className="text-[10px] text-gray-400 font-semibold">Paid:</span>
+                            <span className="text-xs font-black text-[#FF7000]">₹{Number(amount).toLocaleString("en-IN")}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Wish */}
+                {wish && (
+                    <div className="mt-3 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                        <p className="text-[9px] text-amber-500 font-bold uppercase tracking-wide">🙏 Sankalp Wish</p>
+                        <p className="text-xs text-stone-600 italic mt-0.5">"{wish}"</p>
+                    </div>
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
+// Helper component for Chadhava Booking Card
+const ChadhavaBookingCard = ({ booking, index }: { booking: any; index: number }) => {
+    const formattedDate = booking.addedOn 
+        ? new Date(booking.addedOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    const getPaymentBadge = (status: string) => {
+        switch (status) {
+            case "paid":
+                return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+            case "failed":
+                return "bg-red-50 text-red-600 border border-red-100";
+            default:
+                return "bg-orange-50 text-orange-600 border border-orange-100";
+        }
+    };
+
+    // Construct selections text
+    const selectionsText = booking.selections 
+        ? booking.selections.map((s: any) => `${s.quantity}x ${s.name}`).join(", ")
+        : "";
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            {/* Top row */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-lg">🌸</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">{booking.deity}</h3>
+                    </div>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                        <span className="truncate text-gray-600">{booking.templeName}</span>
+                    </p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getPaymentBadge(booking.paymentStatus)}`}>
+                    {booking.paymentStatus === "paid" ? "Paid" : booking.paymentStatus || "Pending"}
+                </span>
+            </div>
+
+            {/* Selections / Offerings list */}
+            {selectionsText && (
+                <div className="mt-3 bg-orange-50/30 p-2.5 rounded-xl border border-orange-100/30">
+                    <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider mb-0.5">Offerings</p>
+                    <p className="text-xs font-semibold text-gray-700 leading-tight">{selectionsText}</p>
+                </div>
+            )}
+
+            {/* Prasad Box indicator if true */}
+            {booking.addPrasadBox && (
+                <div className="mt-2 flex items-center gap-1.5 bg-yellow-50 text-yellow-700 text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-yellow-100">
+                    <span>📦</span>
+                    <span>Prasad Box Added (Dispatched to Home Address)</span>
+                </div>
+            )}
+
+            {/* Middle Details Grid */}
+            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50">
+                <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Devotee</p>
+                    <p className="text-xs font-bold text-gray-700">{booking.devoteeName}</p>
+                    {booking.gotra && <p className="text-[10px] text-gray-400">Gotra: {booking.gotra}</p>}
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Booking Date</p>
+                    <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-orange-50/50">
+                <span className="text-[10px] text-gray-400 font-medium">
+                    Order ID: <span className="font-mono text-gray-500 font-semibold">{booking.razorpayOrderId ? booking.razorpayOrderId.substring(0, 12) : "N/A"}</span>
+                </span>
+                <div className="flex items-center gap-1 text-[#FF7000]">
+                    <span className="text-[10px] font-bold text-gray-400">Total:</span>
+                    <span className="text-sm font-black">₹{booking.totalAmount}</span>
+                </div>
+            </div>
+
+            {/* Wish / Prayer */}
+            {booking.wish && (
+                <div className="mt-3 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                    <p className="text-[9px] text-stone-400 font-semibold uppercase">Your Prayer / Wish</p>
+                    <p className="text-xs text-stone-600 italic mt-0.5">"{booking.wish}"</p>
+                </div>
+            )}
+        </motion.div>
+    );
+};
+
+// Helper component for Direct Pandit Booking Card
+const DirectBookingCard = ({ booking, index }: { booking: any; index: number }) => {
+    const formattedDate = booking.createdAt 
+        ? new Date(booking.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+    const formattedTime = booking.createdAt 
+        ? new Date(booking.createdAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+        : "";
+
+    const getStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case "confirmed":
+            case "approved":
+                return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+            case "completed":
+                return "bg-blue-50 text-blue-600 border border-blue-100";
+            case "cancelled":
+            case "rejected":
+                return "bg-red-50 text-red-600 border border-red-100";
+            default:
+                return "bg-orange-50 text-orange-600 border border-orange-100";
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            {/* Top row */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-lg">🪔</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">Pandit Direct Booking</h3>
+                      </div>
+                      <p className="text-xs text-[#FF7000] font-bold flex items-center gap-1">
+                          <span>Acharya:</span>
+                          <span className="truncate">{booking.panditName || "Assigned Pandit"}</span>
+                      </p>
+                  </div>
+                  <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getStatusColor(booking.status)}`}>
+                      {booking.status || "Pending"}
+                  </span>
+              </div>
+
+              {/* Middle Details Grid */}
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-orange-50/50">
+                  <div>
+                      <p className="text-[9px] text-gray-400 uppercase font-semibold">Devotee</p>
+                      <p className="text-xs font-bold text-gray-700">{booking.name}</p>
+                  </div>
+                  <div className="text-right">
+                      <p className="text-[9px] text-gray-400 uppercase font-semibold">Requested On</p>
+                      <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                      <p className="text-[10px] text-gray-400">{formattedTime}</p>
+                  </div>
+              </div>
+
+              {/* Contact info / reference */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-orange-50/50">
+                  <div className="flex items-center gap-1 text-gray-500">
+                      <Phone className="w-3 h-3" />
+                      <span className="text-[11px] font-medium">+91 {booking.phone}</span>
+                  </div>
+                  <span className="text-[10px] bg-stone-50 text-stone-500 border border-stone-100 rounded-lg px-2 py-0.5 font-mono">
+                      Ref: {booking._id ? booking._id.substring(0, 8) : "N/A"}
+                  </span>
+              </div>
+          </motion.div>
+      );
+  };

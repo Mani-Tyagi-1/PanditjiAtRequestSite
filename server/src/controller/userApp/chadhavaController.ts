@@ -1,4 +1,5 @@
 import { RequestHandler } from "express";
+import axios from "axios";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import Chadhava, { IChadhava } from "../../model/userApp/chadhavaModel";
@@ -8,6 +9,43 @@ import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhav
 const toClientShape = (doc: any) => {
   const obj = doc.toObject ? doc.toObject() : doc;
   return { ...obj, id: obj.slug };
+};
+
+const normalizeExternalChadhava = (raw: any) => {
+  const deity = raw.chadhavaName || raw.deity || "";
+  const mandir = raw.selectedMandirs?.[0];
+  let templeName = "";
+  let templeLocation = "";
+  if (mandir) {
+    templeName = mandir.nameEnglish || "";
+    templeLocation = mandir.city || "";
+  }
+  const image = raw.chadhavaWebCardImage?.location || raw.chadhavaAppImage?.location || raw.image || "";
+  
+  const rawSections = raw.chadhavaSections || raw.sections || [];
+  const sections = rawSections.map((sec: any) => ({
+    sectionName: sec.sectionName || "",
+    items: (sec.items || []).map((it: any, index: number) => ({
+      code: it.code || it.itemName || `item_${index}`,
+      itemName: it.itemName || "",
+      itemDesc: it.itemDesc || "",
+      itemImage: it.itemImage?.location || it.itemImage || "",
+      itemPrice: (it.discountedPrice && it.discountedPrice > 0) ? it.discountedPrice : (it.itemPrice || it.chadhavaPrice || 0),
+      maxQuantity: it.maxQuantity || 10,
+      popular: it.popular || false,
+      isActive: it.isActive !== false
+    }))
+  }));
+
+  return {
+    slug: raw.slug || raw._id || raw.id || "",
+    deity,
+    templeName,
+    templeLocation,
+    image,
+    sections,
+    prasad: raw.prasad || { enabled: false, price: 0, name: "", desc: "", image: "" }
+  };
 };
 
 // ── Razorpay setup (mirrors paidConsultationController) ──
@@ -120,6 +158,22 @@ export const getChadhavas: RequestHandler = async (_req, res) => {
 export const getChadhavaBySlug: RequestHandler = async (req, res) => {
   try {
     const { slug } = req.params;
+
+    // Check if slug is a 24-character hex ID (indicating it's from the external newChadhava API)
+    if (slug && slug.length === 24 && /^[0-9a-fA-F]{24}$/.test(slug)) {
+      try {
+        const response = await axios.get("https://vedicvaibhav.com/api/newChadhava/get-all-new-chadhava");
+        const list = response.data?.data || response.data?.items || response.data || [];
+        const chadhava = list.find((item: any) => item._id === slug);
+        if (chadhava) {
+          res.status(200).json({ success: true, data: chadhava });
+          return;
+        }
+      } catch (proxyErr: any) {
+        console.error("Failed to proxy find chadhava by ID:", proxyErr.message);
+      }
+    }
+
     const chadhava = await Chadhava.findOne({ slug, isActive: true });
     if (!chadhava) {
       res.status(404).json({ success: false, message: "Chadhava not found" });
@@ -135,7 +189,25 @@ export const getChadhavaBySlug: RequestHandler = async (req, res) => {
 export const getChadhavaQuote: RequestHandler = async (req, res) => {
   try {
     const { slug } = req.params;
-    const chadhava = await Chadhava.findOne({ slug, isActive: true });
+    let chadhava: any = null;
+
+    if (slug && slug.length === 24 && /^[0-9a-fA-F]{24}$/.test(slug)) {
+      try {
+        const response = await axios.get("https://vedicvaibhav.com/api/newChadhava/get-all-new-chadhava");
+        const list = response.data?.data || response.data?.items || response.data || [];
+        const rawChadhava = list.find((item: any) => item._id === slug);
+        if (rawChadhava) {
+          chadhava = normalizeExternalChadhava(rawChadhava);
+        }
+      } catch (proxyErr: any) {
+        console.error("Failed to proxy fetch external chadhava for quote:", proxyErr.message);
+      }
+    }
+
+    if (!chadhava) {
+      chadhava = await Chadhava.findOne({ slug, isActive: true });
+    }
+
     if (!chadhava) {
       res.status(404).json({ success: false, message: "Chadhava not found" });
       return;
@@ -181,7 +253,25 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       return;
     }
 
-    const chadhava = await Chadhava.findOne({ slug: chadhavaSlug, isActive: true });
+    let chadhava: any = null;
+
+    if (chadhavaSlug && chadhavaSlug.length === 24 && /^[0-9a-fA-F]{24}$/.test(chadhavaSlug)) {
+      try {
+        const response = await axios.get("https://vedicvaibhav.com/api/newChadhava/get-all-new-chadhava");
+        const list = response.data?.data || response.data?.items || response.data || [];
+        const rawChadhava = list.find((item: any) => item._id === chadhavaSlug);
+        if (rawChadhava) {
+          chadhava = normalizeExternalChadhava(rawChadhava);
+        }
+      } catch (proxyErr: any) {
+        console.error("Failed to proxy fetch external chadhava for order:", proxyErr.message);
+      }
+    }
+
+    if (!chadhava) {
+      chadhava = await Chadhava.findOne({ slug: chadhavaSlug, isActive: true });
+    }
+
     if (!chadhava) {
       res.status(404).json({ success: false, message: "Chadhava not found" });
       return;
@@ -369,3 +459,29 @@ export const getChadhavaBookings: RequestHandler = async (_req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch chadhava bookings" });
   }
 };
+
+// GET /chadhava-bookings/user/:phone
+export const getUserChadhavaBookings: RequestHandler = async (req, res) => {
+  try {
+    const { phone } = req.params;
+    if (!phone) {
+      res.status(400).json({ success: false, message: "Phone number is required" });
+      return;
+    }
+    const cleanPhone = String(phone).replace(/\D/g, "");
+    const alias10 = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
+
+    const bookings = await ChadhavaBooking.find({
+      $or: [
+        { phone: cleanPhone },
+        { phone: alias10 },
+        { phone: { $regex: alias10 + "$" } }
+      ]
+    }).sort({ addedOn: -1 });
+
+    res.status(200).json({ success: true, data: bookings });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch user chadhava bookings" });
+  }
+};
+

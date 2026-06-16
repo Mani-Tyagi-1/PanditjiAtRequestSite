@@ -112,9 +112,6 @@ export default function LiveMandirPujaCard({ puja }: Props) {
                 {/* Price + CTA */}
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col leading-none">
-                        <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-0.5">
-                            Starting at
-                        </span>
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[19px] font-bold text-stone-900">
                                 ₹{puja.price.toLocaleString("en-IN")}
@@ -125,6 +122,7 @@ export default function LiveMandirPujaCard({ puja }: Props) {
                                 </span>
                             )}
                         </div>
+                        <span className="text-[10px] font-medium text-stone-400 mt-0.5">{puja.durationMins} min · Live Puja</span>
                     </div>
 
                     <button

@@ -202,7 +202,7 @@ function App() {
             <Route path="/book-puja" element={<BookPujaPage />} />
             <Route path="/chadhava" element={<ChadhavaPage />} />
             <Route path="/kashi" element={<KashiPage />} />
-            <Route path="/account" element={<ComingSoonTab title="Account" emoji="👤" />} />
+            <Route path="/account" element={<ProfilePage />} />
           </Route>
 
           <Route path="/privacypolicy" element={<PrivacyPolicy />} />

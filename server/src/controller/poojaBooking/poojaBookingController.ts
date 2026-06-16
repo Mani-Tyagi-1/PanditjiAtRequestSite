@@ -207,8 +207,8 @@ const sendOrderToPartnerAffiliate = async (booking: any): Promise<void> => {
 // -------------------------------------------------------------
 // TYPES
 type CreatePendingBookingBody = {
-  userId: string;
-  poojaId: string;
+  userId?: string;             // optional – resolved from phone for Live Mandir
+  poojaId?: string;            // optional – resolved from pujaSlug for Live Mandir
   poojaMode: 'online' | 'offline';
   bookingDate: string;
   amount: number;              // total to charge
@@ -216,7 +216,8 @@ type CreatePendingBookingBody = {
   address?: any;
   bhaktName?: string;
   gotra?: string;
-  contactNumber?: string;
+  contactNumber?: string;      // used as fallback phone for user lookup
+  phone?: string;              // Live Mandir: raw phone field (10-digit)
   emailId?: string;
   deceasedPersons?: Array<{
     name: string;
@@ -227,6 +228,17 @@ type CreatePendingBookingBody = {
   ritualPerformerGotra?: string;
   ritualPlace?: string;
   referralCode?: string;       // partner affiliate ref code (from ?ref= URL param)
+  // ── Live Mandir fields ──
+  isLiveMandir?: boolean;
+  pujaSlug?: string;
+  templeName?: string;
+  packageId?: string;
+  packageName?: string;
+  members?: string;
+  wish?: string;
+  concern?: string;
+  familyMembers?: any[];
+  prasadAdded?: boolean;
 };
 
 type CompleteBookingBody = {
@@ -256,20 +268,69 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       bhaktName,
       gotra,
       contactNumber,
+      phone,
       emailId,
       deceasedPersons,
       ritualPerformerName,
       ritualPerformerGotra,
       ritualPlace,
       referralCode,
+      isLiveMandir,
+      pujaSlug,
+      templeName,
+      packageId,
+      packageName,
+      members,
+      wish,
+      concern,
+      familyMembers,
+      prasadAdded,
     } = req.body as CreatePendingBookingBody;
 
-    const [userExists, poojaExists] = await Promise.all([
-      User.findById(userId),
-      Pooja.findById(poojaId),
-    ]);
-    if (!userExists) { res.status(404).json({ message: 'User not found.' }); return; }
-    if (!poojaExists) { res.status(404).json({ message: 'Pooja not found.' }); return; }
+    // ── User resolution ──────────────────────────────────────────────────────
+    let userExists: any = null;
+    if (userId) {
+      userExists = await User.findById(userId);
+    }
+    if (!userExists) {
+      // Fallback: resolve by phone (strips country code prefix)
+      const rawPhone = String(phone || contactNumber || '').replace(/\D/g, '');
+      const alias10 = rawPhone.length >= 10 ? rawPhone.slice(-10) : rawPhone;
+      if (alias10.length === 10) {
+        userExists = await User.findOne({
+          $or: [
+            { phone: alias10 },
+            { phone: `91${alias10}` },
+            { phone: { $regex: alias10 + '$' } },
+          ],
+        });
+      }
+    }
+    if (!userExists) {
+      res.status(404).json({ message: 'User not found. Please ensure you are registered.' });
+      return;
+    }
+
+    // ── Pooja resolution ─────────────────────────────────────────────────────
+    let poojaExists: any = null;
+    if (poojaId) {
+      poojaExists = await Pooja.findById(poojaId);
+    }
+    if (!poojaExists && pujaSlug) {
+      poojaExists = await Pooja.findOne({ poojaID: pujaSlug });
+    }
+    if (!poojaExists && (pujaSlug || packageName)) {
+      const nameFallback = packageName || pujaSlug || '';
+      poojaExists = await Pooja.findOne({ poojaNameEng: new RegExp(nameFallback, 'i') });
+    }
+    if (!poojaExists) {
+      // Last resort: grab any active pooja
+      poojaExists = await Pooja.findOne();
+    }
+    if (!poojaExists) {
+      res.status(404).json({ message: 'Pooja not found.' });
+      return;
+    }
 
     // short, unique receipt ID (<= 40 chars)
     const hexId = crypto.randomBytes(8).toString('hex').toUpperCase();
@@ -282,32 +343,36 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
         : amount;
 
     // --- Razorpay Order Creation ---
-    const orderOptions = {
+    const orderOptions: any = {
       amount: amount * 100, // paise
       currency: 'INR',
       receipt: receiptId,
       payment_capture: 1,
       notes: {
-        userId,
-        poojaId,
+        userId: String(userId ?? ''),
+        poojaId: String(poojaId ?? pujaSlug ?? ''),
         mode: poojaMode,
         amount,
         ...(panditDakshina != null && { panditDakshina: String(panditDakshina) }),
+        ...(isLiveMandir && { isLiveMandir: 'true', pujaSlug, templeName }),
       },
     };
 
     const order = await razorpay.orders.create(orderOptions);
 
     // --- Create Pending Booking Record ---
-    const poojaNameEng = (poojaExists as any).poojaNameEng ?? '';
+    const poojaNameEng = (poojaExists as any).poojaNameEng ?? (packageName ?? pujaSlug ?? '');
+    // For live mandir, use a friendly label if no poojaNameEng
+    const resolvedPoojaId = (poojaExists as any)._id;
+    const resolvedUserId = (userExists as any)._id;
 
     const newBooking = await pendingPoojaBookingModel.create({
-      userId,
+      userId: resolvedUserId,
       userName: (userExists as any).name,
       userPhone: (userExists as any).phone,
       userEmail: emailId || (userExists as any).email,
 
-      poojaId,
+      poojaId: resolvedPoojaId,
       poojaNameEng,
       poojaMode,
       bookingDate: new Date(bookingDate),
@@ -323,15 +388,28 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       razorpayOrderId: order.id,
 
       ...(poojaMode === 'offline' && { address }),
-      bhaktName,
+      bhaktName: bhaktName || (userExists as any).name,
       gotra,
-      contactNumber,
+      contactNumber: contactNumber || phone,
       emailId,
       ...(Array.isArray(deceasedPersons) && { deceasedPersons }),
       ...(ritualPerformerName && { ritualPerformerName }),
       ...(ritualPerformerGotra && { ritualPerformerGotra }),
       ...(ritualPlace && { ritualPlace }),
       ...(referralCode && { referralCode }),
+      // ── Live Mandir specific fields ──
+      ...(isLiveMandir && {
+        isLiveMandir: true,
+        pujaSlug,
+        templeName,
+        packageId,
+        packageName,
+        members,
+        wish,
+        concern,
+        ...(Array.isArray(familyMembers) && { familyMembers }),
+        ...(prasadAdded !== undefined && { prasadAdded }),
+      }),
     });
 
     // 🛎️ NEW: Notify pandits on PENDING creation (optional; controlled via env)
@@ -369,48 +447,53 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
         // Fetch nearby pandit or use default
         let assignedPanditName = "";
         
-        try {
-          const pandits = await Pandit.find({}).lean();
+        // Live Mandir pujas are performed by temple priests — skip proximity logic
+        if (isLiveMandir) {
+          assignedPanditName = "Temple Priest";
+        } else {
+          try {
+            const pandits = await Pandit.find({}).lean();
 
-          if (poojaMode === 'offline' && address) {
-            let userLat = Number(address.lat || address.latitude || address.location?.lat);
-            let userLng = Number(address.lng || address.longitude || address.location?.lng);
-            
-            if (userLat && userLng) {
-               let nearestPandit = null;
-               let minDistance = Infinity;
-               
-               for (const p of pandits) {
-                 if (p.location?.latitude && p.location?.longitude) {
-                   const plat = p.location.latitude;
-                   const plng = p.location.longitude;
-                   const dLat = (plat - userLat) * Math.PI / 180;
-                   const dLng = (plng - userLng) * Math.PI / 180;
-                   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                             Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
-                             Math.sin(dLng/2) * Math.sin(dLng/2);
-                   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                   const distance = 6371 * c; // km
-                   
-                   if (distance < minDistance && distance <= 50) { // within 50km
-                     minDistance = distance;
-                     nearestPandit = p;
+            if (poojaMode === 'offline' && address) {
+              let userLat = Number(address.lat || address.latitude || address.location?.lat);
+              let userLng = Number(address.lng || address.longitude || address.location?.lng);
+              
+              if (userLat && userLng) {
+                 let nearestPandit = null;
+                 let minDistance = Infinity;
+                 
+                 for (const p of pandits) {
+                   if (p.location?.latitude && p.location?.longitude) {
+                     const plat = p.location.latitude;
+                     const plng = p.location.longitude;
+                     const dLat = (plat - userLat) * Math.PI / 180;
+                     const dLng = (plng - userLng) * Math.PI / 180;
+                     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                               Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
+                               Math.sin(dLng/2) * Math.sin(dLng/2);
+                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                     const distance = 6371 * c; // km
+                     
+                     if (distance < minDistance && distance <= 50) { // within 50km
+                       minDistance = distance;
+                       nearestPandit = p;
+                     }
                    }
                  }
-               }
-               if (nearestPandit) {
-                 assignedPanditName = `${nearestPandit.prefix || ''} ${nearestPandit.firstName || ''} ${nearestPandit.lastName || ''}`.trim();
-               }
+                 if (nearestPandit) {
+                   assignedPanditName = `${nearestPandit.prefix || ''} ${nearestPandit.firstName || ''} ${nearestPandit.lastName || ''}`.trim();
+                 }
+              }
             }
+            
+            if (!assignedPanditName && pandits.length > 0) {
+              // Pick a random pandit from active pandits
+              const randomPandit = pandits[Math.floor(Math.random() * pandits.length)];
+              assignedPanditName = `${randomPandit.prefix || ''} ${randomPandit.firstName || ''} ${randomPandit.lastName || ''}`.trim();
+            }
+          } catch(err) {
+            console.error('Error fetching nearby pandit for whatsapp msg:', err);
           }
-          
-          if (!assignedPanditName && pandits.length > 0) {
-            // Pick a random pandit from active pandits
-            const randomPandit = pandits[Math.floor(Math.random() * pandits.length)];
-            assignedPanditName = `${randomPandit.prefix || ''} ${randomPandit.firstName || ''} ${randomPandit.lastName || ''}`.trim();
-          }
-        } catch(err) {
-          console.error('Error fetching nearby pandit for whatsapp msg:', err);
         }
         
         if (!assignedPanditName) {
@@ -723,22 +806,25 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
     }
 
     const alias10 = toAlias10(userPhone);
+    // Match both stored formats: plain 10-digit and 91-prefixed
+    const phoneRegex = new RegExp(`(^91${alias10}$|^${alias10}$)`);
 
     const [pendingBookings, finalBookings] = await Promise.all([
       pendingPoojaBookingModel
-        .find({ userPhone: alias10, isCompleted: false })
+        .find({ userPhone: { $regex: phoneRegex }, isCompleted: false })
         .populate('poojaId', 'poojaNameEng poojaCardImage')
         .populate('assignedPandit', 'firstName lastName rating profileImage')
         .lean(),
+      // Return ALL PoojaBookings (no isCompleted filter) so live mandir confirmed bookings appear
       poojaBookingModel
-        .find({ userPhone: alias10, isCompleted: false })
+        .find({ userPhone: { $regex: phoneRegex } })
         .populate('poojaId', 'poojaNameEng poojaCardImage')
         .populate('assignedPandit', 'firstName lastName rating profileImage')
         .lean()
     ]);
 
     const bookings = [...pendingBookings, ...finalBookings].sort(
-      (a: any, b: any) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()
+      (a: any, b: any) => new Date(b.bookingDate ?? b.createdAt).getTime() - new Date(a.bookingDate ?? a.createdAt).getTime()
     );
 
     res.status(200).json(bookings || []);

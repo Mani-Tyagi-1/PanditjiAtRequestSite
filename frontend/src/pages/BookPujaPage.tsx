@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
     ArrowLeft,
@@ -54,7 +54,8 @@ type Tab = "home" | "mandir";
 
 export default function BookPujaPage() {
     const navigate = useNavigate();
-    const [tab, setTab] = useState<Tab>("home");
+    const [searchParams] = useSearchParams();
+    const [tab, setTab] = useState<Tab>(searchParams.get("tab") === "mandir" ? "mandir" : "home");
 
     const [poojas, setPoojas] = useState<Pooja[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);

@@ -1,19 +1,10 @@
 // ─────────────────────────────────────────────────────────────
-//  Live Pujas from Mandir — Types + Dummy Data
+//  Live Pujas from Mandir — Types + Data
 //  NOTE: This data is hard-coded for now. When the backend is
 //  ready, replace `LIVE_MANDIR_PUJAS` with an API fetch that
 //  returns the same `LiveMandirPuja[]` shape — nothing else in the
 //  UI needs to change.
 // ─────────────────────────────────────────────────────────────
-
-export interface LiveMandirPackage {
-    id: string;
-    name: string;
-    description: string;
-    price: number;
-    perks: string[];
-    popular?: boolean;
-}
 
 export interface LiveMandirPuja {
     id: string;
@@ -34,33 +25,7 @@ export interface LiveMandirPuja {
     devoteesJoined: number;
     benefits: string[];
     tags: string[];
-    packages: LiveMandirPackage[];
 }
-
-const standardPackages = (base: number): LiveMandirPackage[] => [
-    {
-        id: "individual",
-        name: "Individual Sankalp",
-        description: "Puja performed in your name & gotra with live video.",
-        price: base,
-        perks: ["Sankalp in your name", "Live HD video link", "Prasad delivered home"],
-    },
-    {
-        id: "family",
-        name: "Family Sankalp",
-        description: "For up to 4 family members. Most chosen by devotees.",
-        price: Math.round(base * 1.8),
-        perks: ["Sankalp for 4 members", "Live HD video link", "Prasad + Tilak kit", "Personalised aarti mention"],
-        popular: true,
-    },
-    {
-        id: "premium",
-        name: "Premium Seva",
-        description: "Dedicated pandit, full puja recording & blessed samagri.",
-        price: Math.round(base * 3),
-        perks: ["Unlimited family members", "Full puja recording", "Blessed Rudraksha + Prasad", "Priority dedicated pandit", "WhatsApp updates"],
-    },
-];
 
 export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
     {
@@ -81,7 +46,6 @@ export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
         devoteesJoined: 2840,
         benefits: ["Removes negativity", "Health & longevity", "Peace at home"],
         tags: ["Most Popular", "Jyotirlinga"],
-        packages: standardPackages(851),
     },
     {
         id: "mahakaleshwar-bhasma-aarti",
@@ -101,7 +65,6 @@ export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
         devoteesJoined: 5120,
         benefits: ["Protection from fear", "Victory over enemies", "Moksha"],
         tags: ["Rare Seva", "Jyotirlinga"],
-        packages: standardPackages(1100),
     },
     {
         id: "siddhivinayak-modak-puja",
@@ -121,7 +84,6 @@ export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
         devoteesJoined: 3960,
         benefits: ["Removes obstacles", "New beginnings", "Success in work"],
         tags: ["New Venture", "Prosperity"],
-        packages: standardPackages(551),
     },
     {
         id: "tirupati-balaji-archana",
@@ -141,7 +103,6 @@ export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
         devoteesJoined: 6740,
         benefits: ["Wealth & abundance", "Wish fulfilment", "Family harmony"],
         tags: ["Wish Fulfilment", "Most Loved"],
-        packages: standardPackages(999),
     },
     {
         id: "khatu-shyam-nishan-yatra",
@@ -161,7 +122,6 @@ export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
         devoteesJoined: 2210,
         benefits: ["Faith rewarded", "Courage & strength", "Protection"],
         tags: ["Haare Ka Sahara"],
-        packages: standardPackages(451),
     },
     {
         id: "vaishno-devi-aarti",
@@ -181,6 +141,5 @@ export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
         devoteesJoined: 4480,
         benefits: ["Divine blessings", "Wish fulfilment", "Strength & courage"],
         tags: ["Shakti Peeth"],
-        packages: standardPackages(651),
     },
 ];

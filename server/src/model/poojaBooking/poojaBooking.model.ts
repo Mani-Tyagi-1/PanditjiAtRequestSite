@@ -113,6 +113,17 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
       type: { type: String, enum: ['Point'] },
       coordinates: { type: [Number] }, // [lng, lat]
     },
+
+    pujaSlug: { type: String, trim: true },
+    templeName: { type: String, trim: true },
+    packageId: { type: String, trim: true },
+    packageName: { type: String, trim: true },
+    members: { type: String, trim: true },
+    wish: { type: String, trim: true },
+    isLiveMandir: { type: Boolean, default: false },
+    concern: { type: String, trim: true },
+    familyMembers: { type: Array, default: undefined },
+    prasadAdded: { type: Boolean, default: undefined },
   },
   { timestamps: true },
 );

@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from "express";
+  import express, { Request, Response, NextFunction } from "express";
 import {
   getChadhavas,
   getChadhavaBySlug,
@@ -7,6 +7,7 @@ import {
   completeChadhavaPayment,
   chadhavaWebhook,
   getChadhavaBookings,
+  getUserChadhavaBookings,
 } from "../../controller/userApp/chadhavaController";
 
 const router = express.Router();
@@ -33,5 +34,6 @@ router.post("/chadhava-bookings/webhook", wrap(chadhavaWebhook));
 
 // Bookings
 router.get("/chadhava-bookings", wrap(getChadhavaBookings));
+router.get("/chadhava-bookings/user/:phone", wrap(getUserChadhavaBookings));
 
 export default router;

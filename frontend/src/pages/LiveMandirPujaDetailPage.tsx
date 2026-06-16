@@ -127,37 +127,6 @@ export default function LiveMandirPujaDetailPage() {
                     </div>
                 </div>
 
-                {/* Seva Packages */}
-                <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Select Seva Package</h3>
-                    <div className="space-y-3">
-                        {puja.packages.map((pkg) => (
-                            <div key={pkg.id} className={`bg-white rounded-2xl border-2 p-4 transition-all relative ${pkg.popular ? "border-orange-500 bg-orange-50/20" : "border-stone-200"}`}>
-                                {pkg.popular && (
-                                    <span className="absolute -top-2.5 right-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
-                                        ★ Most Chosen
-                                    </span>
-                                )}
-                                <div className="flex justify-between gap-3">
-                                    <div className="space-y-1">
-                                        <h4 className="font-bold text-[14px] text-stone-850">{pkg.name}</h4>
-                                        <p className="text-[12px] text-stone-500 leading-snug">{pkg.description}</p>
-                                    </div>
-                                    <span className="font-bold text-[16px] text-stone-900 shrink-0">₹{pkg.price.toLocaleString("en-IN")}</span>
-                                </div>
-                                <ul className="mt-3 space-y-1.5 border-t border-stone-100 pt-3">
-                                    {pkg.perks.map((perk) => (
-                                        <li key={perk} className="flex items-center gap-2 text-[11.5px] text-stone-600">
-                                            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" strokeWidth={3} />
-                                            {perk}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
                 {/* Bottom Trust Row */}
                 <div className="grid grid-cols-3 gap-2 mt-4 text-center">
                     {[

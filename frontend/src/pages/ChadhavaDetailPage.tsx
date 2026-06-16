@@ -25,7 +25,56 @@ export default function ChadhavaDetailPage() {
                 const res = await fetch(`${API_URL}/chadhavas/${slug}`);
                 if (!res.ok) throw new Error("Chadhava not found");
                 const json = await res.json();
-                setChadhava(json.data);
+                
+                const raw = json.data;
+                if (!raw) throw new Error("Chadhava data is empty");
+                
+                const normalized: Chadhava = {
+                    id: raw._id || raw.id || "",
+                    slug: raw.slug || raw._id || raw.id || "",
+                    deity: raw.chadhavaName || raw.deity || "",
+                    deityHindi: raw.deityHindi || "",
+                    templeName: raw.selectedMandirs?.[0]?.nameEnglish || raw.templeName || "",
+                    templeLocation: raw.selectedMandirs?.[0]?.city || raw.templeLocation || "",
+                    image: raw.chadhavaWebCardImage?.location || raw.chadhavaAppImage?.location || raw.image || "",
+                    offeringDay: raw.offeringDay || (raw.availableDates?.length ? "Available on: " + raw.availableDates.join(", ") : ""),
+                    startingPrice: raw.startingPrice || 0,
+                    originalPrice: raw.originalPrice,
+                    rating: raw.rating || 5,
+                    devoteesOffered: raw.devoteesOffered || 0,
+                    benefits: Array.isArray(raw.benefits) ? raw.benefits.map((b: any) => typeof b === "object" ? b.description : b) : [],
+                    tags: raw.tags || [],
+                    sections: (raw.chadhavaSections || raw.sections || []).map((sec: any) => ({
+                        sectionName: sec.sectionName || "",
+                        items: (sec.items || []).map((it: any, index: number) => ({
+                            code: it.code || it.itemName || `item_${index}`,
+                            itemName: it.itemName || "",
+                            itemDesc: it.itemDesc || "",
+                            itemImage: it.itemImage?.location || it.itemImage || "",
+                            itemPrice: (it.discountedPrice && it.discountedPrice > 0) ? it.discountedPrice : (it.itemPrice || it.chadhavaPrice || 0),
+                            maxQuantity: it.maxQuantity || 10,
+                            popular: it.popular || false,
+                            isActive: it.isActive !== false
+                        }))
+                    })),
+                    prasad: raw.prasad || { enabled: false, price: 0, name: "", desc: "", image: "" }
+                };
+
+                // Calculate startingPrice and originalPrice dynamically if not set
+                if (normalized.startingPrice === 0) {
+                    const prices: number[] = [];
+                    for (const sec of normalized.sections) {
+                        for (const it of sec.items) {
+                            if (it.itemPrice) prices.push(it.itemPrice);
+                        }
+                    }
+                    if (prices.length > 0) {
+                        normalized.startingPrice = Math.min(...prices);
+                        normalized.originalPrice = raw.originalPrice || Math.round(normalized.startingPrice * 2.2);
+                    }
+                }
+                
+                setChadhava(normalized);
             } catch (err) {
                 console.error("Error fetching chadhava details:", err);
                 setError("Failed to load offering details. It may not exist or is inactive.");

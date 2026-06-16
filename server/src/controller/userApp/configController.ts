@@ -53,3 +53,13 @@ export const proxyApplyCoupon = async (req: Request, res: Response) => {
         res.status(status).json({ message });
     }
 };
+
+export const proxyFetchAllNewChadhava = async (req: Request, res: Response) => {
+    try {
+        const response = await axios.get("https://vedicvaibhav.com/api/newChadhava/get-all-new-chadhava");
+        res.status(response.status).json(response.data);
+    } catch (error: any) {
+        console.error("New Chadhava Proxy fetch error:", error.message);
+        res.status(500).json({ message: "Failed to fetch new chadhava from external service." });
+    }
+};

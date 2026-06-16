@@ -4,8 +4,9 @@ import {
     X, MapPin, Clock, Check, ChevronLeft, ChevronRight,
     Star, ShieldCheck, Video, Gift, CalendarDays,
 } from "lucide-react";
-import type { LiveMandirPuja, LiveMandirPackage } from "./liveMandirData";
+import type { LiveMandirPuja } from "./liveMandirData";
 import API_URL from "../../../utils/apiConfig";
+import { encryptPayload } from "../../../utils/encryption";
 
 interface Props {
     isOpen: boolean;
@@ -13,17 +14,16 @@ interface Props {
     puja: LiveMandirPuja | null;
 }
 
-type Step = "package" | "details" | "review" | "success";
+type Step = "details" | "review" | "success";
 
-const STEP_ORDER: Step[] = ["package", "details", "review"];
+const STEP_ORDER: Step[] = ["details", "review"];
 
 const INPUT =
     "w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all";
 const LABEL = "text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block";
 
 export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props) {
-    const [step, setStep] = useState<Step>("package");
-    const [selectedPkg, setSelectedPkg] = useState<LiveMandirPackage | null>(null);
+    const [step, setStep] = useState<Step>("details");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [form, setForm] = useState({ name: "", gotra: "", phone: "", members: "", wish: "" });
@@ -31,8 +31,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
     // Reset whenever a new puja is opened
     useEffect(() => {
         if (isOpen && puja) {
-            setStep("package");
-            setSelectedPkg(puja.packages.find((p) => p.popular) || puja.packages[0]);
+            setStep("details");
             setSubmitting(false);
             setError("");
             setForm({ name: "", gotra: "", phone: "", members: "", wish: "" });
@@ -48,16 +47,23 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
         }
     }, [isOpen]);
 
+    // Load the Razorpay checkout script once.
+    useEffect(() => {
+        const SRC = "https://checkout.razorpay.com/v1/checkout.js";
+        if (document.querySelector(`script[src="${SRC}"]`)) return;
+        const script = document.createElement("script");
+        script.src = SRC;
+        script.async = true;
+        document.body.appendChild(script);
+    }, []);
+
     if (!puja) return null;
 
     const stepIndex = STEP_ORDER.indexOf(step);
 
     const goNext = () => {
         setError("");
-        if (step === "package") {
-            if (!selectedPkg) { setError("Please select a seva package."); return; }
-            setStep("details");
-        } else if (step === "details") {
+        if (step === "details") {
             if (!form.name.trim()) { setError("Please enter the devotee's name."); return; }
             if (form.phone.replace(/\D/g, "").length !== 10) { setError("Enter a valid 10-digit mobile number."); return; }
             setStep("review");
@@ -66,45 +72,104 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
 
     const goBack = () => {
         setError("");
-        if (step === "details") setStep("package");
-        else if (step === "review") setStep("details");
+        if (step === "review") setStep("details");
     };
 
     const handleConfirm = async () => {
-        if (!selectedPkg) return;
         setSubmitting(true);
         setError("");
         try {
-            const res = await fetch(`${API_URL}/live-mandir-bookings`, {
+            // 1. Create booking order via unified endpoint
+            const res = await fetch(`${API_URL}/bookings/create-pending`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+                body: JSON.stringify(encryptPayload({
+                    // Live Mandir flag
+                    isLiveMandir: true,
+                    // Puja info
                     pujaSlug: puja.id,
-                    pujaName: puja.pujaName,
                     templeName: puja.templeName,
-                    packageId: selectedPkg.id,
-                    packageName: selectedPkg.name,
-                    amount: selectedPkg.price,
-                    devoteeName: form.name.trim(),
+                    // Devotee details
+                    bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
                     members: form.members.trim(),
                     phone: form.phone.replace(/\D/g, ""),
                     wish: form.wish.trim(),
-                }),
+                    // Amount — flat puja price
+                    amount: puja.price,
+                    poojaMode: "online",
+                    bookingDate: new Date().toISOString(),
+                })),
             });
-            if (!res.ok) throw new Error("Failed");
-            if (window.fbq) {
-                window.fbq("track", "Purchase", {
-                    content_name: `${puja.pujaName} - ${puja.templeName}`,
-                    content_type: "live_mandir_puja",
-                    value: selectedPkg.price,
-                    currency: "INR",
-                });
-            }
-            setStep("success");
-        } catch {
-            setError("Something went wrong. Please try again.");
-        } finally {
+            const orderData = await res.json();
+            if (!res.ok) throw new Error(orderData.message || "Failed to start booking payment.");
+
+            const RazorpayCtor = (window as any).Razorpay;
+            if (!RazorpayCtor) throw new Error("Payment SDK failed to load. Please refresh and try again.");
+
+            // 2. Open Razorpay checkout widget
+            const rzp = new RazorpayCtor({
+                key: orderData.razorpayKeyId,
+                amount: Number(orderData.amount || puja.price) * 100,
+                currency: "INR",
+                name: "Pandit Ji At Request",
+                description: `${puja.pujaName} — ${puja.templeName}`,
+                order_id: orderData.razorpayOrderId,
+                prefill: {
+                    name: form.name.trim(),
+                    contact: form.phone.replace(/\D/g, ""),
+                    email: `user${form.phone.replace(/\D/g, "")}@panditjiatrequest.com`,
+                },
+                theme: { color: "#FF7000" },
+                handler: async (response: any) => {
+                    try {
+                        setSubmitting(true);
+                        // 3. Verify payment signature via unified endpoint
+                        const verifyRes = await fetch(`${API_URL}/bookings/complete-booking`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(encryptPayload({
+                                pendingBookingId: orderData.bookingId,
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                razorpaySignature: response.razorpay_signature,
+                                amountPaid: puja.price,
+                            })),
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (!verifyRes.ok) throw new Error(verifyData.message || "Payment verification failed.");
+
+                        if ((window as any).fbq) {
+                            (window as any).fbq("track", "Purchase", {
+                                content_name: `${puja.pujaName} - ${puja.templeName}`,
+                                content_type: "live_mandir_puja",
+                                value: puja.price,
+                                currency: "INR",
+                            });
+                        }
+                        setStep("success");
+                    } catch (verifyErr: any) {
+                        setError(verifyErr.message || "Payment verification failed. Please contact support.");
+                    } finally {
+                        setSubmitting(false);
+                    }
+                },
+                modal: {
+                    ondismiss: () => {
+                        setError("Payment was cancelled. You can try again.");
+                        setSubmitting(false);
+                    },
+                },
+            });
+
+            rzp.on("payment.failed", (resp: any) => {
+                setError(resp?.error?.description || "Payment failed. Please try again.");
+                setSubmitting(false);
+            });
+
+            rzp.open();
+        } catch (err: any) {
+            setError(err.message || "Something went wrong. Please try again.");
             setSubmitting(false);
         }
     };
@@ -186,72 +251,36 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                         {/* ── Scrollable content ── */}
                         <div className="flex-1 overflow-y-auto px-5 pb-3">
                             <AnimatePresence mode="wait">
-                                {/* STEP 1 — PACKAGE */}
-                                {step === "package" && (
-                                    <motion.div key="package" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}>
-                                        <SectionTitle eyebrow="Step 1" title="Choose your Seva" />
-                                        <div className="space-y-3 mt-3">
-                                            {puja.packages.map((pkg) => {
-                                                const active = selectedPkg?.id === pkg.id;
-                                                return (
-                                                    <button
-                                                        key={pkg.id}
-                                                        onClick={() => setSelectedPkg(pkg)}
-                                                        className={`relative w-full text-left rounded-2xl border-2 p-3.5 transition-all ${active ? "border-orange-500 bg-orange-50/60 shadow-md shadow-orange-100" : "border-stone-200 bg-white"}`}
-                                                    >
-                                                        {pkg.popular && (
-                                                            <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-                                                                ★ Most Chosen
-                                                            </span>
-                                                        )}
-                                                        <div className="flex items-start justify-between gap-3">
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0 ${active ? "border-orange-500 bg-orange-500" : "border-stone-300"}`}>
-                                                                        {active && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
-                                                                    </span>
-                                                                    <h4 className="font-bold text-stone-800 text-[14px]">{pkg.name}</h4>
-                                                                </div>
-                                                                <p className="text-[12px] text-stone-500 mt-1 ml-6.5 leading-snug">{pkg.description}</p>
-                                                            </div>
-                                                            <span className="font-bold text-stone-900 text-[16px] shrink-0">₹{pkg.price.toLocaleString("en-IN")}</span>
-                                                        </div>
-                                                        <ul className="mt-2.5 ml-6.5 space-y-1">
-                                                            {pkg.perks.map((perk) => (
-                                                                <li key={perk} className="flex items-center gap-1.5 text-[11.5px] text-stone-600">
-                                                                    <Check className="w-3 h-3 text-emerald-500 shrink-0" strokeWidth={3} />
-                                                                    {perk}
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
 
-                                        {/* Trust strip */}
-                                        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                                            {[
-                                                { icon: Video, label: "Live HD Video" },
-                                                { icon: Gift, label: "Prasad at Home" },
-                                                { icon: ShieldCheck, label: "Verified Pandit" },
-                                            ].map(({ icon: Icon, label }) => (
-                                                <div key={label} className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1">
-                                                    <Icon className="w-4 h-4 text-orange-500" />
-                                                    <span className="text-[9.5px] font-semibold text-stone-500 leading-tight">{label}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* STEP 2 — DETAILS */}
+                                {/* STEP 1 — DEVOTEE DETAILS */}
                                 {step === "details" && (
                                     <motion.div key="details" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}>
-                                        <SectionTitle eyebrow="Step 2" title="Sankalp Details" />
+                                        <SectionTitle eyebrow="Step 1" title="Sankalp Details" />
                                         <p className="text-[12px] text-stone-500 mt-1 mb-4">
-                                            The puja will be performed in this name & gotra. Your sankalp is taken before the deity. 🙏
+                                            The puja will be performed in this name &amp; gotra. Your sankalp is taken before the deity. 🙏
                                         </p>
+
+                                        {/* Price highlight */}
+                                        <div className="mb-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100 rounded-2xl px-4 py-3 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Seva Amount</p>
+                                                <div className="flex items-baseline gap-2 mt-0.5">
+                                                    <span className="text-[22px] font-bold text-stone-900">₹{puja.price.toLocaleString("en-IN")}</span>
+                                                    {puja.originalPrice && (
+                                                        <span className="text-[13px] text-stone-400 line-through">₹{puja.originalPrice.toLocaleString("en-IN")}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-1">
+                                                {puja.originalPrice && (
+                                                    <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                                        {Math.round(((puja.originalPrice - puja.price) / puja.originalPrice) * 100)}% OFF
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] text-stone-400 font-medium">{puja.durationMins} min · Live</span>
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-3.5">
                                             <div>
                                                 <label className={LABEL}>Devotee's Full Name *</label>
@@ -270,26 +299,40 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                             <div>
                                                 <label className={LABEL}>Mobile Number *</label>
                                                 <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))} placeholder="10-digit WhatsApp number" inputMode="numeric" className={INPUT} />
-                                                <p className="text-[10.5px] text-stone-400 mt-1.5">Live link & prasad updates are sent here.</p>
+                                                <p className="text-[10.5px] text-stone-400 mt-1.5">Live link &amp; prasad updates are sent here.</p>
                                             </div>
                                             <div>
                                                 <label className={LABEL}>Your Wish / Prayer (optional)</label>
                                                 <textarea value={form.wish} onChange={(e) => setForm((f) => ({ ...f, wish: e.target.value }))} placeholder="Share the intention behind this puja…" rows={2} className={`${INPUT} resize-none`} />
                                             </div>
                                         </div>
+
+                                        {/* Trust strip */}
+                                        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                                            {[
+                                                { icon: Video, label: "Live HD Video" },
+                                                { icon: Gift, label: "Prasad at Home" },
+                                                { icon: ShieldCheck, label: "Verified Pandit" },
+                                            ].map(({ icon: Icon, label }) => (
+                                                <div key={label} className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1">
+                                                    <Icon className="w-4 h-4 text-orange-500" />
+                                                    <span className="text-[9.5px] font-semibold text-stone-500 leading-tight">{label}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </motion.div>
                                 )}
 
-                                {/* STEP 3 — REVIEW */}
-                                {step === "review" && selectedPkg && (
+                                {/* STEP 2 — REVIEW */}
+                                {step === "review" && (
                                     <motion.div key="review" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.22 }}>
-                                        <SectionTitle eyebrow="Step 3" title="Review & Confirm" />
+                                        <SectionTitle eyebrow="Step 2" title="Review &amp; Confirm" />
                                         <div className="mt-3 bg-white rounded-2xl border border-stone-100 overflow-hidden">
                                             <Row label="Puja" value={`${puja.pujaName} (${puja.pujaNameHindi})`} />
                                             <Row label="Mandir" value={`${puja.templeName}, ${puja.templeLocation}`} />
                                             <Row label="Schedule" value={`${puja.scheduledDate} · ${puja.scheduledTime}`} />
-                                            <Row label="Seva" value={selectedPkg.name} />
                                             <Row label="Devotee" value={form.name + (form.gotra ? ` · ${form.gotra} gotra` : "")} />
+                                            {form.members && <Row label="Members" value={`${form.members} person(s)`} />}
                                             <Row label="Contact" value={`+91 ${form.phone}`} />
                                             {form.wish && <Row label="Wish" value={form.wish} />}
                                         </div>
@@ -298,7 +341,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                         <div className="mt-3 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-100 p-4">
                                             <div className="flex items-center justify-between text-[13px] text-stone-600">
                                                 <span>Seva amount</span>
-                                                <span>₹{selectedPkg.price.toLocaleString("en-IN")}</span>
+                                                <span>₹{puja.price.toLocaleString("en-IN")}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-[13px] text-emerald-600 mt-1">
                                                 <span>Prasad delivery</span>
@@ -307,7 +350,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                             <div className="my-2.5 h-px bg-orange-100" />
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-stone-800">Total Payable</span>
-                                                <span className="font-bold text-orange-600 text-[20px]">₹{selectedPkg.price.toLocaleString("en-IN")}</span>
+                                                <span className="font-bold text-orange-600 text-[20px]">₹{puja.price.toLocaleString("en-IN")}</span>
                                             </div>
                                         </div>
 
@@ -332,7 +375,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                         </h3>
                                         <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
                                             Your <span className="font-semibold text-stone-700">{puja.pujaName}</span> at{" "}
-                                            <span className="font-semibold text-stone-700">{puja.templeName}</span> is reserved. Our pandit ji will WhatsApp the live link & details on{" "}
+                                            <span className="font-semibold text-stone-700">{puja.templeName}</span> is reserved. Our pandit ji will WhatsApp the live link &amp; details on{" "}
                                             <span className="font-semibold text-stone-700">+91 {form.phone}</span> shortly.
                                         </p>
                                         <div className="mt-5 w-full bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center gap-3">
@@ -359,7 +402,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                         {/* ── Sticky footer ── */}
                         {step !== "success" && (
                             <div className="shrink-0 bg-white/90 backdrop-blur-sm border-t border-stone-100 px-5 py-3.5 flex items-center gap-3">
-                                {step !== "package" && (
+                                {step !== "details" && (
                                     <button onClick={goBack} className="w-12 h-12 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 active:scale-95 transition-transform shrink-0">
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
@@ -367,7 +410,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                 <div className="flex-1 flex items-center justify-between">
                                     <div className="leading-none">
                                         <span className="text-[10px] text-stone-400 font-semibold uppercase">Total</span>
-                                        <p className="text-[18px] font-bold text-stone-900">₹{(selectedPkg?.price || 0).toLocaleString("en-IN")}</p>
+                                        <p className="text-[18px] font-bold text-stone-900">₹{puja.price.toLocaleString("en-IN")}</p>
                                     </div>
                                     {step === "review" ? (
                                         <button onClick={handleConfirm} disabled={submitting} className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform disabled:opacity-60">

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, MapPin, CalendarDays, Star, Users } from "lucide-react";
+import { ArrowLeft, MapPin, CalendarDays, Share2 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 
 type Chadhava = {
@@ -19,6 +19,181 @@ type Chadhava = {
     devoteesOffered?: number;
     benefits?: string[];
     tags?: string[];
+    availableDates?: string[];
+    description?: string;
+};
+
+function CountdownTimer({ targetDate }: { targetDate: string }) {
+    const [timeLeft, setTimeLeft] = useState("");
+
+    useEffect(() => {
+        const calculateTime = () => {
+            const difference = new Date(targetDate).getTime() - new Date().getTime();
+            if (difference <= 0) {
+                setTimeLeft("Offerings Closed");
+                return;
+            }
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            const hh = String(hours).padStart(2, "0");
+            const mm = String(minutes).padStart(2, "0");
+            const ss = String(seconds).padStart(2, "0");
+
+            setTimeLeft(`${days}d ${hh}:${mm}:${ss}`);
+        };
+
+        calculateTime();
+        const timer = setInterval(calculateTime, 1000);
+        return () => clearInterval(timer);
+    }, [targetDate]);
+
+    return (
+        <span className="text-[11.5px] font-bold text-stone-700 tabular-nums">
+            {timeLeft}
+        </span>
+    );
+}
+
+const getEventTag = (c: any) => {
+    const match = c.deity.match(/\(([^)]+)\)/);
+    if (match?.[1]) {
+        return match[1].trim();
+    }
+    if (c.tags && c.tags.length > 0) {
+        return c.tags[0];
+    }
+    return "Seva Booking";
+};
+
+const handleShare = async (e: React.MouseEvent, c: any) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/chadhava/${c.id}`;
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: c.deity,
+                text: `Offer sacred Chadhava at ${c.templeName}`,
+                url: url
+            });
+        } catch (err) {
+            console.error("Share failed:", err);
+        }
+    } else {
+        try {
+            await navigator.clipboard.writeText(url);
+            alert("Link copied to clipboard!");
+        } catch (err) {
+            console.error("Clipboard copy failed:", err);
+        }
+    }
+};
+
+const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString("en-IN", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+    });
+};
+
+const isTodayOrFutureDate = (value: unknown): boolean => {
+    if (!value) return false;
+    const date = new Date(String(value));
+    if (Number.isNaN(date.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+    return date.getTime() >= today.getTime();
+};
+
+const normalizeChadhavaItem = (item: any): Chadhava => {
+    const id = item._id || item.id || "";
+    
+    // If it's already in the normalized layout (e.g. fallback)
+    if (item.deity && item.image) {
+        return {
+            id,
+            slug: item.slug || id,
+            deity: item.deity,
+            deityHindi: item.deityHindi || "",
+            templeName: item.templeName,
+            templeLocation: item.templeLocation || "",
+            image: item.image,
+            offeringDay: item.offeringDay || "",
+            startingPrice: item.startingPrice,
+            originalPrice: item.originalPrice,
+            rating: item.rating || 5,
+            devoteesOffered: item.devoteesOffered || 0,
+            benefits: item.benefits || [],
+            tags: item.tags || [],
+            availableDates: item.availableDates || [],
+            description: item.description || ""
+        };
+    }
+
+    const deity = item.chadhavaName || "";
+    const mandir = item.selectedMandirs?.[0];
+    let templeName = "";
+    let templeLocation = "";
+    if (mandir) {
+        templeName = mandir.nameEnglish || "";
+        templeLocation = mandir.city || "";
+    }
+    
+    const image = item.chadhavaWebCardImage?.location || item.chadhavaAppImage?.location || "";
+    
+    // Calculate sections & items
+    const rawSections = item.chadhavaSections || item.sections || [];
+    const prices: number[] = [];
+    for (const sec of rawSections) {
+        for (const it of (sec.items || [])) {
+            const pr = it.discountedPrice || it.itemPrice;
+            if (pr) prices.push(Number(pr));
+        }
+    }
+    
+    let startingPrice = 501;
+    let originalPrice: number | undefined = undefined;
+    if (prices.length > 0) {
+        startingPrice = Math.min(...prices);
+        if (item.offer?.offerStartPrice) {
+            originalPrice = Number(item.offer.offerStartPrice);
+        } else {
+            originalPrice = Math.round(startingPrice * 2.2);
+        }
+    }
+    
+    const tags = item.isFeatured ? ["Most Booked"] : (item.isExclusive ? ["New Offerings"] : []);
+    const benefits = Array.isArray(item.benefits)
+        ? item.benefits.map((b: any) => (typeof b === "object" ? b.description : b))
+        : [];
+
+    return {
+        id,
+        slug: item.slug || id,
+        deity,
+        deityHindi: item.deityHindi || "",
+        templeName,
+        templeLocation,
+        image,
+        offeringDay: item.offeringDay || (item.availableDates?.length ? "Available on: " + item.availableDates.join(", ") : ""),
+        startingPrice,
+        originalPrice,
+        rating: item.rating || 5,
+        devoteesOffered: item.devoteesOffered || 0,
+        benefits,
+        tags,
+        availableDates: item.availableDates || [],
+        description: item.description || ""
+    };
 };
 
 export default function ChadhavaPage() {
@@ -30,10 +205,25 @@ export default function ChadhavaPage() {
     useEffect(() => {
         (async () => {
             try {
-                const res = await fetch(`${API_URL}/chadhavas`);
+                const res = await fetch(`${API_URL}/config/get-all-new-chadhava-proxy`);
                 if (!res.ok) throw new Error("Failed");
                 const json = await res.json();
-                setItems(json?.data || []);
+                
+                const rawItems = Array.isArray(json?.data)
+                    ? json.data
+                    : Array.isArray(json?.items)
+                        ? json.items
+                        : Array.isArray(json)
+                            ? json
+                            : [];
+
+                const activeItems = rawItems.filter(
+                    (item: any) =>
+                        item?.isActive !== false &&
+                        (Array.isArray(item?.availableDates) ? item.availableDates.some(isTodayOrFutureDate) : true)
+                );
+
+                setItems(activeItems.map(normalizeChadhavaItem));
             } catch (err) {
                 console.error("Error loading chadhavas:", err);
                 setError(true);
@@ -44,20 +234,20 @@ export default function ChadhavaPage() {
     }, []);
 
     return (
-        <div className="font-sans min-h-screen">
+        <div className="font-sans min-h-screen bg-[#FFFDF9]/60">
             <Helmet>
                 <title>Chadhava Seva | Pandit Ji At Request</title>
             </Helmet>
 
             {/* ── Header ── */}
-            <div className="relative px-4 pt-3 pb-5 bg-gradient-to-b from-[#f7d9ad] to-[#FFFAF3]">
+            <div className="relative px-4 pt-3 pb-5 bg-gradient-to-b from-[#f7d9ad] to-[#FFFAF3] shadow-sm">
                 <button
                     onClick={() => navigate("/home")}
-                    className="absolute left-4 top-3 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+                    className="absolute left-4 top-3 w-8 h-8 rounded-full bg-white/80 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
                 >
-                    <ArrowLeft className="w-4 h-4 text-stone-700" />
+                    <ArrowLeft className="w-4 h-4 text-stone-700" strokeWidth={2.5} />
                 </button>
-                <h1 className="text-center text-[26px] font-bold text-orange-600" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                <h1 className="text-center text-[26px] font-bold text-orange-600 tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     Chadhava Seva
                 </h1>
                 <p className="text-center text-[12.5px] text-stone-500 -mt-0.5">
@@ -66,15 +256,15 @@ export default function ChadhavaPage() {
             </div>
 
             {/* ── List ── */}
-            <section className="px-4 pt-4 space-y-4 pb-4">
+            <section className="px-4 pt-4 space-y-5 pb-8">
                 {loading &&
                     Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="bg-white rounded-3xl border border-orange-100 overflow-hidden animate-pulse">
-                            <div className="h-40 bg-stone-200" />
+                        <div key={i} className="bg-white rounded-[24px] border border-orange-100/50 overflow-hidden animate-pulse">
+                            <div className="h-52 bg-stone-200" />
                             <div className="p-4 space-y-3">
                                 <div className="h-4 bg-stone-200 rounded w-1/2" />
                                 <div className="h-4 bg-stone-200 rounded w-3/4" />
-                                <div className="h-10 bg-stone-200 rounded-xl" />
+                                <div className="h-12 bg-stone-200 rounded-full" />
                             </div>
                         </div>
                     ))}
@@ -91,80 +281,89 @@ export default function ChadhavaPage() {
 
                 {!loading &&
                     items.map((c) => {
-                        const discount = c.originalPrice
-                            ? Math.round(((c.originalPrice - c.startingPrice) / c.originalPrice) * 100)
-                            : 0;
+                        const eventTag = getEventTag(c);
+                        const targetDate = c.availableDates?.[0] || new Date(Date.now() + 13 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000 + 6 * 60 * 1000).toISOString();
+                        const displayDate = c.availableDates?.[0] ? formatDate(c.availableDates[0]) : "";
+                        const cleanTitle = c.deity.replace(/\s*\([^)]*\)\s*$/, "").trim();
+
                         return (
-                            <div key={c.id} className="bg-white rounded-3xl border border-orange-100 overflow-hidden shadow-sm">
-                                {/* Banner */}
-                                <div className="relative h-44">
-                                    <img src={c.image} alt={c.deity} className="w-full h-full object-cover" loading="lazy" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30" />
-                                    {!!c.tags?.length && (
-                                        <span className="absolute top-3 left-3 bg-amber-400 text-amber-950 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
-                                            {c.tags[0]}
+                            <div 
+                                key={c.id} 
+                                onClick={() => navigate(`/chadhava/${c.id}`)}
+                                className="bg-[#FFFDF9] rounded-[24px] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.12)] cursor-pointer active:scale-[0.995] transition-transform flex flex-col"
+                            >
+                                {/* Banner Image container */}
+                                <div className="relative w-full h-52 overflow-hidden rounded-t-[24px]">
+                                    <img 
+                                        src={c.image} 
+                                        alt={c.deity} 
+                                        className="w-full h-full object-cover" 
+                                        loading="lazy" 
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                                    
+                                    {/* Top-Left Event Pill (Dark grey) */}
+                                    <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-[2px] text-white px-3.5 py-1 text-[11px] font-bold rounded-full flex items-center gap-1 shadow-sm">
+                                        <span>🕉️</span>
+                                        <span>{eventTag}</span>
+                                    </div>
+
+                                    {/* Top-Right Share Button */}
+                                    <button 
+                                        onClick={(e) => handleShare(e, c)}
+                                        className="absolute top-3 right-3 w-8 h-8 bg-white/95 rounded-full flex items-center justify-center shadow-md border border-stone-100/50 active:scale-90 transition-transform"
+                                    >
+                                        <Share2 className="w-4 h-4 text-stone-700" />
+                                    </button>
+
+                                    {/* Bottom-Left Countdown Timer */}
+                                    <div className="absolute bottom-3 left-3 bg-white/95 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm border border-stone-100/30">
+                                        <span className="relative flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
                                         </span>
-                                    )}
-                                    {discount > 0 && (
-                                        <span className="absolute top-3 right-3 bg-orange-600 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                                            {discount}% OFF
-                                        </span>
-                                    )}
-                                    <div className="absolute bottom-3 left-4 right-4 text-white">
-                                        <h2 className="text-[22px] font-bold leading-none" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                                            {c.deity}
-                                        </h2>
-                                        {c.deityHindi && <p className="text-[12px] text-amber-100 mt-0.5">{c.deityHindi}</p>}
+                                        <CountdownTimer targetDate={targetDate} />
                                     </div>
                                 </div>
 
-                                {/* Body */}
-                                <div className="p-4">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="flex items-center gap-1 text-[12.5px] font-semibold text-stone-600 min-w-0">
+                                {/* Card Body */}
+                                <div className="p-4 flex flex-col gap-2">
+                                    {/* Temple & Date Row */}
+                                    <div className="flex items-center justify-between text-[12.5px] font-semibold text-stone-500 gap-2">
+                                        <div className="flex items-center gap-1 min-w-0">
                                             <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                                             <span className="truncate">{c.templeName}{c.templeLocation ? `, ${c.templeLocation}` : ""}</span>
-                                        </p>
-                                        <span className="flex items-center gap-1 text-[12px] font-bold text-amber-700 shrink-0">
-                                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {(c.rating ?? 5).toFixed(1)}
-                                        </span>
-                                    </div>
-
-                                    {c.offeringDay && (
-                                        <p className="mt-2 flex items-center gap-1.5 text-[12px] text-stone-500">
-                                            <CalendarDays className="w-3.5 h-3.5 text-orange-500" /> {c.offeringDay}
-                                        </p>
-                                    )}
-
-                                    {!!c.benefits?.length && (
-                                        <p className="mt-2 text-[12.5px] text-stone-500 leading-snug line-clamp-2">
-                                            {c.benefits.join(" · ")}
-                                        </p>
-                                    )}
-
-                                    {c.devoteesOffered != null && (
-                                        <p className="mt-2 flex items-center gap-1 text-[11.5px] font-semibold text-sky-600">
-                                            <Users className="w-3.5 h-3.5" /> {c.devoteesOffered.toLocaleString("en-IN")}+ devotees offered
-                                        </p>
-                                    )}
-
-                                    <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
-                                        <div className="leading-none">
-                                            <span className="text-[10px] text-stone-400 font-semibold uppercase">Starting at</span>
-                                            <div className="flex items-baseline gap-1.5 mt-0.5">
-                                                <span className="text-[20px] font-bold text-orange-600">₹{c.startingPrice.toLocaleString("en-IN")}</span>
-                                                {c.originalPrice && (
-                                                    <span className="text-[12px] text-stone-400 line-through">₹{c.originalPrice.toLocaleString("en-IN")}</span>
-                                                )}
-                                            </div>
                                         </div>
-                                        <button
-                                            onClick={() => navigate(`/chadhava/${c.id}`)}
-                                            className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[14px] px-6 py-3 rounded-2xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform"
-                                        >
-                                            Participate Now
-                                        </button>
+                                        {displayDate && (
+                                            <div className="flex items-center gap-1 shrink-0 text-amber-800 bg-amber-50/50 px-2 py-0.5 rounded-md">
+                                                <CalendarDays className="w-3.5 h-3.5 text-orange-500 animate-pulse" />
+                                                <span>{displayDate}</span>
+                                            </div>
+                                        )}
                                     </div>
+
+                                    {/* Deity title */}
+                                    <h2 className="text-[19px] font-bold text-[#2E1F15] mt-1 text-left">
+                                        {cleanTitle}
+                                    </h2>
+
+                                    {/* Description */}
+                                    {c.description && (
+                                        <p className="text-[13px] text-stone-500 leading-relaxed line-clamp-2 text-left mt-0.5">
+                                            {c.description}
+                                        </p>
+                                    )}
+
+                                    {/* Action button */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/chadhava/${c.id}`);
+                                        }}
+                                        className="mt-3.5 w-full bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold py-3.5 rounded-full flex items-center justify-center gap-1.5 shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-[0.985] transition-all duration-200 text-[14.5px]"
+                                    >
+                                        <span>Participate Now</span>
+                                    </button>
                                 </div>
                             </div>
                         );

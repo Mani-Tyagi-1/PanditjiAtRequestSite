@@ -14,8 +14,14 @@ export interface ILiveMandirBooking {
   phone: string;
   wish: string;
   status: "pending" | "confirmed" | "completed" | "cancelled";
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
   isFromSite: boolean;
   addedOn: Date;
+  userId?: any;
+  normalBookingId?: string;
 }
 
 const liveMandirBookingSchema = new Schema<ILiveMandirBooking>({
@@ -35,8 +41,18 @@ const liveMandirBookingSchema = new Schema<ILiveMandirBooking>({
     enum: ["pending", "confirmed", "completed", "cancelled"],
     default: "pending",
   },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "paid", "failed", "refunded"],
+    default: "pending",
+  },
+  razorpayOrderId: { type: String, index: true },
+  razorpayPaymentId: { type: String },
+  razorpaySignature: { type: String },
   isFromSite: { type: Boolean, default: true },
   addedOn: { type: Date, default: Date.now },
+  userId: { type: Schema.Types.ObjectId, ref: "User", index: true },
+  normalBookingId: { type: String },
 });
 
 const LiveMandirBooking: Model<ILiveMandirBooking> =

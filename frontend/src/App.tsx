@@ -116,11 +116,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
 import LoginModal from "./components/auth/LoginModal";
-
-// Eagerly load the critical path pages
-import LandingPage from "./pages/LandingPage";
 import AppLayout from "./components/layout/AppLayout";
-import ComingSoonTab from "./pages/ComingSoonTab";
 
 // Lazy load all other pages
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));

@@ -215,6 +215,7 @@ export interface IPendingPoojaBooking extends Document {
   members?: string;
   wish?: string;
   isLiveMandir?: boolean;
+  livePaymentNudgeSent?: boolean;
   concern?: string;
   familyMembers?: any[];
   prasadAdded?: boolean;
@@ -299,6 +300,7 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     members: { type: String, trim: true },
     wish: { type: String, trim: true },
     isLiveMandir: { type: Boolean, default: false },
+    livePaymentNudgeSent: { type: Boolean, default: false },
     concern: { type: String, trim: true },
     familyMembers: { type: Array, default: undefined },
     prasadAdded: { type: Boolean, default: undefined },

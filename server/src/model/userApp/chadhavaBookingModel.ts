@@ -31,6 +31,9 @@ export interface IChadhavaBooking {
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
+  // True once the "complete your payment" WhatsApp nudge has been sent, so an
+  // abandoned booking is only nudged once.
+  paymentNudgeSent?: boolean;
   isFromSite: boolean;
   addedOn: Date;
   familyMembers?: string[];
@@ -74,6 +77,7 @@ const chadhavaBookingSchema = new Schema<IChadhavaBooking>({
   razorpayOrderId: { type: String, index: true },
   razorpayPaymentId: { type: String },
   razorpaySignature: { type: String },
+  paymentNudgeSent: { type: Boolean, default: false },
   isFromSite: { type: Boolean, default: true },
   addedOn: { type: Date, default: Date.now },
   familyMembers: { type: [String], default: [] },

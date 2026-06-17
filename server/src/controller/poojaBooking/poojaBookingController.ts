@@ -254,6 +254,72 @@ async function sendBookingConfirmationWhatsapp(booking: any) {
 // Reads referralSourcePJAR from the user's profile (set once at signup/first visit).
 // This fires on every booking; "organic" is sent when no partner referral exists.
 // -------------------------------------------------------------
+// ---- Live Mandir abandoned-payment nudge ----
+// How long after a Live Mandir payment attempt to nudge the devotee if payment
+// is not completed. Configurable via env, defaults to 15 minutes.
+const parsePositiveNumber = (value: string | undefined, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const LIVE_MANDIR_NUDGE_DELAY_MINUTES = parsePositiveNumber(
+  process.env.LIVE_MANDIR_NUDGE_DELAY_MINUTES,
+  15,
+);
+
+const sendLiveMandirPaymentNudge = async (pendingBookingId: string) => {
+  try {
+    const booking = await pendingPoojaBookingModel.findById(pendingBookingId);
+    if (!booking) return;
+    if (!booking.isLiveMandir) return;
+    if (booking.isPaymentDone) return;
+    if (booking.livePaymentNudgeSent) return;
+
+    if (booking.razorpayOrderId) {
+      const paidBooking = await poojaBookingModel.exists({
+        razorpayOrderId: booking.razorpayOrderId,
+      });
+      if (paidBooking) return;
+    }
+
+    const rawPhone = String(booking.contactNumber || booking.userPhone || '');
+    const cleanedPhone = rawPhone.replace(/\D/g, '');
+    if (cleanedPhone.length < 10) return;
+    const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+
+    const devoteeName = booking.bhaktName || booking.userName || 'Devotee';
+    const poojaName = booking.packageName || booking.poojaNameEng || 'Live Mandir Puja';
+    const templeText = booking.templeName ? ` at ${booking.templeName}` : '';
+    const amount = Number(booking.amount || 0);
+    const bookingDateStr = new Date(booking.bookingDate).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+    const message =
+      `Namaste ${devoteeName} ji 🙏\n\n` +
+      `We noticed you started booking *${poojaName}*${templeText}, but the payment of ₹${amount.toLocaleString('en-IN')} wasn't completed. 🛕\n\n` +
+      `Your Live Mandir Puja request is still pending for ${bookingDateStr}. Complete the payment to confirm your sankalp and receive the live stream details. 🌸\n\n` +
+      `Complete your booking: https://play.google.com/store/apps/details?id=com.panditJiAtReqapp`;
+
+    await sendWhatsappMessage({ to: phone, message });
+    console.log(`✅ [LiveMandir] Payment nudge sent to ${phone} (pendingBookingId=${pendingBookingId})`);
+
+    booking.livePaymentNudgeSent = true;
+    await booking.save();
+  } catch (e: any) {
+    console.error('❌ [LiveMandir] Payment nudge failed:', e?.response?.data || e?.message || e);
+  }
+};
+
+const scheduleLiveMandirPaymentNudge = (pendingBookingId: string) => {
+  const delayMs = LIVE_MANDIR_NUDGE_DELAY_MINUTES * 60 * 1000;
+  setTimeout(() => {
+    void sendLiveMandirPaymentNudge(pendingBookingId);
+  }, delayMs);
+};
+
 const sendOrderToPartnerAffiliate = async (booking: any): Promise<void> => {
   try {
     const apiUrl = process.env.PARTNER_AFFILIATE_ORDER_API;
@@ -589,6 +655,12 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
     // (sent only once payment is verified).
     if (!isLiveMandir) {
       void sendBookingConfirmationWhatsapp(newBooking);
+    }
+
+    // Live Mandir payment attempt started -> booking stays pending until payment
+    // is verified. If still unpaid after the configured delay, nudge the devotee.
+    if (isLiveMandir) {
+      scheduleLiveMandirPaymentNudge(String((newBooking as any)._id));
     }
 
     res.status(201).json({

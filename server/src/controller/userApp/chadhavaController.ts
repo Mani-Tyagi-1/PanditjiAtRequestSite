@@ -154,6 +154,65 @@ const sendChadhavaConfirmationWhatsapp = async (booking: any) => {
   }
 };
 
+// ---- Abandoned-payment nudge ----
+// How long after a payment attempt (order creation) to nudge the devotee if they
+// never completed payment. Configurable via env, defaults to 15 minutes.
+const parsePositiveNumber = (value: string | undefined, fallback: number) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+const CHADHAVA_NUDGE_DELAY_MINUTES = parsePositiveNumber(
+  process.env.CHADHAVA_NUDGE_DELAY_MINUTES,
+  15
+);
+
+// Sent ONLY if the booking is still unpaid `CHADHAVA_NUDGE_DELAY_MINUTES` after the
+// payment attempt — a gentle "complete your Chadhava" reminder (fire-and-forget).
+const sendChadhavaPaymentNudge = async (bookingId: string) => {
+  try {
+    const booking = await ChadhavaBooking.findById(bookingId);
+    if (!booking) return;
+    // Already paid → nothing to nudge. Already nudged → don't double-send.
+    if (booking.paymentStatus === "paid") return;
+    if (booking.paymentNudgeSent) return;
+
+    const rawPhone = String(booking.phone || "");
+    const cleanedPhone = rawPhone.replace(/\D/g, "");
+    if (cleanedPhone.length < 10) return;
+    const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+
+    const devoteeName = booking.devoteeName || "Devotee";
+    const deity = booking.deity || "the deity";
+    const templeText = booking.templeName ? ` at ${booking.templeName}` : "";
+    const amount = Number(booking.totalAmount || 0);
+
+    const message =
+      `Namaste ${devoteeName} ji 🙏\n\n` +
+      `We noticed you started booking a sacred Chadhava offering to *${deity}*${templeText}, but the payment of ₹${amount.toLocaleString("en-IN")} wasn't completed. 🌸\n\n` +
+      `Your offering is reserved — complete the payment to have it presented at the temple with your sankalp. 🛕\n\n` +
+      `Complete your Chadhava: https://play.google.com/store/apps/details?id=com.panditJiAtReqapp`;
+
+    await sendWhatsappMessage({ to: phone, message });
+    console.log(`✅ [Chadhava] Payment nudge sent to ${phone} (bookingId=${bookingId})`);
+
+    // Mark so we never nudge the same booking twice.
+    booking.paymentNudgeSent = true;
+    await booking.save();
+  } catch (e: any) {
+    console.error("❌ [Chadhava] Payment nudge failed:", e?.response?.data || e?.message || e);
+  }
+};
+
+// Schedules the nudge after the configured delay. In-memory timer (lost on
+// server restart) — matches the existing timed-request pattern in the codebase.
+const scheduleChadhavaPaymentNudge = (bookingId: string) => {
+  const delayMs = CHADHAVA_NUDGE_DELAY_MINUTES * 60 * 1000;
+  setTimeout(() => {
+    void sendChadhavaPaymentNudge(bookingId);
+  }, delayMs);
+};
+
 type SelectionInput = { code?: string; quantity?: number };
 type QuoteInput = {
   items?: SelectionInput[];
@@ -400,6 +459,10 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       familyMembers: Array.isArray(familyMembers) ? familyMembers : [],
       deliveryAddress: addPrasadBox ? deliveryAddress : undefined,
     });
+
+    // Payment attempt started → booking is now pending. If it isn't completed
+    // within CHADHAVA_NUDGE_DELAY_MINUTES, send a WhatsApp nudge to finish paying.
+    scheduleChadhavaPaymentNudge(String(booking._id));
 
     res.status(201).json({
       success: true,

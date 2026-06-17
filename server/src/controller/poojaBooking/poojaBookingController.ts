@@ -896,8 +896,13 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
     }
 
     const alias10 = toAlias10(userPhone);
-    // Match both stored formats: plain 10-digit and 91-prefixed
-    const phoneRegex = new RegExp(`(^91${alias10}$|^${alias10}$)`);
+    if (alias10.length !== 10) {
+      res.status(400).json({ message: 'A valid 10-digit phone number is required.' });
+      return;
+    }
+    // Match by the trailing 10 digits so any stored format works:
+    // "9876543210", "919876543210", "+91 98765 43210", etc.
+    const phoneRegex = new RegExp(`${alias10}$`);
 
     const [pendingBookings, finalBookings] = await Promise.all([
       pendingPoojaBookingModel
@@ -915,6 +920,10 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
 
     const bookings = [...pendingBookings, ...finalBookings].sort(
       (a: any, b: any) => new Date(b.bookingDate ?? b.createdAt).getTime() - new Date(a.bookingDate ?? a.createdAt).getTime()
+    );
+
+    console.log(
+      `[get-pending-poojabookings] phone=${alias10} → pending=${pendingBookings.length}, final(poojabookings)=${finalBookings.length}, total=${bookings.length}`
     );
 
     res.status(200).json(bookings || []);

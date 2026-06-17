@@ -68,9 +68,17 @@ const MyBookingsPage: React.FC = () => {
             const poojaRes = await axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${cleanPhone}`);
 
             const allBookings: any[] = poojaRes.data || [];
-            // Split: regular puja bookings vs live mandir bookings
-            // detect by either isLiveMandir flag (old) or poojaType field (new)
-            const isLive = (b: any) => b.isLiveMandir === true || b.poojaType === 'live_puja_at_mandir';
+            // Split: regular puja bookings vs live mandir bookings.
+            // Primary signals: isLiveMandir flag (old) or poojaType field (new).
+            // Fallback signals: templeName / pujaSlug — these are set ONLY on live
+            // mandir bookings, so they reliably catch any live booking whose explicit
+            // flag didn't persist (e.g. older records) instead of leaking it into the
+            // regular tab.
+            const isLive = (b: any) =>
+                b.isLiveMandir === true ||
+                b.poojaType === 'live_puja_at_mandir' ||
+                !!b.templeName ||
+                !!b.pujaSlug;
             const regularBookings = allBookings.filter((b: any) => !isLive(b));
             const liveMandirBookings = allBookings.filter(isLive);
 

@@ -116,8 +116,10 @@ const sendChadhavaConfirmationWhatsapp = async (booking: any) => {
     const param3 = sevaSummary
       ? `Offering: ${sevaSummary} · Amount Paid: ₹${amount.toLocaleString("en-IN")}`
       : `Amount Paid: ₹${amount.toLocaleString("en-IN")}`;
-    // {{4}} — booking reference + next step
-    const param4 = `Booking ID: ${bookingId}\nOur team will share the offering & prasad updates with you shortly. 🛕`;
+    // {{4}} — booking reference + next step.
+    // NOTE: WhatsApp template params must be a SINGLE line — no "\n"/tab or >4 spaces
+    // (error #132018), so keep this on one line.
+    const param4 = `Booking ID: ${bookingId} — our team will share offering & prasad updates shortly. 🛕`;
 
     // "Check Now" button → https://play.google.com/store/apps/details?id=com.panditJiAtReqapp
     const buttonParam = "apps/details?id=com.panditJiAtReqapp";

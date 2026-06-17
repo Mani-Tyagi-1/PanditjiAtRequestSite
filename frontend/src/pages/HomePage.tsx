@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Search,
     Bell,
-    Wallet,
     ChevronRight,
     Phone,
     Video,
@@ -22,7 +21,6 @@ import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
 import VerifiedPanditJi from "../components/home/VerifiedPanditJi";
 import PoojaByProblem from "../components/home/PoojaByProblem";
-import AvailableCities from "../components/home/AvailableCities";
 import Testimonials from "../components/booking/Testimonials";
 import FAQSection from "../components/home/FAQSection";
 import TrustSanatanSection from "../components/home/TrustSanatanSection";
@@ -402,10 +400,10 @@ export default function HomePage() {
                                         </li>
                                     )}
                                     {[
-                                        { label: "Profile", href: "/account", icon: "👤" },
+                                        // { label: "Profile", href: "/account", icon: "👤" },
                                         { label: "My Bookings", href: "/account?tab=bookings", icon: "📖" },
                                         { label: "Book Puja Now", href: "/book-puja", icon: "🪔" },
-                                        { label: "Free consultation", href: "/free-consultation", icon: "🙏" },
+                                        // { label: "Free consultation", href: "/free-consultation", icon: "🙏" },
                                         { label: "Paid consultation", href: "/paid-consultation", icon: "📞" },
                                     ]
                                     .filter(link => isLoggedIn || (link.label !== "Profile" && link.label !== "My Bookings"))

@@ -11,7 +11,7 @@ import { useAuth } from "../../context/AuthContext";
 
 const navLinks = [
     { label: "Profile", href: "/profile", icon: "👤" },
-    { label: "My Bookings", href: "/my-bookings", icon: "📖" },
+    { label: "My Bookings", href: "/account?tab=pooja", icon: "📖" },
     { label: "Book Puja Now", href: "/category/685b290c922c7df97c114213", icon: "🪔" },
     { label: "Pandit Ji Registration", href: "/join-as-panditji#register-as-panditji", icon: "🙏" },
     { label: "Booking Flow", href: "/join-as-panditji#booking-flow", icon: "📋" },

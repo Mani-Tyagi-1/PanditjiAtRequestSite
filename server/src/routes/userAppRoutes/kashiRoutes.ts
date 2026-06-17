@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { createKashiRequest, getKashiRequests } from "../../controller/userApp/kashiController";
+import { createKashiRequest, getKashiRequests, getUserKashiRequests } from "../../controller/userApp/kashiController";
 
 const router = express.Router();
 
@@ -15,5 +15,6 @@ const wrap =
 
 router.post("/kashi-requests", wrap(createKashiRequest));
 router.get("/kashi-requests", wrap(getKashiRequests));
+router.get("/kashi-requests/user/:phone", wrap(getUserKashiRequests));
 
 export default router;

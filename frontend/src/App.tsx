@@ -147,6 +147,18 @@ const BookPujaPage = React.lazy(() => import("./pages/BookPujaPage"));
 const ChadhavaPage = React.lazy(() => import("./pages/ChadhavaPage"));
 const KashiPage = React.lazy(() => import("./pages/KashiPage"));
 
+// Resets scroll to the top on every route change so a new page never opens
+// mid-way down (React Router otherwise keeps the previous scroll offset).
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    // Respect in-page anchor links (#section) — don't yank those to the top.
+    if (window.location.hash) return;
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 // Fires PageView on every SPA route change so Meta Pixel tracks all pages
 function PixelPageTracker() {
   const location = useLocation();
@@ -186,6 +198,7 @@ function App() {
   return (
     <AuthProvider>
       <LoginModal />
+      <ScrollToTop />
       <PixelPageTracker />
       <ReferralCapture />
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>

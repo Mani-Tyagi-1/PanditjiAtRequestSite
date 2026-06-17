@@ -287,10 +287,10 @@ export default function PanditDetailPage() {
               <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Yrs Exp</p>
             </div>
             <div className="w-px h-8 bg-stone-100" />
-            <div className="text-center">
+            {/* <div className="text-center">
               <p className="text-sm font-bold text-stone-700 leading-none">{pandit.age || "—"}</p>
               <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Age</p>
-            </div>
+            </div> */}
             <div className="w-px h-8 bg-stone-100" />
             <div className="text-center">
               <p className="text-sm font-bold text-stone-700 leading-none capitalize">{pandit.gender || "—"}</p>

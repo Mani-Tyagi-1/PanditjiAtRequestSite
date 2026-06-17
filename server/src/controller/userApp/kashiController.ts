@@ -124,3 +124,29 @@ export const getKashiRequests: RequestHandler = async (_req, res) => {
     res.status(500).json({ success: false, message: "Failed to fetch kashi requests" });
   }
 };
+
+// GET /kashi-requests/user/:phone — a single user's Kashi requests (shown under
+// the "Direct Pandit" tab on the account page).
+export const getUserKashiRequests: RequestHandler = async (req, res) => {
+  try {
+    const { phone } = req.params;
+    if (!phone) {
+      res.status(400).json({ success: false, message: "Phone number is required" });
+      return;
+    }
+    const cleanPhone = String(phone).replace(/\D/g, "");
+    const alias10 = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
+
+    const requests = await KashiRequest.find({
+      $or: [
+        { mobileNumber: cleanPhone },
+        { mobileNumber: alias10 },
+        { mobileNumber: { $regex: alias10 + "$" } },
+      ],
+    }).sort({ addedOn: -1 });
+
+    res.status(200).json({ success: true, data: requests });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch user kashi requests" });
+  }
+};

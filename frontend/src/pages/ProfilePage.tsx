@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -106,6 +106,7 @@ const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text"
 
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { logout } = useAuth();
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -253,10 +254,11 @@ const ProfilePage: React.FC = () => {
             const apiUrl = API_URL;
             const cleanPhone = String(phone).replace(/\D/g, "");
 
-            const [poojaRes, chadhavaRes, directRes] = await Promise.all([
+            const [poojaRes, chadhavaRes, directRes, kashiRes] = await Promise.all([
                 axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${cleanPhone}`),
                 axios.get(`${apiUrl}/chadhava-bookings/user/${cleanPhone}`),
-                axios.get(`${apiUrl}/pandit-direct-bookings/user/${cleanPhone}`)
+                axios.get(`${apiUrl}/pandit-direct-bookings/user/${cleanPhone}`),
+                axios.get(`${apiUrl}/kashi-requests/user/${cleanPhone}`)
             ]);
 
             const allPoojaBookings: any[] = poojaRes.data || [];
@@ -264,10 +266,26 @@ const ProfilePage: React.FC = () => {
             const regularBookings = allPoojaBookings.filter((b: any) => !b.isLiveMandir);
             const liveMandirBookings = allPoojaBookings.filter((b: any) => b.isLiveMandir === true);
 
+            // Kashi Ji requests are shown alongside Direct Pandit bookings. Map them
+            // into the same shape the DirectBookingCard expects.
+            const kashiRequests = (kashiRes.data?.data || []).map((k: any) => ({
+                _id: k._id,
+                name: k.devoteeName,
+                phone: k.mobileNumber,
+                panditName: "Kashi Ji Pandit",
+                status: k.status,
+                createdAt: k.addedOn || k.createdAt,
+                ritualDetails: k.ritualDetails,
+                isKashi: true,
+            }));
+            const mergedDirect = [...(directRes.data?.data || []), ...kashiRequests].sort(
+                (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            );
+
             setPoojaBookings(regularBookings);
             setLiveBookings(liveMandirBookings);
             setChadhavaBookings(chadhavaRes.data?.data || []);
-            setDirectBookings(directRes.data?.data || []);
+            setDirectBookings(mergedDirect);
         } catch (err) {
             console.error("Error fetching user bookings:", err);
         } finally {
@@ -381,6 +399,24 @@ const ProfilePage: React.FC = () => {
     useEffect(() => {
         fetchUserProfile();
     }, []);
+
+    // Open the "My Bookings" view on the right tab when the URL has ?tab=...
+    // e.g. /account?tab=live → Live Puja tab, /account?tab=chadhava → Chadhava tab.
+    // Any tab value (including "bookings") opens the bookings view; unknown values
+    // fall back to the Puja tab.
+    useEffect(() => {
+        const tab = (searchParams.get("tab") || "").toLowerCase();
+        if (!tab) return;
+        const map: Record<string, "pooja" | "direct" | "live" | "chadhava"> = {
+            pooja: "pooja",
+            puja: "pooja",
+            direct: "direct",
+            live: "live",
+            chadhava: "chadhava",
+        };
+        setMode("bookings");
+        if (map[tab]) setActiveBookingTab(map[tab]);
+    }, [searchParams]);
 
     const handleLogout = () => {
         setIsLogoutModalOpen(true);
@@ -1737,12 +1773,14 @@ const DirectBookingCard = ({ booking, index }: { booking: any; index: number }) 
             <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-lg">🪔</span>
-                        <h3 className="font-bold text-gray-800 text-sm truncate">Pandit Direct Booking</h3>
+                        <span className="text-lg">{booking.isKashi ? "🛕" : "🪔"}</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">
+                            {booking.isKashi ? "Kashi Ji Pandit Request" : "Pandit Direct Booking"}
+                        </h3>
                       </div>
                       <p className="text-xs text-[#FF7000] font-bold flex items-center gap-1">
-                          <span>Acharya:</span>
-                          <span className="truncate">{booking.panditName || "Assigned Pandit"}</span>
+                          <span>{booking.isKashi ? "From:" : "Acharya:"}</span>
+                          <span className="truncate">{booking.isKashi ? "Kashi Vishwanath Dham" : (booking.panditName || "Assigned Pandit")}</span>
                       </p>
                   </div>
                   <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getStatusColor(booking.status)}`}>

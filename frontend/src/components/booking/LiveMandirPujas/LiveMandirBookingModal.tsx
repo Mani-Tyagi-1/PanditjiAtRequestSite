@@ -274,7 +274,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                         // Auto-redirect to Live Pooja Bookings after 2.5s
                         setTimeout(() => {
                             onClose();
-                            navigate("/my-bookings?tab=live");
+                            navigate("/account?tab=live");
                         }, 2500);
                     } catch (verifyErr: any) {
                         setError(verifyErr.message || "Payment verification failed. Please contact support.");
@@ -628,7 +628,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                             Your <span className="font-semibold text-stone-700">{puja.pujaName}</span> at{" "}
                                             <span className="font-semibold text-stone-700">{puja.templeName}</span> is reserved. Our pandit ji will WhatsApp the live link &amp; details shortly.
                                         </p>
-                                        <button onClick={() => { onClose(); navigate("/my-bookings?tab=live"); }} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
+                                        <button onClick={() => { onClose(); navigate("/account?tab=live"); }} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
                                             Done
                                         </button>
                                     </motion.div>

@@ -298,7 +298,7 @@ function TrackingMapContent({ apiKey, panditId, destination }: MapContentProps) 
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            onClick={() => navigate("/my-bookings")}
+            onClick={() => navigate("/account?tab=pooja")}
             className="w-12 h-12 flex items-center justify-center rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 text-white pointer-events-auto hover:bg-black/60 transition-all active:scale-95"
           >
             <ChevronLeft className="w-6 h-6" />

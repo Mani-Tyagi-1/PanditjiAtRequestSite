@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, ShieldCheck, Plus, Trash2, Home, Briefcase, MapPin, Phone, User, HelpCircle } from "lucide-react";
 import { type Chadhava, type ChadhavaSelection } from "./chadhavaData";
@@ -19,6 +20,7 @@ const INPUT_CONTAINER = "relative bg-white border border-stone-200 rounded-xl px
 const INPUT_FIELD = "w-full bg-transparent text-sm text-stone-800 placeholder-stone-400 focus:outline-none";
 
 export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, selections, addPrasad, prasadPrice }: Props) {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
@@ -402,7 +404,7 @@ export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, select
                                         Your seva will be offered to <span className="font-semibold text-stone-700">{chadhava.deity}</span>.
                                         We'll WhatsApp the proof on <span className="font-semibold text-stone-700">+91 {form.phone}</span>.
                                     </p>
-                                    <button onClick={onClose} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform">
+                                    <button onClick={() => { onClose(); navigate("/account?tab=chadhava"); }} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform">
                                         Done
                                     </button>
                                 </div>

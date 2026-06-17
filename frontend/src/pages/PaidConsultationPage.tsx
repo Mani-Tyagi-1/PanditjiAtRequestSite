@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, Clock, CreditCard, Shield, Lock, CheckCircle } from "lucide-react";
+import { Check, ChevronLeft, Clock, CreditCard, Shield, Lock, CheckCircle, Phone, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
@@ -19,7 +19,9 @@ export default function PaidConsultationPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryParams = new URLSearchParams(window.location.search);
-  const consultType = queryParams.get("type") || "voice";
+  const [consultType, setConsultType] = useState<"voice" | "video">(
+    queryParams.get("type") === "video" ? "video" : "voice"
+  );
 
   const [form, setForm] = useState({
     fullName: "",
@@ -53,6 +55,12 @@ export default function PaidConsultationPage() {
 
   const handleTimeSlotSelect = (slotValue: string) => {
     setForm((current) => ({ ...current, preferredTimeSlot: slotValue }));
+  };
+
+  const handleTypeChange = (type: "voice" | "video") => {
+    setConsultType(type);
+    setAmount(type === "video" ? 201 : 101);
+    setError("");
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -214,6 +222,31 @@ export default function PaidConsultationPage() {
           </div>
         ) : (
           <>
+            {/* Consultation Type Tabs */}
+            <div className="flex bg-white border border-stone-100 rounded-2xl p-1 mb-5 shadow-sm">
+              {([
+                { key: "voice", label: "Talk on Call", icon: Phone },
+                { key: "video", label: "Video Call", icon: Video },
+              ] as const).map(({ key, label, icon: Icon }) => {
+                const active = consultType === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleTypeChange(key)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                      active
+                        ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md"
+                        : "text-stone-500 hover:text-stone-700"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Special Offer Banner */}
             <div className="bg-white border border-orange-200 rounded-3xl p-5 mb-6 shadow-sm">
               <div className="flex items-center justify-between">
@@ -307,7 +340,7 @@ export default function PaidConsultationPage() {
                   </p>
                   <ul className="space-y-2 text-stone-600 text-[13px]">
                     <li className="flex items-start gap-2">
-                      <span className="text-orange-500 mt-0.5">✓</span>30-minute dedicated one-on-one call
+                      <span className="text-orange-500 mt-0.5">✓</span>30-minute dedicated one-on-one {consultType === "video" ? "video call" : "call"}
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-orange-500 mt-0.5">✓</span>Personalised guidance &amp; remedies

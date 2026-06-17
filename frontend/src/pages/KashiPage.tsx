@@ -114,10 +114,10 @@ export default function KashiPage() {
                             Pooja / Pandit Ji from Kashi.
                         </p>
                         <button
-                            onClick={() => navigate("/home")}
+                            onClick={() => navigate("/account?tab=direct")}
                             className="mt-6 w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform"
                         >
-                            Back to Home
+                            View My Booking
                         </button>
                     </div>
                 ) : (

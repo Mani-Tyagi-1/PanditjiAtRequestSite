@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
 
 const PANDIT_AVATAR =
@@ -9,7 +9,6 @@ const PANDIT_AVATAR =
  * persistent bottom nav and the floating "Ask PanditJi" pill shown across tabs.
  */
 export default function AppLayout() {
-  const navigate = useNavigate();
 
   return (
     <div

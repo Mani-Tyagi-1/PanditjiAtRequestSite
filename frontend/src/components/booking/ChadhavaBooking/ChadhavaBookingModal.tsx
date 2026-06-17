@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, ShieldCheck, Plus, Trash2, Home, Briefcase, MapPin, Phone, User, HelpCircle } from "lucide-react";
+import { X, Check, ShieldCheck, Plus, Trash2, Home, Briefcase, Phone, User, HelpCircle } from "lucide-react";
 import { type Chadhava, type ChadhavaSelection } from "./chadhavaData";
 import API_URL from "../../../utils/apiConfig";
 import { decryptData } from "../../../utils/encryption";

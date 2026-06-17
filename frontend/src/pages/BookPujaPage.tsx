@@ -8,10 +8,7 @@ import {
     Landmark,
     Star,
     MapPin,
-    Users,
-    Clock,
     Check,
-    ChevronRight,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 

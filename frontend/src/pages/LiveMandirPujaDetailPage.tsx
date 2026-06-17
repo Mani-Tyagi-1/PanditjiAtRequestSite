@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, CalendarDays, MapPin, Check, ShieldCheck, Video, Gift } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ShieldCheck, Video, Gift } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { type LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";

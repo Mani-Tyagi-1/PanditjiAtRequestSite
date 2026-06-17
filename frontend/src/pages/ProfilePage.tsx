@@ -28,7 +28,6 @@ import {
     MailOpen,
     Video,
     Star,
-    AlertCircle,
     Loader2,
 } from "lucide-react";
 

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-    X, MapPin, Clock, Check, ChevronLeft, ChevronRight,
-    Star, ShieldCheck, Video, Gift, CalendarDays, Users, User, Plus, Trash2
+    X, MapPin,  Check, ChevronRight,
+   Plus
 } from "lucide-react";
 import type { LiveMandirPuja } from "./liveMandirData";
 import API_URL from "../../../utils/apiConfig";
@@ -202,6 +202,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                 body: JSON.stringify(encryptPayload({
                     isLiveMandir: true,
                     pujaSlug: puja.id,
+                    packageName: puja.pujaName,
                     templeName: puja.templeName,
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
@@ -217,8 +218,12 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
             const orderData = await res.json();
             if (!res.ok) throw new Error(orderData.message || "Failed to start booking payment.");
 
+            if (!orderData.razorpayOrderId || !orderData.razorpayKeyId) {
+                throw new Error("Could not initialise payment. Please try again.");
+            }
+
             const RazorpayCtor = (window as any).Razorpay;
-            if (!RazorpayCtor) throw new Error("Payment SDK failed to load. Please refresh and try again.");
+            if (!RazorpayCtor) throw new Error("Payment SDK failed to load. Please check your connection and refresh.");
 
             // 2. Open Razorpay checkout widget
             const rzp = new RazorpayCtor({
@@ -292,6 +297,7 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
 
             rzp.open();
         } catch (err: any) {
+            console.error("[LiveMandirBooking] Pay & Book failed:", err);
             setError(err.message || "Something went wrong. Please try again.");
             setSubmitting(false);
         }
@@ -386,6 +392,17 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                                 </div>
                                             </div>
                                             <div className="space-y-3">
+                                                {/* Mobile Number input (required if user not logged in or edit allowed) */}
+                                                <div>
+                                                    <label className={LABEL}>Mobile Number *</label>
+                                                    <input
+                                                        value={form.phone}
+                                                        onChange={(e) => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                                                        placeholder="10-digit number for live link & updates"
+                                                        inputMode="numeric"
+                                                        className={INPUT}
+                                                    />
+                                                </div>
                                                 <div>
                                                     <label className={LABEL}>Devotee's Name *</label>
                                                     <input
@@ -401,17 +418,6 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                                         value={form.gotra}
                                                         onChange={(e) => setForm(f => ({ ...f, gotra: e.target.value }))}
                                                         placeholder="e.g. Kashyap"
-                                                        className={INPUT}
-                                                    />
-                                                </div>
-                                                {/* Mobile Number input (required if user not logged in or edit allowed) */}
-                                                <div>
-                                                    <label className={LABEL}>Mobile Number *</label>
-                                                    <input
-                                                        value={form.phone}
-                                                        onChange={(e) => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
-                                                        placeholder="10-digit number for live link & updates"
-                                                        inputMode="numeric"
                                                         className={INPUT}
                                                     />
                                                 </div>
@@ -628,30 +634,33 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-
-                            {error && (
-                                <p className="text-red-500 text-[12px] font-semibold mt-3 text-center">{error}</p>
-                            )}
                         </div>
 
                         {/* Sticky Footer */}
                         {step !== "success" && (
-                            <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-stone-100 px-5 py-4 flex items-center justify-between z-10">
-                                <div>
-                                    <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
-                                    <span className="text-[20px] font-extrabold text-[#D85C0E]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-stone-100 px-5 py-4 z-10">
+                                {/* Error is shown here (always visible) so the user gets feedback
+                                    even when the scrollable area is not scrolled to the bottom. */}
+                                {error && (
+                                    <p className="text-red-500 text-[12px] font-semibold mb-3 text-center">{error}</p>
+                                )}
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
+                                        <span className="text-[20px] font-extrabold text-[#D85C0E]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                    </div>
+                                    <button
+                                        onClick={handleConfirm}
+                                        disabled={submitting}
+                                        className="flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                                    >
+                                        {submitting ? (
+                                            <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
+                                        ) : (
+                                            <>Pay & Book Puja <ChevronRight className="w-4 h-4" /></>
+                                        )}
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={handleConfirm}
-                                    disabled={submitting}
-                                    className="flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
-                                >
-                                    {submitting ? (
-                                        <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
-                                    ) : (
-                                        <>Pay & Book Puja <ChevronRight className="w-4 h-4" /></>
-                                    )}
-                                </button>
                             </div>
                         )}
                     </motion.div>

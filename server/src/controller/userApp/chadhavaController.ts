@@ -4,6 +4,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import Chadhava, { IChadhava } from "../../model/userApp/chadhavaModel";
 import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhavaBookingModel";
+import { sendWhatsappTemplateMessage, sendWhatsappMessage } from "../../utils/whatsapp";
 
 // Shape a DB doc to the frontend `Chadhava` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -74,6 +75,81 @@ const verifyPaymentSignature = (
   const hmac = crypto.createHmac("sha256", razorpayKeySecret as string);
   hmac.update(`${orderId}|${paymentId}`);
   return hmac.digest("hex") === signature;
+};
+
+// ---- WhatsApp Chadhava confirmation (fire-and-forget) ----
+// Sent only AFTER a Chadhava payment is verified — a thank-you to the devotee
+// who booked the chadhava. Uses the approved `pjar_order` template:
+//
+//   Namaste {{1}}
+//
+//   {{2}}
+//   {{3}}
+//
+//   {{4}}
+//
+//   For further assistance, visit Pandit Ji At Request
+//   [ Check Now ] -> https://play.google.com/store/{{1}}
+const sendChadhavaConfirmationWhatsapp = async (booking: any) => {
+  try {
+    const rawPhone = String(booking?.phone || "");
+    const cleanedPhone = rawPhone.replace(/\D/g, "");
+    if (cleanedPhone.length < 10) return;
+    const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+
+    const devoteeName = booking?.devoteeName || "Devotee";
+    const deity = booking?.deity || "the deity";
+    const templeText = booking?.templeName ? ` at *${booking.templeName}*` : "";
+
+    // Summarise the sevas offered, e.g. "Pushp Mala x2, Chunri x1"
+    const selections: IChadhavaSelection[] = Array.isArray(booking?.selections) ? booking.selections : [];
+    const sevaSummary = selections
+      .map((s) => `${s.name}${s.quantity > 1 ? ` x${s.quantity}` : ""}`)
+      .join(", ");
+
+    const amount = Number(booking?.totalAmount || 0);
+    const bookingId = booking?.razorpayOrderId || String(booking?._id || "");
+
+    // {{2}} — heartfelt thank-you with deity + temple
+    const param2 = `Thank you for your sacred Chadhava offering to *${deity}*${templeText}. 🌸 Your offering has been received and will be presented at the temple with your sankalp. 🙏`;
+    // {{3}} — the seva details + amount paid
+    const param3 = sevaSummary
+      ? `Offering: ${sevaSummary} · Amount Paid: ₹${amount.toLocaleString("en-IN")}`
+      : `Amount Paid: ₹${amount.toLocaleString("en-IN")}`;
+    // {{4}} — booking reference + next step
+    const param4 = `Booking ID: ${bookingId}\nOur team will share the offering & prasad updates with you shortly. 🛕`;
+
+    // "Check Now" button → https://play.google.com/store/apps/details?id=com.panditJiAtReqapp
+    const buttonParam = "apps/details?id=com.panditJiAtReqapp";
+
+    let sent = false;
+    try {
+      await sendWhatsappTemplateMessage({
+        to: phone,
+        templateName: "pjar_order",
+        parameters: [devoteeName, param2, param3, param4],
+        buttonUrlParam: buttonParam,
+        languageCode: "en",
+      });
+      console.log(`✅ [Chadhava] WhatsApp pjar_order sent to ${phone}`);
+      sent = true;
+    } catch (err: any) {
+      console.warn(`[Chadhava] Template send failed:`, err?.response?.data || err.message);
+    }
+
+    // Plain-text fallback if the template send fails
+    if (!sent) {
+      try {
+        const fallbackMsg = `Namaste ${devoteeName} ji 🙏\n\n${param2}\n${param3}\n\n${param4}\n\nFor further assistance, visit Pandit Ji At Request: https://play.google.com/store/${buttonParam}`;
+        await sendWhatsappMessage({ to: phone, message: fallbackMsg });
+        console.log(`✅ [Chadhava] WhatsApp plain text confirmation sent to ${phone}`);
+      } catch (textErr: any) {
+        console.error(`❌ [Chadhava] WhatsApp fallback text failed:`, textErr?.response?.data || textErr.message);
+      }
+    }
+  } catch (e: any) {
+    console.error("❌ [Chadhava] WhatsApp confirmation flow failed entirely:", e?.response?.data || e?.message || e);
+  }
 };
 
 type SelectionInput = { code?: string; quantity?: number };
@@ -391,6 +467,9 @@ export const completeChadhavaPayment: RequestHandler = async (req, res) => {
     booking.razorpaySignature = razorpaySignature;
     await booking.save();
 
+    // 🟢 Thank-you WhatsApp — only now that payment is verified (fire-and-forget)
+    void sendChadhavaConfirmationWhatsapp(booking);
+
     res.status(200).json({
       success: true,
       message: "Chadhava payment verified",
@@ -442,6 +521,10 @@ export const chadhavaWebhook: RequestHandler = async (req, res) => {
           booking.status = "confirmed";
           booking.razorpayPaymentId = paymentEntity.id;
           await booking.save();
+          // 🟢 Thank-you WhatsApp via reconciliation path (fire-and-forget).
+          // Mutually exclusive with completeChadhavaPayment's send — only the
+          // path that first flips the booking to "paid" runs this.
+          void sendChadhavaConfirmationWhatsapp(booking);
         } else if (event.event === "payment.failed") {
           booking.paymentStatus = "failed";
           await booking.save();

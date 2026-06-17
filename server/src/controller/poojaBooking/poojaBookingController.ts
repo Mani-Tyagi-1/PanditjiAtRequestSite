@@ -114,6 +114,140 @@ async function notifyPanditsNewRequest(req: any, opts: {
   }
 }
 
+// ---- WhatsApp booking confirmation ----
+// Sends the "booking confirmed" WhatsApp for a booking doc (pending or final).
+// Works for both normal pujas and Live Mandir pujas — the message text adapts
+// based on the booking's isLiveMandir flag.
+//
+// Timing note:
+//   • Normal puja  → no payment is taken, so this is called at create-pending.
+//   • Live Mandir  → payment is taken AFTER create-pending, so this is called
+//                    in complete-booking (only once payment is verified) to avoid
+//                    confirming a puja the devotee never actually paid for.
+async function sendBookingConfirmationWhatsapp(booking: any) {
+  try {
+    const rawPhone = String(booking?.userPhone || '');
+    const cleanedPhone = rawPhone.replace(/\D/g, ''); // keep only digits
+    const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+
+    if (cleanedPhone.length < 10) return;
+
+    const isLiveMandir = Boolean(booking?.isLiveMandir);
+    const address = booking?.address;
+
+    // Use form-submitted name (bhaktName) for greeting — NOT the potentially-stale DB name
+    const userName = booking?.bhaktName || booking?.userName || 'Devotee';
+    const poojaName = booking?.poojaNameEng || 'Puja';
+    const poojaMode = booking?.poojaMode || 'offline';
+    const bookingDateStr = new Date(booking.bookingDate).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const bookingId = booking?.razorpayOrderId || booking?.id;
+
+    // Fetch nearby pandit or use default
+    let assignedPanditName = "";
+
+    // Live Mandir pujas are performed by temple priests — skip proximity logic
+    if (isLiveMandir) {
+      assignedPanditName = "Temple Priest";
+    } else {
+      try {
+        const pandits = await Pandit.find({}).lean();
+
+        if (poojaMode === 'offline' && address) {
+          let userLat = Number(address.lat || address.latitude || address.location?.lat);
+          let userLng = Number(address.lng || address.longitude || address.location?.lng);
+
+          if (userLat && userLng) {
+            let nearestPandit = null;
+            let minDistance = Infinity;
+
+            for (const p of pandits) {
+              if (p.location?.latitude && p.location?.longitude) {
+                const plat = p.location.latitude;
+                const plng = p.location.longitude;
+                const dLat = (plat - userLat) * Math.PI / 180;
+                const dLng = (plng - userLng) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
+                          Math.sin(dLng/2) * Math.sin(dLng/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const distance = 6371 * c; // km
+
+                if (distance < minDistance && distance <= 50) { // within 50km
+                  minDistance = distance;
+                  nearestPandit = p;
+                }
+              }
+            }
+            if (nearestPandit) {
+              assignedPanditName = `${nearestPandit.prefix || ''} ${nearestPandit.firstName || ''} ${nearestPandit.lastName || ''}`.trim();
+            }
+          }
+        }
+
+        if (!assignedPanditName && pandits.length > 0) {
+          // Pick a random pandit from active pandits
+          const randomPandit = pandits[Math.floor(Math.random() * pandits.length)];
+          assignedPanditName = `${randomPandit.prefix || ''} ${randomPandit.firstName || ''} ${randomPandit.lastName || ''}`.trim();
+        }
+      } catch(err) {
+        console.error('Error fetching nearby pandit for whatsapp msg:', err);
+      }
+    }
+
+    if (!assignedPanditName) {
+       assignedPanditName = "Acharya Ramlok Sharma ji"; // Ultimate fallback if DB is empty
+    }
+
+    // For Live Mandir: include mandir name in param2, selected date in param3
+    const liveMandirTemple = booking?.templeName ? ` at *${booking.templeName}*` : '';
+    const param2 = isLiveMandir
+      ? `Thank you for booking your Live Mandir Puja — *${poojaName}*${liveMandirTemple}. 🛕 Your sacred booking is confirmed and the puja will be performed with your sankalp. 🌸 Our team will share the live stream link & details with you shortly. 🙏`
+      : `Your booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏`;
+    const param3 = `Date: ${bookingDateStr}`;
+    const param4 = `Booking ID: ${bookingId}`;
+
+    let sent = false;
+    // "Check Now" button → https://play.google.com/store/apps/details?id=com.panditJiAtReqapp
+    const buttonParam = 'apps/details?id=com.panditJiAtReqapp';
+
+    // Template pjar_order is registered in 'en' locale — send directly
+    try {
+      await sendWhatsappTemplateMessage({
+        to: phone,
+        templateName: 'pjar_order',
+        parameters: [userName, param2, param3, param4],
+        buttonUrlParam: buttonParam,
+        languageCode: 'en',
+      });
+      console.log(`✅ [PujaBooking] WhatsApp pjar_order sent to ${phone}`);
+      sent = true;
+    } catch (err: any) {
+      console.warn(`[PujaBooking] Template send failed:`, err?.response?.data || err.message);
+    }
+
+    // Ultimate fallback to sending a plain text message if templates fail
+    if (!sent) {
+      try {
+        const fallbackMsg = `Namaste ${userName} ji 🙏\n\n${param2}\n\nDate: ${bookingDateStr}\nBooking ID: ${bookingId}\n\nTrack booking details: https://play.google.com/store/${buttonParam}`;
+        await sendWhatsappMessage({
+          to: phone,
+          message: fallbackMsg,
+        });
+        console.log(`✅ [PujaBooking] WhatsApp plain text confirmation sent to ${phone}`);
+        sent = true;
+      } catch (textErr: any) {
+        console.error(`❌ [PujaBooking] WhatsApp fallback text message failed:`, textErr?.response?.data || textErr.message);
+      }
+    }
+  } catch (e: any) {
+    console.error('❌ [PujaBooking] WhatsApp confirmation flow failed entirely:', e?.response?.data || e?.message || e);
+  }
+}
+
 
 // -------------------------------------------------------------
 // PARTNER AFFILIATE – fire-and-forget after a puja booking is confirmed
@@ -376,7 +510,12 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
     const order = await razorpay.orders.create(orderOptions);
 
     // --- Create Pending Booking Record ---
-    const poojaNameEng = (poojaExists as any).poojaNameEng ?? (packageName ?? pujaSlug ?? '');
+    // For Live Mandir, the pujaSlug is NOT in the Pooja collection, so poojaExists
+    // is a fallback (often the first pooja in the DB). Trust the client-sent puja
+    // name (packageName) instead so the WhatsApp/booking shows the actual puja booked.
+    const poojaNameEng = isLiveMandir
+      ? (packageName || pujaSlug || (poojaExists as any).poojaNameEng || 'Live Mandir Puja')
+      : ((poojaExists as any).poojaNameEng ?? (packageName ?? pujaSlug ?? ''));
     // For live mandir, use a friendly label if no poojaNameEng
     const resolvedPoojaId = (poojaExists as any)._id;
     const resolvedUserId = (userExists as any)._id;
@@ -444,125 +583,13 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
     }
 
     // 🟢 WhatsApp booking confirmation (fire-and-forget)
-    void (async () => {
-      try {
-        const rawPhone = String((newBooking as any).userPhone || '');
-        const cleanedPhone = rawPhone.replace(/\D/g, ''); // keep only digits
-        const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
-
-        if (cleanedPhone.length < 10) return;
-
-        // Use form-submitted name (bhaktName) for greeting — NOT the potentially-stale DB name
-        const userName = (newBooking as any).bhaktName || (newBooking as any).userName || 'Devotee';
-        const poojaName = newBooking.poojaNameEng || 'Puja';
-        const poojaMode = newBooking.poojaMode || 'offline';
-        const bookingDateStr = new Date(newBooking.bookingDate).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        });
-        const bookingId = newBooking.razorpayOrderId || newBooking.id;
-
-        // Fetch nearby pandit or use default
-        let assignedPanditName = "";
-        
-        // Live Mandir pujas are performed by temple priests — skip proximity logic
-        if (isLiveMandir) {
-          assignedPanditName = "Temple Priest";
-        } else {
-          try {
-            const pandits = await Pandit.find({}).lean();
-
-            if (poojaMode === 'offline' && address) {
-              let userLat = Number(address.lat || address.latitude || address.location?.lat);
-              let userLng = Number(address.lng || address.longitude || address.location?.lng);
-              
-              if (userLat && userLng) {
-                 let nearestPandit = null;
-                 let minDistance = Infinity;
-                 
-                 for (const p of pandits) {
-                   if (p.location?.latitude && p.location?.longitude) {
-                     const plat = p.location.latitude;
-                     const plng = p.location.longitude;
-                     const dLat = (plat - userLat) * Math.PI / 180;
-                     const dLng = (plng - userLng) * Math.PI / 180;
-                     const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                               Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
-                               Math.sin(dLng/2) * Math.sin(dLng/2);
-                     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                     const distance = 6371 * c; // km
-                     
-                     if (distance < minDistance && distance <= 50) { // within 50km
-                       minDistance = distance;
-                       nearestPandit = p;
-                     }
-                   }
-                 }
-                 if (nearestPandit) {
-                   assignedPanditName = `${nearestPandit.prefix || ''} ${nearestPandit.firstName || ''} ${nearestPandit.lastName || ''}`.trim();
-                 }
-              }
-            }
-            
-            if (!assignedPanditName && pandits.length > 0) {
-              // Pick a random pandit from active pandits
-              const randomPandit = pandits[Math.floor(Math.random() * pandits.length)];
-              assignedPanditName = `${randomPandit.prefix || ''} ${randomPandit.firstName || ''} ${randomPandit.lastName || ''}`.trim();
-            }
-          } catch(err) {
-            console.error('Error fetching nearby pandit for whatsapp msg:', err);
-          }
-        }
-        
-        if (!assignedPanditName) {
-           assignedPanditName = "Acharya Ramlok Sharma ji"; // Ultimate fallback if DB is empty
-        }
-
-        // For Live Mandir: include mandir name in param2, selected date in param3
-        const liveMandirTemple = (newBooking as any).templeName ? ` at *${(newBooking as any).templeName}*` : '';
-        const param2 = isLiveMandir
-          ? `Your Live Mandir Puja booking for *${poojaName}*${liveMandirTemple} has been successfully confirmed! 🛕 Our team will reach out with the live stream details. 🙏`
-          : `Your booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏`;
-        const param3 = `Date: ${bookingDateStr}`;
-        const param4 = `Booking ID: ${bookingId}`;
-
-        let sent = false;
-        const buttonParam = 'apps/details?id=com.panditJiAtReqapp&pcampaignid=web_share';
-
-        // Template pjar_order is registered in 'en' locale — send directly
-        try {
-          await sendWhatsappTemplateMessage({
-            to: phone,
-            templateName: 'pjar_order',
-            parameters: [userName, param2, param3, param4],
-            buttonUrlParam: buttonParam,
-            languageCode: 'en',
-          });
-          console.log(`✅ [Pending PujaBooking] WhatsApp pjar_order sent to ${phone}`);
-          sent = true;
-        } catch (err: any) {
-          console.warn(`[Pending PujaBooking] Template send failed:`, err?.response?.data || err.message);
-        }
-
-        // Ultimate fallback to sending a plain text message if templates fail
-        if (!sent) {
-          try {
-            const fallbackMsg = `Namaste ${userName} ji 🙏\n\nYour booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏\n\nDate: ${bookingDateStr}\nBooking ID: ${bookingId}\n\nTrack booking details: https://play.google.com/store/${buttonParam}`;
-            await sendWhatsappMessage({
-              to: phone,
-              message: fallbackMsg,
-            });
-            console.log(`✅ [Pending PujaBooking] WhatsApp plain text confirmation sent to ${phone}`);
-            sent = true;
-          } catch (textErr: any) {
-            console.error(`❌ [Pending PujaBooking] WhatsApp fallback text message failed:`, textErr?.response?.data || textErr.message);
-          }
-        }
-      } catch (e: any) {
-        console.error('❌ [Pending PujaBooking] WhatsApp confirmation flow failed entirely:', e?.response?.data || e?.message || e);
-      }
-    })();
+    // Only for NORMAL pujas — those take no payment, so the booking is confirmed
+    // the moment the pending record is created. Live Mandir pujas take payment
+    // AFTER this step, so their confirmation is deferred to complete-booking
+    // (sent only once payment is verified).
+    if (!isLiveMandir) {
+      void sendBookingConfirmationWhatsapp(newBooking);
+    }
 
     res.status(201).json({
       message: 'Pre-booking created. Proceed to payment.',
@@ -749,7 +776,13 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     } catch (pushErr) {
       console.error('Push send/schedule failed:', pushErr);
     }
-    // 🟢 Note: WhatsApp booking confirmation is now sent during pending booking creation.
+    // 🟢 WhatsApp booking confirmation (fire-and-forget)
+    // Normal pujas already got their WhatsApp at create-pending (no payment taken).
+    // Live Mandir pujas take payment, so we send the confirmation here — only now
+    // that the payment signature has been verified.
+    if ((finalBooking as any).isLiveMandir) {
+      void sendBookingConfirmationWhatsapp(finalBooking);
+    }
     // ----------------------------------------------------------
 
     // 🟢 Email booking confirmation (fire-and-forget)

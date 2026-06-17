@@ -14,6 +14,7 @@ export interface ChadhavaItem {
     maxQuantity: number;
     popular?: boolean;
     isActive?: boolean;
+    type?: string;
 }
 
 export interface ChadhavaSection {
@@ -47,6 +48,10 @@ export interface Chadhava {
     tags: string[];
     sections: ChadhavaSection[];
     prasad?: ChadhavaPrasad;
+    description?: string;
+    mandirAppImage?: string;
+    mandirSectionIntro?: string;
+    mandirSectionHistory?: string;
 }
 
 /** A chosen seva item with quantity, used by the detail + booking flow. */

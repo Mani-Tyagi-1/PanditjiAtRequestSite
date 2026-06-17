@@ -80,6 +80,7 @@ type SelectionInput = { code?: string; quantity?: number };
 type QuoteInput = {
   items?: SelectionInput[];
   addPrasadBox?: boolean;
+  familyMembers?: string[];
 };
 
 type ResolvedPricing = {
@@ -87,13 +88,14 @@ type ResolvedPricing = {
   prasadBoxPrice: number;
   itemsTotal: number;
   prasadTotal: number;
+  familyTotal: number;
   grandTotal: number;
 };
 
 // Resolve prices from the DB document — never trust client-sent amounts.
 const resolvePricing = (
   chadhava: IChadhava,
-  { items, addPrasadBox }: QuoteInput
+  { items, addPrasadBox, familyMembers }: QuoteInput
 ): ResolvedPricing | { error: string } => {
   if (!Array.isArray(items) || items.length === 0) {
     return { error: "Please select at least one seva" };
@@ -130,14 +132,16 @@ const resolvePricing = (
   if (selections.length === 0) return { error: "Please select at least one seva" };
 
   const itemsTotal = selections.reduce((sum, s) => sum + s.lineTotal, 0);
-  const prasadBoxPrice = addPrasadBox && chadhava.prasad?.enabled ? chadhava.prasad.price : 0;
+  const prasadBoxPrice = addPrasadBox ? 298 : 0;
+  const familyTotal = Array.isArray(familyMembers) ? familyMembers.length * 50 : 0;
 
   return {
     selections,
     prasadBoxPrice,
     itemsTotal,
     prasadTotal: prasadBoxPrice,
-    grandTotal: itemsTotal + prasadBoxPrice,
+    familyTotal,
+    grandTotal: itemsTotal + prasadBoxPrice + familyTotal,
   };
 };
 
@@ -237,7 +241,7 @@ export const getChadhavaQuote: RequestHandler = async (req, res) => {
 // POST /chadhava-bookings/create-order — pending booking + Razorpay order
 export const createChadhavaOrder: RequestHandler = async (req, res) => {
   try {
-    const { chadhavaSlug, items, addPrasadBox, devoteeName, gotra, phone, wish } = req.body;
+    const { chadhavaSlug, items, addPrasadBox, devoteeName, gotra, phone, wish, familyMembers, deliveryAddress } = req.body;
 
     if (!chadhavaSlug || !devoteeName || !phone) {
       res.status(400).json({
@@ -277,7 +281,7 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       return;
     }
 
-    const pricing = resolvePricing(chadhava, { items, addPrasadBox });
+    const pricing = resolvePricing(chadhava, { items, addPrasadBox, familyMembers });
     if ("error" in pricing) {
       res.status(400).json({ success: false, message: pricing.error });
       return;
@@ -303,7 +307,7 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       deity: chadhava.deity,
       templeName: chadhava.templeName,
       selections: pricing.selections,
-      addPrasadBox: !!addPrasadBox && !!chadhava.prasad?.enabled,
+      addPrasadBox: !!addPrasadBox,
       prasadBoxPrice: pricing.prasadBoxPrice,
       itemsTotal: pricing.itemsTotal,
       totalAmount: pricing.grandTotal,
@@ -315,6 +319,8 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       paymentStatus: "pending",
       razorpayOrderId: order.id,
       isFromSite: true,
+      familyMembers: Array.isArray(familyMembers) ? familyMembers : [],
+      deliveryAddress: addPrasadBox ? deliveryAddress : undefined,
     });
 
     res.status(201).json({

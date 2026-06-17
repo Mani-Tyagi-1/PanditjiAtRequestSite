@@ -135,7 +135,40 @@ export const lookupUserByPhone: RequestHandler = async (req, res) => {
     res.status(200).json({ exists: true, user, bookingCount });
   } catch (error) {
     console.error("Error looking up user by phone:", error);
-    res.status(500).json({ exists: false, user: null, bookingCount: 0 });
+  }
+};
+
+/**
+ * Find or register a guest user by phone number.
+ * POST /users/find-or-register-guest
+ */
+export const findOrRegisterGuest: RequestHandler = async (req, res) => {
+  const { phone, name, gotra } = req.body;
+  const cleaned = String(phone || "").replace(/\D/g, "").slice(-10);
+
+  if (!cleaned || cleaned.length !== 10) {
+    res.status(400).json({ success: false, message: "Valid 10-digit phone number is required" });
+    return;
+  }
+
+  try {
+    let user = await User.findOne({ phone: cleaned });
+    let exists = true;
+
+    if (!user) {
+      exists = false;
+      user = await User.create({
+        phone: cleaned,
+        name: name || "Devotee",
+        gotra: gotra || "",
+        fullName: name || "Devotee"
+      });
+    }
+
+    res.status(200).json({ success: true, exists, user });
+  } catch (error) {
+    console.error("Error in findOrRegisterGuest:", error);
+    res.status(500).json({ success: false, message: "Server error lookup/registering guest" });
   }
 };
 

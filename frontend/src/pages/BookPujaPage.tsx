@@ -246,84 +246,84 @@ function LiveMandirVerticalCard({ puja, onBook }: { puja: LivePuja; onBook: () =
         ? Math.round(((puja.originalPrice - puja.price) / puja.originalPrice) * 100)
         : 0;
     return (
-        <div className="bg-white rounded-3xl border border-orange-100 overflow-hidden shadow-sm">
-            {/* Image */}
-            <div className="relative h-44 bg-stone-200">
+        <div 
+            onClick={onBook}
+            className="bg-[#FFFDF9] rounded-[24px] border border-[#FFEFE2] overflow-hidden shadow-[0_12px_36px_-12px_rgba(224,90,16,0.08)] hover:shadow-[0_16px_40px_-10px_rgba(224,90,16,0.14)] active:scale-[0.99] hover:scale-[1.005] transition-all duration-300 cursor-pointer flex flex-col justify-between"
+        >
+            {/* Image & Badges */}
+            <div className="relative h-48 bg-stone-100 overflow-hidden">
                 <img src={puja.image} alt={puja.pujaName} className="w-full h-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2E1F15]/90 via-transparent to-black/20" />
+                
                 {puja.status === "live" && (
-                    <span className="absolute top-3 left-3 flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+                    <span className="absolute top-3.5 left-3.5 flex items-center gap-1.5 bg-rose-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-full shadow-md">
+                        <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> LIVE NOW
                     </span>
                 )}
-                <div className="absolute bottom-3 left-4 right-4 text-white">
+                
+                {discount > 0 && (
+                    <span className="absolute top-3.5 right-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[10px] font-bold px-3 py-1 rounded-full shadow-sm">
+                        {discount}% OFF
+                    </span>
+                )}
+
+                <div className="absolute bottom-3.5 left-4 right-4 text-white">
                     {puja.deity && (
-                        <span className="block text-[11px] font-bold tracking-widest text-amber-300 uppercase">{puja.deity}</span>
+                        <span className="block text-[10.5px] font-bold tracking-widest text-orange-200 uppercase mb-0.5">{puja.deity}</span>
                     )}
-                    <span className="block text-[20px] font-bold" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                    <span className="block text-2xl font-bold font-serif leading-tight">
                         {puja.templeName}
                     </span>
                 </div>
             </div>
 
-            {/* Body */}
-            <div className="p-4">
-                <h3 className="text-[18px] font-bold text-stone-900">{puja.pujaName}</h3>
-                {puja.templeLocation && (
-                    <p className="mt-1 flex items-center gap-1 text-[12.5px] text-stone-500">
-                        <MapPin className="w-3.5 h-3.5 text-rose-500" /> {puja.templeLocation}
-                    </p>
-                )}
-
-                <div className="mt-2 flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-[12px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
-                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {(puja.rating ?? 4.9).toFixed(1)}
-                    </span>
-                    {puja.devoteesJoined != null && (
-                        <span className="flex items-center gap-1 text-[12px] font-semibold text-sky-600">
-                            <Users className="w-3.5 h-3.5" /> {puja.devoteesJoined.toLocaleString("en-IN")}+ Devotees Joined
+            {/* Content Body */}
+            <div className="p-5 flex flex-col justify-between flex-1">
+                <div>
+                    <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-[19px] font-bold text-[#2E1F15] leading-tight">{puja.pujaName}</h3>
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-0.5 rounded-md self-start shrink-0">
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> {(puja.rating ?? 4.9).toFixed(1)}
                         </span>
+                    </div>
+
+                    {puja.templeLocation && (
+                        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-stone-500">
+                            <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" /> {puja.templeLocation}
+                        </p>
+                    )}
+
+                    {/* Benefits List */}
+                    {!!(puja.benefits && puja.benefits.length) && (
+                        <div className="mt-4 space-y-2">
+                            {puja.benefits.slice(0, 2).map((b) => (
+                                <div key={b} className="flex items-start gap-2.5 text-[12.5px] text-[#4E3D30]">
+                                    <span className="w-4.5 h-4.5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <Check className="w-3 h-3 text-emerald-600" strokeWidth={3} />
+                                    </span>
+                                    <span className="leading-tight">{b}</span>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
 
-                {!!(puja.benefits && puja.benefits.length) && (
-                    <div className="mt-3 space-y-1.5">
-                        {puja.benefits.slice(0, 2).map((b) => (
-                            <div key={b} className="flex items-center gap-2 text-[13px] text-stone-700">
-                                <span className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                                    <Check className="w-2.5 h-2.5 text-emerald-600" strokeWidth={3} />
-                                </span>
-                                {b}
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {(puja.scheduledDate || puja.scheduledTime) && (
-                    <div className="mt-3 flex items-center gap-2 bg-orange-50/70 border border-orange-100 rounded-xl px-3 py-2 text-[12.5px] font-semibold text-stone-600">
-                        <Clock className="w-4 h-4 text-orange-500" />
-                        {[puja.scheduledDate, puja.scheduledTime].filter(Boolean).join(" • ")}
-                    </div>
-                )}
-
-                <div className="mt-3 pt-3 border-t border-stone-100 flex items-center justify-between">
-                    <div className="leading-none">
-                        <span className="text-[10px] text-stone-400 font-semibold uppercase">Starting at</span>
-                        <div className="flex items-baseline gap-1.5 mt-0.5">
-                            <span className="text-[20px] font-bold text-stone-900">₹{puja.price.toLocaleString("en-IN")}</span>
+                {/* Footer Section */}
+                <div className="mt-5 pt-4 border-t border-stone-100 flex items-center justify-between">
+                    <div>
+                        <span className="text-[9.5px] text-stone-400 font-bold uppercase tracking-wider block">Starting at</span>
+                        <div className="flex items-baseline gap-2 mt-0.5">
+                            <span className="text-2xl font-black text-[#D85C0E]">₹{puja.price.toLocaleString("en-IN")}</span>
                             {puja.originalPrice && (
-                                <span className="text-[12px] text-stone-400 line-through">₹{puja.originalPrice.toLocaleString("en-IN")}</span>
-                            )}
-                            {discount > 0 && (
-                                <span className="text-[10px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full">{discount}% OFF</span>
+                                <span className="text-[13px] text-stone-400 line-through">₹{puja.originalPrice.toLocaleString("en-IN")}</span>
                             )}
                         </div>
                     </div>
                     <button
-                        onClick={onBook}
-                        className="flex items-center gap-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[14px] px-6 py-3 rounded-2xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform"
+                        onClick={(e) => { e.stopPropagation(); onBook(); }}
+                        className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[14px] px-7 py-3 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 cursor-pointer"
                     >
-                        Book Now <ChevronRight className="w-4 h-4" />
+                        Book Seva
                     </button>
                 </div>
             </div>

@@ -100,18 +100,6 @@ export default function LiveMandirPujaDetailPage() {
                             <p className="text-[11px] text-stone-500">{puja.templeLocation}</p>
                         </div>
                     </div>
-                    <div className="h-px bg-stone-100" />
-                    
-                    <div className="grid grid-cols-2 gap-2 text-[12px] text-stone-600">
-                        <div className="flex items-center gap-1.5">
-                            <CalendarDays className="w-4 h-4 text-orange-500" />
-                            <span>Date: <strong>{puja.scheduledDate}</strong></span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Clock className="w-4 h-4 text-orange-500" />
-                            <span>Time: <strong>{puja.scheduledTime}</strong></span>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Benefits */}

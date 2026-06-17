@@ -33,6 +33,8 @@ export interface IChadhavaBooking {
   razorpaySignature?: string;
   isFromSite: boolean;
   addedOn: Date;
+  familyMembers?: string[];
+  deliveryAddress?: Record<string, any>;
 }
 
 const selectionSchema = new Schema<IChadhavaSelection>(
@@ -74,6 +76,8 @@ const chadhavaBookingSchema = new Schema<IChadhavaBooking>({
   razorpaySignature: { type: String },
   isFromSite: { type: Boolean, default: true },
   addedOn: { type: Date, default: Date.now },
+  familyMembers: { type: [String], default: [] },
+  deliveryAddress: { type: Schema.Types.Mixed },
 });
 
 const ChadhavaBooking: Model<IChadhavaBooking> =

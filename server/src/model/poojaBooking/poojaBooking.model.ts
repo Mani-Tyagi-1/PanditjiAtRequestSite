@@ -47,6 +47,7 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     poojaId: { type: Schema.Types.ObjectId, ref: 'Pooja', required: true },
     poojaNameEng: { type: String, required: true },
     poojaMode: { type: String, enum: ['online', 'offline'], required: true },
+    poojaType: { type: String, default: 'normal_pooja' },
     poojaPrice: { type: Number, required: true },
     bookingDate: { type: Date, required: true },
     userAvailabilityVC: { type: Boolean, default: true },
@@ -137,6 +138,9 @@ PoojaBookingSchema.set('toObject', { virtuals: true });
 
 // Indexes
 PoojaBookingSchema.index({ bookingDate: 1 });
+PoojaBookingSchema.index({ userPhone: 1, bookingDate: -1 });
+PoojaBookingSchema.index({ userId: 1, bookingDate: -1 });
+PoojaBookingSchema.index({ poojaType: 1, userPhone: 1, bookingDate: -1 });
 PoojaBookingSchema.index({ assignedPandit: 1, bookingDate: 1 });
 PoojaBookingSchema.index({ razorpayOrderId: 1 }, { unique: true });
 PoojaBookingSchema.index({ location: '2dsphere' }, { sparse: true });

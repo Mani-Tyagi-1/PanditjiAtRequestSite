@@ -218,6 +218,7 @@ export interface IPendingPoojaBooking extends Document {
   concern?: string;
   familyMembers?: any[];
   prasadAdded?: boolean;
+  poojaType?: string;
 }
 
 const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
@@ -301,6 +302,7 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     concern: { type: String, trim: true },
     familyMembers: { type: Array, default: undefined },
     prasadAdded: { type: Boolean, default: undefined },
+    poojaType: { type: String, default: 'normal_pooja' },
   },
   { timestamps: true },
 );

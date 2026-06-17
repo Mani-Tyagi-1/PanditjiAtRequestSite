@@ -194,11 +194,10 @@ function App() {
       <ReferralCapture />
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-
           {/* App shell with persistent bottom nav */}
           <Route element={<AppLayout />}>
-            <Route path="/home" element={<HomePage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/home" element={<Navigate to="/" replace />} />
             <Route path="/book-puja" element={<BookPujaPage />} />
             <Route path="/chadhava" element={<ChadhavaPage />} />
             <Route path="/kashi" element={<KashiPage />} />

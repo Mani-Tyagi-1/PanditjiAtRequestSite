@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import API_URL from "../utils/apiConfig";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,11 +22,13 @@ import {
 
 const MyBookingsPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const tabParam = searchParams.get("tab") === "live" ? "live" : "pooja";
     const [bookings, setBookings] = useState<any[]>([]);
     const [liveBookings, setLiveBookings] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<"pooja" | "live">("pooja");
+    const [activeTab, setActiveTab] = useState<"pooja" | "live">(tabParam);
 
     const [alertConfig, setAlertConfig] = useState<{
         show: boolean;
@@ -66,9 +68,11 @@ const MyBookingsPage: React.FC = () => {
             const poojaRes = await axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${cleanPhone}`);
 
             const allBookings: any[] = poojaRes.data || [];
-            // Split: regular puja bookings vs live mandir bookings (isLiveMandir: true)
-            const regularBookings = allBookings.filter((b: any) => !b.isLiveMandir);
-            const liveMandirBookings = allBookings.filter((b: any) => b.isLiveMandir === true);
+            // Split: regular puja bookings vs live mandir bookings
+            // detect by either isLiveMandir flag (old) or poojaType field (new)
+            const isLive = (b: any) => b.isLiveMandir === true || b.poojaType === 'live_puja_at_mandir';
+            const regularBookings = allBookings.filter((b: any) => !isLive(b));
+            const liveMandirBookings = allBookings.filter(isLive);
 
             setBookings(regularBookings);
             setLiveBookings(liveMandirBookings);

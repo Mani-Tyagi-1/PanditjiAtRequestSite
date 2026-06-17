@@ -48,29 +48,73 @@ export default function TrustSanatanSection() {
                         subtitle="Our commitment to authenticity"
                     />
 
-                    {/* Vertical list of Trust items matching screenshot */}
-                    <div className="mt-3.5 space-y-2.5">
+                    {/* Grid of Trust items matching screenshot */}
+                    <div className="mt-3.5 grid grid-cols-2 gap-2.5">
                         {TRUST_LIST.map((t) => {
                             const IconComp = t.icon;
                             return (
                                 <div
                                     key={t.id}
-                                    className="bg-white border border-orange-100 rounded-[20px] p-3 flex items-center shadow-sm"
+                                    className="bg-white border border-orange-100 rounded-[20px] p-3 flex flex-col items-start gap-2 shadow-sm text-left"
                                 >
-                                    <span className="w-[42px] h-[42px] rounded-[14px] bg-[#FFFBF6] border border-orange-100/60 flex items-center justify-center text-[#F0780A] shrink-0">
-                                        <IconComp className="w-5 h-5 stroke-[2.2]" />
+                                    <span className="w-[36px] h-[36px] rounded-[12px] bg-[#FFFBF6] border border-orange-100/60 flex items-center justify-center text-[#F0780A] shrink-0">
+                                        <IconComp className="w-4 h-4 stroke-[2.2]" />
                                     </span>
-                                    <div className="flex-1 min-w-0 pl-3 flex flex-col">
-                                        <h4 className="text-[13.5px] font-bold text-stone-800 leading-tight">
+                                    <div className="flex flex-col">
+                                        <h4 className="text-[12px] font-bold text-stone-800 leading-tight">
                                             {t.title}
                                         </h4>
-                                        <p className="text-[10.5px] text-stone-400 mt-0.5 leading-normal truncate">
+                                        <p className="text-[9px] text-stone-400 mt-0.5 leading-snug">
                                             {t.desc}
                                         </p>
                                     </div>
                                 </div>
                             );
                         })}
+                    </div>
+
+                    {/* Puja Samagri Included nested section */}
+                    <div className="mt-5 pt-4 border-t border-dashed border-orange-200/50">
+                        <div className="text-center">
+                            <h4 className="text-[14px] font-bold text-stone-800 leading-tight">
+                                Puja Samagri Included
+                            </h4>
+                            <p className="text-[10px] text-stone-400 mt-0.5">
+                                Each booking includes all essential materials & guidance
+                            </p>
+                        </div>
+
+                        <div className="mt-4.5 grid grid-cols-3 gap-2">
+                            {[
+                                {
+                                    image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/thali.jpeg",
+                                    title: "Complete Samagri Kit",
+                                    desc: "All essential puja items",
+                                },
+                                {
+                                    image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/kalash.jpeg",
+                                    title: "Sankalp in Your Name",
+                                    desc: "With your name & gotra",
+                                },
+                                {
+                                    image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/book.jpeg",
+                                    title: "Pandit Ji Guidance",
+                                    desc: "Before & after puja",
+                                },
+                            ].map(({ image, title, desc }) => (
+                                <div key={title} className="bg-white border border-orange-100/60 rounded-[18px] p-2 text-center flex flex-col items-center shadow-xs">
+                                    <div className="w-[50px] h-[50px] rounded-full overflow-hidden bg-[#FFFBF2] flex items-center justify-center shrink-0">
+                                        <img src={image} alt={title} loading="lazy" className="w-10 h-10 object-contain rounded-full" />
+                                    </div>
+                                    <h5 className="mt-2 text-[10px] font-bold text-stone-850 leading-tight min-h-[24px]">
+                                        {title}
+                                    </h5>
+                                    <p className="mt-0.5 text-[8.5px] text-stone-400 leading-tight">
+                                        {desc}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

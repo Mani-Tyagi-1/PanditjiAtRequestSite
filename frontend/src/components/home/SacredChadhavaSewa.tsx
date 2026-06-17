@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Share2 } from "lucide-react";
+import { Share2, ChevronRight } from "lucide-react";
 import axios from "axios";
 import { CHADHAVA_FALLBACK, Chadhava } from "./chadhavaFallback";
 import API_URL from "../../utils/apiConfig";
@@ -79,8 +79,8 @@ const isTodayOrFutureDate = (value: unknown): boolean => {
 const normalizeChadhava = (item: any): Chadhava => {
     const id = item._id || item.id || "";
     
-    // If it's already in the normalized layout (e.g. fallback)
-    if (item.deity && item.image) {
+    // If it's already fully normalized with a startingPrice
+    if (item.deity && item.image && typeof item.startingPrice === "number") {
         return {
             id,
             deity: item.deity,
@@ -92,32 +92,34 @@ const normalizeChadhava = (item: any): Chadhava => {
         };
     }
 
-    const deity = item.chadhavaName || "";
+    const deity = item.deity || item.chadhavaName || "";
     const mandir = item.selectedMandirs?.[0];
-    let templeName = "";
-    if (mandir) {
+    let templeName = item.templeName || "";
+    if (mandir && !templeName) {
         templeName = mandir.nameEnglish || "";
     }
     
-    const image = item.chadhavaWebCardImage?.location || item.chadhavaAppImage?.location || "";
+    const image = item.image || item.chadhavaWebCardImage?.location || item.chadhavaAppImage?.location || "";
     
-    let startingPrice = 501;
-    let originalPrice: number | undefined = undefined;
+    let startingPrice = item.startingPrice || 501;
+    let originalPrice = item.originalPrice;
     
     const prices: number[] = [];
-    if (Array.isArray(item.chadhavaSections)) {
-        for (const sec of item.chadhavaSections) {
+    const sections = item.chadhavaSections || item.sections;
+    if (Array.isArray(sections)) {
+        for (const sec of sections) {
             if (Array.isArray(sec.items)) {
                 for (const it of sec.items) {
-                    const pr = it.discountedPrice || it.itemPrice;
+                    const pr = it.discountedPrice || it.itemPrice || it.chadhavaPrice;
                     if (pr) prices.push(Number(pr));
                 }
             }
         }
     }
-    if (Array.isArray(item.chadhavaItems)) {
-        for (const it of item.chadhavaItems) {
-            const pr = Number(it.chadhavaPrice);
+    const chadhavaItems = item.chadhavaItems || item.items;
+    if (Array.isArray(chadhavaItems)) {
+        for (const it of chadhavaItems) {
+            const pr = Number(it.chadhavaPrice || it.itemPrice || it.discountedPrice);
             if (!isNaN(pr)) prices.push(pr);
         }
     }
@@ -126,12 +128,12 @@ const normalizeChadhava = (item: any): Chadhava => {
         startingPrice = Math.min(...prices);
         if (item.offer?.offerStartPrice) {
             originalPrice = Number(item.offer.offerStartPrice);
-        } else {
+        } else if (!originalPrice) {
             originalPrice = Math.round(startingPrice * 2.2);
         }
     }
     
-    const tags = item.isFeatured ? ["Most Booked"] : (item.isExclusive ? ["New Offerings"] : []);
+    const tags = item.isFeatured ? ["Most Booked"] : (item.isExclusive ? ["New Offerings"] : (item.tags || []));
 
     return {
         id,
@@ -196,6 +198,12 @@ export default function SacredChadhavaSewa() {
                 </h2>
                 <span className="h-[1px] w-6 bg-stone-300 shrink-0" />
                 <span className="text-[12.5px] text-stone-500 font-medium truncate">Direct Temple Offerings</span>
+                <button
+                    onClick={() => navigate("/chadhava")}
+                    className="ml-auto flex items-center gap-0.5 text-[14px] font-bold text-orange-600 active:scale-95 transition-transform shrink-0 cursor-pointer"
+                >
+                    View All <ChevronRight className="w-4 h-4" />
+                </button>
             </div>
 
             <div className="mt-3 flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x scroll-px-4 [&>*:last-child]:mr-1">

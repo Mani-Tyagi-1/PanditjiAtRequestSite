@@ -9,9 +9,10 @@ import Pandit from '../../model/panditApp/panditModel';
 import UserReferralBooking from '../../model/userApp/userReferralBooking.model';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
-import { sendWhatsappTemplateMessage } from '../../utils/whatsapp';
+import { sendWhatsappTemplateMessage, sendWhatsappMessage } from '../../utils/whatsapp';
 import { sendBookingConfirmationEmail } from '../../utils/emailService';
 import type { Document } from "mongoose";
 
@@ -304,10 +305,24 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
             { phone: { $regex: alias10 + '$' } },
           ],
         });
+
+        if (!userExists) {
+          // Auto-register user
+          userExists = new User({
+            phone: alias10,
+            name: bhaktName || 'Guest User',
+            isFromApp: false,
+            isNotifyOkay: true,
+            email_verified: false,
+            isActive: true,
+            addedOn: new Date(),
+          });
+          await userExists.save();
+        }
       }
     }
     if (!userExists) {
-      res.status(404).json({ message: 'User not found. Please ensure you are registered.' });
+      res.status(400).json({ message: 'A valid 10-digit phone number is required.' });
       return;
     }
 
@@ -377,6 +392,9 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       poojaMode,
       bookingDate: new Date(bookingDate),
 
+      // poojaType: live mandir vs normal
+      poojaType: isLiveMandir ? 'live_puja_at_mandir' : 'normal_pooja',
+
       // store both total + base (derived)
       amount,
       poojaPrice,
@@ -387,7 +405,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       isPaymentDone: false,
       razorpayOrderId: order.id,
 
-      ...(poojaMode === 'offline' && { address }),
+      ...((poojaMode === 'offline' || prasadAdded) && { address }),
       bhaktName: bhaktName || (userExists as any).name,
       gotra,
       contactNumber: contactNumber || phone,
@@ -434,7 +452,8 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
 
         if (cleanedPhone.length < 10) return;
 
-        const userName = (newBooking as any).userName || 'Devotee';
+        // Use form-submitted name (bhaktName) for greeting — NOT the potentially-stale DB name
+        const userName = (newBooking as any).bhaktName || (newBooking as any).userName || 'Devotee';
         const poojaName = newBooking.poojaNameEng || 'Puja';
         const poojaMode = newBooking.poojaMode || 'offline';
         const bookingDateStr = new Date(newBooking.bookingDate).toLocaleDateString('en-IN', {
@@ -500,19 +519,48 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
            assignedPanditName = "Acharya Ramlok Sharma ji"; // Ultimate fallback if DB is empty
         }
 
-        const param2 = `Your booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏`;
+        // For Live Mandir: include mandir name in param2, selected date in param3
+        const liveMandirTemple = (newBooking as any).templeName ? ` at *${(newBooking as any).templeName}*` : '';
+        const param2 = isLiveMandir
+          ? `Your Live Mandir Puja booking for *${poojaName}*${liveMandirTemple} has been successfully confirmed! 🛕 Our team will reach out with the live stream details. 🙏`
+          : `Your booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏`;
         const param3 = `Date: ${bookingDateStr}`;
         const param4 = `Booking ID: ${bookingId}`;
 
-        await sendWhatsappTemplateMessage({
-          to: phone,
-          templateName: 'pjar_order',
-          parameters: [userName, param2, param3, param4],
-          buttonUrlParam: 'apps/details?id=com.panditJiAtReqapp',
-        });
-        console.log(`✅ [Pending PujaBooking] WhatsApp pjar_order template confirmation sent to ${phone}`);
+        let sent = false;
+        const buttonParam = 'apps/details?id=com.panditJiAtReqapp&pcampaignid=web_share';
+
+        // Template pjar_order is registered in 'en' locale — send directly
+        try {
+          await sendWhatsappTemplateMessage({
+            to: phone,
+            templateName: 'pjar_order',
+            parameters: [userName, param2, param3, param4],
+            buttonUrlParam: buttonParam,
+            languageCode: 'en',
+          });
+          console.log(`✅ [Pending PujaBooking] WhatsApp pjar_order sent to ${phone}`);
+          sent = true;
+        } catch (err: any) {
+          console.warn(`[Pending PujaBooking] Template send failed:`, err?.response?.data || err.message);
+        }
+
+        // Ultimate fallback to sending a plain text message if templates fail
+        if (!sent) {
+          try {
+            const fallbackMsg = `Namaste ${userName} ji 🙏\n\nYour booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏\n\nDate: ${bookingDateStr}\nBooking ID: ${bookingId}\n\nTrack booking details: https://play.google.com/store/${buttonParam}`;
+            await sendWhatsappMessage({
+              to: phone,
+              message: fallbackMsg,
+            });
+            console.log(`✅ [Pending PujaBooking] WhatsApp plain text confirmation sent to ${phone}`);
+            sent = true;
+          } catch (textErr: any) {
+            console.error(`❌ [Pending PujaBooking] WhatsApp fallback text message failed:`, textErr?.response?.data || textErr.message);
+          }
+        }
       } catch (e: any) {
-        console.error('❌ [Pending PujaBooking] WhatsApp pjar_order failed:', e?.response?.data || e?.message || e);
+        console.error('❌ [Pending PujaBooking] WhatsApp confirmation flow failed entirely:', e?.response?.data || e?.message || e);
       }
     })();
 
@@ -783,9 +831,18 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     })();
     // ────────────────────────────────────────────────────────────
 
+    const token = jwt.sign({ id: finalBooking.userId }, process.env.JWT_SECRET || "supersecretkey", {
+      expiresIn: "7d",
+    });
+    const user = await User.findById(finalBooking.userId).select(
+      "name email phone gotra given_name family_name addedOn"
+    );
+
     res.status(201).json({
       message: 'Pooja booking confirmed and payment verified.',
       booking: finalBooking,
+      token,
+      user,
     });
   } catch (error) {
     next(error);

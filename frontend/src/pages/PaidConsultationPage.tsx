@@ -18,13 +18,16 @@ const LABEL_CLASS = "text-xs font-semibold text-stone-500 uppercase tracking-wid
 export default function PaidConsultationPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryParams = new URLSearchParams(window.location.search);
+  const consultType = queryParams.get("type") || "voice";
+
   const [form, setForm] = useState({
     fullName: "",
     mobileNumber: "",
     city: "",
     preferredTimeSlot: "5-7", // ← Default is now 5-7 PM
   });
-  const [amount, setAmount] = useState(101);
+  const [amount, setAmount] = useState(consultType === "video" ? 201 : 101);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
@@ -82,6 +85,7 @@ export default function PaidConsultationPage() {
           mobileNumber: form.mobileNumber,
           city: form.city,
           preferredTimeSlot: form.preferredTimeSlot,
+          type: consultType,
         }),
       });
 

@@ -40,7 +40,7 @@ const verifyPaymentSignature = (
 
 export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
   try {
-    const { fullName, mobileNumber, city, concern, preferredTimeSlot } = req.body;
+    const { fullName, mobileNumber, city, concern, preferredTimeSlot, type } = req.body;
 
     if (!fullName || !mobileNumber || !city || !preferredTimeSlot) {
       res.status(400).json({
@@ -66,7 +66,7 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
       return;
     }
 
-    const amount = getConsultationAmount();
+    const amount = type === "video" ? 201 : 101;
     const orderOptions: any = {
       amount: amount * 100,
       currency: "INR",

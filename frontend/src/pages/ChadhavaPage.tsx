@@ -117,8 +117,8 @@ const isTodayOrFutureDate = (value: unknown): boolean => {
 const normalizeChadhavaItem = (item: any): Chadhava => {
     const id = item._id || item.id || "";
     
-    // If it's already in the normalized layout (e.g. fallback)
-    if (item.deity && item.image) {
+    // If it's already fully normalized
+    if (item.deity && item.image && typeof item.startingPrice === "number") {
         return {
             id,
             slug: item.slug || id,
@@ -139,39 +139,50 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
         };
     }
 
-    const deity = item.chadhavaName || "";
+    const deity = item.deity || item.chadhavaName || "";
     const mandir = item.selectedMandirs?.[0];
-    let templeName = "";
-    let templeLocation = "";
+    let templeName = item.templeName || "";
+    let templeLocation = item.templeLocation || "";
     if (mandir) {
-        templeName = mandir.nameEnglish || "";
-        templeLocation = mandir.city || "";
+        if (!templeName) templeName = mandir.nameEnglish || "";
+        if (!templeLocation) templeLocation = mandir.city || "";
     }
     
-    const image = item.chadhavaWebCardImage?.location || item.chadhavaAppImage?.location || "";
+    const image = item.image || item.chadhavaWebCardImage?.location || item.chadhavaAppImage?.location || "";
     
     // Calculate sections & items
     const rawSections = item.chadhavaSections || item.sections || [];
     const prices: number[] = [];
-    for (const sec of rawSections) {
-        for (const it of (sec.items || [])) {
-            const pr = it.discountedPrice || it.itemPrice;
-            if (pr) prices.push(Number(pr));
+    if (Array.isArray(rawSections)) {
+        for (const sec of rawSections) {
+            if (Array.isArray(sec.items)) {
+                for (const it of sec.items) {
+                    const pr = it.discountedPrice || it.itemPrice || it.chadhavaPrice;
+                    if (pr) prices.push(Number(pr));
+                }
+            }
+        }
+    }
+    const rawItems = item.chadhavaItems || item.items;
+    if (Array.isArray(rawItems)) {
+        for (const it of rawItems) {
+            const pr = Number(it.chadhavaPrice || it.itemPrice || it.discountedPrice);
+            if (!isNaN(pr)) prices.push(pr);
         }
     }
     
-    let startingPrice = 501;
-    let originalPrice: number | undefined = undefined;
+    let startingPrice = item.startingPrice || 501;
+    let originalPrice = item.originalPrice;
     if (prices.length > 0) {
         startingPrice = Math.min(...prices);
         if (item.offer?.offerStartPrice) {
             originalPrice = Number(item.offer.offerStartPrice);
-        } else {
+        } else if (!originalPrice) {
             originalPrice = Math.round(startingPrice * 2.2);
         }
     }
     
-    const tags = item.isFeatured ? ["Most Booked"] : (item.isExclusive ? ["New Offerings"] : []);
+    const tags = item.isFeatured ? ["Most Booked"] : (item.isExclusive ? ["New Offerings"] : (item.tags || []));
     const benefits = Array.isArray(item.benefits)
         ? item.benefits.map((b: any) => (typeof b === "object" ? b.description : b))
         : [];

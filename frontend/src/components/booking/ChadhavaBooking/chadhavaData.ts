@@ -40,6 +40,7 @@ export interface Chadhava {
     image: string;
     /** e.g. "Offered every Tuesday & Saturday" */
     offeringDay: string;
+    availableDates?: string[];
     startingPrice: number;
     originalPrice?: number;
     rating: number;

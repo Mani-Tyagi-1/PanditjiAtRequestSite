@@ -1393,7 +1393,7 @@ export default function BookingModal({
               </div>
             </div>
 
-            <div className={`mx-4 mb-1 rounded-2xl px-4 py-3 flex items-start gap-3 border ${mode === "online" ? "bg-orange-50 border-orange-200" : "bg-amber-50 border-amber-200"}`}>
+            {/* <div className={`mx-4 mb-1 rounded-2xl px-4 py-3 flex items-start gap-3 border ${mode === "online" ? "bg-orange-50 border-orange-200" : "bg-amber-50 border-amber-200"}`}>
               <div className={`shrink-0 mt-0.5 w-6 h-6 rounded-full flex items-center justify-center ${mode === "online" ? "bg-orange-100" : "bg-amber-100"}`}>
                 {mode === "online" ? (
                   <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1410,7 +1410,7 @@ export default function BookingModal({
                   ? "Online puja — Pandit Ji performs all rituals virtually. All samagri will be arranged on your behalf."
                   : "Offline puja — Pandit Ji will visit your provided address with all required samagri."}
               </p>
-            </div>
+            </div> */}
 
             <div className="px-4 py-6 space-y-6">
               <div>

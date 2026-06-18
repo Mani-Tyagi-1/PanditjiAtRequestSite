@@ -8,12 +8,20 @@ import { useAuth } from "../context/AuthContext";
 const KASHI_BG =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/ChatGPT%20Image%20Jun%2015,%202026,%2012_15_58%20PM%20(1).png";
 
+const normalizeIndianPhone = (value: string) => {
+    let digits = value.replace(/\D/g, "");
+    if (digits.length > 10 && digits.startsWith("91")) {
+        digits = digits.slice(2);
+    }
+    return digits.slice(0, 10);
+};
+
 export default function KashiPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [form, setForm] = useState({
         devoteeName: "",
-        mobileNumber: user?.phone || "",
+        mobileNumber: normalizeIndianPhone(user?.phone || ""),
         email: user?.email || "",
         ritualDetails: "",
     });
@@ -29,7 +37,8 @@ export default function KashiPage() {
             setError("Please enter the devotee's name.");
             return;
         }
-        if (form.mobileNumber.replace(/\D/g, "").length !== 10) {
+        const mobileNumber = normalizeIndianPhone(form.mobileNumber);
+        if (mobileNumber.length !== 10) {
             setError("Please enter a valid 10-digit mobile number.");
             return;
         }
@@ -40,7 +49,7 @@ export default function KashiPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     devoteeName: form.devoteeName.trim(),
-                    mobileNumber: form.mobileNumber.replace(/\D/g, ""),
+                    mobileNumber,
                     email: form.email.trim(),
                     ritualDetails: form.ritualDetails.trim(),
                 }),
@@ -144,7 +153,7 @@ export default function KashiPage() {
                             <Field icon={<Phone className="w-5 h-5 text-orange-500" />} label="Mobile Number">
                                 <input
                                     value={form.mobileNumber}
-                                    onChange={(e) => update("mobileNumber", e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                    onChange={(e) => update("mobileNumber", normalizeIndianPhone(e.target.value))}
                                     placeholder="10-digit mobile number"
                                     inputMode="numeric"
                                     className={INPUT}

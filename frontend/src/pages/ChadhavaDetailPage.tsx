@@ -7,6 +7,41 @@ import API_URL from "../utils/apiConfig";
 import { type Chadhava, type ChadhavaSelection } from "../components/booking/ChadhavaBooking/chadhavaData";
 import ChadhavaBookingModal from "../components/booking/ChadhavaBooking/ChadhavaBookingModal";
 
+function CountdownTimer({ targetDate }: { targetDate: string }) {
+    const [timeLeft, setTimeLeft] = useState("");
+
+    useEffect(() => {
+        const calculateTime = () => {
+            const difference = new Date(targetDate).getTime() - new Date().getTime();
+            if (difference <= 0) {
+                setTimeLeft("Offerings Closed");
+                return;
+            }
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            const hh = String(hours).padStart(2, "0");
+            const mm = String(minutes).padStart(2, "0");
+            const ss = String(seconds).padStart(2, "0");
+
+            setTimeLeft(`${days}d ${hh}:${mm}:${ss}`);
+        };
+
+        calculateTime();
+        const timer = setInterval(calculateTime, 1000);
+        return () => clearInterval(timer);
+    }, [targetDate]);
+
+    return (
+        <span className="text-[11.5px] font-bold text-stone-700 tabular-nums">
+            {timeLeft}
+        </span>
+    );
+}
+
 export default function ChadhavaDetailPage() {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
@@ -41,6 +76,7 @@ export default function ChadhavaDetailPage() {
                     templeLocation: raw.selectedMandirs?.[0]?.city || raw.templeLocation || "",
                     image: raw.chadhavaWebCardImage?.location || raw.chadhavaAppImage?.location || raw.image || "",
                     offeringDay: raw.offeringDay || (raw.availableDates?.length ? "Available on: " + raw.availableDates.join(", ") : ""),
+                    availableDates: raw.availableDates || [],
                     startingPrice: raw.startingPrice || 0,
                     originalPrice: raw.originalPrice,
                     rating: raw.rating || 5,
@@ -167,6 +203,7 @@ export default function ChadhavaDetailPage() {
     const itemsTotal = selections.reduce((s, x) => s + x.unitPrice * x.quantity, 0);
     const grandTotal = itemsTotal + prasadPrice;
     const sevasSelected = selections.length;
+    const targetDate = chadhava?.availableDates?.[0] || new Date(Date.now() + 13 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000 + 6 * 60 * 1000).toISOString();
 
     if (loading) {
         return (
@@ -222,6 +259,13 @@ export default function ChadhavaDetailPage() {
                         {chadhava.tags[0]}
                     </span>
                 )}
+                <div className="absolute top-3 right-3 bg-white/95 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm border border-stone-100/30">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                    </span>
+                    <CountdownTimer targetDate={targetDate} />
+                </div>
                 <span className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/45 backdrop-blur-sm text-white text-[12px] font-bold px-2 py-1 rounded-full">
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {chadhava.rating.toFixed(1)}
                 </span>

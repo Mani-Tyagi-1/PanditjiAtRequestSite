@@ -122,25 +122,15 @@ export default function HomePage() {
             >
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setIsMenuOpen(true)}
-                            className="p-1.5 rounded-xl hover:bg-orange-50 active:scale-95 transition-transform cursor-pointer"
-                        >
-                            <Menu className="w-6 h-6 text-stone-700" />
-                        </button>
                         <img src={LOGO} alt="Pandit Ji At Request" className="h-11 w-auto object-contain" />
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {/* Bell */}
-                        <button className="relative w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm active:scale-95 transition-transform">
-                            <Bell className="w-5 h-5 text-stone-700" />
-                            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500" />
-                        </button>
-
-                        {/* Lang toggle */}
-                        <button className="w-12 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm active:scale-95 transition-transform">
-                            <span className="text-[11px] font-bold text-orange-600">हिं<span className="text-stone-400"> / </span>EN</span>
+                         <button
+                            onClick={() => setIsMenuOpen(true)}
+                            className="p-1.5 rounded-xl hover:bg-orange-50 active:scale-95 transition-transform cursor-pointer"
+                        >
+                            <Menu className="w-6 h-6 text-stone-700" />
                         </button>
                     </div>
                 </div>

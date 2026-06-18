@@ -19,6 +19,14 @@ interface Props {
 const INPUT_CONTAINER = "relative bg-white border border-stone-200 rounded-xl px-4 py-2.5 flex items-center gap-3 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all";
 const INPUT_FIELD = "w-full bg-transparent text-sm text-stone-800 placeholder-stone-400 focus:outline-none";
 
+const normalizeIndianPhone = (value: string) => {
+    let digits = value.replace(/\D/g, "");
+    if (digits.length > 10 && digits.startsWith("91")) {
+        digits = digits.slice(2);
+    }
+    return digits.slice(0, 10);
+};
+
 export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, selections, addPrasad, prasadPrice }: Props) {
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -60,7 +68,7 @@ export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, select
             setForm({
                 name: user?.name || user?.fullName || "",
                 gotra: user?.gotra || "",
-                phone: user?.phone || "",
+                phone: normalizeIndianPhone(user?.phone || ""),
                 wish: ""
             });
             setDontKnowGotra(false);
@@ -115,15 +123,16 @@ export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, select
 
     // Handle guest phone input (checking or registering guest when 10 digits are filled)
     const handlePhoneChange = async (val: string) => {
-        setForm((f) => ({ ...f, phone: val }));
+        const phoneDigits = normalizeIndianPhone(val);
+        setForm((f) => ({ ...f, phone: phoneDigits }));
         
         // As soon as the user completes 10 digits (when not logged in)
-        if (!user && val.length === 10) {
+        if (!user && phoneDigits.length === 10) {
             try {
                 const res = await fetch(`${API_URL}/find-or-register-guest`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ phone: val, name: form.name, gotra: form.gotra })
+                    body: JSON.stringify({ phone: phoneDigits, name: form.name, gotra: form.gotra })
                 });
                 const data = await res.json();
                 
@@ -187,7 +196,7 @@ export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, select
             errors.name = "Devotee's name is required";
         }
         
-        const phoneDigits = form.phone.replace(/\D/g, "");
+        const phoneDigits = normalizeIndianPhone(form.phone);
         if (phoneDigits.length !== 10) {
             errors.phone = "Valid 10-digit number is required";
         }
@@ -471,7 +480,7 @@ export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, select
                                                     <Phone className="w-4 h-4 text-emerald-500" />
                                                     <input 
                                                         value={form.phone} 
-                                                        onChange={(e) => handlePhoneChange(e.target.value.replace(/\D/g, "").slice(0, 10))} 
+                                                        onChange={(e) => handlePhoneChange(e.target.value)} 
                                                         placeholder="10-digit mobile number" 
                                                         inputMode="numeric" 
                                                         className={INPUT_FIELD} 

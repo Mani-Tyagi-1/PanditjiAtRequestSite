@@ -7,6 +7,7 @@ import User from "../../model/userApp/userModel";
 import pendingPoojaBookingModel from "../../model/poojaBooking/pendingPoojaBooking.model";
 import poojaBookingModel from "../../model/poojaBooking/poojaBooking.model";
 import Pooja from "../../model/userApp/poojaModel";
+import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 
 // ── Razorpay setup ──
 const isProduction = process.env.PAYMENT_MODE === "production";
@@ -255,6 +256,40 @@ export const completeLiveBookingPayment: RequestHandler = async (req, res) => {
     booking.razorpayPaymentId = razorpayPaymentId;
     booking.razorpaySignature = razorpaySignature;
     await booking.save();
+
+    // META CAPI Purchase (fire-and-forget) — dedup with browser pixel via eventId.
+    void (async () => {
+      if (!isProduction) {
+        console.log(`[MetaCAPI][LiveMandir] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+        return;
+      }
+      try {
+        const forwardedFor = req.headers["x-forwarded-for"];
+        const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(",")[0]) || req.ip || null;
+
+        await sendMetaPurchaseEvent({
+          orderID: String(razorpayOrderId),
+          eventId: `live_mandir_purchase_${razorpayOrderId}`,
+          value: Number((booking as any).amount || 0),
+          currency: "INR",
+          contentId: String((booking as any).pujaName || "LIVE_MANDIR_PUJA").trim(),
+          actionSource: "website",
+          phone: String((booking as any).phone || ""),
+          externalId: String((booking as any).userId || ""),
+          clientIp,
+          userAgent: String(req.headers["user-agent"] || ""),
+          fbp: String(req.headers["x-fbp"] || (req as any).cookies?._fbp || ""),
+          fbc: String(req.headers["x-fbc"] || (req as any).cookies?._fbc || ""),
+          eventSourceUrl:
+            String(req.headers["x-event-source-url"] || "") ||
+            process.env.META_DEFAULT_EVENT_SOURCE_URL ||
+            null,
+        });
+        console.log(`[MetaCAPI][LiveMandir] Purchase sent for orderID=${razorpayOrderId}`);
+      } catch (e: any) {
+        console.error(`[MetaCAPI][LiveMandir] Purchase failed for orderID=${razorpayOrderId}:`, e?.response?.data || e?.message || e);
+      }
+    })();
 
     res.status(200).json({
       success: true,

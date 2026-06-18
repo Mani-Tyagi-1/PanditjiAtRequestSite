@@ -34,6 +34,19 @@ export default function LiveMandirPujaDetailPage() {
         fetchPujaDetails();
     }, [slug]);
 
+    // Meta Pixel: track live mandir puja detail view
+    useEffect(() => {
+        if (puja && window.fbq) {
+            window.fbq("track", "ViewContent", {
+                content_name: puja.pujaName,
+                content_ids: [puja.id],
+                content_type: "live_mandir_puja",
+                value: puja.price,
+                currency: "INR",
+            });
+        }
+    }, [puja]);
+
     if (loading) {
         return (
             <div className="min-h-screen bg-[#FFFAF3] flex flex-col w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 animate-pulse">

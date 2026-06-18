@@ -134,6 +134,19 @@ export default function ChadhavaDetailPage() {
         })();
     }, [slug]);
 
+    // Meta Pixel: track chadhava detail view
+    useEffect(() => {
+        if (chadhava && window.fbq) {
+            window.fbq("track", "ViewContent", {
+                content_name: chadhava.deity,
+                content_ids: [chadhava.id],
+                content_type: "chadhava",
+                value: chadhava.startingPrice,
+                currency: "INR",
+            });
+        }
+    }, [chadhava]);
+
     const itemByCode = useMemo(() => {
         const map = new Map<string, { name: string; price: number; max: number }>();
         chadhava?.sections.forEach((s) =>

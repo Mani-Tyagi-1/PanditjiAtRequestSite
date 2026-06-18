@@ -34,6 +34,14 @@ export default function AppLayout() {
             href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              if (window.fbq) {
+                window.fbq("track", "Ask PanditJi", {
+                  content_name: "Ask PanditJi",
+                  content_type: "consultation",
+                });
+              }
+            }}
             className="pointer-events-auto flex items-center gap-2 bg-white border-2 border-orange-300 rounded-full pl-1.5 pr-4 py-1.5 shadow-lg shadow-orange-200/60 active:scale-95 transition-transform cursor-pointer"
           >
             <img

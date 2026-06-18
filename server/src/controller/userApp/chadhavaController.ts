@@ -5,6 +5,7 @@ import crypto from "crypto";
 import Chadhava, { IChadhava } from "../../model/userApp/chadhavaModel";
 import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhavaBookingModel";
 import { sendWhatsappTemplateMessage, sendWhatsappMessage } from "../../utils/whatsapp";
+import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 
 // Shape a DB doc to the frontend `Chadhava` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -534,6 +535,40 @@ export const completeChadhavaPayment: RequestHandler = async (req, res) => {
 
     // 🟢 Thank-you WhatsApp — only now that payment is verified (fire-and-forget)
     void sendChadhavaConfirmationWhatsapp(booking);
+
+    // META CAPI Purchase (fire-and-forget) — dedup with browser pixel via eventId.
+    void (async () => {
+      if (!isProduction) {
+        console.log(`[MetaCAPI][Chadhava] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+        return;
+      }
+      try {
+        const forwardedFor = req.headers["x-forwarded-for"];
+        const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(",")[0]) || req.ip || null;
+
+        await sendMetaPurchaseEvent({
+          orderID: String(razorpayOrderId),
+          eventId: `chadhava_purchase_${razorpayOrderId}`,
+          value: Number((booking as any).totalAmount || 0),
+          currency: "INR",
+          contentId: String((booking as any).deity || "CHADHAVA").trim(),
+          actionSource: "website",
+          phone: String((booking as any).phone || ""),
+          externalId: String((booking as any)._id || ""),
+          clientIp,
+          userAgent: String(req.headers["user-agent"] || ""),
+          fbp: String(req.headers["x-fbp"] || (req as any).cookies?._fbp || ""),
+          fbc: String(req.headers["x-fbc"] || (req as any).cookies?._fbc || ""),
+          eventSourceUrl:
+            String(req.headers["x-event-source-url"] || "") ||
+            process.env.META_DEFAULT_EVENT_SOURCE_URL ||
+            null,
+        });
+        console.log(`[MetaCAPI][Chadhava] Purchase sent for orderID=${razorpayOrderId}`);
+      } catch (e: any) {
+        console.error(`[MetaCAPI][Chadhava] Purchase failed for orderID=${razorpayOrderId}:`, e?.response?.data || e?.message || e);
+      }
+    })();
 
     res.status(200).json({
       success: true,

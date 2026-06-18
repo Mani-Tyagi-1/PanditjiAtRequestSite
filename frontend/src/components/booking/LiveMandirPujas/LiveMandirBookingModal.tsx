@@ -263,12 +263,16 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                         }
 
                         if ((window as any).fbq) {
+                            // Website live-mandir bookings settle through the unified pooja
+                            // /bookings/complete-booking endpoint, whose server CAPI emits
+                            // `puja_purchase_<orderID>`. eventID must match that for dedup.
                             (window as any).fbq("track", "Purchase", {
                                 content_name: `${puja.pujaName} - ${puja.templeName}`,
+                                content_ids: [puja.id],
                                 content_type: "live_mandir_puja",
                                 value: totalPrice,
                                 currency: "INR",
-                            });
+                            }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
                         }
                         setStep("success");
                         // Auto-redirect to Live Pooja Bookings after 2.5s
@@ -294,6 +298,16 @@ export default function LiveMandirBookingModal({ isOpen, onClose, puja }: Props)
                 setError(resp?.error?.description || "Payment failed. Please try again.");
                 setSubmitting(false);
             });
+
+            if ((window as any).fbq) {
+                (window as any).fbq("track", "InitiateCheckout", {
+                    content_name: `${puja.pujaName} - ${puja.templeName}`,
+                    content_ids: [puja.id],
+                    content_type: "live_mandir_puja",
+                    value: totalPrice,
+                    currency: "INR",
+                });
+            }
 
             rzp.open();
         } catch (err: any) {

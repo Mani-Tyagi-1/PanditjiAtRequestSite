@@ -194,7 +194,7 @@ export default function SacredChadhavaSewa() {
             {/* Custom Header matching screenshot style */}
             <div className="flex items-center gap-2 mb-4">
                 <h2 className="text-[22px] font-black text-[#2E1F15] tracking-tight shrink-0 flex items-center gap-1.5" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                    Sacred Chadhava Sewa <span className="text-xl">🔥</span>
+                    Sacred Chadhava Sewa
                 </h2>
                 <span className="h-[1px] w-6 bg-stone-300 shrink-0" />
                 <span className="text-[12.5px] text-stone-500 font-medium truncate">Direct Temple Offerings</span>
@@ -276,6 +276,15 @@ export default function SacredChadhavaSewa() {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
+                                                if (window.fbq) {
+                                                    window.fbq("track", "Chadhava Offer Now", {
+                                                        content_name: c.deity,
+                                                        content_ids: [c.id],
+                                                        content_type: "chadhava",
+                                                        value: c.startingPrice,
+                                                        currency: "INR",
+                                                    });
+                                                }
                                                 navigate(`/chadhava/${c.id}`);
                                             }}
                                             className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[15px] px-10 py-1.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200"

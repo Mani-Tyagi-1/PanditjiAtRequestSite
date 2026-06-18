@@ -143,12 +143,13 @@ export default function PaidConsultationPage() {
             }
 
             if (window.fbq) {
+              // eventID must match server CAPI event_id for deduplication
               window.fbq("track", "Purchase", {
-                content_name: "Personalised Consultation",
-                content_type: "service",
+                content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+                content_type: consultType === "video" ? "video_call" : "audio_call",
                 value: orderData.amount,
                 currency: orderData.currency || "INR",
-              });
+              }, { eventID: `consultation_purchase_${response.razorpay_order_id}` });
             }
 
             setSubmitted(true);
@@ -170,6 +171,15 @@ export default function PaidConsultationPage() {
         setError(response?.error?.description || "Payment failed. Please try again.");
         setSubmitting(false);
       });
+
+      if (window.fbq) {
+        window.fbq("track", "InitiateCheckout", {
+          content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+          content_type: consultType === "video" ? "video_call" : "audio_call",
+          value: Number(orderData.amount) || amount,
+          currency: orderData.currency || "INR",
+        });
+      }
 
       rzp.open();
     } catch (submitError: any) {

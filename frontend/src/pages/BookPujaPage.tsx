@@ -201,7 +201,18 @@ export default function BookPujaPage() {
                                                 {p.poojaNameEng}
                                             </h3>
                                             <button
-                                                onClick={() => navigate(`/puja/${p._id}`)}
+                                                onClick={() => {
+                                                    if (window.fbq) {
+                                                        window.fbq("track", "Book Pandit Ji", {
+                                                            content_name: p.poojaNameEng,
+                                                            content_ids: [p._id],
+                                                            content_type: "pooja",
+                                                            value: p.poojaPriceOnline,
+                                                            currency: "INR",
+                                                        });
+                                                    }
+                                                    navigate(`/puja/${p._id}`);
+                                                }}
                                                 className="mt-2 w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[13px] font-bold py-2.5 rounded-xl active:scale-95 transition-transform"
                                             >
                                                 Book Pandit Ji
@@ -317,7 +328,19 @@ function LiveMandirVerticalCard({ puja, onBook }: { puja: LivePuja; onBook: () =
                         </div>
                     </div>
                     <button
-                        onClick={(e) => { e.stopPropagation(); onBook(); }}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.fbq) {
+                                window.fbq("track", "Live Mandir Book Seva", {
+                                    content_name: puja.pujaName,
+                                    content_ids: [puja.id],
+                                    content_type: "live_mandir_puja",
+                                    value: puja.price,
+                                    currency: "INR",
+                                });
+                            }
+                            onBook();
+                        }}
                         className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[14px] px-7 py-3 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 cursor-pointer"
                     >
                         Book Seva

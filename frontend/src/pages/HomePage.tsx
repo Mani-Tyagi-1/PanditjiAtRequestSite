@@ -285,6 +285,12 @@ export default function HomePage() {
                             key={label}
                             onClick={() => {
                                 if (label === "Chat") {
+                                    if (window.fbq) {
+                                        window.fbq("track", "Instant Chat Request", {
+                                            content_name: "Instant Chat",
+                                            content_type: "consultation",
+                                        });
+                                    }
                                     window.open("https://play.google.com/store/apps/details?id=com.panditJiAtReqapp&hl=en_IN", "_blank");
                                 } else {
                                     navigate(path);

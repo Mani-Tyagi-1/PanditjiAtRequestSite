@@ -56,6 +56,15 @@ export default function KashiPage() {
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to submit request.");
+
+            // Meta Pixel Tracking
+            if (window.fbq) {
+                window.fbq("track", "Kashi Pandit Pooja Request", {
+                    content_name: "Kashi Vishwanath Dham",
+                    content_type: "kashi_request",
+                });
+            }
+
             setSubmitted(true);
         } catch (err: any) {
             setError(err.message || "Something went wrong. Please try again.");

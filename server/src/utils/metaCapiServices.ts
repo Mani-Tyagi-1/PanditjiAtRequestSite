@@ -218,6 +218,11 @@ export async function sendMetaPurchaseEvent(args: {
   contentId: string;
   deliveryCategory?: "home_delivery" | "in_store";
 
+  // Optional explicit dedup event_id. Must match the browser pixel's
+  // { eventID } so Meta dedupes the pixel + CAPI Purchase. When omitted,
+  // falls back to the legacy `puja_purchase_<orderID>` scheme.
+  eventId?: string | null;
+
   // ✅ you said it is website, so we default fallback to website (NOT app)
   actionSource?: MetaActionSource | string;
   eventSourceUrl?: string | null;
@@ -242,7 +247,7 @@ export async function sendMetaPurchaseEvent(args: {
   // ✅ IMPORTANT: fallback is WEBSITE now (because your source is website)
   const action_source: MetaActionSource = normalizeActionSource(args.actionSource, "website");
 
-  const event_id = `puja_purchase_${String(args.orderID)}`;
+  const event_id = (args.eventId && String(args.eventId).trim()) || `puja_purchase_${String(args.orderID)}`;
 
   const user_data = buildUserData({
     email: args.email || null,

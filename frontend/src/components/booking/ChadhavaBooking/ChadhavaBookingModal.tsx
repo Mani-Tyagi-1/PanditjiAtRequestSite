@@ -341,12 +341,14 @@ export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, select
                         if (!verifyRes.ok) throw new Error(verifyData.message || "Payment verification failed.");
 
                         if ((window as any).fbq) {
+                            // eventID must match server CAPI event_id for deduplication
                             (window as any).fbq("track", "Purchase", {
                                 content_name: `Chadhava - ${chadhava.deity} - ${chadhava.templeName}`,
+                                content_ids: [chadhava.id],
                                 content_type: "chadhava",
                                 value: total,
                                 currency: "INR",
-                            });
+                            }, { eventID: `chadhava_purchase_${response.razorpay_order_id}` });
                         }
                         setDone(true);
                     } catch (verifyErr: any) {
@@ -367,6 +369,16 @@ export default function ChadhavaBookingModal({ isOpen, onClose, chadhava, select
                 setError(resp?.error?.description || "Payment failed. Please try again.");
                 setSubmitting(false);
             });
+
+            if ((window as any).fbq) {
+                (window as any).fbq("track", "InitiateCheckout", {
+                    content_name: `Chadhava - ${chadhava.deity} - ${chadhava.templeName}`,
+                    content_ids: [chadhava.id],
+                    content_type: "chadhava",
+                    value: total,
+                    currency: "INR",
+                });
+            }
 
             rzp.open();
         } catch (err: any) {

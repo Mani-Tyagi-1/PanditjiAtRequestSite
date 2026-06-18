@@ -5,7 +5,6 @@ import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Search,
-    Bell,
     ChevronRight,
     Phone,
     Video,
@@ -324,7 +323,11 @@ export default function HomePage() {
             {/* ── Call To Action Banner ── */}
             <CTASection />
 
-            <div className="h-4" />
+            <footer className="px-4 pt-1 pb-6 text-center">
+                <p className="text-[13px] font-medium text-stone-400">
+                    &copy; {new Date().getFullYear()} VEDICVAIBHAV DOT COM PRIVATE LIMITED. All Rights Reserved.
+                </p>
+            </footer>
 
             {/* Mobile Nav Menu Drawer Overlay */}
             <AnimatePresence>
@@ -426,6 +429,13 @@ export default function HomePage() {
                                     >
                                         Download Now
                                     </a>
+                                    <Link
+                                        to="/privacypolicy"
+                                        onClick={() => setIsMenuOpen(false)}
+                                        className="text-[11.5px] font-semibold text-stone-500 hover:text-orange-700 transition-colors"
+                                    >
+                                        Privacy Policy
+                                    </Link>
                                 </div>
                             </div>
                         </motion.div>

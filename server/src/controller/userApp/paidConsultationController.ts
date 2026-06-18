@@ -2,8 +2,15 @@ import { RequestHandler } from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import PaidConsultation from "../../model/userApp/paidConsultationModel";
+import { sendWhatsappTemplateMessage, sendWhatsappMessage } from "../../utils/whatsapp";
 
 const TIME_SLOTS = new Set(["9-11", "11-1", "3-5", "5-7"]);
+const TIME_SLOT_LABELS: Record<string, string> = {
+  "9-11": "9 AM - 11 AM",
+  "11-1": "11 AM - 1 PM",
+  "3-5": "3 PM - 5 PM",
+  "5-7": "5 PM - 7 PM",
+};
 const DEFAULT_CONSULTATION_AMOUNT = 101;
 
 const isProduction = process.env.PAYMENT_MODE === "production";
@@ -38,6 +45,54 @@ const verifyPaymentSignature = (
   return hmac.digest("hex") === signature;
 };
 
+const sendPaidConsultationConfirmationWhatsapp = async (consultation: any) => {
+  try {
+    const rawPhone = String(consultation?.mobileNumber || "");
+    const cleanedPhone = rawPhone.replace(/\D/g, "");
+    if (cleanedPhone.length < 10) return;
+    const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+
+    const devoteeName = consultation?.fullName || "Devotee";
+    const consultationType = consultation?.consultationType === "video" ? "Video Call" : "Audio Call";
+    const consultationText = consultation?.consultationType === "video" ? "video consultation" : "audio consultation";
+    const slot = TIME_SLOT_LABELS[String(consultation?.timeSlot || consultation?.callbackTime || "")] || consultation?.timeSlot || consultation?.callbackTime || "our next available slot";
+    const amount = Number(consultation?.amount || 0);
+    const bookingId = consultation?.razorpayOrderId || String(consultation?._id || "");
+
+    const param2 = `Thank you for booking your *${consultationType}* with experienced Pandit ji. Your ${consultationText} request is confirmed and our team will connect with you shortly.`;
+    const param3 = `Preferred Slot: ${slot} - Amount Paid: Rs.${amount.toLocaleString("en-IN")}`;
+    const param4 = `Booking ID: ${bookingId} - please keep your phone available during the selected time slot.`;
+    const buttonParam = "apps/details?id=com.panditJiAtReqapp";
+
+    let sent = false;
+    try {
+      await sendWhatsappTemplateMessage({
+        to: phone,
+        templateName: "pjar_order",
+        parameters: [devoteeName, param2, param3, param4],
+        buttonUrlParam: buttonParam,
+        languageCode: "en",
+      });
+      console.log(`[PaidConsultation] WhatsApp pjar_order sent to ${phone}`);
+      sent = true;
+    } catch (err: any) {
+      console.warn("[PaidConsultation] Template send failed:", err?.response?.data || err.message);
+    }
+
+    if (!sent) {
+      try {
+        const fallbackMsg = `Namaste ${devoteeName} ji\n\n${param2}\n${param3}\n\n${param4}\n\nFor further assistance, visit Pandit Ji At Request: https://play.google.com/store/${buttonParam}`;
+        await sendWhatsappMessage({ to: phone, message: fallbackMsg });
+        console.log(`[PaidConsultation] WhatsApp plain text confirmation sent to ${phone}`);
+      } catch (textErr: any) {
+        console.error("[PaidConsultation] WhatsApp fallback text failed:", textErr?.response?.data || textErr.message);
+      }
+    }
+  } catch (e: any) {
+    console.error("[PaidConsultation] WhatsApp confirmation flow failed entirely:", e?.response?.data || e?.message || e);
+  }
+};
+
 export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
   try {
     const { fullName, mobileNumber, city, concern, preferredTimeSlot, type } = req.body;
@@ -66,7 +121,8 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
       return;
     }
 
-    const amount = type === "video" ? 201 : 101;
+    const consultationType = type === "video" ? "video" : "voice";
+    const amount = consultationType === "video" ? 201 : 101;
     const orderOptions: any = {
       amount: amount * 100,
       currency: "INR",
@@ -93,6 +149,7 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
       callbackTime: preferredTimeSlot,
       timeSlot: preferredTimeSlot,
       amount,
+      consultationType,
       isPaymentDone: false,
       razorpayOrderId: order.id,
     });
@@ -141,6 +198,15 @@ export const completePaidConsultationPayment: RequestHandler = async (req, res) 
       return;
     }
 
+    if (consultation.isPaymentDone) {
+      res.json({
+        success: true,
+        message: "Paid consultation payment already verified",
+        data: consultation,
+      });
+      return;
+    }
+
     if (consultation.razorpayOrderId !== razorpayOrderId) {
       res.status(400).json({
         success: false,
@@ -168,6 +234,8 @@ export const completePaidConsultationPayment: RequestHandler = async (req, res) 
     consultation.razorpayPaymentId = razorpayPaymentId;
     consultation.razorpaySignature = razorpaySignature;
     await consultation.save();
+
+    void sendPaidConsultationConfirmationWhatsapp(consultation);
 
     res.json({
       success: true,

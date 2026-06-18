@@ -10,6 +10,7 @@ export interface IConsultancyLead {
   city: string;
   callbackTime: string;
   timeSlot: string;
+  consultationType?: "voice" | "video";
   amount: number;
   isPaymentDone: boolean;
   razorpayOrderId: string;
@@ -27,6 +28,7 @@ const consultancyLeadSchema = new Schema<IConsultancyLead>({
   city: { type: String, required: true, trim: true },
   callbackTime: { type: String, trim: true },
   timeSlot: { type: String, trim: true },
+  consultationType: { type: String, enum: ["voice", "video"], default: "voice", trim: true },
   amount: { type: Number, default: 0 },
   isPaymentDone: { type: Boolean, default: false },
   razorpayOrderId: { type: String, trim: true },

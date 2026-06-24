@@ -127,8 +127,9 @@ const ProfilePage: React.FC = () => {
     const [liveBookings, setLiveBookings] = useState<any[]>([]);
     const [chadhavaBookings, setChadhavaBookings] = useState<any[]>([]);
     const [directBookings, setDirectBookings] = useState<any[]>([]);
+    const [shopifyOrders, setShopifyOrders] = useState<any[]>([]);
     const [bookingsLoading, setBookingsLoading] = useState(false);
-    const [activeBookingTab, setActiveBookingTab] = useState<"pooja" | "direct" | "live" | "chadhava">("pooja");
+    const [activeBookingTab, setActiveBookingTab] = useState<"pooja" | "direct" | "live" | "chadhava" | "shopify">("pooja");
 
     // Payout state
     const [payoutModal, setPayoutModal] = useState<"confirm" | "not-allowed" | null>(null);
@@ -253,11 +254,15 @@ const ProfilePage: React.FC = () => {
             const apiUrl = API_URL;
             const cleanPhone = String(phone).replace(/\D/g, "");
 
-            const [poojaRes, chadhavaRes, directRes, kashiRes] = await Promise.all([
+            const [poojaRes, chadhavaRes, directRes, kashiRes, shopifyRes] = await Promise.all([
                 axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${cleanPhone}`),
                 axios.get(`${apiUrl}/chadhava-bookings/user/${cleanPhone}`),
                 axios.get(`${apiUrl}/pandit-direct-bookings/user/${cleanPhone}`),
-                axios.get(`${apiUrl}/kashi-requests/user/${cleanPhone}`)
+                axios.get(`${apiUrl}/kashi-requests/user/${cleanPhone}`),
+                axios.get(`${apiUrl}/shopify-orders/user/${cleanPhone}`).catch((err) => {
+                    console.error("Error fetching Shopify orders:", err);
+                    return { data: { success: true, data: [] } };
+                })
             ]);
 
             const allPoojaBookings: any[] = poojaRes.data || [];
@@ -285,6 +290,7 @@ const ProfilePage: React.FC = () => {
             setLiveBookings(liveMandirBookings);
             setChadhavaBookings(chadhavaRes.data?.data || []);
             setDirectBookings(mergedDirect);
+            setShopifyOrders(shopifyRes.data?.data || []);
         } catch (err) {
             console.error("Error fetching user bookings:", err);
         } finally {
@@ -406,12 +412,14 @@ const ProfilePage: React.FC = () => {
     useEffect(() => {
         const tab = (searchParams.get("tab") || "").toLowerCase();
         if (!tab) return;
-        const map: Record<string, "pooja" | "direct" | "live" | "chadhava"> = {
+        const map: Record<string, "pooja" | "direct" | "live" | "chadhava" | "shopify"> = {
             pooja: "pooja",
             puja: "pooja",
             direct: "direct",
             live: "live",
             chadhava: "chadhava",
+            shopify: "shopify",
+            shop: "shopify",
         };
         setMode("bookings");
         if (map[tab]) setActiveBookingTab(map[tab]);
@@ -1047,6 +1055,16 @@ const ProfilePage: React.FC = () => {
                                     >
                                         Chadhava ({chadhavaBookings.length})
                                     </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("shopify")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "shopify"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Shop Orders ({shopifyOrders.length})
+                                    </button>
                                 </div>
                             </div>
 
@@ -1079,6 +1097,14 @@ const ProfilePage: React.FC = () => {
                                     ) : (
                                         liveBookings.map((booking, idx) => (
                                             <LiveBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "shopify" ? (
+                                    shopifyOrders.length === 0 ? (
+                                        <EmptyBookingsState type="Shop" />
+                                    ) : (
+                                        shopifyOrders.map((order, idx) => (
+                                            <ShopifyOrderCard key={order._id || idx} order={order} index={idx} />
                                         ))
                                     )
                                 ) : (
@@ -1813,3 +1839,108 @@ const DirectBookingCard = ({ booking, index }: { booking: any; index: number }) 
           </motion.div>
       );
   };
+
+// Helper component for Shopify Order Card
+const ShopifyOrderCard = ({ order, index }: { order: any; index: number }) => {
+    const dateVal = order.addedOn || order.createdAt;
+    const formattedDate = dateVal
+        ? new Date(dateVal).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    const getStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case "delivered":
+                return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+            case "shipped":
+                return "bg-blue-50 text-blue-600 border border-blue-100";
+            case "confirmed":
+                return "bg-amber-50 text-amber-600 border border-amber-100";
+            case "cancelled":
+                return "bg-red-50 text-red-600 border border-red-100";
+            default:
+                return "bg-orange-50 text-orange-600 border border-orange-100";
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            {/* Top row */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-lg">🛍️</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">
+                            Shop Order
+                        </h3>
+                    </div>
+                    <p className="text-xs text-[#FF7000] font-bold">
+                        Status: <span className="capitalize text-xs">{order.status || "Pending"}</span>
+                    </p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                    {order.status || "Pending"}
+                </span>
+            </div>
+
+            {/* Items list */}
+            <div className="mt-3 space-y-2">
+                {order.items?.map((item: any, itemIdx: number) => (
+                    <div key={itemIdx} className="flex items-center gap-3 bg-stone-50/50 p-2 rounded-xl border border-stone-100/50">
+                        {item.image ? (
+                            <img src={item.image} alt={item.title} className="w-10 h-10 object-cover rounded-lg border border-orange-100 shrink-0" />
+                        ) : (
+                            <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center text-stone-400 shrink-0">
+                                🛍️
+                            </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-850 truncate">{item.title}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">Qty: {item.qty} · ₹{item.price?.toLocaleString("en-IN")}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Delivery address */}
+            <div className="mt-3 bg-orange-50/20 p-2.5 rounded-xl border border-orange-100/30">
+                <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider mb-0.5">Delivery Address</p>
+                <p className="text-xs font-bold text-gray-700 leading-tight">{order.customerName}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5 leading-normal">
+                    {order.addressLine}, {order.city}, {order.state} - {order.pincode}
+                </p>
+            </div>
+
+            {/* Middle Details Grid */}
+            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50">
+                <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Payment Status</p>
+                    <span className={`inline-block text-[10px] font-bold uppercase tracking-wider mt-0.5 ${
+                        order.paymentStatus === "paid" ? "text-emerald-600" : "text-orange-500"
+                    }`}>
+                        {order.paymentStatus || "Pending"}
+                    </span>
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Ordered On</p>
+                    <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-orange-50/50">
+                <span className="text-[10px] text-gray-400 font-medium">
+                    Order ID: <span className="font-mono text-gray-500 font-semibold">{order.razorpayOrderId ? order.razorpayOrderId.substring(0, 12) : "N/A"}</span>
+                </span>
+                <div className="flex items-center gap-1 text-[#FF7000]">
+                    <span className="text-[10px] font-bold text-gray-400">Total Paid:</span>
+                    <span className="text-sm font-black">₹{order.totalAmount?.toLocaleString("en-IN")}</span>
+                </div>
+            </div>
+        </motion.div>
+    );
+};

@@ -146,6 +146,7 @@ const HomePage = React.lazy(() => import("./pages/HomePage"));
 const BookPujaPage = React.lazy(() => import("./pages/BookPujaPage"));
 const ChadhavaPage = React.lazy(() => import("./pages/ChadhavaPage"));
 const KashiPage = React.lazy(() => import("./pages/KashiPage"));
+const ShopPage = React.lazy(() => import("./pages/ShopPage"));
 
 // Resets scroll to the top on every route change so a new page never opens
 // mid-way down (React Router otherwise keeps the previous scroll offset).
@@ -210,6 +211,7 @@ function App() {
             <Route path="/book-puja" element={<BookPujaPage />} />
             <Route path="/chadhava" element={<ChadhavaPage />} />
             <Route path="/kashi" element={<KashiPage />} />
+            <Route path="/shop" element={<ShopPage />} />
             <Route path="/account" element={<ProfilePage />} />
           </Route>
 

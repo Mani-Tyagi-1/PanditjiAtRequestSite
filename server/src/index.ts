@@ -36,6 +36,8 @@ import chadhavaRoutes from "./routes/userAppRoutes/chadhavaRoutes";
 import kashiRoutes from "./routes/userAppRoutes/kashiRoutes";
 import shopRoutes from "./routes/userAppRoutes/shopRoutes";
 import holyPanditRoutes from "./routes/userAppRoutes/holyPanditRoutes";
+import shopifyProductRoutes from "./routes/userAppRoutes/shopifyProductRoutes";
+import shopifyOrderRoutes from "./routes/userAppRoutes/shopifyOrderRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -86,6 +88,8 @@ app.use("/api", chadhavaRoutes);
 app.use("/api", kashiRoutes);
 app.use("/api", shopRoutes);
 app.use("/api", holyPanditRoutes);
+app.use("/api", shopifyProductRoutes);
+app.use("/api", shopifyOrderRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 

@@ -13,6 +13,7 @@ import {
     Flower2,
     Menu,
     X,
+    User,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
@@ -125,6 +126,19 @@ export default function HomePage() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => {
+                                if (isLoggedIn) {
+                                    navigate("/account");
+                                } else {
+                                    openLoginModal();
+                                }
+                            }}
+                            className="p-1.5 rounded-xl hover:bg-orange-50 active:scale-95 transition-transform cursor-pointer"
+                            title="Profile / Account"
+                        >
+                            <User className="w-6 h-6 text-stone-700" />
+                        </button>
                          <button
                             onClick={() => setIsMenuOpen(true)}
                             className="p-1.5 rounded-xl hover:bg-orange-50 active:scale-95 transition-transform cursor-pointer"

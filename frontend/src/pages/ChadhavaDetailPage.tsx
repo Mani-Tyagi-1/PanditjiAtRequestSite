@@ -1,20 +1,20 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, CalendarDays, Star, Minus, Plus, Gift, Check, ShieldCheck, Share2 } from "lucide-react";
+import { ArrowLeft, MapPin, CalendarDays, Star, Minus, Plus, Gift, Check, ShieldCheck, Share2, ChevronDown } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import API_URL from "../utils/apiConfig";
 import { type Chadhava, type ChadhavaSelection } from "../components/booking/ChadhavaBooking/chadhavaData";
 import ChadhavaBookingModal from "../components/booking/ChadhavaBooking/ChadhavaBookingModal";
 
-function CountdownTimer({ targetDate }: { targetDate: string }) {
+function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" }) {
     const [timeLeft, setTimeLeft] = useState("");
 
     useEffect(() => {
         const calculateTime = () => {
             const difference = new Date(targetDate).getTime() - new Date().getTime();
             if (difference <= 0) {
-                setTimeLeft("Offerings Closed");
+                setTimeLeft(variant === "bar" ? "Offerings Closed" : "Closed");
                 return;
             }
 
@@ -23,23 +23,41 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
             const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-            const hh = String(hours).padStart(2, "0");
-            const mm = String(minutes).padStart(2, "0");
-            const ss = String(seconds).padStart(2, "0");
-
-            setTimeLeft(`${days}d ${hh}:${mm}:${ss}`);
+            if (variant === "bar") {
+                setTimeLeft(`${days} Days | ${hours} Hrs | ${minutes} Mins | ${seconds} Sec`);
+            } else {
+                const hh = String(hours).padStart(2, "0");
+                const mm = String(minutes).padStart(2, "0");
+                const ss = String(seconds).padStart(2, "0");
+                setTimeLeft(`${days}d ${hh}:${mm}:${ss}`);
+            }
         };
 
         calculateTime();
         const timer = setInterval(calculateTime, 1000);
         return () => clearInterval(timer);
-    }, [targetDate]);
+    }, [targetDate, variant]);
+
+    if (variant === "bar") {
+        return <span className="text-[12.5px] font-bold text-white tabular-nums tracking-wide">{timeLeft}</span>;
+    }
 
     return (
         <span className="text-[11.5px] font-bold text-stone-700 tabular-nums">
             {timeLeft}
         </span>
     );
+}
+
+/** Format an ISO date to "29 June 2026 , Monday". */
+function formatOfferingDate(dateStr?: string): string {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+    const day = d.getDate();
+    const month = d.toLocaleString("en-US", { month: "long" });
+    const weekday = d.toLocaleString("en-US", { weekday: "long" });
+    return `${day} ${month} ${d.getFullYear()} , ${weekday}`;
 }
 
 export default function ChadhavaDetailPage() {
@@ -54,6 +72,8 @@ export default function ChadhavaDetailPage() {
     const [prasadUpsellOpen, setPrasadUpsellOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<"about" | "history">("about");
+    const [bannerIndex, setBannerIndex] = useState(0);
+    const sectionsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         (async () => {
@@ -67,6 +87,18 @@ export default function ChadhavaDetailPage() {
                 const raw = json.data;
                 if (!raw) throw new Error("Chadhava data is empty");
                 
+                // Collect every banner image the backend exposes so the hero
+                // carousel + dots reflect the actual number of images available.
+                const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
+                const bannerImages = Array.from(new Set([
+                    ...(Array.isArray(raw.chadhavaImages) ? raw.chadhavaImages : []),
+                    ...(Array.isArray(raw.bannerImages) ? raw.bannerImages : []),
+                    ...(Array.isArray(raw.images) ? raw.images : []),
+                    raw.chadhavaWebCardImage,
+                    raw.chadhavaAppImage,
+                    raw.image,
+                ].map(imgLoc).filter(Boolean)));
+
                 const normalized: Chadhava = {
                     id: raw._id || raw.id || "",
                     slug: raw.slug || raw._id || raw.id || "",
@@ -74,7 +106,8 @@ export default function ChadhavaDetailPage() {
                     deityHindi: raw.deityHindi || "",
                     templeName: raw.selectedMandirs?.[0]?.nameEnglish || raw.templeName || "",
                     templeLocation: raw.selectedMandirs?.[0]?.city || raw.templeLocation || "",
-                    image: raw.chadhavaWebCardImage?.location || raw.chadhavaAppImage?.location || raw.image || "",
+                    image: bannerImages[0] || "",
+                    bannerImages,
                     offeringDay: raw.offeringDay || (raw.availableDates?.length ? "Available on: " + raw.availableDates.join(", ") : ""),
                     availableDates: raw.availableDates || [],
                     startingPrice: raw.startingPrice || 0,
@@ -85,17 +118,22 @@ export default function ChadhavaDetailPage() {
                     tags: raw.tags || [],
                     sections: (raw.chadhavaSections || raw.sections || []).map((sec: any) => ({
                         sectionName: sec.sectionName || "",
-                        items: (sec.items || []).map((it: any, index: number) => ({
+                        items: (sec.items || []).map((it: any, index: number) => {
+                            const basePrice = it.itemPrice || it.chadhavaPrice || 0;
+                            const hasDiscount = it.discountedPrice && it.discountedPrice > 0 && it.discountedPrice < basePrice;
+                            return {
                             code: it.code || it.itemName || `item_${index}`,
                             itemName: it.itemName || "",
                             itemDesc: it.itemDesc || "",
                             itemImage: it.itemImage?.location || it.itemImage || "",
-                            itemPrice: (it.discountedPrice && it.discountedPrice > 0) ? it.discountedPrice : (it.itemPrice || it.chadhavaPrice || 0),
+                            itemPrice: hasDiscount ? it.discountedPrice : basePrice,
+                            originalPrice: hasDiscount ? basePrice : undefined,
                             maxQuantity: it.maxQuantity || 10,
                             popular: it.popular || false,
                             isActive: it.isActive !== false,
                             type: it.type || "item"
-                        }))
+                            };
+                        })
                     })),
                     prasad: raw.prasad || { enabled: false, price: 0, name: "", desc: "", image: "" },
                     description: raw.description || "",
@@ -147,6 +185,19 @@ export default function ChadhavaDetailPage() {
         }
     }, [chadhava]);
 
+    // Auto-scroll: once the chadhava loads, gently glide the page down and
+    // settle at the offerings ("chadhava") section so the user lands on it.
+    useEffect(() => {
+        if (loading || !chadhava) return;
+        const t = setTimeout(() => {
+            const el = sectionsRef.current;
+            if (!el) return;
+            const top = el.getBoundingClientRect().top + window.scrollY - 64;
+            window.scrollTo({ top, behavior: "smooth" });
+        }, 700);
+        return () => clearTimeout(t);
+    }, [loading, chadhava]);
+
     const itemByCode = useMemo(() => {
         const map = new Map<string, { name: string; price: number; max: number }>();
         chadhava?.sections.forEach((s) =>
@@ -188,19 +239,6 @@ export default function ChadhavaDetailPage() {
                 console.error("Clipboard copy failed:", err);
             }
         }
-    };
-
-    const handleAddAll = () => {
-        if (!chadhava) return;
-        const newQty: Record<string, number> = {};
-        chadhava.sections.forEach(sec => {
-            sec.items.forEach(it => {
-                if (it.isActive !== false && it.type !== "combo") {
-                    newQty[it.code] = 1;
-                }
-            });
-        });
-        setQty(newQty);
     };
 
     const selections: ChadhavaSelection[] = useMemo(
@@ -245,247 +283,179 @@ export default function ChadhavaDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#FFFAF6] pb-28 font-sans w-full max-w-md mx-auto border-x border-rose-100 relative">
+        <div className="min-h-screen bg-[#FFFAF6] pb-36 font-sans w-full max-w-md mx-auto border-x border-rose-100 relative">
             <Helmet>
                 <title>{`${chadhava.deity} Chadhava at ${chadhava.templeName} | Pandit Ji At Request`}</title>
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFFAF6]/95 backdrop-blur-md border-b border-rose-100 px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-rose-200/50 shadow-sm active:scale-90 transition-transform">
-                        <ArrowLeft className="w-4 h-4 text-stone-700" />
-                    </button>
-                    <h1 className="text-[15px] font-bold text-stone-800">Chadhava Details</h1>
-                </div>
-                <button onClick={(e) => handleShare(e, chadhava)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-rose-200/50 shadow-sm active:scale-90 transition-transform">
-                    <Share2 className="w-4 h-4 text-stone-700" />
+            <div className="sticky top-0 z-40 bg-[#FFFAF6]/95 backdrop-blur-md border-b border-rose-100 px-4 py-3 flex items-center gap-3">
+                <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-rose-200/50 shadow-sm active:scale-90 transition-transform">
+                    <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
+                <h1 className="text-[15px] font-bold text-stone-800">Chadhava Details</h1>
             </div>
 
-            {/* Hero banner */}
-            <div className="relative h-52">
-                <img src={chadhava.image} alt={chadhava.deity} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#7a1c12]/95 via-[#9b2d18]/55 to-black/25" />
-                {!!chadhava.tags?.length && (
-                    <span className="absolute top-3 left-3 bg-amber-400 text-amber-950 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
-                        {chadhava.tags[0]}
-                    </span>
-                )}
-                <div className="absolute top-3 right-3 bg-white/95 rounded-full px-3 py-1 flex items-center gap-1.5 shadow-sm border border-stone-100/30">
-                    <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                    </span>
-                    <CountdownTimer targetDate={targetDate} />
-                </div>
-                <span className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/45 backdrop-blur-sm text-white text-[12px] font-bold px-2 py-1 rounded-full">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {chadhava.rating.toFixed(1)}
-                </span>
-                <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <h2 className="text-[26px] font-bold leading-none" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            {/* Hero banner carousel */}
+            {(() => {
+                const banners = chadhava.bannerImages?.length ? chadhava.bannerImages : [chadhava.image];
+                return (
+                    <div className="px-3 pt-3">
+                        <div className="relative rounded-[22px] overflow-hidden shadow-[0_10px_30px_-12px_rgba(224,90,16,0.25)]">
+                            <div
+                                className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
+                                onScroll={(e) => {
+                                    const el = e.currentTarget;
+                                    setBannerIndex(Math.round(el.scrollLeft / el.clientWidth));
+                                }}
+                            >
+                                {banners.map((img, i) => (
+                                    <img
+                                        key={i}
+                                        src={img}
+                                        alt={`${chadhava.deity} ${i + 1}`}
+                                        className="w-full shrink-0 snap-center h-auto object-cover"
+                                        loading={i === 0 ? "eager" : "lazy"}
+                                    />
+                                ))}
+                            </div>
+                            {!!chadhava.tags?.length && (
+                                <span className="absolute top-3 left-3 bg-amber-400 text-amber-950 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                                    {chadhava.tags[0]}
+                                </span>
+                            )}
+                            <div className="absolute bottom-3 left-3 bg-white/95 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
+                                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                <span className="text-[12px] font-bold text-stone-800">{chadhava.rating.toFixed(1)}</span>
+                                {chadhava.devoteesOffered > 0 && (
+                                    <span className="text-[11px] text-stone-500 font-semibold">({chadhava.devoteesOffered})</span>
+                                )}
+                            </div>
+                        </div>
+                        {/* Pagination dots — one per banner image */}
+                        {banners.length > 1 && (
+                            <div className="flex items-center justify-center gap-1.5 mt-2.5">
+                                {banners.map((_, i) => (
+                                    <span
+                                        key={i}
+                                        className={`h-1.5 rounded-full transition-all ${
+                                            i === bannerIndex ? "w-5 bg-[#E05A10]" : "w-1.5 bg-[#FFD9BF]"
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
+
+            {/* Title + temple + date */}
+            <div className="px-4 pt-3">
+                <div className="flex items-start justify-between gap-3">
+                    <h2 className="text-[18px] font-bold text-[#2E1F15] leading-snug text-left flex-1">
                         {chadhava.deity}
                     </h2>
-                    {chadhava.deityHindi && <p className="text-[13px] text-rose-100 mt-1">{chadhava.deityHindi}</p>}
+                    <button onClick={(e) => handleShare(e, chadhava)} className="w-9 h-9 rounded-xl bg-[#FFF1E6] flex items-center justify-center shrink-0 active:scale-90 transition-transform">
+                        <Share2 className="w-4 h-4 text-[#E05A10]" />
+                    </button>
                 </div>
-            </div>
-
-            {/* Info card */}
-            <div className="px-4 -mt-4 relative z-10">
-                <div className="bg-white rounded-[24px] border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.12)] p-5 space-y-2.5">
-                    <div className="flex items-start gap-2.5 text-[13.5px] text-stone-700">
-                        <MapPin className="w-4 h-4 text-[#E05A10] shrink-0 mt-0.5" />
+                {chadhava.deityHindi && (
+                    <p className="text-[13px] text-stone-500 mt-1 text-left">{chadhava.deityHindi}</p>
+                )}
+                <div className="mt-3 space-y-1.5">
+                    <div className="flex items-center gap-2 text-[13px] text-stone-700">
+                        <MapPin className="w-4 h-4 text-[#E05A10] shrink-0" />
                         <span className="font-semibold text-left">{chadhava.templeName}{chadhava.templeLocation ? `, ${chadhava.templeLocation}` : ""}</span>
                     </div>
-                    {chadhava.offeringDay && (
-                        <div className="flex items-center gap-2.5 text-[13px] text-stone-600">
+                    {(formatOfferingDate(chadhava.availableDates?.[0]) || chadhava.offeringDay) && (
+                        <div className="flex items-center gap-2 text-[13px] text-stone-600">
                             <CalendarDays className="w-4 h-4 text-[#E05A10] shrink-0" />
-                            <span className="font-medium text-left">{chadhava.offeringDay}</span>
+                            <span className="font-medium text-left">{formatOfferingDate(chadhava.availableDates?.[0]) || chadhava.offeringDay}</span>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Choose Your Offerings Card */}
-            <div className="px-4 pt-5">
-                <div className="bg-[#FFF8F2] border border-[#FFE6D3] rounded-[20px] p-4 flex items-center justify-between">
-                    <div className="leading-tight text-left">
-                        <h3 className="text-[15.5px] font-bold text-[#2E1F15]">Choose Your Offerings</h3>
-                        <p className="text-[12.5px] text-[#E05A10] font-semibold mt-0.5">
-                            {sevasSelected === 0 ? "No offerings selected" : `${sevasSelected} selected`}
-                        </p>
-                    </div>
-                    <div className="flex items-center">
-                        {sevasSelected > 0 && (
-                            <button
-                                onClick={() => setQty({})}
-                                className="text-[12.5px] font-bold text-stone-400 hover:text-stone-600 transition-colors mr-3"
-                            >
-                                Clear All
-                            </button>
-                        )}
-                        <button
-                            onClick={handleAddAll}
-                            className="bg-[#E05A10] hover:bg-[#C94D0C] text-white text-[12.5px] font-bold px-4 py-2 rounded-full shadow-md active:scale-95 transition-all flex items-center gap-1"
-                        >
-                            <span>Add All</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Sections */}
+            {/* Sections (auto-scroll target) */}
+            <div ref={sectionsRef} className="pt-1">
             {chadhava.sections.map((section) => {
                 const regularItems = section.items.filter((i) => i.isActive !== false && i.type !== "combo");
                 const comboItems = section.items.filter((i) => i.isActive !== false && i.type === "combo");
 
                 return (
-                    <div key={section.sectionName} className="px-4 pt-4">
-                        {/* Section Title */}
-                        <div className="flex items-center gap-2 mt-2 mb-3">
-                            <span className="w-6 h-6 rounded-full bg-[#FFE6D3] flex items-center justify-center shrink-0">
-                                <span className="text-[12px]">🕉️</span>
-                            </span>
-                            <h4 className="text-[15.5px] font-bold text-[#2E1F15] tracking-tight">
+                    <div key={section.sectionName} className="px-4 pt-5">
+                        {/* Section Title Bar */}
+                        <div className="bg-[#FFF3EA] rounded-xl px-4 py-2.5 flex items-center gap-2">
+                            <span className="text-[15px]">🔱</span>
+                            <h4 className="text-[15px] font-bold text-[#C1272D] tracking-tight text-left">
                                 {section.sectionName}
                             </h4>
-                            <div className="h-[1px] bg-[#FFEFE2] flex-1 ml-2" />
                         </div>
 
-                        {/* Regular Offerings Row (Horizontal Scroll) */}
-                        {regularItems.length > 0 && (
-                            <div className="flex gap-3.5 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x">
-                                {regularItems.map((item) => {
-                                    const count = qty[item.code] || 0;
-                                    return (
-                                        <div 
-                                            key={item.code} 
-                                            className={`w-[155px] shrink-0 bg-white rounded-[20px] border transition-all snap-start flex flex-col justify-between ${
-                                                count > 0 ? "border-[#E05A10] shadow-md shadow-orange-50/50" : "border-[#FFEFE2] shadow-sm"
-                                            }`}
-                                        >
-                                            <div>
-                                                {/* Image */}
-                                                <div className="relative w-full h-[105px] overflow-hidden rounded-t-[19px]">
-                                                    <img 
-                                                        src={item.itemImage} 
-                                                        alt={item.itemName} 
-                                                        className="w-full h-full object-cover" 
-                                                        loading="lazy" 
-                                                    />
-                                                    {item.popular && (
-                                                        <span className="absolute top-2 left-2 bg-amber-400 text-amber-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase">
-                                                            ★ Popular
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                
-                                                {/* Details */}
-                                                <div className="p-3 text-left">
-                                                    <h5 className="text-[13.5px] font-bold text-[#2E1F15] line-clamp-1">
-                                                        {item.itemName}
-                                                    </h5>
-                                                    <p className="text-[11px] text-stone-500 mt-0.5 leading-tight line-clamp-2 h-[28px]">
-                                                        {item.itemDesc}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Footer Price & Action */}
-                                            <div className="p-3 pt-0 flex items-center justify-between mt-auto">
-                                                <span className="text-[14px] font-extrabold text-[#2E1F15]">
-                                                    ₹{item.itemPrice}
-                                                </span>
-                                                
-                                                {count === 0 ? (
-                                                    <button
-                                                        onClick={() => setItemQty(item.code, 1)}
-                                                        className="bg-white hover:bg-[#FFE6D3] text-[#E05A10] border border-[#E05A10] text-[11px] font-bold px-3 py-1 rounded-md active:scale-95 transition-transform"
-                                                    >
-                                                        ADD
-                                                    </button>
-                                                ) : (
-                                                    <div className="flex items-center gap-1.5 border border-[#E05A10] rounded-md px-1 py-0.5 bg-[#FFF8F2]">
-                                                        <button 
-                                                            onClick={() => setItemQty(item.code, count - 1)} 
-                                                            className="w-4 h-4 flex items-center justify-center text-[#E05A10] active:scale-90"
-                                                        >
-                                                            <Minus className="w-3 h-3" strokeWidth={3} />
-                                                        </button>
-                                                        <span className="text-[11.5px] font-bold text-stone-800 w-3 text-center">{count}</span>
-                                                        <button 
-                                                            onClick={() => setItemQty(item.code, count + 1)} 
-                                                            className="w-4 h-4 flex items-center justify-center text-[#E05A10] active:scale-90"
-                                                        >
-                                                            <Plus className="w-3 h-3" strokeWidth={3} />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-
-                        {/* Combo Offering Card (Full Width) */}
+                        {/* Combo Offering Cards (Full Width) */}
                         {comboItems.map((item) => {
                             const count = qty[item.code] || 0;
+                            const discountPct = item.originalPrice ? Math.round((1 - item.itemPrice / item.originalPrice) * 100) : 0;
                             return (
-                                <div 
-                                    key={item.code} 
-                                    className={`w-full bg-white rounded-[24px] border overflow-hidden mt-3 transition-all ${
-                                        count > 0 ? "border-[#E05A10] shadow-md shadow-orange-50/50" : "border-[#FFEFE2] shadow-sm"
+                                <div
+                                    key={item.code}
+                                    className={`w-full bg-white rounded-2xl border overflow-hidden mt-3 transition-all shadow-sm ${
+                                        count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"
                                     }`}
                                 >
-                                    {/* Image displayed fully */}
-                                    <div className="w-full bg-[#FFFDF9] border-b border-[#FFEFE2]">
-                                        <img 
-                                            src={item.itemImage} 
-                                            alt={item.itemName} 
-                                            className="w-full h-auto object-contain max-h-[220px]" 
-                                            loading="lazy" 
+                                    {/* Image with badges */}
+                                    <div className="relative w-full bg-[#FFFDF9]">
+                                        <img
+                                            src={item.itemImage}
+                                            alt={item.itemName}
+                                            className="w-full h-auto object-cover max-h-[210px]"
+                                            loading="lazy"
                                         />
+                                        <span className="absolute top-2 left-2 bg-[#E8A22A] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+                                            Combo Pack
+                                        </span>
+                                        {discountPct > 0 && (
+                                            <span className="absolute top-2 right-2 bg-[#C1272D] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+                                                Save {discountPct}%
+                                            </span>
+                                        )}
                                     </div>
 
                                     {/* Details */}
-                                    <div className="p-5 text-left">
-                                        <p className="text-[13.5px] text-[#2E1F15] font-semibold leading-relaxed">
+                                    <div className="p-4 text-left">
+                                        <h5 className="text-[15px] font-bold text-[#2E1F15] leading-snug">
                                             {item.itemName}
-                                        </p>
+                                        </h5>
                                         {item.itemDesc && item.itemDesc !== item.itemName && (
-                                            <p className="text-[12px] text-stone-500 mt-2 leading-relaxed">
+                                            <p className="text-[12px] text-stone-500 mt-1 leading-snug line-clamp-2">
                                                 {item.itemDesc}
                                             </p>
                                         )}
 
                                         {/* Price & Action */}
-                                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#FFEFE2]">
-                                            <span className="text-[19px] font-extrabold text-[#2E1F15]">
-                                                ₹{item.itemPrice}
-                                            </span>
+                                        <div className="flex items-center justify-between mt-3">
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-[18px] font-extrabold text-[#C1272D]">₹ {item.itemPrice}/-</span>
+                                                {item.originalPrice && (
+                                                    <span className="text-[13px] text-stone-400 line-through">₹{item.originalPrice}/-</span>
+                                                )}
+                                            </div>
 
                                             {count === 0 ? (
                                                 <button
                                                     onClick={() => setItemQty(item.code, 1)}
-                                                    className="bg-[#E05A10] hover:bg-[#C94D0C] text-white text-[13px] font-bold px-6 py-2.5 rounded-full active:scale-95 transition-transform shadow-md shadow-orange-100/50"
+                                                    className="bg-[#9B1B1B] text-white text-[13px] font-bold px-6 py-2.5 rounded-xl active:scale-95 transition-transform shadow-md"
                                                 >
-                                                    ADD COMBO
+                                                    Add+
                                                 </button>
                                             ) : (
-                                                <div className="flex items-center gap-3 border border-[#E05A10] rounded-full px-3 py-1.5 bg-[#FFF8F2]">
-                                                    <button 
-                                                        onClick={() => setItemQty(item.code, count - 1)} 
-                                                        className="w-5 h-5 flex items-center justify-center text-[#E05A10] active:scale-90"
-                                                    >
-                                                        <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                                                <div className="flex items-center gap-3 bg-white border border-[#9B1B1B] rounded-xl px-3 py-2 shadow-md">
+                                                    <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
+                                                        <Minus className="w-4 h-4" strokeWidth={3} />
                                                     </button>
-                                                    <span className="text-[13.5px] font-bold text-stone-800 w-4 text-center">{count}</span>
-                                                    <button 
-                                                        onClick={() => setItemQty(item.code, count + 1)} 
-                                                        className="w-5 h-5 flex items-center justify-center text-[#E05A10] active:scale-90"
-                                                    >
-                                                        <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                                                    <span className="text-[14px] font-bold text-stone-800 w-4 text-center">{count}</span>
+                                                    <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
+                                                        <Plus className="w-4 h-4" strokeWidth={3} />
                                                     </button>
                                                 </div>
                                             )}
@@ -494,9 +464,76 @@ export default function ChadhavaDetailPage() {
                                 </div>
                             );
                         })}
+
+                        {/* Regular Offerings (Vertical List Rows) */}
+                        {regularItems.length > 0 && (
+                            <div className="bg-white rounded-2xl border border-[#F4E7DC] shadow-sm px-4 mt-3">
+                                {regularItems.map((item) => {
+                                    const count = qty[item.code] || 0;
+                                    return (
+                                        <div
+                                            key={item.code}
+                                            className="flex items-start justify-between gap-3 py-4 border-b border-[#F4E7DC] last:border-b-0"
+                                        >
+                                            {/* Text column */}
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <div className="flex items-center gap-1.5">
+                                                    <h5 className="text-[15px] font-bold text-[#2E1F15]">{item.itemName}</h5>
+                                                    {item.popular && (
+                                                        <span className="bg-amber-400 text-amber-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase">★ Popular</span>
+                                                    )}
+                                                </div>
+                                                {item.itemDesc && (
+                                                    <p className="text-[12px] text-stone-500 mt-1 leading-snug line-clamp-2">{item.itemDesc}</p>
+                                                )}
+                                                <div className="flex items-baseline gap-2 mt-2">
+                                                    <span className="text-[15px] font-bold text-[#C1272D]">₹ {item.itemPrice}/-</span>
+                                                    {item.originalPrice && (
+                                                        <span className="text-[12px] text-stone-400 line-through">₹{item.originalPrice}/-</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Image + action */}
+                                            <div className="relative shrink-0 w-[92px] pb-3">
+                                                <div className="w-[92px] h-[78px] rounded-2xl overflow-hidden bg-[#FFFDF9]">
+                                                    <img
+                                                        src={item.itemImage}
+                                                        alt={item.itemName}
+                                                        className="w-full h-full object-cover"
+                                                        loading="lazy"
+                                                    />
+                                                </div>
+                                                <div className="absolute left-1/2 -translate-x-1/2 bottom-0">
+                                                    {count === 0 ? (
+                                                        <button
+                                                            onClick={() => setItemQty(item.code, 1)}
+                                                            className="bg-[#9B1B1B] text-white text-[12px] font-bold px-4 py-1.5 rounded-lg shadow-md active:scale-95 transition-transform whitespace-nowrap"
+                                                        >
+                                                            Add+
+                                                        </button>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 bg-white border border-[#9B1B1B] rounded-lg px-2 py-1 shadow-md">
+                                                            <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
+                                                                <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                                                            </button>
+                                                            <span className="text-[12.5px] font-bold text-stone-800 w-3 text-center">{count}</span>
+                                                            <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
+                                                                <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 );
             })}
+            </div>
 
             {/* Prasad add-on */}
             {chadhava.prasad?.enabled && (
@@ -618,18 +655,34 @@ export default function ChadhavaDetailPage() {
                 </div>
             </div>
 
-            {/* Bottom bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#FFEFE2] px-4 py-3 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-                <div className="leading-none text-left">
-                    <span className="text-[11.5px] text-stone-500 font-semibold">Sevas Selected: {sevasSelected}</span>
-                    <p className="text-[20px] font-bold text-[#E05A10] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}</p>
+            {/* Floating scroll-down button */}
+            <div className="fixed bottom-[128px] left-0 right-0 z-40 max-w-md mx-auto pointer-events-none">
+                <button
+                    onClick={() => window.scrollTo({ top: window.scrollY + window.innerHeight * 0.7, behavior: "smooth" })}
+                    className="pointer-events-auto absolute right-4 w-10 h-10 rounded-full bg-[#E0531A] text-white flex items-center justify-center shadow-lg shadow-orange-200/70 active:scale-90 transition-transform"
+                    aria-label="Scroll down"
+                >
+                    <ChevronDown className="w-5 h-5" />
+                </button>
+            </div>
+
+            {/* Countdown bar */}
+            <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#B5290F] to-[#E0531A] py-2 flex items-center justify-center">
+                <CountdownTimer targetDate={targetDate} variant="bar" />
+            </div>
+
+            {/* Bottom pay bar */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF3E9] border-t border-[#FFE0CC] px-4 py-3 flex items-center justify-between">
+                <div className="leading-tight text-left">
+                    <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
+                    <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
                 </div>
                 <button
                     onClick={() => setPrasadUpsellOpen(true)}
                     disabled={sevasSelected === 0}
-                    className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold px-7 py-3.5 rounded-2xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none"
+                    className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold tracking-wide px-10 py-3 rounded-xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none"
                 >
-                    Proceed Seva ›
+                    PAY NOW
                 </button>
             </div>
 

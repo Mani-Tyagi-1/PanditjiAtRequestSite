@@ -11,6 +11,8 @@ export interface ChadhavaItem {
     itemDesc: string;
     itemImage: string;
     itemPrice: number;
+    /** Original (pre-discount) price, used to show strikethrough + savings. */
+    originalPrice?: number;
     maxQuantity: number;
     popular?: boolean;
     isActive?: boolean;
@@ -38,6 +40,8 @@ export interface Chadhava {
     templeName: string;
     templeLocation: string;
     image: string;
+    /** All banner images (web-card, app image, gallery…) used by the hero carousel. */
+    bannerImages?: string[];
     /** e.g. "Offered every Tuesday & Saturday" */
     offeringDay: string;
     availableDates?: string[];

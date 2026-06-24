@@ -31,10 +31,67 @@ const verifyPaymentSignature = (
   return hmac.digest("hex") === signature;
 };
 
+// Promotional config
+const GIFT_WRAP_CHARGE = 49; // flat ₹49 add-on
+const FIRST_ORDER_DISCOUNT_PERCENT = 10; // 10% off the items subtotal
+
+// A user is "first order" eligible if they have no previously PAID shopify order.
+// Matched by phone (last 10 digits) and, when available, by userId.
+const hasPaidOrder = async (phone: string, userId?: string) => {
+  const cleanPhone = String(phone).replace(/\D/g, "");
+  const alias10 = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
+  const or: any[] = [
+    { phone: cleanPhone },
+    { phone: alias10 },
+    { phone: { $regex: alias10 + "$" } },
+  ];
+  if (userId) or.push({ user: userId });
+
+  const count = await ShopifyOrder.countDocuments({
+    paymentStatus: "paid",
+    $or: or,
+  });
+  return count > 0;
+};
+
+// GET /shopify-orders/first-order-eligibility/:phone — UI hint for the 10% first-order offer
+export const checkFirstOrderEligibility: RequestHandler = async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const { userId } = req.query;
+    if (!phone) {
+      res.status(400).json({ success: false, message: "Phone number is required" });
+      return;
+    }
+
+    const paid = await hasPaidOrder(String(phone), userId ? String(userId) : undefined);
+    res.status(200).json({
+      success: true,
+      eligible: !paid,
+      discountPercent: FIRST_ORDER_DISCOUNT_PERCENT,
+    });
+  } catch (error) {
+    console.error("Failed to check first-order eligibility:", error);
+    res.status(500).json({ success: false, message: "Failed to check eligibility" });
+  }
+};
+
 // POST /shopify-orders/create-order — Creates pending shopify order and Razorpay order
 export const createShopifyOrder: RequestHandler = async (req, res) => {
   try {
-    const { items, customerName, phone, addressLine, city, state, pincode, userId } = req.body;
+    const {
+      items,
+      customerName,
+      phone,
+      addressLine,
+      city,
+      state,
+      pincode,
+      userId,
+      giftWrap,
+      giftRecipientName,
+      giftMessage,
+    } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
       res.status(400).json({ success: false, message: "No items provided" });
@@ -51,6 +108,16 @@ export const createShopifyOrder: RequestHandler = async (req, res) => {
     const cleanPhone = String(phone).replace(/\D/g, "");
     if (cleanPhone.length !== 10) {
       res.status(400).json({ success: false, message: "A valid 10-digit phone number is required" });
+      return;
+    }
+
+    const wantsGiftWrap = Boolean(giftWrap);
+    const cleanRecipient = String(giftRecipientName || "").trim();
+    if (wantsGiftWrap && !cleanRecipient) {
+      res.status(400).json({
+        success: false,
+        message: "Recipient name is required for gift wrapping",
+      });
       return;
     }
 
@@ -91,8 +158,17 @@ export const createShopifyOrder: RequestHandler = async (req, res) => {
       return;
     }
 
+    // Re-validate the first-order discount server-side to prevent tampering.
+    const subtotal = calculatedTotal;
+    const eligibleForFirstOrder = !(await hasPaidOrder(cleanPhone, userId));
+    const discountAmount = eligibleForFirstOrder
+      ? Math.round((subtotal * FIRST_ORDER_DISCOUNT_PERCENT) / 100)
+      : 0;
+    const giftWrapCharge = wantsGiftWrap ? GIFT_WRAP_CHARGE : 0;
+    const finalTotal = Math.max(1, subtotal - discountAmount + giftWrapCharge);
+
     const orderOptions = {
-      amount: calculatedTotal * 100, // amount in paisa
+      amount: finalTotal * 100, // amount in paisa
       currency: "INR",
       receipt: `shopify_${Date.now()}`,
       payment_capture: 1,
@@ -108,7 +184,13 @@ export const createShopifyOrder: RequestHandler = async (req, res) => {
     const orderObj = await ShopifyOrder.create({
       user: userId || undefined,
       items: resolvedItems,
-      totalAmount: calculatedTotal,
+      subtotal,
+      discountAmount,
+      giftWrap: wantsGiftWrap,
+      giftWrapCharge,
+      giftRecipientName: wantsGiftWrap ? cleanRecipient : undefined,
+      giftMessage: wantsGiftWrap ? String(giftMessage || "").trim() : undefined,
+      totalAmount: finalTotal,
       customerName: String(customerName).trim(),
       phone: cleanPhone,
       addressLine: String(addressLine).trim(),
@@ -126,7 +208,14 @@ export const createShopifyOrder: RequestHandler = async (req, res) => {
       bookingId: orderObj._id,
       razorpayOrderId: razorpayOrder.id,
       razorpayKeyId,
-      amount: calculatedTotal,
+      amount: finalTotal,
+      breakdown: {
+        subtotal,
+        discountAmount,
+        giftWrapCharge,
+        total: finalTotal,
+        firstOrderDiscountApplied: discountAmount > 0,
+      },
       currency: "INR",
     });
   } catch (error: any) {

@@ -14,6 +14,12 @@ export interface IShopifyOrderItem {
 export interface IShopifyOrder {
   user?: Schema.Types.ObjectId;
   items: IShopifyOrderItem[];
+  subtotal: number;
+  discountAmount: number;
+  giftWrap: boolean;
+  giftWrapCharge: number;
+  giftRecipientName?: string;
+  giftMessage?: string;
   totalAmount: number;
   customerName: string;
   phone: string;
@@ -46,6 +52,12 @@ const shopifyOrderSchema = new Schema<IShopifyOrder>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User" },
     items: { type: [shopifyOrderItemSchema], required: true },
+    subtotal: { type: Number, default: 0 },
+    discountAmount: { type: Number, default: 0 },
+    giftWrap: { type: Boolean, default: false },
+    giftWrapCharge: { type: Number, default: 0 },
+    giftRecipientName: { type: String, trim: true },
+    giftMessage: { type: String, trim: true },
     totalAmount: { type: Number, required: true },
     customerName: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },

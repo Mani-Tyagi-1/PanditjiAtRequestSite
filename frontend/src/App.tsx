@@ -142,6 +142,7 @@ const LiveMandirPujaDetailPage = React.lazy(() => import("./pages/LiveMandirPuja
 const HolyPanditDetailPage = React.lazy(() => import("./pages/HolyPanditDetailPage"));
 const ChadhavaDetailPage = React.lazy(() => import("./pages/ChadhavaDetailPage"));
 const ShopProductDetailPage = React.lazy(() => import("./pages/ShopProductDetailPage"));
+const ShopifyProductDetailPage = React.lazy(() => import("./pages/ShopifyProductDetailPage"));
 const HomePage = React.lazy(() => import("./pages/HomePage"));
 const BookPujaPage = React.lazy(() => import("./pages/BookPujaPage"));
 const ChadhavaPage = React.lazy(() => import("./pages/ChadhavaPage"));
@@ -243,6 +244,7 @@ function App() {
           <Route path="/holy-pandit/:slug" element={<HolyPanditDetailPage />} />
           <Route path="/chadhava/:slug" element={<ChadhavaDetailPage />} />
           <Route path="/shop-product/:slug" element={<ShopProductDetailPage />} />
+          <Route path="/shop/product/:handle" element={<ShopifyProductDetailPage />} />
 
           {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

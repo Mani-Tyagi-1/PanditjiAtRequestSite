@@ -47,13 +47,17 @@ export const sendOtp = async (
         isActive: true,
         addedOn: new Date(),
       });
+      user.otp = otpHash;
+      user.otpExpiry = otpExpiry;
+      await user.save();
     } else {
-      user.isNotifyOkay = isNotifyOkay;
+      // Update only the OTP fields so full-document validation does not run on
+      // unrelated (possibly legacy/incomplete) sub-documents like addresses.
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { isNotifyOkay, otp: otpHash, otpExpiry } }
+      );
     }
-
-    user.otp = otpHash;
-    user.otpExpiry = otpExpiry;
-    await user.save();
 
     const authKey = process.env.FAST2SMS_API_KEY;
     const senderId = process.env.FAST2SMS_SENDER_ID;
@@ -86,13 +90,17 @@ export const sendOtp = async (
         isActive: true,
         addedOn: new Date(),
       });
+      user.otp = otpHash;
+      user.otpExpiry = otpExpiry;
+      await user.save();
     } else {
-      user.isNotifyOkay = isNotifyOkay;
+      // Update only the OTP fields so full-document validation does not run on
+      // unrelated (possibly legacy/incomplete) sub-documents like addresses.
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { isNotifyOkay, otp: otpHash, otpExpiry } }
+      );
     }
-
-    user.otp = otpHash;
-    user.otpExpiry = otpExpiry;
-    await user.save();
 
     const authKey = process.env.FAST2SMS_API_KEY;
     const senderId = process.env.FAST2SMS_SENDER_ID;
@@ -143,17 +151,21 @@ export const loginByPhone = async (
       });
       await user.save();
     } else {
-      let changed = false;
+      const update: Record<string, unknown> = {};
       if (name && (!user.name || user.name === "Vedic Shop User" || user.name === "Guest User")) {
         user.name = name;
-        changed = true;
+        update.name = name;
       }
       // Save email if the user record has none yet
       if (cleanedEmail && !user.email) {
         user.email = cleanedEmail;
-        changed = true;
+        update.email = cleanedEmail;
       }
-      if (changed) await user.save();
+      // Update only changed fields so full-document validation does not run on
+      // unrelated (possibly legacy/incomplete) sub-documents like addresses.
+      if (Object.keys(update).length > 0) {
+        await User.updateOne({ _id: user._id }, { $set: update });
+      }
     }
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, {
@@ -196,9 +208,13 @@ export const verifyOtp = async (
       return;
     }
 
+    // Clear OTP fields without re-validating the whole document
+    await User.updateOne(
+      { _id: user._id },
+      { $unset: { otp: "", otpExpiry: "" } }
+    );
     user.otp = undefined;
     user.otpExpiry = undefined;
-    await user.save();
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,

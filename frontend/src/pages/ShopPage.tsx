@@ -7,10 +7,11 @@ import {
     Search,
     X,
     ShoppingBag,
+    ShoppingCart,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
-import { useAuth } from "../context/AuthContext";
-import ShopifyCheckoutSheet, { type ShopifyProduct } from "../components/booking/Shop/ShopifyCheckoutSheet";
+import { type ShopifyProduct } from "../components/booking/Shop/shopifyTypes";
+import { useShopifyCart } from "../context/ShopifyCartContext";
 
 // Category rules — products are classified by matching these keywords against
 // their productType / category / title / tags. Order here = order of chips.
@@ -40,16 +41,12 @@ const getCategory = (p: ShopifyProduct): string => {
 
 export default function ShopPage() {
     const navigate = useNavigate();
-    const { user, openLoginModal } = useAuth();
+    const { addItem, openCart, count } = useShopifyCart();
 
     const [products, setProducts] = useState<ShopifyProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeCategory, setActiveCategory] = useState("Rudraksh");
-
-    // Checkout sheet
-    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-    const [checkoutProduct, setCheckoutProduct] = useState<ShopifyProduct | null>(null);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -90,12 +87,8 @@ export default function ShopPage() {
     }, [products, searchQuery, activeCategory]);
 
     const handleBuyClick = (prod: ShopifyProduct) => {
-        if (!user) {
-            openLoginModal();
-            return;
-        }
-        setCheckoutProduct(prod);
-        setIsCheckoutOpen(true);
+        addItem(prod, 1);
+        openCart();
     };
 
     return (
@@ -112,6 +105,17 @@ export default function ShopPage() {
                     className="absolute left-4 top-3 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
                 >
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
+                </button>
+                <button
+                    onClick={openCart}
+                    className="absolute right-4 top-3 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+                >
+                    <ShoppingCart className="w-4 h-4 text-stone-700" />
+                    {count > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-orange-500 text-white text-[9px] font-bold">
+                            {count}
+                        </span>
+                    )}
                 </button>
                 <h1 className="text-center text-[26px] font-bold text-orange-600" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     Bhakti Shop
@@ -255,13 +259,6 @@ export default function ShopPage() {
                     </div>
                 )}
             </div>
-
-            {/* ── Checkout Sheet ── */}
-            <ShopifyCheckoutSheet
-                product={checkoutProduct}
-                isOpen={isCheckoutOpen}
-                onClose={() => setIsCheckoutOpen(false)}
-            />
         </div>
     );
 }

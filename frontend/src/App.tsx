@@ -115,7 +115,9 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
+import { ShopifyCartProvider } from "./context/ShopifyCartContext";
 import LoginModal from "./components/auth/LoginModal";
+import ShopifyCartDrawer from "./components/booking/Shop/ShopifyCartDrawer";
 import AppLayout from "./components/layout/AppLayout";
 
 // Lazy load all other pages
@@ -199,7 +201,9 @@ function ReferralCapture() {
 function App() {
   return (
     <AuthProvider>
+      <ShopifyCartProvider>
       <LoginModal />
+      <ShopifyCartDrawer />
       <ScrollToTop />
       <PixelPageTracker />
       <ReferralCapture />
@@ -252,6 +256,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </ShopifyCartProvider>
     </AuthProvider>
   );
 }

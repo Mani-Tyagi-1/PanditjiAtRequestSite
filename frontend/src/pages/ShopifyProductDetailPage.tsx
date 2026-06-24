@@ -6,26 +6,28 @@ import {
     ArrowLeft,
     Star,
     Check,
-    Sparkles,
+    Plus,
+    Minus,
+    ShoppingCart,
     ShoppingBag,
     ShieldCheck,
     Truck,
     RotateCcw,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
-import { useAuth } from "../context/AuthContext";
-import ShopifyCheckoutSheet, { type ShopifyProduct } from "../components/booking/Shop/ShopifyCheckoutSheet";
+import { type ShopifyProduct } from "../components/booking/Shop/shopifyTypes";
+import { useShopifyCart } from "../context/ShopifyCartContext";
 
 export default function ShopifyProductDetailPage() {
     const { handle } = useParams<{ handle: string }>();
     const navigate = useNavigate();
-    const { user, openLoginModal } = useAuth();
+    const { addItem, openCart, count } = useShopifyCart();
 
     const [product, setProduct] = useState<ShopifyProduct | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeImage, setActiveImage] = useState(0);
-    const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [qty, setQty] = useState(1);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -58,11 +60,9 @@ export default function ShopifyProductDetailPage() {
     }, [product]);
 
     const handleBuyClick = () => {
-        if (!user) {
-            openLoginModal();
-            return;
-        }
-        setIsCheckoutOpen(true);
+        if (!product) return;
+        addItem(product, qty);
+        openCart();
     };
 
     if (loading) {
@@ -108,7 +108,15 @@ export default function ShopifyProductDetailPage() {
                 <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-100 shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
-                <h1 className="text-sm font-bold text-stone-850 truncate">Product Details</h1>
+                <h1 className="text-sm font-bold text-stone-850 truncate flex-1">Product Details</h1>
+                <button onClick={openCart} className="relative w-9 h-9 rounded-full bg-white flex items-center justify-center border border-orange-100 shadow-sm active:scale-90 transition-transform">
+                    <ShoppingCart className="w-4 h-4 text-stone-700" />
+                    {count > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-orange-500 text-white text-[9px] font-bold">
+                            {count}
+                        </span>
+                    )}
+                </button>
             </div>
 
             {/* Image Gallery */}
@@ -183,6 +191,20 @@ export default function ShopifyProductDetailPage() {
                     <p className="text-[10px] text-stone-400 mt-1">Free energized packaging · Blessed by Experts · Inclusive of all taxes</p>
                 </div>
 
+                {/* Quantity Selector */}
+                <div className="flex items-center justify-between bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
+                    <span className="text-[13.5px] font-bold text-stone-700">Quantity</span>
+                    <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-xl px-1.5 py-1">
+                        <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-stone-600 active:scale-90 transition-transform shadow-sm">
+                            <Minus className="w-4 h-4" strokeWidth={3} />
+                        </button>
+                        <span className="text-[15px] font-bold text-stone-800 min-w-[26px] text-center">{qty}</span>
+                        <button onClick={() => setQty((q) => Math.min(10, q + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500 text-white active:scale-90 transition-transform shadow-sm">
+                            <Plus className="w-4 h-4" strokeWidth={3} />
+                        </button>
+                    </div>
+                </div>
+
                 {/* Trust Badges */}
                 <div className="grid grid-cols-3 gap-2">
                     {[
@@ -230,16 +252,10 @@ export default function ShopifyProductDetailPage() {
                     onClick={handleBuyClick}
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-md hover:shadow-lg active:scale-95 transition-all text-center flex items-center justify-center gap-2 text-sm"
                 >
-                    <Sparkles className="w-4 h-4 fill-white text-white animate-pulse" />
-                    Buy Now · ₹{minPrice.toLocaleString("en-IN")}
+                    <ShoppingCart className="w-4 h-4" />
+                    Add to Cart · ₹{(minPrice * qty).toLocaleString("en-IN")}
                 </button>
             </div>
-
-            <ShopifyCheckoutSheet
-                product={product}
-                isOpen={isCheckoutOpen}
-                onClose={() => setIsCheckoutOpen(false)}
-            />
         </div>
     );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
+import Seo from "../components/seo/Seo";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Search,
@@ -112,9 +112,12 @@ export default function HomePage() {
                 backgroundColor: "#FFFAF3",
             }}
         >
-            <Helmet>
-                <title>Pandit Ji At Request — Book Pooja, Chadhava & Consultation</title>
-            </Helmet>
+            <Seo
+                title="Book Verified Pandit Online for Puja, Havan & Chadhava | PanditJiAtRequest"
+                description="Book verified pandits for Satyanarayan Katha, Griha Pravesh, Havan & all Hindu ceremonies at home. Live video proof, transparent pricing from ₹799, free consultation before booking. Doorstep service across India."
+                path="/"
+            />
+
 
             {/* ── Header ── */}
             <div

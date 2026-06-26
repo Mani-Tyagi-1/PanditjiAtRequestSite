@@ -38,6 +38,7 @@ import shopRoutes from "./routes/userAppRoutes/shopRoutes";
 import holyPanditRoutes from "./routes/userAppRoutes/holyPanditRoutes";
 import shopifyProductRoutes from "./routes/userAppRoutes/shopifyProductRoutes";
 import shopifyOrderRoutes from "./routes/userAppRoutes/shopifyOrderRoutes";
+import seoRoutes from "./routes/seoRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -99,6 +100,7 @@ app.use("/", panditAddressRoutes);
 
 app.use("/api", panditRoute);
 app.use("/api/user", userRoute);
+app.use("/api/seo", seoRoutes);
 
 const PORT = process.env.PORT || 8001;
 

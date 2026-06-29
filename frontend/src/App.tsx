@@ -141,8 +141,10 @@ const TermsAndConditionPandit = React.lazy(() => import("./pages/TermsAndConditi
 const FreeConsultationPage = React.lazy(() => import("./pages/FreeConsultationPage"));
 const PaidConsultationPage = React.lazy(() => import("./pages/PaidConsultationPage"));
 const LiveMandirPujaDetailPage = React.lazy(() => import("./pages/LiveMandirPujaDetailPage"));
+const LiveMandirBookingPage = React.lazy(() => import("./pages/LiveMandirBookingPage"));
 const HolyPanditDetailPage = React.lazy(() => import("./pages/HolyPanditDetailPage"));
 const ChadhavaDetailPage = React.lazy(() => import("./pages/ChadhavaDetailPage"));
+const ChadhavaBookingPage = React.lazy(() => import("./pages/ChadhavaBookingPage"));
 const ShopProductDetailPage = React.lazy(() => import("./pages/ShopProductDetailPage"));
 const ShopifyProductDetailPage = React.lazy(() => import("./pages/ShopifyProductDetailPage"));
 const HomePage = React.lazy(() => import("./pages/HomePage"));
@@ -246,8 +248,10 @@ function App() {
           <Route path="/pandit/:panditId" element={<PanditDetailPage />} />
 
           {/* Detail pages for dynamic sharing */}
+          <Route path="/live-mandir-puja/:slug/booking" element={<LiveMandirBookingPage />} />
           <Route path="/live-mandir-puja/:slug" element={<LiveMandirPujaDetailPage />} />
           <Route path="/holy-pandit/:slug" element={<HolyPanditDetailPage />} />
+          <Route path="/chadhava/:slug/booking" element={<ChadhavaBookingPage />} />
           <Route path="/chadhava/:slug" element={<ChadhavaDetailPage />} />
           <Route path="/shop-product/:slug" element={<ShopProductDetailPage />} />
           <Route path="/shop/product/:handle" element={<ShopifyProductDetailPage />} />

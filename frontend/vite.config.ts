@@ -38,5 +38,19 @@ export default defineConfig(({ mode }) => {
         },
       },
     ],
+    build: {
+      // Target modern browsers — avoids legacy down-leveling / extra polyfills.
+      target: "es2020",
+      // Split stable vendor libs into their own chunks so they cache across
+      // deploys and shrink the main entry chunk (build-only — no runtime change).
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
+            motion: ['framer-motion'],
+          },
+        },
+      },
+    },
   }
 })

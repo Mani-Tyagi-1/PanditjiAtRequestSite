@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import LiveMandirPujaCard from "./LiveMandirPujaCard";
-import LiveMandirBookingModal from "./LiveMandirBookingModal";
 import { type LiveMandirPuja } from "./liveMandirData";
 import API_URL from "../../../utils/apiConfig";
 
@@ -12,8 +11,6 @@ import API_URL from "../../../utils/apiConfig";
 // ─────────────────────────────────────────────────────────────
 
 export default function LiveMandirPujasSection() {
-    const [selectedPuja, _setSelectedPuja] = useState<LiveMandirPuja | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [pujas, setPujas] = useState<LiveMandirPuja[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -38,17 +35,6 @@ export default function LiveMandirPujasSection() {
     useEffect(() => {
         fetchPujas();
     }, []);
-
-    // const handleBook = (puja: LiveMandirPuja) => {
-    //     setSelectedPuja(puja);
-    //     setIsModalOpen(true);
-    //     if (window.fbq) {
-    //         window.fbq("track", "ViewContent", {
-    //             content_name: `${puja.pujaName} - ${puja.templeName}`,
-    //             content_type: "live_mandir_puja",
-    //         });
-    //     }
-    // };
 
     return (
         <section className="lmp-section relative py-6 overflow-hidden bg-gradient-to-b from-[#FFF8EE] to-[#FFFAF3]">
@@ -108,13 +94,6 @@ export default function LiveMandirPujasSection() {
                     <div className="shrink-0 w-1" />
                 </div>
             </div>
-
-            {/* ── Booking flow ── */}
-            <LiveMandirBookingModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                puja={selectedPuja}
-            />
         </section>
     );
 }

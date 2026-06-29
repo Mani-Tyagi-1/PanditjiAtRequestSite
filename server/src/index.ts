@@ -5,6 +5,7 @@ import express, { Request, Response, NextFunction, ErrorRequestHandler } from "e
 import * as http from "http";
 import * as dotenv from "dotenv";
 import cors from "cors";
+import compression from "compression";
 import { Server as SocketIOServer } from "socket.io";
 
 import { panditJiAtRequestDB } from "./config/connectDB";
@@ -50,6 +51,9 @@ import UserAddressModel from "./model/userApp/userAddressModel";
 dotenv.config();
 
 const app = express();
+// Gzip all responses (safe, transparent) — big payload-size win for API responses.
+app.use(compression());
+
 // Capture the raw request body so webhook handlers can verify HMAC signatures.
 app.use(
   express.json({

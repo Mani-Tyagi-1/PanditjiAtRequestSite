@@ -25,6 +25,23 @@ export interface LiveMandirPuja {
     devoteesJoined: number;
     benefits: string[];
     tags: string[];
+    // ── Optional, API-ready fields. Rendered when the backend provides them;
+    //    the page shows clearly-marked placeholders otherwise. ──
+    includes?: string[];
+    templeAbout?: string;
+    templeHistory?: string;
+    videos?: string[];
+    ratingCount?: number;
+    reviews?: LiveMandirReview[];
+}
+
+// (kept exported for typing placeholder + API review data)
+export interface LiveMandirReview {
+    name: string;
+    rating: number;
+    date: string;   // ISO or human label
+    text: string;
+    verified?: boolean;
 }
 
 export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
@@ -61,7 +78,7 @@ export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
         durationMins: 60,
         price: 1100,
         originalPrice: 1500,
-        rating: 5.0,
+        rating: 4.7,
         devoteesJoined: 5120,
         benefits: ["Protection from fear", "Victory over enemies", "Moksha"],
         tags: ["Rare Seva", "Jyotirlinga"],

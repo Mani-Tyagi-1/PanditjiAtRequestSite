@@ -465,7 +465,7 @@ export default function ChadhavaDetailPage() {
 
             {/* WhatsApp reassurance line */}
             <div className="px-4 pt-3">
-                <div className="flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-3 py-1 bg-green-50 border border-green-200 text-green-700 rounded-lg px-2 text-[12px] font-semibold text-start">
                     <MessageCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
                     Receive chadhava video with your name &amp; gotra on WhatsApp
                 </div>

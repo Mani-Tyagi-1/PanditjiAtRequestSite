@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star } from "lucide-react";
 import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
@@ -16,6 +16,17 @@ interface BookingState {
 }
 
 type Step = "details" | "success";
+
+// Live Mandir pujas carry a human date label ("Today", "Tomorrow", "Mon, 16 Jun").
+// Resolve it to an ISO timestamp for the booking record; fall back to today.
+function resolveScheduledDate(label: string): string {
+    const today = new Date();
+    const norm = (label || "").trim().toLowerCase();
+    if (norm === "today") return today.toISOString();
+    if (norm === "tomorrow") return new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    const parsed = new Date(label);
+    return isNaN(parsed.getTime()) ? today.toISOString() : parsed.toISOString();
+}
 
 const INPUT =
     "w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all";
@@ -42,7 +53,6 @@ export default function LiveMandirBookingPage() {
         wish: "",
         familyMembers: [] as string[],
         prasadAdded: false,
-        bookingDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     });
 
     const [familyInput, setFamilyInput] = useState("");
@@ -197,7 +207,7 @@ export default function LiveMandirBookingPage() {
                     phone: phoneDigits,
                     amount: totalPrice,
                     poojaMode: "online",
-                    bookingDate: new Date(form.bookingDate).toISOString(),
+                    bookingDate: resolveScheduledDate(puja.scheduledDate),
                     familyMembers: form.familyMembers,
                     prasadAdded: form.prasadAdded,
                     address: addressPayload,
@@ -339,7 +349,13 @@ export default function LiveMandirBookingPage() {
                     <div className="space-y-6">
                         {/* Base Puja price info */}
                         <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
-                            <p className="text-[13.5px] font-bold text-stone-800 leading-snug">{puja.pujaName}</p>
+                            <div className="flex items-start justify-between gap-2">
+                                <p className="text-[13.5px] font-bold text-stone-800 leading-snug">{puja.pujaName}</p>
+                                <span className="flex items-center gap-1 shrink-0 bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 text-[11px] font-bold">
+                                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                    4.5
+                                </span>
+                            </div>
                             {puja.pujaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5">{puja.pujaNameHindi}</p>}
                             <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
                                 <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
@@ -434,17 +450,14 @@ export default function LiveMandirBookingPage() {
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Select Puja Date</h3>
-                                    <p className="text-[11px] text-stone-400">Choose the date for puja</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px]">Puja Date</h3>
+                                    <p className="text-[11px] text-stone-400">Scheduled date for this puja</p>
                                 </div>
                             </div>
-                            <input
-                                type="date"
-                                value={form.bookingDate}
-                                min={new Date().toISOString().split("T")[0]}
-                                onChange={(e) => setForm(f => ({ ...f, bookingDate: e.target.value }))}
-                                className={INPUT}
-                            />
+                            <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
+                                <span className="text-sm font-semibold text-stone-800">{puja.scheduledDate}</span>
+                                <span className="text-[12px] text-stone-500">{puja.scheduledTime}</span>
+                            </div>
                         </div>
 
                         {/* Step 4: Prasad Delivery */}

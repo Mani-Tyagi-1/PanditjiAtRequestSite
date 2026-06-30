@@ -1,7 +1,10 @@
 import express, { Request, Response, NextFunction } from "express";
 import {
   createShopifyOrder,
+  createCodShopifyOrder,
+  getShopifyCodConfig,
   completeShopifyOrderPayment,
+  shopifyOrderWebhook,
   getUserShopifyOrders,
   checkFirstOrderEligibility,
 } from "../../controller/userApp/shopifyOrderController";
@@ -21,8 +24,17 @@ const wrap =
 // Initialize order and create Razorpay payment intent
 router.post("/shopify-orders/create-order", wrap(createShopifyOrder));
 
+// Place a Cash-on-Delivery order (no online payment step)
+router.post("/shopify-orders/cod", wrap(createCodShopifyOrder));
+
+// COD availability + minimum-order config (server source of truth)
+router.get("/shopify-orders/cod-config", wrap(getShopifyCodConfig));
+
 // Verify Razorpay payment signature and capture order
 router.post("/shopify-orders/complete-payment", wrap(completeShopifyOrderPayment));
+
+// Razorpay webhook — server-side reconciliation for prepaid orders
+router.post("/shopify-orders/webhook", wrap(shopifyOrderWebhook));
 
 // Check whether the user qualifies for the first-order discount
 router.get("/shopify-orders/first-order-eligibility/:phone", wrap(checkFirstOrderEligibility));

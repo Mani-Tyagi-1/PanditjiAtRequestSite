@@ -12,19 +12,27 @@ import {
     Lock,
     Phone,
     AlertCircle,
-    Check,
     ShoppingBag,
     Gift,
     Tag,
     LogIn,
+    Truck,
 } from "lucide-react";
 import API_URL from "../../../utils/apiConfig";
 import { useAuth } from "../../../context/AuthContext";
 import { useShopifyCart } from "../../../context/ShopifyCartContext";
 import { productPrice } from "./shopifyTypes";
+import CodConfirmModal from "./CodConfirmModal";
+import OrderSuccessModal from "./OrderSuccessModal";
 
 const GIFT_WRAP_CHARGE = 49;
 const FIRST_ORDER_DISCOUNT_PERCENT = 10;
+const PREPAID_DISCOUNT_PERCENT = 5; // extra reward for paying online (COD pays full)
+
+// COD config from build-time env so the button renders instantly; the server
+// /cod-config endpoint is the authoritative source and overrides this on open.
+const COD_ENV_AVAILABLE = import.meta.env.VITE_COD_AVAILABLE === "true";
+const COD_ENV_MINIMUM = Math.max(0, Number(import.meta.env.VITE_MINIMUM_COD_AMOUNT) || 0);
 
 const FORM_ID = "shopify-cart-checkout-form";
 
@@ -42,7 +50,13 @@ export default function ShopifyCartDrawer() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [successMode, setSuccessMode] = useState<"online" | "cod">("online");
     const [errorMsg, setErrorMsg] = useState("");
+
+    // COD availability (seeded from env, refreshed from the server on open)
+    const [codConfig, setCodConfig] = useState({ available: COD_ENV_AVAILABLE, minimum: COD_ENV_MINIMUM });
+    const [showCodModal, setShowCodModal] = useState(false);
+    const [codError, setCodError] = useState("");
 
     // Gift wrapping
     const [giftWrap, setGiftWrap] = useState(false);
@@ -71,12 +85,31 @@ export default function ShopifyCartDrawer() {
         if (isOpen) {
             setIsSuccess(false);
             setErrorMsg("");
+            setShowCodModal(false);
+            setCodError("");
             setGiftWrap(false);
             setGiftRecipientName("");
             setGiftMessage("");
             setCheckoutForm((prev) => ({ ...prev, name: user?.name || prev.name }));
         }
     }, [isOpen, user]);
+
+    // Refresh COD availability from the server (togglable without redeploy)
+    useEffect(() => {
+        if (!isOpen) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const { data } = await axios.get(`${API_URL}/shopify-orders/cod-config`);
+                if (!cancelled && data?.success) {
+                    setCodConfig({ available: Boolean(data.available), minimum: Number(data.minimum) || 0 });
+                }
+            } catch {
+                /* keep env-seeded defaults */
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [isOpen]);
 
     // Background check: first-order eligibility (10% off)
     useEffect(() => {
@@ -117,8 +150,78 @@ export default function ShopifyCartDrawer() {
     const firstOrderDiscount = firstOrderEligible
         ? Math.round((subtotal * FIRST_ORDER_DISCOUNT_PERCENT) / 100)
         : 0;
+    const prepaidDiscount = Math.round((subtotal * PREPAID_DISCOUNT_PERCENT) / 100);
     const giftWrapCharge = giftWrap ? GIFT_WRAP_CHARGE : 0;
-    const total = Math.max(1, subtotal - firstOrderDiscount + giftWrapCharge);
+    // Online (Razorpay) pays the prepaid-discounted total; COD pays full (no 5% off).
+    const total = Math.max(1, subtotal - firstOrderDiscount - prepaidDiscount + giftWrapCharge);
+    const codTotal = Math.max(1, subtotal - firstOrderDiscount + giftWrapCharge);
+    const codAvailable = codConfig.available && codTotal >= codConfig.minimum;
+
+    // Validates the delivery form and returns the trimmed payload (or null on error).
+    const buildValidatedCheckout = (onError: (msg: string) => void) => {
+        const { name, addressLine, city, state, pincode } = checkoutForm;
+        if (!name.trim() || !addressLine.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
+            onError("Please fill in all shipping details.");
+            return null;
+        }
+        if (!/^\d{6}$/.test(pincode.trim())) {
+            onError("Please enter a valid 6-digit pincode.");
+            return null;
+        }
+        if (giftWrap && !giftRecipientName.trim()) {
+            onError("Please enter the recipient's name for gift wrapping.");
+            return null;
+        }
+        return {
+            items: items.map((l) => ({
+                shopifyProductId: l.product.shopifyProductId,
+                variantId: "",
+                title: l.product.title,
+                qty: l.qty,
+            })),
+            customerName: name,
+            phone: user?.phone,
+            addressLine,
+            city,
+            state,
+            pincode,
+            userId: user?._id,
+            giftWrap,
+            giftRecipientName: giftWrap ? giftRecipientName.trim() : "",
+            giftMessage: giftWrap ? giftMessage.trim() : "",
+        };
+    };
+
+    const handleCodClick = () => {
+        if (!user) {
+            openLoginModal();
+            return;
+        }
+        if (items.length === 0) return;
+        setCodError("");
+        const payload = buildValidatedCheckout(setErrorMsg);
+        if (!payload) return;
+        setShowCodModal(true);
+    };
+
+    const handleCodConfirm = async () => {
+        const payload = buildValidatedCheckout(setCodError);
+        if (!payload) return;
+        setCodError("");
+        setIsSubmitting(true);
+        try {
+            const { data } = await axios.post(`${API_URL}/shopify-orders/cod`, payload);
+            if (!data?.success) throw new Error(data?.message || "Failed to place order.");
+            clear();
+            setShowCodModal(false);
+            setSuccessMode("cod");
+            setIsSuccess(true);
+        } catch (err: any) {
+            setCodError(err.response?.data?.message || err.message || "Failed to place order. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const handleCheckoutSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -128,42 +231,15 @@ export default function ShopifyCartDrawer() {
         }
         if (items.length === 0) return;
 
-        const { name, addressLine, city, state, pincode } = checkoutForm;
-        if (!name.trim() || !addressLine.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
-            setErrorMsg("Please fill in all shipping details.");
-            return;
-        }
-        if (!/^\d{6}$/.test(pincode.trim())) {
-            setErrorMsg("Please enter a valid 6-digit pincode.");
-            return;
-        }
-        if (giftWrap && !giftRecipientName.trim()) {
-            setErrorMsg("Please enter the recipient's name for gift wrapping.");
-            return;
-        }
+        const payload = buildValidatedCheckout(setErrorMsg);
+        if (!payload) return;
+        const { customerName: name } = payload;
 
         setErrorMsg("");
         setIsSubmitting(true);
 
         try {
-            const orderRes = await axios.post(`${API_URL}/shopify-orders/create-order`, {
-                items: items.map((l) => ({
-                    shopifyProductId: l.product.shopifyProductId,
-                    variantId: "",
-                    title: l.product.title,
-                    qty: l.qty,
-                })),
-                customerName: name,
-                phone: user?.phone,
-                addressLine,
-                city,
-                state,
-                pincode,
-                userId: user?._id,
-                giftWrap,
-                giftRecipientName: giftWrap ? giftRecipientName.trim() : "",
-                giftMessage: giftWrap ? giftMessage.trim() : "",
-            });
+            const orderRes = await axios.post(`${API_URL}/shopify-orders/create-order`, payload);
 
             const orderData = orderRes.data;
             if (!orderData || !orderData.success) {
@@ -201,6 +277,7 @@ export default function ShopifyCartDrawer() {
                             throw new Error(completeRes.data.message || "Payment verification failed.");
                         }
                         clear();
+                        setSuccessMode("online");
                         setIsSuccess(true);
                     } catch (paymentError: any) {
                         setErrorMsg(paymentError.response?.data?.message || paymentError.message || "Payment verification failed.");
@@ -228,6 +305,16 @@ export default function ShopifyCartDrawer() {
         }
     };
 
+    if (isSuccess) {
+        return (
+            <OrderSuccessModal
+                mode={successMode}
+                onContinueShopping={() => { setIsSuccess(false); closeCart(); navigate("/shop"); }}
+                onSeeOrders={() => { setIsSuccess(false); closeCart(); navigate("/profile?tab=shopify"); }}
+            />
+        );
+    }
+
     return (
         <div className="fixed inset-0 z-[200] max-w-md mx-auto">
             {/* Backdrop */}
@@ -235,26 +322,7 @@ export default function ShopifyCartDrawer() {
 
             {/* Right Drawer Panel */}
             <div className="absolute top-0 right-0 h-full w-[92%] max-w-[420px] bg-[#FFFAF3] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-                {isSuccess ? (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6">
-                            <Check className="w-8 h-8" strokeWidth={3} />
-                        </div>
-                        <h2 className="text-2xl font-bold text-stone-850 mb-2">Order Confirmed!</h2>
-                        <p className="text-stone-500 text-sm mb-6">
-                            Thank you! Your payment is successful and your order has been placed.
-                        </p>
-                        <button
-                            onClick={() => {
-                                closeCart();
-                                navigate("/profile?tab=shopify");
-                            }}
-                            className="w-full bg-[#FF7000] text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-100 active:scale-95 transition-all text-sm"
-                        >
-                            Go to My Orders
-                        </button>
-                    </div>
-                ) : (
+                {(
                     <>
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-3.5 border-b border-orange-100 shrink-0">
@@ -455,6 +523,10 @@ export default function ShopifyCartDrawer() {
                                                         <span className="font-semibold">−₹{firstOrderDiscount.toLocaleString("en-IN")}</span>
                                                     </div>
                                                 )}
+                                                <div className="flex items-center justify-between text-emerald-600">
+                                                    <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5" /> Pay online & save {PREPAID_DISCOUNT_PERCENT}%</span>
+                                                    <span className="font-semibold">−₹{prepaidDiscount.toLocaleString("en-IN")}</span>
+                                                </div>
                                                 {giftWrapCharge > 0 && (
                                                     <div className="flex items-center justify-between text-stone-600">
                                                         <span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Gift wrapping</span>
@@ -462,9 +534,15 @@ export default function ShopifyCartDrawer() {
                                                     </div>
                                                 )}
                                                 <div className="flex items-center justify-between pt-2 border-t border-orange-50 text-stone-850">
-                                                    <span className="font-bold">Total</span>
+                                                    <span className="font-bold flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-orange-500" /> Online Prepaid Total</span>
                                                     <span className="text-base font-black text-orange-600">₹{total.toLocaleString("en-IN")}</span>
                                                 </div>
+                                                {codAvailable && (
+                                                    <div className="flex items-center justify-between text-stone-500">
+                                                        <span className="font-semibold flex items-center gap-1"><Truck className="w-3.5 h-3.5" /> Cash on Delivery Total</span>
+                                                        <span className="font-bold">₹{codTotal.toLocaleString("en-IN")}</span>
+                                                    </div>
+                                                )}
                                                 {firstOrderDiscount > 0 && (
                                                     <p className="text-[10.5px] text-emerald-600 font-semibold">🎉 You saved ₹{firstOrderDiscount.toLocaleString("en-IN")} on your first order!</p>
                                                 )}
@@ -507,18 +585,30 @@ export default function ShopifyCartDrawer() {
                                             <LogIn className="w-4 h-4" /> Login to Checkout
                                         </button>
                                     ) : (
-                                        <button
-                                            type="submit"
-                                            form={FORM_ID}
-                                            disabled={isSubmitting}
-                                            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
-                                        >
-                                            {isSubmitting ? (
-                                                <><Loader2 className="w-4 h-4 animate-spin" /><span>Processing Secure Payment...</span></>
-                                            ) : (
-                                                <><CreditCard className="w-4 h-4" /><span>Pay ₹{total.toLocaleString("en-IN")} Securely</span></>
+                                        <>
+                                            <button
+                                                type="submit"
+                                                form={FORM_ID}
+                                                disabled={isSubmitting}
+                                                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+                                            >
+                                                {isSubmitting ? (
+                                                    <><Loader2 className="w-4 h-4 animate-spin" /><span>Processing Secure Payment...</span></>
+                                                ) : (
+                                                    <><CreditCard className="w-4 h-4" /><span>Pay ₹{total.toLocaleString("en-IN")} Securely</span></>
+                                                )}
+                                            </button>
+                                            {codAvailable && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCodClick}
+                                                    disabled={isSubmitting}
+                                                    className="w-full bg-white border-2 border-orange-200 text-orange-600 font-bold py-3 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+                                                >
+                                                    <Truck className="w-4 h-4" /><span>Cash on Delivery · ₹{codTotal.toLocaleString("en-IN")}</span>
+                                                </button>
                                             )}
-                                        </button>
+                                        </>
                                     )}
                                 </div>
                             </>
@@ -526,6 +616,30 @@ export default function ShopifyCartDrawer() {
                     </>
                 )}
             </div>
+
+            <CodConfirmModal
+                isOpen={showCodModal}
+                onClose={() => setShowCodModal(false)}
+                onConfirm={handleCodConfirm}
+                isSubmitting={isSubmitting}
+                total={codTotal}
+                itemCount={count}
+                items={items.map((l) => ({
+                    title: l.product.title,
+                    image: l.product.featuredImage?.url,
+                    qty: l.qty,
+                    price: productPrice(l.product),
+                }))}
+                address={{
+                    name: checkoutForm.name,
+                    phone: user?.phone || "",
+                    addressLine: checkoutForm.addressLine,
+                    city: checkoutForm.city,
+                    state: checkoutForm.state,
+                    pincode: checkoutForm.pincode,
+                }}
+                errorMsg={codError}
+            />
         </div>
     );
 }

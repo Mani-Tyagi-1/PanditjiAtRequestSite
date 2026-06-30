@@ -123,7 +123,7 @@ export default function ShopSection() {
                 <div>
                     <h2 className="text-stone-900 font-bold leading-tight" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "27px" }}>
                         Spiritual{" "}
-                        <span className="italic bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">Bhakti Store</span>
+                        <span className="italic bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">Panditji At Request Shop</span>
                     </h2>
                 </div>
 

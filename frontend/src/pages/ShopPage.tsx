@@ -94,7 +94,7 @@ export default function ShopPage() {
     return (
         <div className="font-sans min-h-screen bg-[#FFFAF3] pb-24 w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100/50">
             <Helmet>
-                <title>Bhakti Shop | Pandit Ji At Request</title>
+                <title>Pandit Ji At Request Shop</title>
                 <meta name="description" content="Shop spiritual gems, energized zodiac wristbands, bracelets and puja items." />
             </Helmet>
 
@@ -118,7 +118,7 @@ export default function ShopPage() {
                     )}
                 </button>
                 <h1 className="text-center text-[26px] font-bold text-orange-600" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
-                    Bhakti Shop
+                    Pandit Ji At Request Shop
                 </h1>
                 <p className="text-center text-[12.5px] text-stone-500 -mt-0.5">Energized spiritual gems & bracelets</p>
 

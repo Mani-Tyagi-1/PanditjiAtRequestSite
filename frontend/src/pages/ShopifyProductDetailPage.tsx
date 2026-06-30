@@ -99,7 +99,7 @@ export default function ShopifyProductDetailPage() {
     return (
         <div className="font-sans min-h-screen bg-[#FFFAF3] pb-24 w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100/50">
             <Helmet>
-                <title>{`${product.title} | Bhakti Shop | Pandit Ji At Request`}</title>
+                <title>{`${product.title} | Pandit Ji At Request`}</title>
                 <meta name="description" content={`Buy ${product.title} — energized & certified spiritual product. Blessed by experts.`} />
             </Helmet>
 

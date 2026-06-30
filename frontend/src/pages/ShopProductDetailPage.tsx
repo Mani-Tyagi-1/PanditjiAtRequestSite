@@ -135,7 +135,7 @@ export default function ShopProductDetailPage() {
     return (
         <div className="min-h-screen bg-[#FFFAF3] pb-20 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-amber-100">
             <Helmet>
-                <title>{`${product.name} | Spiritual Bhakti Store | Pandit Ji At Request`}</title>
+                <title>{`${product.name} | Pandit Ji At Request Shop`}</title>
                 <meta name="description" content={`Purchase authentic ${product.name}. ${product.shortDesc}. Sourced & blessed by experts.`} />
             </Helmet>
 

@@ -48,8 +48,22 @@ function extractPhoneAndMessage(
 }
 
 /**
+ * Extract message delivery statuses from a Pinnacle/WABA webhook payload.
+ * Status callbacks arrive as { entry: [{ changes: [{ value: { statuses: [...] } }] }] }
+ * (and some providers post a flat { statuses: [...] }). Each status carries
+ * status ('sent' | 'delivered' | 'read' | 'failed') and, on failure, an errors[]
+ * array with the code — e.g. 131049 when Meta drops a MARKETING template.
+ */
+function extractStatuses(body: any): any[] {
+  const fromWaba = body?.entry?.[0]?.changes?.[0]?.value?.statuses;
+  if (Array.isArray(fromWaba)) return fromWaba;
+  if (Array.isArray(body?.statuses)) return body.statuses;
+  return [];
+}
+
+/**
  * POST /api/whatsapp/webhook
- * Receives incoming WhatsApp messages from Pinnacle and drives the booking bot.
+ * Receives incoming WhatsApp messages AND delivery-status callbacks from Pinnacle.
  */
 export async function handleWebhook(req: Request, res: Response): Promise<void> {
   // Log raw payload to help diagnose Pinnacle payload shape differences
@@ -57,6 +71,30 @@ export async function handleWebhook(req: Request, res: Response): Promise<void> 
 
   // Always respond 200 immediately to prevent Pinnacle from retrying
   res.status(200).json({ status: 'ok' });
+
+  // ── Delivery-status callbacks (sent / delivered / read / failed) ──────────────
+  // This is where a real delivery failure surfaces. Without this, a 131049 drop is
+  // invisible server-side because the original send API returned 200.
+  try {
+    for (const s of extractStatuses(req.body)) {
+      const recipient = s?.recipient_id ?? s?.to ?? 'unknown';
+      if (s?.status === 'failed') {
+        const err = Array.isArray(s?.errors) ? s.errors[0] : s?.error;
+        const code = err?.code ?? err?.error_code ?? 'n/a';
+        const title = err?.title ?? err?.message ?? 'unknown error';
+        console.error(
+          `❌ [WhatsApp Delivery] FAILED to ${recipient} — code ${code}: ${title}` +
+            (String(code) === '131049'
+              ? ' (marketing frequency cap — template must be UTILITY category)'
+              : '')
+        );
+      } else if (s?.status) {
+        console.log(`[WhatsApp Delivery] ${s.status} → ${recipient}`);
+      }
+    }
+  } catch (statusErr: any) {
+    console.error('[WhatsApp Webhook] Error parsing statuses:', statusErr?.message);
+  }
 
   try {
     const parsed = extractPhoneAndMessage(req.body);

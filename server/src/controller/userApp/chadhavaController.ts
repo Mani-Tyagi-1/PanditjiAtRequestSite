@@ -4,7 +4,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import Chadhava, { IChadhava } from "../../model/userApp/chadhavaModel";
 import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhavaBookingModel";
-import { sendWhatsappTemplateMessage, sendWhatsappMessage } from "../../utils/whatsapp";
+import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 
 // Shape a DB doc to the frontend `Chadhava` interface (id = slug).
@@ -80,7 +80,7 @@ const verifyPaymentSignature = (
 
 // ---- WhatsApp Chadhava confirmation (fire-and-forget) ----
 // Sent only AFTER a Chadhava payment is verified — a thank-you to the devotee
-// who booked the chadhava. Uses the approved `pjar_order` template:
+// who booked the chadhava. Uses the approved `pjar_booking` UTILITY template:
 //
 //   Namaste {{1}}
 //
@@ -125,16 +125,27 @@ const sendChadhavaConfirmationWhatsapp = async (booking: any) => {
     // "Check Now" button → https://play.google.com/store/apps/details?id=com.panditJiAtReqapp
     const buttonParam = "apps/details?id=com.panditJiAtReqapp";
 
+    // Header image = the booked chadhava's image (looked up by slug); fall back
+    // to the brand image if unavailable.
+    let headerImage = ORDER_TEMPLATE_HEADER_IMAGE;
+    try {
+      if ((booking as any)?.chadhavaSlug) {
+        const chadhavaDoc = await Chadhava.findOne({ slug: (booking as any).chadhavaSlug }).lean();
+        if ((chadhavaDoc as any)?.image) headerImage = (chadhavaDoc as any).image;
+      }
+    } catch (imgErr: any) {
+      console.warn("[Chadhava] Could not resolve header image, using fallback:", imgErr?.message);
+    }
+
     let sent = false;
     try {
-      await sendWhatsappTemplateMessage({
+      await sendOrderConfirmationTemplate({
         to: phone,
-        templateName: "pjar_order",
         parameters: [devoteeName, param2, param3, param4],
+        headerImageUrl: headerImage,
         buttonUrlParam: buttonParam,
-        languageCode: "en",
       });
-      console.log(`✅ [Chadhava] WhatsApp pjar_order sent to ${phone}`);
+      console.log(`[Chadhava] WhatsApp confirmation accepted by API for ${phone} (delivery not guaranteed)`);
       sent = true;
     } catch (err: any) {
       console.warn(`[Chadhava] Template send failed:`, err?.response?.data || err.message);

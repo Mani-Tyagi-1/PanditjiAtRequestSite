@@ -3,7 +3,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import ShopifyOrder from "../../model/userApp/shopifyOrderModel";
 import ShopifyProduct from "../../model/userApp/shopifyProductModel";
-import { sendWhatsappTemplateMessage, sendWhatsappMessage } from "../../utils/whatsapp";
+import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 
 const isProduction = process.env.PAYMENT_MODE === "production";
 const razorpayKeyId = isProduction
@@ -43,7 +43,7 @@ const isCodAvailable = () => process.env.COD_AVAILABLE !== "false";
 const getCodMinimum = () => Math.max(0, Number(process.env.MINIMUM_COD_AMOUNT) || 0);
 
 // Fire-and-forget WhatsApp confirmation for both prepaid & COD shop orders.
-// Mirrors the chadhava/pooja flow: `pjar_order` template with a plain-text fallback.
+// Mirrors the chadhava/pooja flow: `pjar_booking` template with a plain-text fallback.
 const sendShopifyOrderConfirmationWhatsapp = async (order: any) => {
   try {
     const rawPhone = String(order?.phone || "");
@@ -84,16 +84,18 @@ const sendShopifyOrderConfirmationWhatsapp = async (order: any) => {
     // "Check Now" button → https://play.google.com/store/apps/details?id=com.panditJiAtReqapp
     const buttonParam = "apps/details?id=com.panditJiAtReqapp";
 
+    // Header image = the ordered product's image; fall back to the brand image.
+    const headerImage = items.find((i) => i?.image)?.image || ORDER_TEMPLATE_HEADER_IMAGE;
+
     let sent = false;
     try {
-      await sendWhatsappTemplateMessage({
+      await sendOrderConfirmationTemplate({
         to: phone,
-        templateName: "pjar_order",
         parameters: [customerName, param2, param3, param4],
+        headerImageUrl: headerImage,
         buttonUrlParam: buttonParam,
-        languageCode: "en",
       });
-      console.log(`✅ [ShopifyOrder] WhatsApp pjar_order sent to ${phone}`);
+      console.log(`[ShopifyOrder] WhatsApp confirmation accepted by API for ${phone} (delivery not guaranteed)`);
       sent = true;
     } catch (err: any) {
       console.warn(`[ShopifyOrder] Template send failed:`, err?.response?.data || err.message);

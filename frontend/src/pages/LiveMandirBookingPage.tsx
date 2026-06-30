@@ -634,7 +634,7 @@ export default function LiveMandirBookingPage() {
                             {submitting ? (
                                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
                             ) : (
-                                <>Pay & Book Puja <ChevronRight className="w-4 h-4" /></>
+                                <>Offer With Devotion <ChevronRight className="w-4 h-4" /></>
                             )}
                         </button>
                     </div>

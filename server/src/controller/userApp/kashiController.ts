@@ -1,10 +1,10 @@
 import { RequestHandler } from "express";
 import KashiRequest from "../../model/userApp/kashiRequestModel";
-import { sendWhatsappTemplateMessage, sendWhatsappMessage } from "../../utils/whatsapp";
+import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 
 // ---- WhatsApp Kashi request confirmation (fire-and-forget) ----
 // Kashi Ji is a request/lead flow (no payment), so the confirmation is sent the
-// moment the request is created. Uses the approved `pjar_order` template:
+// moment the request is created. Uses the approved `pjar_booking` UTILITY template:
 //
 //   Namaste {{1}}
 //
@@ -43,14 +43,13 @@ const sendKashiRequestWhatsapp = async (request: any) => {
 
     let sent = false;
     try {
-      await sendWhatsappTemplateMessage({
+      await sendOrderConfirmationTemplate({
         to: phone,
-        templateName: "pjar_order",
         parameters: [devoteeName, param2, param3, param4],
+        headerImageUrl: ORDER_TEMPLATE_HEADER_IMAGE,
         buttonUrlParam: buttonParam,
-        languageCode: "en",
       });
-      console.log(`✅ [Kashi] WhatsApp pjar_order sent to ${phone}`);
+      console.log(`[Kashi] WhatsApp confirmation accepted by API for ${phone} (delivery not guaranteed)`);
       sent = true;
     } catch (err: any) {
       console.warn(`[Kashi] Template send failed:`, err?.response?.data || err.message);

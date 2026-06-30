@@ -5,6 +5,7 @@ import pendingPoojaBookingModel from '../../model/poojaBooking/pendingPoojaBooki
 import poojaBookingModel, { IPoojaBooking } from '../../model/poojaBooking/poojaBooking.model';
 import User from '../../model/userApp/userModel';
 import Pooja from '../../model/userApp/poojaModel';
+import LiveMandirPuja from '../../model/userApp/liveMandirPujaModel';
 import Pandit from '../../model/panditApp/panditModel';
 import UserReferralBooking from '../../model/userApp/userReferralBooking.model';
 import Razorpay from 'razorpay';
@@ -12,7 +13,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
-import { sendWhatsappTemplateMessage, sendWhatsappMessage } from '../../utils/whatsapp';
+import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from '../../utils/whatsapp';
 import { sendBookingConfirmationEmail } from '../../utils/emailService';
 import type { Document } from "mongoose";
 
@@ -214,16 +215,31 @@ async function sendBookingConfirmationWhatsapp(booking: any) {
     // "Check Now" button → https://play.google.com/store/apps/details?id=com.panditJiAtReqapp
     const buttonParam = 'apps/details?id=com.panditJiAtReqapp';
 
-    // Template pjar_order is registered in 'en' locale — send directly
+    // Header image = the actual booked puja's image (live mandir → temple/puja image,
+    // normal puja → pooja card image). Falls back to the brand image if unavailable.
+    let headerImage = ORDER_TEMPLATE_HEADER_IMAGE;
     try {
-      await sendWhatsappTemplateMessage({
+      if (isLiveMandir && booking?.pujaSlug) {
+        const lm = await LiveMandirPuja.findOne({ slug: booking.pujaSlug }).lean();
+        if ((lm as any)?.image) headerImage = (lm as any).image;
+      } else if (booking?.poojaId) {
+        const pooja = await Pooja.findById(booking.poojaId).lean();
+        if ((pooja as any)?.poojaCardImage) headerImage = (pooja as any).poojaCardImage;
+      }
+    } catch (imgErr: any) {
+      console.warn('[PujaBooking] Could not resolve header image, using fallback:', imgErr?.message);
+    }
+
+    // Sends pjar_booking (image header) and auto-falls back to pjar_order (button)
+    // if pjar_booking isn't available on the number yet.
+    try {
+      await sendOrderConfirmationTemplate({
         to: phone,
-        templateName: 'pjar_order',
         parameters: [userName, param2, param3, param4],
+        headerImageUrl: headerImage,
         buttonUrlParam: buttonParam,
-        languageCode: 'en',
       });
-      console.log(`✅ [PujaBooking] WhatsApp pjar_order sent to ${phone}`);
+      console.log(`[PujaBooking] WhatsApp confirmation accepted by API for ${phone} (delivery not guaranteed)`);
       sent = true;
     } catch (err: any) {
       console.warn(`[PujaBooking] Template send failed:`, err?.response?.data || err.message);
@@ -648,14 +664,11 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       });
     }
 
-    // 🟢 WhatsApp booking confirmation (fire-and-forget)
-    // Only for NORMAL pujas — those take no payment, so the booking is confirmed
-    // the moment the pending record is created. Live Mandir pujas take payment
-    // AFTER this step, so their confirmation is deferred to complete-booking
-    // (sent only once payment is verified).
-    if (!isLiveMandir) {
-      void sendBookingConfirmationWhatsapp(newBooking);
-    }
+    // NOTE: the WhatsApp booking confirmation is intentionally NOT sent here.
+    // All bookings (normal + live mandir) take payment via Razorpay, so the
+    // confirmation is sent from complete-booking once payment is verified — this
+    // avoids confirming a puja the devotee never actually paid for, and keeps the
+    // home-puja flow consistent with live mandir / chadhava / shop.
 
     // Live Mandir payment attempt started -> booking stays pending until payment
     // is verified. If still unpaid after the configured delay, nudge the devotee.
@@ -848,13 +861,10 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     } catch (pushErr) {
       console.error('Push send/schedule failed:', pushErr);
     }
-    // 🟢 WhatsApp booking confirmation (fire-and-forget)
-    // Normal pujas already got their WhatsApp at create-pending (no payment taken).
-    // Live Mandir pujas take payment, so we send the confirmation here — only now
-    // that the payment signature has been verified.
-    if ((finalBooking as any).isLiveMandir) {
-      void sendBookingConfirmationWhatsapp(finalBooking);
-    }
+    // 🟢 WhatsApp booking confirmation (fire-and-forget) — for ALL bookings.
+    // Sent here (not at create-pending) so it goes out only once the payment
+    // signature is verified. Covers home pujas AND live mandir pujas alike.
+    void sendBookingConfirmationWhatsapp(finalBooking);
     // ----------------------------------------------------------
 
     // 🟢 Email booking confirmation (fire-and-forget)

@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import PaidConsultation from "../../model/userApp/paidConsultationModel";
-import { sendWhatsappTemplateMessage, sendWhatsappMessage } from "../../utils/whatsapp";
+import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 
 const TIME_SLOTS = new Set(["9-11", "11-1", "3-5", "5-7"]);
@@ -67,14 +67,13 @@ const sendPaidConsultationConfirmationWhatsapp = async (consultation: any) => {
 
     let sent = false;
     try {
-      await sendWhatsappTemplateMessage({
+      await sendOrderConfirmationTemplate({
         to: phone,
-        templateName: "pjar_order",
         parameters: [devoteeName, param2, param3, param4],
+        headerImageUrl: ORDER_TEMPLATE_HEADER_IMAGE,
         buttonUrlParam: buttonParam,
-        languageCode: "en",
       });
-      console.log(`[PaidConsultation] WhatsApp pjar_order sent to ${phone}`);
+      console.log(`[PaidConsultation] WhatsApp confirmation accepted by API for ${phone} (delivery not guaranteed)`);
       sent = true;
     } catch (err: any) {
       console.warn("[PaidConsultation] Template send failed:", err?.response?.data || err.message);

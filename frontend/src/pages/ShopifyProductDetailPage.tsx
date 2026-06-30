@@ -23,6 +23,15 @@ export default function ShopifyProductDetailPage() {
     const navigate = useNavigate();
     const { addItem, openCart, count } = useShopifyCart();
 
+    // Request a CDN-resized variant instead of the full-res original.
+    // Shopify CDN supports on-the-fly resizing via the `width` param, which
+    // avoids downloading multi-MB 3750x3750 originals for tiny displays.
+    const shopifyImg = (url: string, width: number) => {
+        if (!url || !/cdn\.shopify\.com/.test(url)) return url;
+        const sep = url.includes("?") ? "&" : "?";
+        return `${url}${sep}width=${width}`;
+    };
+
     const [product, setProduct] = useState<ShopifyProduct | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -97,7 +106,7 @@ export default function ShopifyProductDetailPage() {
     const discountPercent = hasDiscount ? Math.round(((maxPrice - minPrice) / maxPrice) * 100) : 0;
 
     return (
-        <div className="font-sans min-h-screen bg-[#FFFAF3] pb-24 w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100/50">
+        <main className="font-sans min-h-screen bg-[#FFFAF3] pb-24 w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100/50">
             <Helmet>
                 <title>{`${product.title} | Pandit Ji At Request`}</title>
                 <meta name="description" content={`Buy ${product.title} — energized & certified spiritual product. Blessed by experts.`} />
@@ -105,11 +114,11 @@ export default function ShopifyProductDetailPage() {
 
             {/* Sticky Header */}
             <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-100 shadow-sm active:scale-90 transition-transform">
+                <button onClick={() => navigate(-1)} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-100 shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <h1 className="text-sm font-bold text-stone-850 truncate flex-1">Product Details</h1>
-                <button onClick={openCart} className="relative w-9 h-9 rounded-full bg-white flex items-center justify-center border border-orange-100 shadow-sm active:scale-90 transition-transform">
+                <button onClick={openCart} aria-label={`Open cart${count > 0 ? `, ${count} items` : ""}`} className="relative w-9 h-9 rounded-full bg-white flex items-center justify-center border border-orange-100 shadow-sm active:scale-90 transition-transform">
                     <ShoppingCart className="w-4 h-4 text-stone-700" />
                     {count > 0 && (
                         <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-orange-500 text-white text-[9px] font-bold">
@@ -123,8 +132,15 @@ export default function ShopifyProductDetailPage() {
             <div className="relative aspect-square bg-orange-50/20 overflow-hidden p-3 rounded-2xl">
                 {images.length > 0 ? (
                     <img
-                        src={images[activeImage]}
+                        src={shopifyImg(images[activeImage], 450)}
+                        srcSet={`${shopifyImg(images[activeImage], 450)} 1x, ${shopifyImg(images[activeImage], 900)} 2x`}
                         alt={product.title}
+                        width={450}
+                        height={450}
+                        // LCP image: load immediately, never lazy.
+                        loading="eager"
+                        fetchPriority="high"
+                        decoding="async"
                         className="w-full h-full object-cover rounded-2xl"
                     />
                 ) : (
@@ -151,11 +167,21 @@ export default function ShopifyProductDetailPage() {
                         <button
                             key={url}
                             onClick={() => setActiveImage(i)}
+                            aria-label={`View image ${i + 1} of ${images.length}`}
+                            aria-pressed={activeImage === i}
                             className={`shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
                                 activeImage === i ? "border-orange-500" : "border-orange-100"
                             }`}
                         >
-                            <img src={url} alt={`${product.title} ${i + 1}`} className="w-full h-full object-cover" />
+                            <img
+                                src={shopifyImg(url, 128)}
+                                alt={`${product.title} ${i + 1}`}
+                                width={64}
+                                height={64}
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-full object-cover"
+                            />
                         </button>
                     ))}
                 </div>
@@ -169,7 +195,7 @@ export default function ShopifyProductDetailPage() {
                         <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[11.5px] font-bold">
                             <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" /> 4.9
                         </span>
-                        <span className="text-[12px] text-stone-400 font-semibold">Energized & Certified</span>
+                        <span className="text-[12px] text-stone-500 font-semibold">Energized & Certified</span>
                     </div>
                 </div>
 
@@ -181,25 +207,25 @@ export default function ShopifyProductDetailPage() {
                         </span>
                         {hasDiscount && (
                             <>
-                                <span className="text-base text-stone-400 line-through">
+                                <span className="text-base text-stone-500 line-through">
                                     ₹{maxPrice.toLocaleString("en-IN")}
                                 </span>
                                 <span className="text-[13px] font-bold text-emerald-600">{discountPercent}% off</span>
                             </>
                         )}
                     </div>
-                    <p className="text-[10px] text-stone-400 mt-1">Free energized packaging · Blessed by Experts · Inclusive of all taxes</p>
+                    <p className="text-[10px] text-stone-500 mt-1">Free energized packaging · Blessed by Experts · Inclusive of all taxes</p>
                 </div>
 
                 {/* Quantity Selector */}
                 <div className="flex items-center justify-between bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
                     <span className="text-[13.5px] font-bold text-stone-700">Quantity</span>
                     <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-xl px-1.5 py-1">
-                        <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-stone-600 active:scale-90 transition-transform shadow-sm">
+                        <button onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Decrease quantity" className="w-8 h-8 flex items-center justify-center rounded-lg bg-white text-stone-600 active:scale-90 transition-transform shadow-sm">
                             <Minus className="w-4 h-4" strokeWidth={3} />
                         </button>
-                        <span className="text-[15px] font-bold text-stone-800 min-w-[26px] text-center">{qty}</span>
-                        <button onClick={() => setQty((q) => Math.min(10, q + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500 text-white active:scale-90 transition-transform shadow-sm">
+                        <span className="text-[15px] font-bold text-stone-800 min-w-[26px] text-center" aria-live="polite">{qty}</span>
+                        <button onClick={() => setQty((q) => Math.min(10, q + 1))} aria-label="Increase quantity" className="w-8 h-8 flex items-center justify-center rounded-lg bg-orange-500 text-white active:scale-90 transition-transform shadow-sm">
                             <Plus className="w-4 h-4" strokeWidth={3} />
                         </button>
                     </div>
@@ -222,7 +248,7 @@ export default function ShopifyProductDetailPage() {
                 {/* Description */}
                 {product.descriptionHtml && (
                     <div>
-                        <h3 className="text-[12px] font-black uppercase tracking-wider text-stone-400 mb-1.5">Description</h3>
+                        <h3 className="text-[12px] font-black uppercase tracking-wider text-stone-500 mb-1.5">Description</h3>
                         <div
                             className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm text-[12.5px] text-stone-600 leading-relaxed space-y-2 shopify-description"
                             dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
@@ -240,7 +266,7 @@ export default function ShopifyProductDetailPage() {
                             <span className="text-[11px] font-bold text-orange-600 flex items-center gap-1">
                                 <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" strokeWidth={3} /> {badge.label}
                             </span>
-                            <span className="text-[9.5px] text-stone-400 mt-0.5">{badge.desc}</span>
+                            <span className="text-[9.5px] text-stone-500 mt-0.5">{badge.desc}</span>
                         </div>
                     ))}
                 </div>
@@ -256,6 +282,6 @@ export default function ShopifyProductDetailPage() {
                     Add to Cart · ₹{(minPrice * qty).toLocaleString("en-IN")}
                 </button>
             </div>
-        </div>
+        </main>
     );
 }

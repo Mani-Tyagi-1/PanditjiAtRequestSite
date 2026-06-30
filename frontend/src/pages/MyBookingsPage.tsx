@@ -79,8 +79,15 @@ const MyBookingsPage: React.FC = () => {
                 b.poojaType === 'live_puja_at_mandir' ||
                 !!b.templeName ||
                 !!b.pujaSlug;
+            // A live mandir puja is paid upfront: on success a FINAL record
+            // (isPaymentDone:true) is created and its pending row deleted. But if
+            // the user dismisses the Razorpay popup, the unpaid pending row lingers.
+            // Treat only PAID (or already completed) live records as real bookings,
+            // so the Live tab shows genuine "Confirmed" bookings instead of leaking
+            // abandoned checkout attempts as "pending".
+            const isPaid = (b: any) => b.isPaymentDone === true || b.isCompleted === true;
             const regularBookings = allBookings.filter((b: any) => !isLive(b));
-            const liveMandirBookings = allBookings.filter(isLive);
+            const liveMandirBookings = allBookings.filter((b: any) => isLive(b) && isPaid(b));
 
             setBookings(regularBookings);
             setLiveBookings(liveMandirBookings);
@@ -522,7 +529,14 @@ const LiveBookingCard = ({ booking, index }: { booking: any; index: number }) =>
         ? new Date(dateVal).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
         : "N/A";
 
-    const displayStatus = booking.status || (booking.isPaymentDone ? "confirmed" : "pending");
+    // Live mandir bookings are paid upfront, so a record that reaches this card
+    // is confirmed (or completed). Derive status from the payment/completion
+    // flags rather than a non-existent `status` field so it never reads "pending".
+    const displayStatus = booking.isCompleted
+        ? "completed"
+        : booking.isPaymentDone
+            ? "confirmed"
+            : booking.status || "pending";
 
     const getStatusColor = (status: string) => {
         switch (status) {

@@ -157,7 +157,7 @@ export default function HomePage() {
                         <Search className="w-5 h-5 text-stone-400 shrink-0" />
                         <input
                             type="text"
-                            placeholder="Search pooja, pandit ji, ritual…"
+                            placeholder="Search here..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-transparent text-[13.5px] text-stone-800 placeholder-stone-400 outline-hidden"

@@ -287,7 +287,7 @@ export default function SacredChadhavaSewa() {
                                                 }
                                                 navigate(`/chadhava/${c.id}`);
                                             }}
-                                            className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[15px] px-10 py-1.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200"
+                                            className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[13px] px-7 py-1 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200"
                                         >
                                             Offer Now
                                         </button>

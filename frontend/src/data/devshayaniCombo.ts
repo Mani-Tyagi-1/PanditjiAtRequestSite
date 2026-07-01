@@ -126,7 +126,7 @@ export const devshayaniCombo: Chadhava = {
     availableDates: [COMBO_DATE],
     startingPrice: COMBO_PRICE,
     originalPrice: COMBO_ORIGINAL,
-    rating: 5,
+    rating: 4.7,
     devoteesOffered: 21008,
     benefits: [
         "Combined blessings of three powerful dhams in a single sankalp",

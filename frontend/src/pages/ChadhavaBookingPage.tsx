@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, Check, ShieldCheck, Plus, Trash2, Home, Briefcase, Phone, User, HelpCircle } from "lucide-react";
+import { ArrowLeft, Check, ShieldCheck, Plus, Trash2, Home, Briefcase, Phone, User, HelpCircle, Gift, ChevronDown } from "lucide-react";
 import { type Chadhava, type ChadhavaSelection } from "../components/booking/ChadhavaBooking/chadhavaData";
 import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
+// Devshayani combo — prasad-box contents accordion (frontend-only, removable)
+import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 
 // State handed over from ChadhavaDetailPage via navigate(..., { state }). Carried
 // in router state (not the URL) so the cart selections survive the page change;
@@ -37,6 +39,10 @@ export default function ChadhavaBookingPage() {
     const selections = state?.selections ?? [];
     const addPrasad = state?.addPrasad ?? false;
     const prasadPrice = state?.prasadPrice ?? 0;
+
+    // Devshayani combo — show the prasad-box contents accordion for this offering.
+    const isDevshayaniCombo = chadhava?.id === DEVSHAYANI_COMBO_SLUG;
+    const [prasadBoxOpen, setPrasadBoxOpen] = useState(false);
 
     const { user } = useAuth();
     const [submitting, setSubmitting] = useState(false);
@@ -424,15 +430,15 @@ export default function ChadhavaBookingPage() {
                                 <span className="text-[12.5px] font-extrabold text-[#E05A10]">01</span>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-1">
                                 {selections.map((s) => (
-                                    <div key={s.code} className="flex items-center justify-between py-2 border-b border-stone-50 text-[13.5px]">
+                                    <div key={s.code} className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px]">
                                         <span className="text-stone-700 font-medium text-left">{s.name} (x{s.quantity})</span>
                                         <span className="font-bold text-stone-800">₹{(s.unitPrice * s.quantity).toLocaleString("en-IN")}</span>
                                     </div>
                                 ))}
                                 {addPrasad && (
-                                    <div className="flex items-center justify-between py-2 border-b border-stone-50 text-[13.5px]">
+                                    <div className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px]">
                                         <span className="text-stone-700 font-medium text-left">Mandir Prasad Box</span>
                                         <span className="font-bold text-stone-800">₹298</span>
                                     </div>
@@ -444,6 +450,44 @@ export default function ChadhavaBookingPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Prasad Box contents — Devshayani combo only, when opted in */}
+                            {isDevshayaniCombo && addPrasad && (
+                                <div className="mt-3.5 rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden">
+                                    <button
+                                        type="button"
+                                        onClick={() => setPrasadBoxOpen((o) => !o)}
+                                        className="w-full flex items-center justify-between px-3.5 py-3 text-left"
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <span className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                                                <Gift className="w-4 h-4 text-amber-600" />
+                                            </span>
+                                            <div>
+                                                <h4 className="text-[13px] font-bold text-[#2E1F15]">Your Prasad Box Includes</h4>
+                                            </div>
+                                        </div>
+                                        <ChevronDown className={`w-4.5 h-4.5 text-stone-400 shrink-0 transition-transform ${prasadBoxOpen ? "rotate-180" : ""}`} />
+                                    </button>
+
+                                    {prasadBoxOpen && (
+                                        <div className="px-3.5 pb-3.5 pt-0.5 space-y-2.5">
+                                            {COMBO_PRASAD_BOX_ITEMS.map((item) => (
+                                                <div key={item.name} className="flex items-center gap-2.5 text-left">
+                                                    {item.image ? (
+                                                        <img src={item.image} alt={item.name} className="w-9 h-9 rounded-lg object-cover border border-[#F4E7DC] shrink-0" loading="lazy" />
+                                                    ) : (
+                                                        <span className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                                            <Check className="w-3 h-3 text-emerald-600" strokeWidth={3} />
+                                                        </span>
+                                                    )}
+                                                    <span className="text-[12.5px] font-medium text-stone-700">{item.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-[#FFEFE2]">
                                 <span className="font-bold text-stone-800 text-[13px] uppercase tracking-wide">Total Amount</span>

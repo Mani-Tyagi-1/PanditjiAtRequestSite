@@ -7,7 +7,7 @@ import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
 import { type Chadhava, type ChadhavaSelection } from "../components/booking/ChadhavaBooking/chadhavaData";
 // Devshayani Ekadashi combo (frontend-only offering — remove to disable)
-import { devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_TEMPLES } from "../data/devshayaniCombo";
+import { devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_TEMPLES, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 
 function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" | "goldbar" }) {
     const [timeLeft, setTimeLeft] = useState("");
@@ -977,6 +977,27 @@ export default function ChadhavaDetailPage() {
                                     <p className="text-[15.5px] font-extrabold text-[#E05A10] mt-1">₹298</p>
                                 </div>
                             </div>
+
+                            {/* Prasad Box contents — Devshayani combo only */}
+                            {isDevshayaniCombo && (
+                                <div className="mt-3 border border-[#FFEFE2] rounded-2xl p-4 bg-white text-left">
+                                    <p className="text-[12px] font-bold text-[#2E1F15] mb-2.5">Your Prasad Box Includes:</p>
+                                    <div className="space-y-2.5">
+                                        {COMBO_PRASAD_BOX_ITEMS.map((item) => (
+                                            <div key={item.name} className="flex items-center gap-2.5">
+                                                {item.image ? (
+                                                    <img src={item.image} alt={item.name} className="w-9 h-9 rounded-lg object-cover border border-[#F4E7DC] shrink-0" loading="lazy" />
+                                                ) : (
+                                                    <span className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                                                        <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />
+                                                    </span>
+                                                )}
+                                                <span className="text-[12.5px] font-medium text-stone-700">{item.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Action Buttons */}
                             <div className="mt-6 space-y-3">

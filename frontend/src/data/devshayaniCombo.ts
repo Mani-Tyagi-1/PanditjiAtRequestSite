@@ -66,6 +66,20 @@ export const COMBO_TEMPLES: ComboTemple[] = [
     { name: "Shri Badrinath Ji", location: "Chamoli, Uttarakhand", image: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/mandir-images/mandir-images_1760422975226.jpg" },
 ];
 
+// ── What the prasad box includes (shown in the booking page accordion). ──
+// Add the image URLs when the real art is ready.
+export interface PrasadBoxItem {
+    name: string;
+    image: string;
+}
+export const COMBO_PRASAD_BOX_ITEMS: PrasadBoxItem[] = [
+    { name: "Mix Dry Fruits Prasad", image: "" },
+    { name: "Tulsi Mala", image: "" },
+    { name: "Jaap Counter", image: "" },
+    { name: "Evil Eye Bracelet", image: "" },
+    { name: "Khatu Shyam Ji Tulsi Locket", image: "" },
+];
+
 // ── The 14 individual sevas (also addable on their own). ──
 // NOTE: `code` + `price` MUST stay in sync with the backend catalog in
 // server/src/config/devshayaniCombo.ts.

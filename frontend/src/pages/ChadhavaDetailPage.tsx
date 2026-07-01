@@ -1,20 +1,23 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, CalendarDays, Star, Minus, Plus, Gift, Check, ShieldCheck, Share2, ChevronDown, BadgeCheck, Camera, MessageCircle, Clock } from "lucide-react";
+import { ArrowLeft, MapPin, CalendarDays, Star, Minus, Plus, Gift, Check, ShieldCheck, Share2, ChevronDown, BadgeCheck, Camera, MessageCircle, Clock, } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
 import { type Chadhava, type ChadhavaSelection } from "../components/booking/ChadhavaBooking/chadhavaData";
+// Devshayani Ekadashi combo (frontend-only offering — remove to disable)
+import { devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_TEMPLES } from "../data/devshayaniCombo";
 
-function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" }) {
+function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" | "goldbar" }) {
     const [timeLeft, setTimeLeft] = useState("");
+    const isLongFormat = variant === "bar" || variant === "goldbar";
 
     useEffect(() => {
         const calculateTime = () => {
             const difference = new Date(targetDate).getTime() - new Date().getTime();
             if (difference <= 0) {
-                setTimeLeft(variant === "bar" ? "Offerings Closed" : "Closed");
+                setTimeLeft(isLongFormat ? "Offerings Closed" : "Closed");
                 return;
             }
 
@@ -23,7 +26,7 @@ function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string;
             const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-            if (variant === "bar") {
+            if (isLongFormat) {
                 setTimeLeft(`${days} Days | ${hours} Hrs | ${minutes} Mins | ${seconds} Sec`);
             } else {
                 const hh = String(hours).padStart(2, "0");
@@ -36,7 +39,11 @@ function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string;
         calculateTime();
         const timer = setInterval(calculateTime, 1000);
         return () => clearInterval(timer);
-    }, [targetDate, variant]);
+    }, [targetDate, isLongFormat]);
+
+    if (variant === "goldbar") {
+        return <span className="text-[12.5px] font-bold text-[#7A4A12] tabular-nums tracking-wide">{timeLeft}</span>;
+    }
 
     if (variant === "bar") {
         return <span className="text-[12.5px] font-bold text-white tabular-nums tracking-wide">{timeLeft}</span>;
@@ -153,7 +160,22 @@ export default function ChadhavaDetailPage() {
     const [bannerIndex, setBannerIndex] = useState(0);
     const sectionsRef = useRef<HTMLDivElement>(null);
 
+    // Is this the frontend-only Devshayani Ekadashi combo?
+    const isDevshayaniCombo = slug === DEVSHAYANI_COMBO_SLUG;
+
     useEffect(() => {
+        // Devshayani combo — served from local data, no backend fetch.
+        if (isDevshayaniCombo) {
+            setChadhava(devshayaniCombo);
+            // Pre-select the first individual seva (not the combo bundle).
+            const firstSeva = devshayaniCombo.sections
+                .flatMap((s) => s.items)
+                .find((i) => i.isActive !== false && i.type !== "combo");
+            setQty(firstSeva ? { [firstSeva.code]: 1 } : {});
+            setLoading(false);
+            setError(null);
+            return;
+        }
         (async () => {
             setLoading(true);
             setError(null);
@@ -401,11 +423,7 @@ export default function ChadhavaDetailPage() {
                                     />
                                 ))}
                             </div>
-                            {!!chadhava.tags?.length && (
-                                <span className="absolute top-3 left-3 bg-amber-400 text-amber-950 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
-                                    {chadhava.tags[0]}
-                                </span>
-                            )}
+                           
                             <div className="absolute bottom-3 left-3 bg-white/95 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
                                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                                 <span className="text-[12px] font-bold text-stone-800">{chadhava.rating.toFixed(1)}</span>
@@ -465,30 +483,88 @@ export default function ChadhavaDetailPage() {
 
             {/* WhatsApp reassurance line */}
             <div className="px-4 pt-3">
-                <div className="flex items-center justify-center gap-3 py-1 bg-green-50 border border-green-200 text-green-700 rounded-lg px-2 text-[12px] font-semibold text-start">
-                    <MessageCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
-                    Receive chadhava video with your name &amp; gotra on WhatsApp
+                <div className="relative flex items-center gap-2.5 py-2 pl-3 pr-24 bg-green-50 border border-green-200 text-green-700 rounded-xl text-[12px] font-semibold text-start">
+                    <MessageCircle className="w-4 h-4 text-green-600 shrink-0" />
+                    <span>Receive chadhava video with your name &amp; gotra on <span className="font-bold">WhatsApp</span></span>
+                    <img
+                        src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/makhan%20apnkh.png"
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute right-[-10px] top-0 h-[82px] pointer-events-none select-none"
+                    />
                 </div>
             </div>
 
             {/* Sections (auto-scroll target) */}
             <div ref={sectionsRef} className="pt-1">
-            {chadhava.sections.map((section) => {
+            {chadhava.sections.map((section, sIdx) => {
                 const regularItems = section.items.filter((i) => i.isActive !== false && i.type !== "combo");
                 const comboItems = section.items.filter((i) => i.isActive !== false && i.type === "combo");
 
                 return (
-                    <div key={section.sectionName} className="px-4 pt-5">
-                        {/* Section Title Bar */}
-                        <div className="bg-[#FFF3EA] rounded-xl px-4 py-2.5 flex items-center gap-2">
-                            <span className="text-[15px]">🔱</span>
-                            <h4 className="text-[15px] font-bold text-[#C1272D] tracking-tight text-left">
-                                {section.sectionName}
-                            </h4>
-                        </div>
+                    <div key={section.sectionName || sIdx} className={section.sectionName ? "px-4 pt-5" : "px-4 pt-3"}>
+                        {/* Section Title Bar (hidden for untitled continuation sections) */}
+                        {/* {section.sectionName && (
+                            <div className="bg-[#FFF3EA] rounded-xl px-4 py-2.5 flex items-center gap-2">
+                                <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Lotus.webp" alt="Lotus icon" className="w-6 h-6 shrink-0"/>
+                                <h4 className="text-[15px] font-bold text-[#C1272D] tracking-tight text-left">
+                                    {section.sectionName}
+                                </h4>
+                            </div>
+                        )} */}
+
+                        {/* Combo — Regular Offerings as a 3-per-row grid */}
+                        {regularItems.length > 0 && isDevshayaniCombo && (
+                            <div className="grid grid-cols-3 gap-2.5 mt-3">
+                                {regularItems.map((item) => {
+                                    const count = qty[item.code] || 0;
+                                    return (
+                                        <div
+                                            key={item.code}
+                                            className={`bg-white rounded-2xl border shadow-sm p-1.5 flex flex-col transition-colors ${count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"}`}
+                                        >
+                                            <div className="relative w-full h-[70px] rounded-xl overflow-hidden bg-[#FFFDF9] mb-1">
+                                                <img
+                                                    src={optimizedImg(item.itemImage, 200)}
+                                                    onError={(e) => { e.currentTarget.src = item.itemImage; }}
+                                                    alt={item.itemName}
+                                                    className="w-full h-full object-cover"
+                                                    loading="lazy"
+                                                />
+                                                {item.popular && (
+                                                    <span className="absolute top-1 left-1 bg-amber-400 text-amber-950 text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase">★</span>
+                                                )}
+                                            </div>
+                                            <h5 className="text-[11px] font-bold text-[#2E1F15] leading-tight line-clamp-2 text-center">{item.itemName}</h5>
+                                            <span className="text-[12px] font-bold text-[#C1272D] text-center mt-0.5">₹{item.itemPrice}/-</span>
+                                            <div className="mt-1">
+                                                {count === 0 ? (
+                                                    <button
+                                                        onClick={() => setItemQty(item.code, 1)}
+                                                        className="w-full bg-[#9B1B1B] text-white text-[11.5px] font-bold py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
+                                                    >
+                                                        Add+
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex items-center justify-between bg-white border border-[#9B1B1B] rounded-lg px-2 py-1 shadow-sm">
+                                                        <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
+                                                            <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                                                        </button>
+                                                        <span className="text-[12px] font-bold text-stone-800">{count}</span>
+                                                        <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
+                                                            <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
 
  {/* Regular Offerings (Vertical List Rows) */}
-                        {regularItems.length > 0 && (
+                        {regularItems.length > 0 && !isDevshayaniCombo && (
                             <div className="bg-white rounded-2xl border border-[#F4E7DC] shadow-sm px-4 mt-3">
                                 {regularItems.map((item) => {
                                     const count = qty[item.code] || 0;
@@ -571,7 +647,7 @@ export default function ChadhavaDetailPage() {
                                             src={optimizedImg(item.itemImage, 700)}
                                             onError={(e) => { e.currentTarget.src = item.itemImage; }}
                                             alt={item.itemName}
-                                            className="w-full h-auto object-cover max-h-[210px]"
+                                            className="w-full h-[160px] object-cover object-bottom"
                                             loading="lazy"
                                         />
                                         <span className="absolute top-2 left-2 bg-[#E8A22A] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
@@ -585,18 +661,18 @@ export default function ChadhavaDetailPage() {
                                     </div>
 
                                     {/* Details */}
-                                    <div className="p-4 text-left">
+                                    <div className="px-4 py-2 text-left">
                                         <h5 className="text-[15px] font-bold text-[#2E1F15] leading-snug">
                                             {item.itemName}
                                         </h5>
                                         {item.itemDesc && item.itemDesc !== item.itemName && (
-                                            <p className="text-[12px] text-stone-500 mt-1 leading-snug line-clamp-2">
+                                            <p className="text-[12px] text-stone-500 mt-0.5 leading-snug line-clamp-1">
                                                 {item.itemDesc}
                                             </p>
                                         )}
 
                                         {/* Price & Action */}
-                                        <div className="flex items-center justify-between mt-3">
+                                        <div className="flex items-center justify-between mt-1">
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-[18px] font-extrabold text-[#C1272D]">₹ {item.itemPrice}/-</span>
                                                 {item.originalPrice && (
@@ -607,12 +683,12 @@ export default function ChadhavaDetailPage() {
                                             {count === 0 ? (
                                                 <button
                                                     onClick={() => setItemQty(item.code, 1)}
-                                                    className="bg-[#9B1B1B] text-white text-[13px] font-bold px-6 py-2.5 rounded-xl active:scale-95 transition-transform shadow-md"
+                                                    className="bg-[#9B1B1B] text-white text-[13px] font-bold px-6 py-2 rounded-xl active:scale-95 transition-transform shadow-md"
                                                 >
                                                     Add+
                                                 </button>
                                             ) : (
-                                                <div className="flex items-center gap-3 bg-white border border-[#9B1B1B] rounded-xl px-3 py-2 shadow-md">
+                                                <div className="flex items-center gap-3 bg-white border border-[#9B1B1B] rounded-xl px-3 py-1.5 shadow-md">
                                                     <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
                                                         <Minus className="w-4 h-4" strokeWidth={3} />
                                                     </button>
@@ -652,6 +728,28 @@ export default function ChadhavaDetailPage() {
                             {addPrasad ? <><Check className="w-3.5 h-3.5" strokeWidth={3} /> Added</> : `Add ₹${chadhava.prasad.price}`}
                         </span>
                     </button>
+                </div>
+            )}
+
+            {/* Devshayani combo — "offered at three dhams" strip (scoped) */}
+            {isDevshayaniCombo && (
+                <div className="px-4 pt-4">
+                    <div className="flex items-center gap-2 mb-2.5">
+                        <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#E7C38A]" />
+                        <span className="text-[12px] font-bold text-[#9B1B1B] uppercase tracking-wide">Offered at Three Sacred Dhams</span>
+                        <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#E7C38A]" />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2.5">
+                        {COMBO_TEMPLES.map((t) => (
+                            <div key={t.name} className="bg-white rounded-2xl border border-[#F4E7DC] overflow-hidden shadow-sm">
+                                <img src={t.image} alt={t.name} className="w-full h-16 object-cover" loading="lazy" />
+                                <div className="p-2 text-center">
+                                    <p className="text-[11px] font-bold text-[#2E1F15] leading-tight">{t.name}</p>
+                                    <p className="text-[9px] text-stone-400 mt-0.5">{t.location}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -789,24 +887,49 @@ export default function ChadhavaDetailPage() {
             </div>
 
             {/* Countdown bar */}
-            <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#B5290F] to-[#E0531A] py-2 flex items-center justify-center">
-                <CountdownTimer targetDate={targetDate} variant="bar" />
-            </div>
+            {isDevshayaniCombo ? (
+                <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#F6E3B4] via-[#F3D488] to-[#F6E3B4] border-t border-[#E4C577] py-2 flex items-center justify-center gap-3">
+                    <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Lotus.webp" alt="Timer" className="w-5 h-5 shrink-0" />
+                    <CountdownTimer targetDate={targetDate} variant="goldbar" />
+                    <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Lotus.webp" alt="Timer" className="w-5 h-5 shrink-0" />
+
+                </div>
+            ) : (
+                <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#B5290F] to-[#E0531A] py-2 flex items-center justify-center">
+                    <CountdownTimer targetDate={targetDate} variant="bar" />
+                </div>
+            )}
 
             {/* Bottom pay bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF3E9] border-t border-[#FFE0CC] px-4 py-3 flex items-center justify-between">
-                <div className="leading-tight text-left">
-                    <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
-                    <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
+            {isDevshayaniCombo ? (
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF7EC] border-t border-[#EAD3A0] px-4 py-3 flex items-center justify-between">
+                    <div className="leading-tight text-left">
+                        <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
+                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
+                    </div>
+                    <button
+                        onClick={() => setPrasadUpsellOpen(true)}
+                        disabled={sevasSelected === 0}
+                        className="relative overflow-hidden bg-gradient-to-r from-[#F0A128] via-[#E9861C] to-[#E0531A] text-white font-bold tracking-wide pl-9 pr-9 py-3 rounded-full shadow-lg shadow-amber-300/50 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none"
+                    >
+                        Participate Now
+                    </button>
                 </div>
-                <button
-                    onClick={() => setPrasadUpsellOpen(true)}
-                    disabled={sevasSelected === 0}
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold tracking-wide px-10 py-3 rounded-xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none"
-                >
-                    Participate Now
-                </button>
-            </div>
+            ) : (
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF3E9] border-t border-[#FFE0CC] px-4 py-3 flex items-center justify-between">
+                    <div className="leading-tight text-left">
+                        <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
+                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
+                    </div>
+                    <button
+                        onClick={() => setPrasadUpsellOpen(true)}
+                        disabled={sevasSelected === 0}
+                        className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold tracking-wide px-10 py-3 rounded-xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none"
+                    >
+                        Participate Now
+                    </button>
+                </div>
+            )}
 
             {/* Prasad Upsell Modal */}
             <AnimatePresence>

@@ -6,6 +6,8 @@ import Chadhava, { IChadhava } from "../../model/userApp/chadhavaModel";
 import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhavaBookingModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
+// Devshayani Ekadashi combo (frontend-only offering — remove to disable)
+import { resolveDevshayaniCombo } from "../../config/devshayaniCombo";
 
 // Shape a DB doc to the frontend `Chadhava` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -342,9 +344,10 @@ export const getChadhavaBySlug: RequestHandler = async (req, res) => {
 export const getChadhavaQuote: RequestHandler = async (req, res) => {
   try {
     const { slug } = req.params;
-    let chadhava: any = null;
+    // Devshayani Ekadashi combo — frontend-only offering resolved here.
+    let chadhava: any = resolveDevshayaniCombo(slug);
 
-    if (slug && slug.length === 24 && /^[0-9a-fA-F]{24}$/.test(slug)) {
+    if (!chadhava && slug && slug.length === 24 && /^[0-9a-fA-F]{24}$/.test(slug)) {
       try {
         const response = await axios.get("https://vedicvaibhav.com/api/newChadhava/get-all-new-chadhava");
         const list = response.data?.data || response.data?.items || response.data || [];
@@ -406,9 +409,10 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       return;
     }
 
-    let chadhava: any = null;
+    // Devshayani Ekadashi combo — frontend-only offering resolved here.
+    let chadhava: any = resolveDevshayaniCombo(chadhavaSlug);
 
-    if (chadhavaSlug && chadhavaSlug.length === 24 && /^[0-9a-fA-F]{24}$/.test(chadhavaSlug)) {
+    if (!chadhava && chadhavaSlug && chadhavaSlug.length === 24 && /^[0-9a-fA-F]{24}$/.test(chadhavaSlug)) {
       try {
         const response = await axios.get("https://vedicvaibhav.com/api/newChadhava/get-all-new-chadhava");
         const list = response.data?.data || response.data?.items || response.data || [];

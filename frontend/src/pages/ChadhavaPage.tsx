@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft, MapPin, CalendarDays, Share2 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
+// Devshayani Ekadashi combo (frontend-only campaign card — remove this import
+// and the <DevshayaniComboCard/> below to disable the whole feature)
+import { DevshayaniComboCard } from "../components/DevshayaniComboCard";
 
 type Chadhava = {
     id: string;
@@ -268,6 +271,9 @@ export default function ChadhavaPage() {
 
             {/* ── List ── */}
             <section className="px-4 pt-4 space-y-5 pb-8">
+                {/* Devshayani Ekadashi combo — frontend-only campaign card (removable) */}
+                <DevshayaniComboCard />
+
                 {loading &&
                     Array.from({ length: 3 }).map((_, i) => (
                         <div key={i} className="bg-white rounded-[24px] border border-orange-100/50 overflow-hidden animate-pulse">

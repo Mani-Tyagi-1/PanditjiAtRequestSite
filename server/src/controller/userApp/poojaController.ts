@@ -4,7 +4,7 @@ import poojaModel from "../../model/userApp/poojaModel";
 // Lightweight projection for list/card views — excludes heavy fields like
 // descriptions, image/video arrays, samagri and FAQs (huge payload otherwise).
 const POOJA_LIST_FIELDS =
-  "poojaID poojaNameEng poojaNameHindi poojaMode poojaPriceOnline poojaPriceOffline mainCategories subCategories poojaCardImage isFeatured isExclusive isActive";
+  "poojaID poojaNameEng poojaNameHindi poojaMode poojaPriceOnline poojaPriceOffline mainCategories subCategories poojaCardImage isFeatured featuredRank isExclusive exclusiveRank isActive";
 
 // Get all active poojas (list view — projected & lean for speed)
 export const fetchAllPoojas = async (req: Request, res: Response) => {

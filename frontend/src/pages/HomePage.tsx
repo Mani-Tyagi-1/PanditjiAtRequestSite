@@ -37,6 +37,7 @@ type Pooja = {
     poojaPriceOnline?: number;
     poojaPriceOffline?: number;
     isFeatured?: boolean;
+    featuredRank?: number;
 };
 
 const CONSULTATIONS = [
@@ -63,8 +64,13 @@ export default function HomePage() {
                 const { data } = await axios.get(`${API_URL}/fetch-all-poojas`);
                 const list: Pooja[] = data?.poojas || [];
                 setAllPoojas(list);
-                // Featured first, then fill with the rest.
-                const featured = list.filter((p) => p.isFeatured);
+                // Featured poojas first, ordered by featuredRank (1 = highest).
+                // Poojas without a rank fall to the end of the featured group.
+                const rankOf = (p: Pooja) =>
+                    typeof p.featuredRank === "number" ? p.featuredRank : Number.POSITIVE_INFINITY;
+                const featured = list
+                    .filter((p) => p.isFeatured)
+                    .sort((a, b) => rankOf(a) - rankOf(b));
                 const ordered = [...featured, ...list.filter((p) => !p.isFeatured)];
                 setPoojas(ordered.slice(0, 8));
             } catch (err) {

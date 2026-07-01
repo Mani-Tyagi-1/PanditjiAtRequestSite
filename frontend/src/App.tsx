@@ -127,6 +127,8 @@ const DeleteUserAccount = React.lazy(() => import("./pages/DeleteUserAccount"));
 const TermsAndConditions = React.lazy(() => import("./pages/TermsAndConditions"));
 const CategoryPage = React.lazy(() => import("./components/booking/CategoryPage"));
 const PujaDetailPage = React.lazy(() => import("./components/booking/PujaPage"));
+const DurgaMataPujaPage = React.lazy(() => import("./pages/DurgaMataPujaPage"));
+const DurgaMataPujaBookingPage = React.lazy(() => import("./pages/DurgaMataPujaBookingPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
 const MyBookingsPage = React.lazy(() => import("./pages/MyBookingsPage"));
 const VideoCallPage = React.lazy(() => import("./video/VideoCallPage"));
@@ -232,6 +234,8 @@ function App() {
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/category/:categoryId" element={<CategoryPage />} />
           <Route path="/puja" element={<PujaDetailPage />} />
+          <Route path="/shri-durga-mata-puja-home" element={<DurgaMataPujaPage />} />
+          <Route path="/shri-durga-mata-puja-home/booking" element={<DurgaMataPujaBookingPage />} />
           <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/my-bookings" element={<MyBookingsPage />} />

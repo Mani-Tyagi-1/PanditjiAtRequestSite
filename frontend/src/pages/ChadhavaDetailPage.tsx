@@ -294,7 +294,7 @@ export default function ChadhavaDetailPage() {
             if (!el) return;
             const top = el.getBoundingClientRect().top + window.scrollY - 64;
             window.scrollTo({ top, behavior: "smooth" });
-        }, 700);
+        }, 2000);
         return () => clearTimeout(t);
     }, [loading, chadhava]);
 

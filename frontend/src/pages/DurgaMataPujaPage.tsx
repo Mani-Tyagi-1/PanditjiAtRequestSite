@@ -179,20 +179,8 @@ export default function DurgaMataPujaPage() {
     ];
 
     const openBooking = () => {
-        track("AddToCart", {
-            content_ids: [pujaId],
-            content_name: puja.poojaNameEng,
-            content_type: "product",
-            value: price,
-            currency: "INR",
-        });
-        track("InitiateCheckout", {
-            content_ids: [pujaId],
-            content_name: puja.poojaNameEng,
-            content_type: "product",
-            value: price,
-            currency: "INR",
-        });
+        // No pixels here — AddToCart / InitiateCheckout fire only when the user
+        // taps "Offer With Devotion" on the booking page.
         navigate(`/${DURGA_MATA_PUJA_SLUG}/booking`);
     };
 

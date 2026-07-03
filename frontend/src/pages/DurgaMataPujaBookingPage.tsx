@@ -180,6 +180,13 @@ export default function DurgaMataPujaBookingPage() {
             if (!RazorpayCtor) throw new Error("Payment SDK failed to load. Please refresh and try again.");
 
             if ((window as any).fbq) {
+                (window as any).fbq("track", "AddToCart", {
+                    content_name: puja.poojaNameEng,
+                    content_ids: [puja._id],
+                    content_type: "product",
+                    value: totalPrice,
+                    currency: "INR",
+                });
                 (window as any).fbq("track", "InitiateCheckout", {
                     content_name: puja.poojaNameEng,
                     content_ids: [puja._id],

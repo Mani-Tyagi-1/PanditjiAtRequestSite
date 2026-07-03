@@ -94,19 +94,19 @@ interface ComboItem {
     popular?: boolean;
 }
 export const COMBO_ITEMS: ComboItem[] = [
-    { code: "dev_makhan_mishri", name: "Makhan Mishri", desc: "Fresh butter & rock-sugar offered to the Lord.", price: 151, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Makhan%20mishri.webp" },
-    { code: "dev_paan", name: "Paan Chadhava", desc: "Sacred betel-leaf offering.", price: 101, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/paan%20seva.webp" },
+    { code: "dev_makhan_mishri", name: "Makhan Mishri", desc: "Fresh butter & rock-sugar offered to the Lord.", price: 301, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Makhan%20mishri.webp" },
+    { code: "dev_paan", name: "Paan Chadhava", desc: "Sacred betel-leaf offering.", price: 401, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/paan%20seva.webp" },
     // { code: "dev_deepak", name: "Deepak Seva", desc: "Pure ghee lamp lit in your name.", price: 121, image: dummy("Deepak") },
     // { code: "dev_laddu", name: "Laddu Seva", desc: "Bhog of desi-ghee laddus.", price: 151, image: dummy("Laddu"), popular: true },
-    { code: "dev_tulsi", name: "Tulsi Seva", desc: "Holy Tulsi dal, dear to Bhagwan Vishnu.", price: 101, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Tulsi.webp" },
-    { code: "dev_gangajal", name: "Gangajal Seva", desc: "Abhishek with sacred Gangajal.", price: 121, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Ganga%20jal.webp" },
-    { code: "dev_chandan", name: "Chandan Seva", desc: "Fragrant sandalwood tilak & offering.", price: 131, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Chandan.webp" },
-    { code: "dev_flowers", name: "Flowers", desc: "Fresh flower garland & petals.", price: 151, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/flower.webp" },
-    { code: "dev_morpankh", name: "Morpankh", desc: "Peacock feather, adornment of Shri Krishna.", price: 101, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/morpankh.webp" },
-    { code: "dev_gulab_itra", name: "Gulab Itra", desc: "Rose attar offered to the deity.", price: 111, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/itra.webp" },
+    { code: "dev_tulsi", name: "Tulsi Seva", desc: "Holy Tulsi dal, dear to Bhagwan Vishnu.", price: 251, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Tulsi.webp" },
+    { code: "dev_gangajal", name: "Gangajal Seva", desc: "Abhishek with sacred Gangajal.", price: 301, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Ganga%20jal.webp" },
+    { code: "dev_chandan", name: "Chandan Seva", desc: "Fragrant sandalwood tilak & offering.", price: 401, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Chandan.webp" },
+    { code: "dev_flowers", name: "Flowers", desc: "Fresh flower garland & petals.", price: 301, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/flower.webp" },
+    { code: "dev_morpankh", name: "Morpankh", desc: "Peacock feather, adornment of Shri Krishna.", price: 301, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/morpankh.webp" },
+    { code: "dev_gulab_itra", name: "Gulab Itra", desc: "Rose attar offered to the deity.", price: 451, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/itra.webp" },
     // { code: "dev_nishan", name: "Nishan", desc: "The sacred Nishan flag offered at the dham.", price: 251, image: dummy("Nishan") },
     // { code: "dev_churma", name: "Churma", desc: "Traditional churma bhog.", price: 121, image: dummy("Churma") },
-    { code: "dev_dry_fruits", name: "Dry Fruits", desc: "Assorted dry-fruit offering.", price: 181, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/dry.webp" },
+    { code: "dev_dry_fruits", name: "Dry Fruits", desc: "Assorted dry-fruit offering.", price: 501, image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/dry.webp" },
     // { code: "dev_seasonal_fruits", name: "Seasonal Fruits", desc: "Fresh seasonal fruit bhog.", price: 141, image: dummy("Seasonal Fruits") },
 ];
 

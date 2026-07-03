@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, CalendarDays, Share2, Feather } from "lucide-react";
 import {
-    devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_PRICE, COMBO_ORIGINAL, COMBO_DATE,
+    devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_PRICE, COMBO_DATE,
 } from "../data/devshayaniCombo";
 
 function Countdown({ targetDate }: { targetDate: string }) {
@@ -107,11 +107,6 @@ export function DevshayaniComboCard() {
                 <p className="text-[13px] text-stone-500 leading-relaxed line-clamp-2 text-left mt-0.5">
                     All 9 sacred sevas offered in your name at Khatu Shyam Ji, Banke Bihari Ji &amp; Shri Badrinath Ji this Devshayani Ekadashi.
                 </p>
-
-                <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-[20px] font-extrabold text-[#C1272D]">₹{COMBO_PRICE.toLocaleString("en-IN")}/-</span>
-                    <span className="text-[13px] text-stone-400 line-through">₹{COMBO_ORIGINAL.toLocaleString("en-IN")}/-</span>
-                </div>
 
                 <button
                     onClick={(e) => {

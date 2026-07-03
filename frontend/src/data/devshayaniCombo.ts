@@ -47,10 +47,12 @@ export const COMBO_DATE: string =
 
 // ── Dummy placeholder images (warm theme; swap when real art is ready) ──
 const dummy = (_label: string) =>
-    `https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Devshani%20ekadashi%20chadhava%20banner.webp`;
+    `https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/devs.webp`;
 
 /** Hero banner (detail-page banner + list card). */
 export const COMBO_HERO_BANNER = dummy("Devshayani Ekadashi Banner");
+/** Second hero banner slide — paste the image link between the quotes below. */
+export const COMBO_HERO_BANNER_2 = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Devshani%20ekadashi%20chadhava%20banner.webp";
 /** Combo-only image (shown on the combo bundle card only). */
 export const COMBO_BANNER = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/plate.webp";
 
@@ -135,7 +137,7 @@ export const devshayaniCombo: Chadhava = {
     templeName: "Khatu Shyam Ji, Banke Bihari Ji & Shri Badrinath Ji",
     templeLocation: "Three Sacred Dhams",
     image: COMBO_HERO_BANNER,
-    bannerImages: [COMBO_HERO_BANNER],
+    bannerImages: [COMBO_HERO_BANNER, COMBO_HERO_BANNER_2].filter(Boolean),
     offeringDay: "Offered on Devshayani Ekadashi",
     availableDates: [COMBO_DATE],
     startingPrice: COMBO_PRICE,

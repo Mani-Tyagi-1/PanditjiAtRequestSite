@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Calendar, Gift } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Gift } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
@@ -386,51 +386,13 @@ export default function DurgaMataPujaBookingPage() {
                                         className={INPUT}
                                     />
                                 </div>
-                                <div>
-                                    <label className={LABEL}>Email (optional)</label>
-                                    <input
-                                        value={form.email}
-                                        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                                        placeholder="For booking confirmation"
-                                        className={INPUT}
-                                    />
-                                </div>
                             </div>
                         </div>
 
-                        {/* Step 2: Puja Schedule */}
-                        <div className="space-y-3">
+                        {/* Step 2: Prasad Delivery (optional) */}
+                        <div className="space-y-3 pb-6">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">02</span>
-                                <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Puja Schedule</h3>
-                                    <p className="text-[11px] text-stone-400">Fixed date · choose a preferred time</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
-                                <span className="flex items-center gap-2 text-sm font-semibold text-stone-800">
-                                    <Calendar className="w-4 h-4 text-orange-500" />
-                                    {puja.pujaDate}
-                                </span>
-                            </div>
-                            <div>
-                                <label className={LABEL}>Preferred time slot</label>
-                                <input
-                                    type="time"
-                                    value={form.time}
-                                    onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-                                    className={INPUT}
-                                />
-                                <p className="text-[11px] text-stone-400 mt-1.5">
-                                    Final puja timing will be confirmed on WhatsApp.
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Step 3: Prasad Delivery (optional) */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
-                                <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
                                     <h3 className="font-bold text-stone-800 text-[14px]">Prasad Delivery</h3>
                                     <p className="text-[11px] text-stone-400">Optional delivery at your address</p>

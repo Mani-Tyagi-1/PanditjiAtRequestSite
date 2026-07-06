@@ -94,7 +94,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
 
 function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
-        <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">
+        <h3 className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-orange-600 mb-2.5">
             {icon}{children}
         </h3>
     );
@@ -215,7 +215,7 @@ export default function DurgaMataPujaPage() {
     };
 
     return (
-      <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 via-[#FFF6EA] to-orange-50/70 pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
         <Helmet>
           <title>{`${puja.poojaNameEng} at ${puja.templeName} | Pandit Ji At Request`}</title>
           <meta
@@ -315,7 +315,7 @@ export default function DurgaMataPujaPage() {
           </div>
 
           {/* ── Hero value props + primary CTA (first-screen sell) ── */}
-          <div className="rounded-2xl border border-orange-100 bg-white p-3.5 shadow-sm">
+          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3.5 shadow-sm">
             <div className="space-y-1.5">
               {[
                 "Personalized Sankalp in your name & gotra",
@@ -328,7 +328,7 @@ export default function DurgaMataPujaPage() {
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-orange-100/70">
+            {/* <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-orange-100/70">
               <div className="shrink-0">
                 <span className="text-[10px] text-stone-400 font-semibold uppercase block leading-none">
                   Starting at
@@ -343,7 +343,7 @@ export default function DurgaMataPujaPage() {
               >
                 Book Puja for ₹{price.toLocaleString("en-IN")}
               </button>
-            </div>
+            </div> */}
           </div>
 
           {/* ── Countdown to the puja date ── */}
@@ -399,7 +399,7 @@ export default function DurgaMataPujaPage() {
           </div>
 
           {/* ── How it works ── */}
-          <div className="rounded-2xl border border-orange-100 bg-white p-3.5 shadow-sm">
+          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3.5 shadow-sm">
             <SectionTitle
               icon={<Sparkles className="w-3.5 h-3.5 text-orange-400" />}
             >
@@ -424,7 +424,7 @@ export default function DurgaMataPujaPage() {
           </div>
 
           {/* ── Why perform this puja ── */}
-          <div className="rounded-2xl border border-orange-100 bg-white p-3 shadow-sm">
+          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3 shadow-sm">
             <SectionTitle
               icon={<Sparkles className="w-3.5 h-3.5 text-orange-400" />}
             >

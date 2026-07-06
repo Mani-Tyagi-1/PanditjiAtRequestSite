@@ -2,8 +2,8 @@ import { useState, useEffect, useId } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Gift, Calendar, Sparkles,
-    Star, Clock, Lock, ChevronDown, MessageCircle, Phone, Flame, BadgeCheck,
-    Home, HandHeart, Share2,
+    Star, Lock, ChevronDown, MessageCircle, Phone, Flame, BadgeCheck,
+    Video, Mountain, Share2, HelpCircle,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "../context/AuthContext";
@@ -21,21 +21,21 @@ function track(event: string, params?: Record<string, unknown>, custom = false) 
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-// Home-puja specific devotee reviews (auto-scrolling marquee).
+// Maa Chintpurni online-puja devotee reviews (auto-scrolling marquee).
 type Review = { name: string; rating: number; date: string; text: string; verified: boolean };
 const PLACEHOLDER_REVIEWS: Review[] = [
-    { name: "Ramesh Iyer", rating: 5, date: "2 weeks ago", text: "Pandit ji came home on time and performed the Durga puja with full devotion. Truly blessed. 🙏", verified: true },
-    { name: "Anjali Sharma", rating: 5, date: "1 month ago", text: "All samagri was arranged by them, we didn't have to worry about anything. Beautiful puja.", verified: true },
-    { name: "Suresh Patel", rating: 5, date: "3 weeks ago", text: "Booking was smooth and the Durga Saptashati path was recited perfectly. Highly recommend.", verified: true },
-    { name: "Lakshmi Menon", rating: 4, date: "2 months ago", text: "Booked for our new home. Pandit ji explained each ritual patiently. Very satisfied.", verified: true },
-    { name: "Vikram Reddy", rating: 5, date: "1 month ago", text: "Transparent pricing and a very knowledgeable pandit. Felt the positive energy at home.", verified: true },
-    { name: "Priya Nair", rating: 5, date: "1 week ago", text: "Got photos and video of the puja on WhatsApp. Felt very authentic and genuine.", verified: true },
-    { name: "Arjun Deshmukh", rating: 5, date: "2 months ago", text: "First time booking a pandit online and it was completely worth it. Will book again.", verified: false },
-    { name: "Meena Gupta", rating: 4, date: "3 weeks ago", text: "Good experience overall. Pandit ji was punctual and the aarti was lovely.", verified: true },
-    { name: "Karthik Subramaniam", rating: 5, date: "1 month ago", text: "Sankalp was done in our name & gotra. Whole family felt blessed. 🙏", verified: true },
-    { name: "Neha Joshi", rating: 5, date: "5 days ago", text: "Simple booking, timely updates on WhatsApp. Thank you for the smooth service.", verified: false },
-    { name: "Rajesh Kumar", rating: 5, date: "2 months ago", text: "Did the Durga puja for family well-being. Everything was on time and proper.", verified: true },
-    { name: "Divya Pillai", rating: 5, date: "2 weeks ago", text: "The whole setup and vidhi was beautiful. Our home felt peaceful after the puja.", verified: true },
+    { name: "Sunita Devi", rating: 5, date: "1 week ago", text: "Video WhatsApp pe mil gaya, pandit ji ne mera naam aur gotra se sankalp kiya. Bahut acha laga. 🙏", verified: true },
+    { name: "Rakesh Kumar", rating: 5, date: "3 weeks ago", text: "₹501 mein Maa Chintpurni Dham se puja karwana bahut easy tha. Sab kuch WhatsApp pe update mila.", verified: true },
+    { name: "Pooja Sharma", rating: 5, date: "2 weeks ago", text: "Prasad 5 din mein ghar aa gaya, achhe se pack kiya hua tha. Thank you team. 🙏", verified: true },
+    { name: "Amit Verma", rating: 4, date: "1 month ago", text: "Puja theek se hui, video bhi mil gaya. Video thoda lamba hota to aur acha tha, par satisfied hoon.", verified: true },
+    { name: "Deepak Yadav", rating: 5, date: "5 days ago", text: "Maine apne parents ke naam se book kiya. Pandit ji ne aarti mein naam liya. Family khush ho gayi.", verified: true },
+    { name: "Anjali Nair", rating: 5, date: "2 months ago", text: "Booked from Dubai. Ghar se door hote hue bhi connected feel hua. Simple process.", verified: false },
+    { name: "Manoj Tiwari", rating: 4, date: "3 weeks ago", text: "Sankalp naam aur gotra se hua. Booking aasan thi. Overall accha experience raha.", verified: true },
+    { name: "Kavita Singh", rating: 5, date: "1 month ago", text: "Maa Chintpurni ke darbar se puja karwa ke mann ko shanti mili. WhatsApp pe sab time pe mila.", verified: true },
+    { name: "Ramesh Patel", rating: 5, date: "2 weeks ago", text: "Genuine service. Koi extra paisa nahi maanga. Video proof bhi diya jaisa bola tha.", verified: true },
+    { name: "Neha Joshi", rating: 4, date: "6 days ago", text: "Achhi service. Puja ki timing WhatsApp pe confirm kar di thi. Recommend karungi.", verified: false },
+    { name: "Suresh Gupta", rating: 5, date: "1 month ago", text: "Parivaar ki sukh-shanti ke liye puja karwayi. Sab kuch time pe aur proper hua. 🙏", verified: true },
+    { name: "Priya Reddy", rating: 5, date: "3 weeks ago", text: "Pehli baar online puja book ki thi, dar tha par sab genuine nikla. Phir se karwaungi.", verified: true },
 ];
 
 function seededReviews(seed: string, count: number): Review[] {
@@ -123,9 +123,10 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
 }
 
 // ── Page ───────────────────────────────────────────────────────
-// FRONTEND-ONLY Durga Mata Puja — styled to match LiveMandirPujaDetailPage,
-// adapted for a home-visit puja. All data comes from src/data/durgaMataPuja.ts.
-// Booking + enquiry keep working because the real backend `_id` is used.
+// FRONTEND-ONLY Maa Chintpurni Puja — styled to match LiveMandirPujaDetailPage,
+// an online puja performed on the devotee's behalf at Maa Chintpurni Dham.
+// All data comes from src/data/durgaMataPuja.ts. Booking + enquiry keep
+// working because the real backend `_id` is used.
 export default function DurgaMataPujaPage() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -144,14 +145,15 @@ export default function DurgaMataPujaPage() {
             content_name: puja.poojaNameEng,
             content_ids: [pujaId],
             content_type: "product",
-            value: puja.poojaPriceOffline,
+            value: puja.poojaPriceOnline,
             currency: "INR",
         });
     }, []);
 
     const image = puja.poojaImages?.[0] || puja.poojaMainImage || puja.poojaCardImage;
-    const price = puja.poojaPriceOffline;
+    const price = puja.poojaPriceOnline;
     const reviews = seededReviews(pujaId, 9);
+    const mandirName = `${puja.templeName}, ${puja.templeLocation}`;
 
     // ── Countdown to the puja date ──
     const targetTs = new Date(puja.pujaDate).getTime();
@@ -173,16 +175,16 @@ export default function DurgaMataPujaPage() {
     } : null;
 
     const whatYouGet = [
-        { icon: Home, title: "Pandit Ji at your home", sub: "Performed in your name & gotra" },
-        { icon: HandHeart, title: "Complete samagri", sub: "All puja items arranged for you" },
-        { icon: Gift, title: "Prasad & guidance", sub: "Blessed prasad + post-puja guidance" },
+        { icon: BadgeCheck, title: "Personalized offering", sub: "Performed in your name & gotra" },
+        { icon: Video, title: "Puja video on WhatsApp", sub: "Full recording delivered to you" },
+        { icon: Gift, title: "Prasad at your home", sub: "Sacred prasad couriered to you" },
     ];
 
-    const openBooking = () => {
-        // No pixels here — AddToCart / InitiateCheckout fire only when the user
-        // taps "Offer With Devotion" on the booking page.
-        navigate(`/${DURGA_MATA_PUJA_SLUG}/booking`);
-    };
+    // Main CTA goes straight to the booking page. The optional prasad add-on
+    // lives inside the booking page only (no pre-booking upsell interruption).
+    // No pixels here — AddToCart / InitiateCheckout fire only when the user
+    // taps "Offer With Devotion" on the booking page.
+    const openBooking = () => navigate(`/${DURGA_MATA_PUJA_SLUG}/booking`);
 
     const handleShare = async () => {
         if (isSharing) return;
@@ -215,10 +217,10 @@ export default function DurgaMataPujaPage() {
     return (
       <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
         <Helmet>
-          <title>{`${puja.poojaNameEng} at Home | Pandit Ji At Request`}</title>
+          <title>{`${puja.poojaNameEng} at ${puja.templeName} | Pandit Ji At Request`}</title>
           <meta
             name="description"
-            content={`Book ${puja.poojaNameEng} (${puja.poojaNameHindi}) at your home. ${puja.benefits.slice(0, 3).join(", ")}. Verified pandits, complete samagri arranged.`}
+            content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) performed on your behalf at ${mandirName}. ${puja.benefits.slice(0, 3).join(", ")}. Verified pandits, puja video on WhatsApp.`}
           />
           {/* Preload the LCP hero (direct CDN webp) at highest priority. */}
           <link rel="preload" as="image" href={image} fetchPriority="high" />
@@ -275,11 +277,11 @@ export default function DurgaMataPujaPage() {
             className="w-full h-full object-cover rounded-[10px]"
           />
           <span className="absolute top-3 left-3 bg-orange-600 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
-            Home Puja
+            Online Puja
           </span>
         </div>
 
-        <div className="px-4 pt-3 pb-4 space-y-4">
+        <div className="px-4 pt-1 pb-4 space-y-4">
           {/* ── Puja name + meta ── */}
           <div>
             <h2 className="text-xl font-bold font-serif text-stone-900 leading-tight">
@@ -300,38 +302,66 @@ export default function DurgaMataPujaPage() {
                 </span>
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-1.5 text-[12px] text-stone-500">
-              <span className="flex items-center gap-1">
-                <Home className="w-3.5 h-3.5 text-orange-500" />
-                At your home
+            <div className="flex flex-col gap-1 mt-2 text-[12px] text-stone-600">
+              <span className="flex items-start gap-1.5">
+                <Mountain className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
+                <span className="leading-snug">{mandirName}</span>
               </span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-orange-500" />
-                2-3 hrs
-              </span>
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-orange-500" />
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                 {puja.pujaDate}
               </span>
             </div>
           </div>
 
-          {/* ── Countdown to the puja date — compact single row ── */}
-          <div className="flex items-center justify-center gap-6 bg-white border border-orange-100 rounded-xl px-3 py-2 shadow-sm">
-            <span className="text-[10.5px] font-bold text-orange-600 leading-tight shrink-0">
-              Bookings close soon
+          {/* ── Hero value props + primary CTA (first-screen sell) ── */}
+          <div className="rounded-2xl border border-orange-100 bg-white p-3.5 shadow-sm">
+            <div className="space-y-1.5">
+              {[
+                "Personalized Sankalp in your name & gotra",
+                "Puja video shared on WhatsApp",
+                "Optional prasad delivered at home",
+              ].map((t) => (
+                <div key={t} className="flex items-start gap-2 text-[12.5px] text-stone-700">
+                  <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-orange-100/70">
+              <div className="shrink-0">
+                <span className="text-[10px] text-stone-400 font-semibold uppercase block leading-none">
+                  Starting at
+                </span>
+                <span className="text-[20px] font-extrabold text-orange-600">
+                  ₹{price.toLocaleString("en-IN")}
+                </span>
+              </div>
+              <button
+                onClick={openBooking}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+              >
+                Book Puja for ₹{price.toLocaleString("en-IN")}
+              </button>
+            </div>
+          </div>
+
+          {/* ── Countdown to the puja date ── */}
+          <div className="flex flex-col items-center gap-2 bg-white border border-orange-100 rounded-xl px-3 py-2.5 shadow-sm">
+            <span className="text-[11px] font-bold text-orange-600 leading-tight text-center">
+              Limited slots for {puja.pujaDate}
             </span>
             {cd ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center justify-center gap-1.5">
                 {[
                   { v: cd.days, l: "Days" },
                   { v: cd.hrs, l: "Hrs" },
                   { v: cd.min, l: "Min" },
                   { v: cd.sec, l: "Sec" },
                 ].map((u, i, arr) => (
-                  <div key={u.l} className="flex items-center gap-1">
-                    <div className="min-w-[32px] bg-stone-50 border border-stone-100 rounded-lg px-1 py-0.5 text-center">
-                      <div className="text-[15px] leading-none font-bold text-stone-900 tabular-nums">
+                  <div key={u.l} className="flex items-center gap-1.5">
+                    <div className="min-w-[40px] bg-stone-50 border border-stone-100 rounded-lg px-1.5 py-1 text-center">
+                      <div className="text-[16px] leading-none font-bold text-stone-900 tabular-nums">
                         {pad2(u.v)}
                       </div>
                       <div className="text-[8px] uppercase tracking-wide text-stone-400 mt-0.5">
@@ -351,11 +381,11 @@ export default function DurgaMataPujaPage() {
             )}
           </div>
 
-          {/* ── Home-visit reassurance line ── */}
+          {/* ── Online-puja reassurance line ── */}
           <div className="flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
-            <Home className="w-3.5 h-3.5 text-green-600 shrink-0" />
-            Pandit ji will come to your home with all samagri to perform this
-            puja
+            <MessageCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
+            Puja performed at {puja.templeName} · receive the video with your
+            name &amp; gotra on WhatsApp
           </div>
 
           {/* ── Auto-scrolling devotee reviews ── */}
@@ -366,6 +396,31 @@ export default function DurgaMataPujaPage() {
               Loved by devotees
             </SectionTitle>
             <ReviewMarquee reviews={reviews} />
+          </div>
+
+          {/* ── How it works ── */}
+          <div className="rounded-2xl border border-orange-100 bg-white p-3.5 shadow-sm">
+            <SectionTitle
+              icon={<Sparkles className="w-3.5 h-3.5 text-orange-400" />}
+            >
+              How your puja will happen
+            </SectionTitle>
+            <div className="space-y-2.5">
+              {[
+                "Enter your name, gotra and phone number",
+                `Pandit ji performs the puja at ${puja.templeName}`,
+                "Sankalp is taken in your name & gotra",
+                "Puja video is shared with you on WhatsApp",
+                "Optional prasad is delivered to your home",
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[11px] font-bold mt-0.5">
+                    {i + 1}
+                  </span>
+                  <span className="text-[12.5px] text-stone-700 leading-snug">{step}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ── Why perform this puja ── */}
@@ -391,13 +446,13 @@ export default function DurgaMataPujaPage() {
             </div>
           </div>
 
-          {/* ── Enquiry CTA ── */}
+          {/* ── Support link (low-emphasis — keeps direct booking as the main path) ── */}
           <button
             onClick={() => setIsEnquiryOpen(true)}
-            className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold text-[14px] py-3 rounded-xl shadow-md active:scale-95 transition-all"
+            className="w-full flex items-center justify-center gap-1.5 text-stone-500 hover:text-green-700 font-semibold text-[12.5px] py-1"
           >
-            <MessageCircle className="w-4 h-4" />
-            Enquire Now for {puja.poojaNameEng}
+            <MessageCircle className="w-3.5 h-3.5" />
+            Need help? Chat on WhatsApp
           </button>
 
           {/* ── Puja details (accordions from poojaDescription) ── */}
@@ -447,12 +502,30 @@ export default function DurgaMataPujaPage() {
             </div>
           </div>
 
+          {/* ── FAQ ── */}
+          {puja.faqs.length > 0 && (
+            <div>
+              <SectionTitle
+                icon={<HelpCircle className="w-3.5 h-3.5 text-orange-400" />}
+              >
+                Frequently asked questions
+              </SectionTitle>
+              <div className="space-y-2">
+                {puja.faqs.map((f, i) => (
+                  <Accordion key={i} title={f.question}>
+                    <p>{f.answer}</p>
+                  </Accordion>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── Trust row ── */}
           <div className="grid grid-cols-3 gap-2 text-center">
             {[
+              { icon: Video, label: "Puja Video Proof" },
+              { icon: Gift, label: "Prasad at Home" },
               { icon: ShieldCheck, label: "Verified Pandit" },
-              { icon: HandHeart, label: "Samagri Included" },
-              { icon: Home, label: "At Your Home" },
             ].map(({ icon: Icon, label }) => (
               <div
                 key={label}
@@ -509,7 +582,7 @@ export default function DurgaMataPujaPage() {
             <div className="flex items-center gap-3">
               <div className="shrink-0">
                 <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">
-                  Starting
+                  Total
                 </span>
                 <span className="text-[19px] font-extrabold text-orange-600">
                   ₹{price.toLocaleString("en-IN")}
@@ -519,7 +592,7 @@ export default function DurgaMataPujaPage() {
                 onClick={openBooking}
                 className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
               >
-                Book Pandit Ji
+                Book Puja for ₹{price.toLocaleString("en-IN")}
               </button>
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-stone-400">

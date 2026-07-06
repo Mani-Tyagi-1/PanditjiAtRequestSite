@@ -234,8 +234,11 @@ function App() {
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/category/:categoryId" element={<CategoryPage />} />
           <Route path="/puja" element={<PujaDetailPage />} />
-          <Route path="/shri-durga-mata-puja-home" element={<DurgaMataPujaPage />} />
-          <Route path="/shri-durga-mata-puja-home/booking" element={<DurgaMataPujaBookingPage />} />
+          <Route path="/maa-chintpurni-puja" element={<DurgaMataPujaPage />} />
+          <Route path="/maa-chintpurni-puja/booking" element={<DurgaMataPujaBookingPage />} />
+          {/* Legacy slug → redirect so old links/ads keep working */}
+          <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/maa-chintpurni-puja" replace />} />
+          <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/maa-chintpurni-puja/booking" replace />} />
           <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/my-bookings" element={<MyBookingsPage />} />

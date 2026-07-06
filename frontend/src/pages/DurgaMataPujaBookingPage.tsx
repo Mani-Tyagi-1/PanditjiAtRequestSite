@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, Home, Check, ChevronRight, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Calendar, Gift } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
-import { durgaMataPuja, DURGA_MATA_PUJA_SLUG } from "../data/durgaMataPuja";
+import { durgaMataPuja, DURGA_MATA_PUJA_SLUG, PRASAD_BOX_PRICE } from "../data/durgaMataPuja";
 
 type Step = "details" | "success";
 
@@ -26,6 +26,10 @@ function resolveBookingDate(dateLabel: string, time: string): string {
 export default function DurgaMataPujaBookingPage() {
     const { user, login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Whether the devotee chose to add the prasad box on the upsell sheet.
+    const prasadPreselected = Boolean((location.state as { prasadAdded?: boolean } | null)?.prasadAdded);
 
     // Static frontend puja data.
     const puja = durgaMataPuja;
@@ -41,12 +45,13 @@ export default function DurgaMataPujaBookingPage() {
         phone: "",
         email: "",
         time: "10:00",
+        prasadAdded: prasadPreselected,
     });
 
-    // Home address (required — pandit ji visits home)
+    // Delivery address (only required when blessed prasad is added)
     const [addresses, setAddresses] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-    const [showNewAddressForm, setShowNewAddressForm] = useState(true);
+    const [showNewAddressForm, setShowNewAddressForm] = useState(false);
     const [newAddress, setNewAddress] = useState({
         houseNo: "",
         street: "",
@@ -67,9 +72,9 @@ export default function DurgaMataPujaBookingPage() {
         }));
     }, [user]);
 
-    // Load saved addresses if logged in.
+    // Load saved addresses if logged in and prasad delivery is added.
     useEffect(() => {
-        if (!user) return;
+        if (!user || !form.prasadAdded) return;
         fetch(`${API_URL}/addresses?userId=${user._id}`)
             .then((res) => res.json())
             .then((data) => {
@@ -84,7 +89,7 @@ export default function DurgaMataPujaBookingPage() {
                 }
             })
             .catch((err) => console.error("Error fetching addresses:", err));
-    }, [user]);
+    }, [user, form.prasadAdded]);
 
     // Load Razorpay checkout script.
     useEffect(() => {
@@ -96,8 +101,9 @@ export default function DurgaMataPujaBookingPage() {
         document.body.appendChild(script);
     }, []);
 
-    const basePrice = puja.poojaPriceOffline;
-    const totalPrice = basePrice;
+    const basePrice = puja.poojaPriceOnline;
+    const prasadCost = form.prasadAdded ? PRASAD_BOX_PRICE : 0;
+    const totalPrice = basePrice + prasadCost;
 
     const handleConfirm = async () => {
         setError("");
@@ -112,37 +118,39 @@ export default function DurgaMataPujaBookingPage() {
             return;
         }
 
-        // Home address is required for a home-visit puja.
+        // Delivery address is only required when blessed prasad is added.
         let addressPayload: any = null;
-        if (user && !showNewAddressForm) {
-            if (!selectedAddressId) {
-                setError("Please select an address for the pandit to visit.");
-                return;
-            }
-            const selected = addresses.find((a) => (a._id || a.id) === selectedAddressId);
-            if (selected) {
+        if (form.prasadAdded) {
+            if (user && !showNewAddressForm) {
+                if (!selectedAddressId) {
+                    setError("Please select a delivery address for the prasad.");
+                    return;
+                }
+                const selected = addresses.find((a) => (a._id || a.id) === selectedAddressId);
+                if (selected) {
+                    addressPayload = {
+                        addressLine1: selected.addressLine1 || selected.houseNo,
+                        addressLine2: selected.addressLine2 || selected.street,
+                        city: selected.city,
+                        state: selected.state,
+                        pincode: selected.pincode,
+                        addressName: selected.addressName || selected.saveAs,
+                    };
+                }
+            } else {
+                if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
+                    setError("Please fill out the full delivery address for the prasad.");
+                    return;
+                }
                 addressPayload = {
-                    addressLine1: selected.addressLine1 || selected.houseNo,
-                    addressLine2: selected.addressLine2 || selected.street,
-                    city: selected.city,
-                    state: selected.state,
-                    pincode: selected.pincode,
-                    addressName: selected.addressName || selected.saveAs,
+                    addressLine1: newAddress.houseNo.trim(),
+                    addressLine2: newAddress.street.trim(),
+                    city: newAddress.city.trim(),
+                    state: newAddress.state.trim(),
+                    pincode: newAddress.pincode.trim(),
+                    addressName: newAddress.saveAs.trim() || "Home",
                 };
             }
-        } else {
-            if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
-                setError("Please fill out the full address where the puja will be performed.");
-                return;
-            }
-            addressPayload = {
-                addressLine1: newAddress.houseNo.trim(),
-                addressLine2: newAddress.street.trim(),
-                city: newAddress.city.trim(),
-                state: newAddress.state.trim(),
-                pincode: newAddress.pincode.trim(),
-                addressName: newAddress.saveAs.trim() || "Home",
-            };
         }
 
         setSubmitting(true);
@@ -158,7 +166,7 @@ export default function DurgaMataPujaBookingPage() {
                 body: JSON.stringify(encryptPayload({
                     userId: user?._id || (user as any)?.id,
                     poojaId: puja._id,
-                    poojaMode: "offline",
+                    poojaMode: "online",
                     bookingDate,
                     amount: totalPrice,
                     panditDakshina: puja.panditDakshina,
@@ -167,6 +175,7 @@ export default function DurgaMataPujaBookingPage() {
                     contactNumber: phoneDigits,
                     phone: phoneDigits,
                     emailId: form.email.trim(),
+                    prasadAdded: form.prasadAdded,
                     address: addressPayload,
                 })),
             });
@@ -291,10 +300,10 @@ export default function DurgaMataPujaBookingPage() {
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Home Puja</h1>
+                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Online Puja</h1>
                     <p className="text-[11px] text-stone-500 flex items-center gap-1">
-                        <Home className="w-3 h-3 text-orange-500 shrink-0" />
-                        <span className="truncate">Pandit ji visits your home with all samagri</span>
+                        <MapPin className="w-3 h-3 text-orange-500 shrink-0" />
+                        <span className="truncate">{puja.templeName} · {puja.templeLocation}</span>
                     </p>
                 </div>
             </div>
@@ -303,7 +312,7 @@ export default function DurgaMataPujaBookingPage() {
             <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
                     <div className="space-y-6">
-                        {/* Base Puja price info */}
+                        {/* Order summary — itemises the prasad box when added */}
                         <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
                             <div className="flex items-start justify-between gap-2">
                                 <p className="text-[13.5px] font-bold text-stone-800 leading-snug">{puja.poojaNameEng}</p>
@@ -312,10 +321,31 @@ export default function DurgaMataPujaBookingPage() {
                                 </span>
                             </div>
                             {puja.poojaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5">{puja.poojaNameHindi}</p>}
-                            <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
-                                <span className="text-xl font-bold text-stone-900">₹{basePrice.toLocaleString("en-IN")}</span>
-                            </div>
+
+                            {form.prasadAdded ? (
+                                <div className="mt-2.5 pt-2.5 border-t border-orange-100/60 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[12.5px] text-stone-600 font-medium">Base Seva</span>
+                                        <span className="text-[13px] font-bold text-stone-800">₹{basePrice.toLocaleString("en-IN")}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-1.5">
+                                            <Gift className="w-3.5 h-3.5 text-orange-500" />
+                                            Sacred Prasad Box
+                                        </span>
+                                        <span className="text-[13px] font-bold text-stone-800">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
+                                    </div>
+                                    <div className="flex items-baseline justify-between pt-2 border-t border-orange-100/60">
+                                        <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Total</span>
+                                        <span className="text-xl font-extrabold text-orange-600">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
+                                    <span className="text-xl font-bold text-stone-900">₹{basePrice.toLocaleString("en-IN")}</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Step 1: Devotee Details */}
@@ -357,7 +387,7 @@ export default function DurgaMataPujaBookingPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className={LABEL}>Email</label>
+                                    <label className={LABEL}>Email (optional)</label>
                                     <input
                                         value={form.email}
                                         onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -384,29 +414,45 @@ export default function DurgaMataPujaBookingPage() {
                                 </span>
                             </div>
                             <div>
-                                <label className={LABEL}>Preferred Time</label>
+                                <label className={LABEL}>Preferred time slot</label>
                                 <input
                                     type="time"
                                     value={form.time}
                                     onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
                                     className={INPUT}
                                 />
+                                <p className="text-[11px] text-stone-400 mt-1.5">
+                                    Final puja timing will be confirmed on WhatsApp.
+                                </p>
                             </div>
                         </div>
 
-                        {/* Step 3: Home Address */}
+                        {/* Step 3: Prasad Delivery (optional) */}
                         <div className="space-y-3">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Puja Address</h3>
-                                    <p className="text-[11px] text-stone-400">Where pandit ji will perform the puja</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px]">Prasad Delivery</h3>
+                                    <p className="text-[11px] text-stone-400">Optional delivery at your address</p>
                                 </div>
                             </div>
 
-                            {user && addresses.length > 0 && !showNewAddressForm && (
+                            <label className="flex items-center gap-3 bg-white border border-orange-100 rounded-2xl p-4 shadow-sm cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={form.prasadAdded}
+                                    onChange={(e) => setForm((f) => ({ ...f, prasadAdded: e.target.checked }))}
+                                    className="w-4 h-4 rounded text-orange-500 focus:ring-orange-400 border-orange-200"
+                                />
+                                <div>
+                                    <p className="text-xs font-bold text-stone-800">Add Sacred Prasad</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5">Blessed at Maa Chintpurni Dham · +₹{PRASAD_BOX_PRICE}</p>
+                                </div>
+                            </label>
+
+                            {form.prasadAdded && user && addresses.length > 0 && !showNewAddressForm && (
                                 <div className="space-y-2">
-                                    <p className={LABEL}>Select Address</p>
+                                    <p className={LABEL}>Select Delivery Address</p>
                                     {addresses.map((addr) => (
                                         <label
                                             key={addr._id}
@@ -434,10 +480,10 @@ export default function DurgaMataPujaBookingPage() {
                                 </div>
                             )}
 
-                            {(!user || showNewAddressForm) && (
+                            {form.prasadAdded && (!user || showNewAddressForm) && (
                                 <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm space-y-3">
                                     <div className="flex items-center justify-between pb-1 border-b border-stone-50">
-                                        <span className="text-[12px] font-bold text-stone-800">Address Details</span>
+                                        <span className="text-[12px] font-bold text-stone-800">Delivery Address Details</span>
                                         {user && addresses.length > 0 && (
                                             <button
                                                 onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
@@ -518,7 +564,7 @@ export default function DurgaMataPujaBookingPage() {
                             Booking Confirmed! 🙏
                         </h3>
                         <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
-                            Your <span className="font-semibold text-stone-700">{puja.poojaNameEng}</span> is booked. Our pandit ji will visit your home with all samagri and WhatsApp you the details shortly.
+                            Your <span className="font-semibold text-stone-700">{puja.poojaNameEng}</span> at <span className="font-semibold text-stone-700">{puja.templeName}</span> is booked. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
                         </p>
                         <button onClick={() => navigate("/account?tab=pooja")} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
                             Done
@@ -546,7 +592,7 @@ export default function DurgaMataPujaBookingPage() {
                             {submitting ? (
                                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
                             ) : (
-                                <>Offer With Devotion <ChevronRight className="w-4 h-4" /></>
+                                <>Book With Devotion <ChevronRight className="w-4 h-4" /></>
                             )}
                         </button>
                     </div>

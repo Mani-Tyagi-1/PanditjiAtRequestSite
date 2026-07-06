@@ -14,12 +14,9 @@ import {
     Menu,
     X,
     User,
-    Sparkles,
-    MapPin,
-    CalendarDays,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
-import { durgaMataPuja, DURGA_MATA_PUJA_SLUG } from "../data/durgaMataPuja";
+import { DURGA_MATA_PUJA_SLUG } from "../data/durgaMataPuja";
 import { useAuth } from "../context/AuthContext";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
@@ -32,6 +29,10 @@ import CTASection from "../components/home/CTASection";
 
 const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
+
+// Featured "Maa Chintpurni Pooja" promo banner shown below Book Puja.
+// 👉 Paste the banner image URL here:
+const FEATURED_PUJA_BANNER = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/WhatsApp%20Image%202026-07-06%20at%207.12.44%20PM.jpeg";
 
 type Pooja = {
     _id: string;
@@ -292,45 +293,23 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── Featured Online Puja (Maa Chintpurni) ── */}
-            <section className="px-4 pt-6">
-                <div className="flex items-center gap-2">
-                    <h2 className="text-[22px] font-bold text-stone-900 shrink-0">Featured Puja</h2>
-                    <Sparkles className="w-5 h-5 text-orange-500 shrink-0" />
-                    <span className="h-px w-6 bg-orange-300 shrink-0" />
-                    <span className="text-[12.5px] text-stone-500 font-medium truncate">Online · limited slots</span>
-                </div>
-
-                <button
-                    onClick={() => navigate(`/${DURGA_MATA_PUJA_SLUG}`)}
-                    className="mt-3 w-full flex items-center gap-3 rounded-2xl border border-orange-200/70 shadow-sm bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-2.5 text-left active:scale-[0.99] transition-transform"
-                >
-                    {/* Landscape thumbnail */}
-                    <div className="relative w-28 h-[70px] shrink-0 rounded-xl overflow-hidden">
+            {/* ── Featured Puja banner (Maa Chintpurni) ── */}
+            {FEATURED_PUJA_BANNER && (
+                <section className="px-4 pt-6">
+                    <button
+                        onClick={() => navigate(`/${DURGA_MATA_PUJA_SLUG}`)}
+                        aria-label="Book Maa Chintpurni Pooja"
+                        className="block w-full active:scale-[0.99] transition-transform cursor-pointer"
+                    >
                         <img
-                            src={durgaMataPuja.poojaCardImage}
-                            alt={durgaMataPuja.poojaNameEng}
-                            className="w-full h-full object-cover"
+                            src={FEATURED_PUJA_BANNER}
+                            alt="Maa Chintpurni Pooja — Book Now"
+                            className="w-full h-auto rounded-2xl shadow-md"
                             loading="lazy"
                         />
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-[14px] font-bold text-stone-900 leading-tight line-clamp-1">{durgaMataPuja.poojaNameEng}</h3>
-                        <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-stone-500">
-                            <span className="flex items-center gap-1 min-w-0"><MapPin className="w-3 h-3 text-orange-500 shrink-0" /><span className="truncate">{durgaMataPuja.templeName}</span></span>
-                            <span className="flex items-center gap-1 shrink-0"><CalendarDays className="w-3 h-3 text-orange-500 shrink-0" />{durgaMataPuja.pujaDate}</span>
-                        </div>
-                        <div className="flex items-center justify-between mt-1.5">
-                            <span className="text-[16px] font-extrabold text-orange-600">₹{durgaMataPuja.poojaPriceOnline.toLocaleString("en-IN")}</span>
-                            <span className="flex items-center gap-0.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[12px] px-3.5 py-1.5 rounded-lg shadow-sm">
-                                Book <ChevronRight className="w-3.5 h-3.5" />
-                            </span>
-                        </div>
-                    </div>
-                </button>
-            </section>
+                    </button>
+                </section>
+            )}
 
              {/* ── Our Services ── */}
             <OurServices />

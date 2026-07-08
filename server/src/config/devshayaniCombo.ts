@@ -25,19 +25,19 @@ const COMBO_PRICE = num(process.env.DEVSHAYANI_COMBO_PRICE, 1100);
 
 // The 14 individually-addable sevas — codes + prices MUST match the frontend.
 const COMBO_ITEMS: Array<{ code: string; name: string; price: number }> = [
-  { code: "dev_makhan_mishri", name: "Makhan Mishri Seva", price: 151 },
-  { code: "dev_paan", name: "Paan Chadhava", price: 101 },
+  { code: "dev_makhan_mishri", name: "Makhan Mishri", price: 301 },
+  { code: "dev_paan", name: "Paan Chadhava", price: 401 },
   { code: "dev_deepak", name: "Deepak Seva", price: 121 },
   { code: "dev_laddu", name: "Laddu Seva", price: 151 },
-  { code: "dev_tulsi", name: "Tulsi Seva", price: 101 },
-  { code: "dev_gangajal", name: "Gangajal Seva", price: 121 },
-  { code: "dev_chandan", name: "Chandan Seva", price: 131 },
-  { code: "dev_flowers", name: "Flowers (Pushp)", price: 151 },
-  { code: "dev_morpankh", name: "Morpankh", price: 101 },
-  { code: "dev_gulab_itra", name: "Gulab Itra", price: 111 },
+  { code: "dev_tulsi", name: "Tulsi Seva", price: 251 },
+  { code: "dev_gangajal", name: "Gangajal Seva", price: 301 },
+  { code: "dev_chandan", name: "Chandan Seva", price: 401 },
+  { code: "dev_flowers", name: "Flowers", price: 301 },
+  { code: "dev_morpankh", name: "Morpankh", price: 301 },
+  { code: "dev_gulab_itra", name: "Gulab Itra", price: 451 },
   { code: "dev_nishan", name: "Nishan", price: 251 },
   { code: "dev_churma", name: "Churma", price: 121 },
-  { code: "dev_dry_fruits", name: "Dry Fruits", price: 181 },
+  { code: "dev_dry_fruits", name: "Dry Fruits", price: 501 },
   { code: "dev_seasonal_fruits", name: "Seasonal Fruits", price: 141 },
 ];
 

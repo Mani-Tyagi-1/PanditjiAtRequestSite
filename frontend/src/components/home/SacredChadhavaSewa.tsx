@@ -99,7 +99,9 @@ const normalizeChadhava = (item: any): Chadhava => {
         templeName = mandir.nameEnglish || "";
     }
     
-    const image = item.image || item.chadhavaWebCardImage?.location || item.chadhavaAppImage?.location || "";
+    // Images may be plain URL strings (new PJAR format) or upload objects (legacy VV).
+    const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
+    const image = item.image || imgLoc(item.chadhavaWebCardImage) || imgLoc(item.chadhavaAppImage) || "";
     
     let startingPrice = item.startingPrice || 501;
     let originalPrice = item.originalPrice;

@@ -56,6 +56,29 @@ function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string;
     );
 }
 
+/**
+ * New PJAR chadhavas store `description` as a Quill delta JSON string, e.g.
+ * `{"ops":[{"insert":"..."}]}`. Convert that to readable plain text; pass
+ * through anything that is already plain text (legacy/site docs).
+ */
+function toPlainDescription(value?: string): string {
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed.startsWith("{") || !trimmed.includes("\"ops\"")) return value;
+    try {
+        const delta = JSON.parse(trimmed);
+        if (Array.isArray(delta?.ops)) {
+            return delta.ops
+                .map((op: any) => (typeof op?.insert === "string" ? op.insert : ""))
+                .join("")
+                .trim();
+        }
+    } catch {
+        /* not valid JSON — fall through and return the original string */
+    }
+    return value;
+}
+
 /** Format an ISO date to "29 June 2026 , Monday". */
 function formatOfferingDate(dateStr?: string): string {
     if (!dateStr) return "";
@@ -192,6 +215,7 @@ export default function ChadhavaDetailPage() {
                 const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
                 const bannerImages = Array.from(new Set([
                     ...(Array.isArray(raw.chadhavaImages) ? raw.chadhavaImages : []),
+                    ...(Array.isArray(raw.chadhavaInnerImages) ? raw.chadhavaInnerImages : []),
                     ...(Array.isArray(raw.bannerImages) ? raw.bannerImages : []),
                     ...(Array.isArray(raw.images) ? raw.images : []),
                     raw.chadhavaWebCardImage,
@@ -199,13 +223,70 @@ export default function ChadhavaDetailPage() {
                     raw.image,
                 ].map(imgLoc).filter(Boolean)));
 
+                // Legacy Vedic Vaibhav docs use `selectedMandirs`; new PJAR docs use `mandirs`.
+                const mandir = raw.selectedMandirs?.[0] || raw.mandirs?.[0] || {};
+
+                // Seva sections. Legacy/site docs expose `chadhavaSections`/`sections`;
+                // new PJAR docs expose flat `chadhavaItems` + `chadhavaCombos`, which we
+                // fold into sections using the SAME `item_N`/`combo_N` codes the server
+                // assigns (see normalizeExternalChadhava) so quotes/orders resolve.
+                const rawSections = raw.chadhavaSections || raw.sections;
+                let sections: Chadhava["sections"];
+                if (Array.isArray(rawSections) && rawSections.length > 0) {
+                    sections = rawSections.map((sec: any) => ({
+                        sectionName: sec.sectionName || "",
+                        items: (sec.items || []).map((it: any, index: number) => {
+                            const basePrice = it.itemPrice || it.chadhavaPrice || 0;
+                            const hasDiscount = it.discountedPrice && it.discountedPrice > 0 && it.discountedPrice < basePrice;
+                            return {
+                                code: it.code || it.itemName || `item_${index}`,
+                                itemName: it.itemName || "",
+                                itemDesc: it.itemDesc || "",
+                                itemImage: imgLoc(it.itemImage),
+                                itemPrice: hasDiscount ? it.discountedPrice : basePrice,
+                                originalPrice: hasDiscount ? basePrice : undefined,
+                                maxQuantity: it.maxQuantity || 10,
+                                popular: it.popular || false,
+                                isActive: it.isActive !== false,
+                                type: it.type || "item",
+                            };
+                        }),
+                    }));
+                } else {
+                    sections = [];
+                    const itemEntries = (Array.isArray(raw.chadhavaItems) ? raw.chadhavaItems : []).map((it: any, index: number) => ({
+                        code: `item_${index}`,
+                        itemName: it.chadhavaName || it.itemName || "",
+                        itemDesc: it.chadhavaDescription || it.itemDesc || "",
+                        itemImage: imgLoc(it.chadhavaImage || it.itemImage),
+                        itemPrice: it.chadhavaPrice || it.itemPrice || 0,
+                        maxQuantity: it.maxQuantity || 10,
+                        popular: false,
+                        isActive: it.isActive !== false,
+                        type: "item",
+                    }));
+                    const comboEntries = (Array.isArray(raw.chadhavaCombos) ? raw.chadhavaCombos : []).map((it: any, index: number) => ({
+                        code: `combo_${index}`,
+                        itemName: it.comboName || "",
+                        itemDesc: it.comboDescription || "",
+                        itemImage: imgLoc(it.comboImages?.[0]),
+                        itemPrice: it.comboPrice || 0,
+                        maxQuantity: it.maxQuantity || 10,
+                        popular: false,
+                        isActive: true,
+                        type: "combo",
+                    }));
+                    if (itemEntries.length) sections.push({ sectionName: "Arpan Seva", items: itemEntries });
+                    if (comboEntries.length) sections.push({ sectionName: "Combo Offerings", items: comboEntries });
+                }
+
                 const normalized: Chadhava = {
                     id: raw._id || raw.id || "",
                     slug: raw.slug || raw._id || raw.id || "",
                     deity: raw.chadhavaName || raw.deity || "",
                     deityHindi: raw.deityHindi || "",
-                    templeName: raw.selectedMandirs?.[0]?.nameEnglish || raw.templeName || "",
-                    templeLocation: raw.selectedMandirs?.[0]?.city || raw.templeLocation || "",
+                    templeName: mandir.nameEnglish || raw.templeName || "",
+                    templeLocation: mandir.city || raw.templeLocation || "",
                     image: bannerImages[0] || "",
                     bannerImages,
                     offeringDay: raw.offeringDay || (raw.availableDates?.length ? "Available on: " + raw.availableDates.join(", ") : ""),
@@ -216,30 +297,12 @@ export default function ChadhavaDetailPage() {
                     devoteesOffered: raw.devoteesOffered || 0,
                     benefits: Array.isArray(raw.benefits) ? raw.benefits.map((b: any) => typeof b === "object" ? b.description : b) : [],
                     tags: raw.tags || [],
-                    sections: (raw.chadhavaSections || raw.sections || []).map((sec: any) => ({
-                        sectionName: sec.sectionName || "",
-                        items: (sec.items || []).map((it: any, index: number) => {
-                            const basePrice = it.itemPrice || it.chadhavaPrice || 0;
-                            const hasDiscount = it.discountedPrice && it.discountedPrice > 0 && it.discountedPrice < basePrice;
-                            return {
-                            code: it.code || it.itemName || `item_${index}`,
-                            itemName: it.itemName || "",
-                            itemDesc: it.itemDesc || "",
-                            itemImage: it.itemImage?.location || it.itemImage || "",
-                            itemPrice: hasDiscount ? it.discountedPrice : basePrice,
-                            originalPrice: hasDiscount ? basePrice : undefined,
-                            maxQuantity: it.maxQuantity || 10,
-                            popular: it.popular || false,
-                            isActive: it.isActive !== false,
-                            type: it.type || "item"
-                            };
-                        })
-                    })),
+                    sections,
                     prasad: raw.prasad || { enabled: false, price: 0, name: "", desc: "", image: "" },
-                    description: raw.description || "",
-                    mandirAppImage: raw.selectedMandirs?.[0]?.mandirAppImage || "",
-                    mandirSectionIntro: raw.selectedMandirs?.[0]?.mandirSectionIntro || "",
-                    mandirSectionHistory: raw.selectedMandirs?.[0]?.mandirSectionHistory || ""
+                    description: toPlainDescription(raw.description),
+                    mandirAppImage: imgLoc(mandir.mandirAppImage),
+                    mandirSectionIntro: mandir.mandirSectionIntro || "",
+                    mandirSectionHistory: mandir.mandirSectionHistory || ""
                 };
 
                 // Calculate startingPrice and originalPrice dynamically if not set

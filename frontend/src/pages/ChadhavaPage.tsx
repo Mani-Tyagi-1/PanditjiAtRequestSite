@@ -117,6 +117,27 @@ const isTodayOrFutureDate = (value: unknown): boolean => {
     return date.getTime() >= today.getTime();
 };
 
+// New PJAR chadhavas store `description` as a Quill delta JSON string
+// (`{"ops":[{"insert":"..."}]}`); convert to plain text. Legacy/site docs are
+// already plain and pass through unchanged.
+const toPlainDescription = (value?: string): string => {
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed.startsWith("{") || !trimmed.includes("\"ops\"")) return value;
+    try {
+        const delta = JSON.parse(trimmed);
+        if (Array.isArray(delta?.ops)) {
+            return delta.ops
+                .map((op: any) => (typeof op?.insert === "string" ? op.insert : ""))
+                .join("")
+                .trim();
+        }
+    } catch {
+        /* not valid JSON — return original */
+    }
+    return value;
+};
+
 const normalizeChadhavaItem = (item: any): Chadhava => {
     const id = item._id || item.id || "";
     
@@ -138,7 +159,7 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
             benefits: item.benefits || [],
             tags: item.tags || [],
             availableDates: item.availableDates || [],
-            description: item.description || ""
+            description: toPlainDescription(item.description)
         };
     }
 
@@ -151,7 +172,9 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
         if (!templeLocation) templeLocation = mandir.city || "";
     }
     
-    const image = item.image || item.chadhavaWebCardImage?.location || item.chadhavaAppImage?.location || "";
+    // Images may be plain URL strings (new PJAR format) or upload objects (legacy VV).
+    const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
+    const image = item.image || imgLoc(item.chadhavaWebCardImage) || imgLoc(item.chadhavaAppImage) || "";
     
     // Calculate sections & items
     const rawSections = item.chadhavaSections || item.sections || [];
@@ -206,7 +229,7 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
         benefits,
         tags,
         availableDates: item.availableDates || [],
-        description: item.description || ""
+        description: toPlainDescription(item.description)
     };
 };
 

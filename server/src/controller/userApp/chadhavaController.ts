@@ -3,6 +3,7 @@ import axios from "axios";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import Chadhava, { IChadhava } from "../../model/userApp/chadhavaModel";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhavaBookingModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
@@ -15,31 +16,78 @@ const toClientShape = (doc: any) => {
   return { ...obj, id: obj.slug };
 };
 
+// Pull a URL out of a value that may be a plain string or an upload object.
+const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
+
+// Look up a raw document (any shape) from our own PJAR `chadhavas` collection by
+// its ObjectId. Used so new admin-format chadhavas (whose `id` is the 24-hex
+// `_id`) resolve for detail/quote/order without going through the strict model.
+const findLocalChadhavaRawById = async (id: string): Promise<any | null> => {
+  try {
+    const { ObjectId } = panditJiAtRequestMongooose.Types;
+    return await panditJiAtRequestMongooose.connection
+      .collection("chadhavas")
+      .findOne({ _id: new ObjectId(id) });
+  } catch {
+    return null;
+  }
+};
+
 const normalizeExternalChadhava = (raw: any) => {
   const deity = raw.chadhavaName || raw.deity || "";
-  const mandir = raw.selectedMandirs?.[0];
+  // Legacy Vedic Vaibhav docs use `selectedMandirs`; new PJAR docs use `mandirs`.
+  const mandir = raw.selectedMandirs?.[0] || raw.mandirs?.[0];
   let templeName = "";
   let templeLocation = "";
   if (mandir) {
     templeName = mandir.nameEnglish || "";
     templeLocation = mandir.city || "";
   }
-  const image = raw.chadhavaWebCardImage?.location || raw.chadhavaAppImage?.location || raw.image || "";
-  
+  const image = imgLoc(raw.chadhavaWebCardImage) || imgLoc(raw.chadhavaAppImage) || raw.image || "";
+
   const rawSections = raw.chadhavaSections || raw.sections || [];
-  const sections = rawSections.map((sec: any) => ({
+  let sections = rawSections.map((sec: any) => ({
     sectionName: sec.sectionName || "",
     items: (sec.items || []).map((it: any, index: number) => ({
       code: it.code || it.itemName || `item_${index}`,
       itemName: it.itemName || "",
       itemDesc: it.itemDesc || "",
-      itemImage: it.itemImage?.location || it.itemImage || "",
+      itemImage: imgLoc(it.itemImage),
       itemPrice: (it.discountedPrice && it.discountedPrice > 0) ? it.discountedPrice : (it.itemPrice || it.chadhavaPrice || 0),
       maxQuantity: it.maxQuantity || 10,
       popular: it.popular || false,
       isActive: it.isActive !== false
     }))
   }));
+
+  // New PJAR admin format: flat `chadhavaItems` + `chadhavaCombos` (no sections).
+  // Build synthetic sections with deterministic `item_N` / `combo_N` codes that
+  // MUST match the frontend detail-page mapping so quotes/orders resolve.
+  if (sections.length === 0 && (Array.isArray(raw.chadhavaItems) || Array.isArray(raw.chadhavaCombos))) {
+    sections = [];
+    const itemEntries = (raw.chadhavaItems || []).map((it: any, index: number) => ({
+      code: `item_${index}`,
+      itemName: it.chadhavaName || it.itemName || "",
+      itemDesc: it.chadhavaDescription || it.itemDesc || "",
+      itemImage: imgLoc(it.chadhavaImage || it.itemImage),
+      itemPrice: it.chadhavaPrice || it.itemPrice || 0,
+      maxQuantity: it.maxQuantity || 10,
+      popular: false,
+      isActive: it.isActive !== false,
+    }));
+    const comboEntries = (raw.chadhavaCombos || []).map((it: any, index: number) => ({
+      code: `combo_${index}`,
+      itemName: it.comboName || "",
+      itemDesc: it.comboDescription || "",
+      itemImage: imgLoc(it.comboImages?.[0]),
+      itemPrice: it.comboPrice || 0,
+      maxQuantity: it.maxQuantity || 10,
+      popular: false,
+      isActive: true,
+    }));
+    if (itemEntries.length) sections.push({ sectionName: "Arpan Seva", items: itemEntries });
+    if (comboEntries.length) sections.push({ sectionName: "Combo Offerings", items: comboEntries });
+  }
 
   return {
     slug: raw.slug || raw._id || raw.id || "",
@@ -327,6 +375,15 @@ export const getChadhavaBySlug: RequestHandler = async (req, res) => {
       } catch (proxyErr: any) {
         console.error("Failed to proxy find chadhava by ID:", proxyErr.message);
       }
+
+      // Not in the legacy external source → try our own PJAR `chadhavas`
+      // collection (new admin-format offering keyed by its _id). Returned raw
+      // so the detail page gets every field (images, dates, mandirs, benefits…).
+      const localRaw = await findLocalChadhavaRawById(slug);
+      if (localRaw) {
+        res.status(200).json({ success: true, data: localRaw });
+        return;
+      }
     }
 
     const chadhava = await Chadhava.findOne({ slug, isActive: true });
@@ -358,6 +415,12 @@ export const getChadhavaQuote: RequestHandler = async (req, res) => {
       } catch (proxyErr: any) {
         console.error("Failed to proxy fetch external chadhava for quote:", proxyErr.message);
       }
+    }
+
+    // New PJAR admin-format offering (keyed by _id) — normalize to sections.
+    if (!chadhava && slug && slug.length === 24 && /^[0-9a-fA-F]{24}$/.test(slug)) {
+      const localRaw = await findLocalChadhavaRawById(slug);
+      if (localRaw) chadhava = normalizeExternalChadhava(localRaw);
     }
 
     if (!chadhava) {
@@ -423,6 +486,12 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       } catch (proxyErr: any) {
         console.error("Failed to proxy fetch external chadhava for order:", proxyErr.message);
       }
+    }
+
+    // New PJAR admin-format offering (keyed by _id) — normalize to sections.
+    if (!chadhava && chadhavaSlug && chadhavaSlug.length === 24 && /^[0-9a-fA-F]{24}$/.test(chadhavaSlug)) {
+      const localRaw = await findLocalChadhavaRawById(chadhavaSlug);
+      if (localRaw) chadhava = normalizeExternalChadhava(localRaw);
     }
 
     if (!chadhava) {

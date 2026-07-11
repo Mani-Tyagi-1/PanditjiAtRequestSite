@@ -8,6 +8,7 @@ import pendingPoojaBookingModel from "../../model/poojaBooking/pendingPoojaBooki
 import poojaBookingModel from "../../model/poojaBooking/poojaBooking.model";
 import Pooja from "../../model/userApp/poojaModel";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
+import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 
 // ── Razorpay setup ──
 const isProduction = process.env.PAYMENT_MODE === "production";
@@ -251,11 +252,23 @@ export const completeLiveBookingPayment: RequestHandler = async (req, res) => {
     }
 
     // Update booking
+    const liveWasUnpaid = booking.paymentStatus !== "paid";
     booking.paymentStatus = "paid";
     booking.status = "confirmed";
     booking.razorpayPaymentId = razorpayPaymentId;
     booking.razorpaySignature = razorpaySignature;
     await booking.save();
+
+    // Partner-affiliate: credit the customer's referrer once, on the first successful payment.
+    if (liveWasUnpaid) {
+      void sendPjarOrderToPartnerAffiliate({
+        userId: (booking as any).userId,
+        phone: (booking as any).phone,
+        orderId: booking.razorpayOrderId,
+        orderPrice: Number((booking as any).amount),
+        productName: (booking as any).pujaName || "LIVE_MANDIR",
+      });
+    }
 
     // META CAPI Purchase (fire-and-forget) — dedup with browser pixel via eventId.
     void (async () => {

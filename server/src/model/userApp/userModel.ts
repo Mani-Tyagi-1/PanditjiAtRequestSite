@@ -62,6 +62,13 @@ export interface IUser {
     expiresAt: Date;            // 1 day from appliedAt
   };
 
+  // ---- Partner/Affiliate APP referral order cap (separate from the above userReferral /
+  // referralSourcePJAR fields, which are this platform's OWN internal referral program). This
+  // tracks, for the partner-affiliate commission system, how many of this user's APP-sourced
+  // Pandit Ji At Request orders have already earned a commission — capped at the platform's
+  // admin-configured appReferralOrderCap (default 15). See utils/partnerAffiliateReferralCap.ts.
+  referralOrdersCounted?: number;
+
   token?: string;               // JWT saved on successful OTP verify
 }
 
@@ -102,6 +109,9 @@ const userSchema = new Schema<IUser>({
     appliedAt: { type: Date },
     expiresAt: { type: Date },
   },
+
+  // Partner/Affiliate APP referral order cap counter (see IUser above for explanation)
+  referralOrdersCounted: { type: Number, default: 0, min: 0 },
 
   token: { type: String },
 });

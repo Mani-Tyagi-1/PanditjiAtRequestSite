@@ -13,6 +13,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
+import { tryConsumeAppReferralOrder } from '../../utils/partnerAffiliateReferralCap';
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from '../../utils/whatsapp';
 import { sendBookingConfirmationEmail } from '../../utils/emailService';
 import type { Document } from "mongoose";
@@ -378,6 +379,22 @@ const sendOrderToPartnerAffiliate = async (booking: any): Promise<void> => {
       return;
     }
 
+    // App orders only earn commission for a referred customer's first N orders (admin-editable
+    // via the Commission Structure page, default 15) — website orders have no such cap. Atomic
+    // check-and-increment against our own local User record (see
+    // utils/partnerAffiliateReferralCap.ts for why it lives here, not on the partner-affiliate side).
+    if ((booking as any).isFromApp === true) {
+      const withinCap = await tryConsumeAppReferralOrder(
+        (booking as any).userPhone || (booking as any).contactNumber
+      );
+      if (!withinCap) {
+        console.log(
+          `[PartnerAffiliate] Skipping commission for booking ${booking._id}: app referral order cap reached for this customer.`
+        );
+        return;
+      }
+    }
+
     // Always use total booking amount (panditDakshina may be undefined on online bookings)
     const orderAmount = Number(booking.amount ?? booking.panditDakshina ?? 0);
     if (orderAmount <= 0) {
@@ -445,6 +462,12 @@ type CreatePendingBookingBody = {
   ritualPerformerGotra?: string;
   ritualPlace?: string;
   referralCode?: string;       // partner affiliate ref code (from ?ref= URL param)
+  // Whether this booking was placed from the app (vs website). No separate app-specific route
+  // exists for this flow today, so this is only ever true if the client explicitly sends it —
+  // defaults to false (website-safe) otherwise. Drives the partner-affiliate "first N app
+  // orders only" referral cap (see utils/partnerAffiliateReferralCap.ts) — website referrals
+  // have no such cap.
+  isFromApp?: boolean;
   // ── Live Mandir fields ──
   isLiveMandir?: boolean;
   pujaSlug?: string;
@@ -492,6 +515,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       ritualPerformerGotra,
       ritualPlace,
       referralCode,
+      isFromApp,
       isLiveMandir,
       pujaSlug,
       templeName,
@@ -636,6 +660,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       ...(ritualPerformerGotra && { ritualPerformerGotra }),
       ...(ritualPlace && { ritualPlace }),
       ...(referralCode && { referralCode }),
+      isFromApp: isFromApp === true,
       // ── Live Mandir specific fields ──
       ...(isLiveMandir && {
         isLiveMandir: true,

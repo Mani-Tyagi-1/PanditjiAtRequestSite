@@ -86,6 +86,11 @@ function normalizeTab(value: string | null): Tab {
     return (VALID_TABS as readonly string[]).includes(value || "") ? (value as Tab) : "home";
 }
 
+// Sort modes for the md+ "Sort by" dropdown above the puja grid. "recommended"
+// applies NO sort at all, so the default order (and therefore the mobile grid,
+// which has no sort control) stays exactly as the API returned it.
+type SortMode = "recommended" | "price-asc" | "price-desc";
+
 // Small, honest, generic puja FAQ — copied verbatim from the same 4 questions
 // already shown in components/home/FAQSection.tsx (kept in sync there).
 const COMMON_QUESTIONS = [
@@ -141,11 +146,12 @@ export default function BookPujaPage() {
     const [livePujas, setLivePujas] = useState<LivePuja[]>([]);
     const [loadingLive, setLoadingLive] = useState(true);
 
-    // Desktop-only additive UI state (hero search, sidebar filters, carousel, FAQ).
+    // Desktop-only additive UI state (hero search, sidebar filters, sort, carousel, FAQ).
     // None of this affects the mobile tree — everything built from it below is
     // wrapped in hidden md:.../hidden lg:... containers.
     const [heroSearch, setHeroSearch] = useState("");
     const [maxPrice, setMaxPrice] = useState<number | null>(null);
+    const [sortBy, setSortBy] = useState<SortMode>("recommended");
     const [heroIndex, setHeroIndex] = useState(0);
     const [faqOpen, setFaqOpen] = useState<number | null>(null);
     const gridRef = useRef<HTMLDivElement>(null);
@@ -210,8 +216,17 @@ export default function BookPujaPage() {
         if (maxPrice !== null) {
             list = list.filter((p) => (p.poojaPriceOnline ?? p.poojaPriceOffline ?? 0) <= maxPrice);
         }
+        // Sort AFTER filtering. "recommended" (the default) applies no sort, so
+        // the array keeps its original order — the md+ dropdown is the only way
+        // to change this, and it never renders on mobile.
+        if (sortBy !== "recommended") {
+            const price = (p: Pooja) => p.poojaPriceOnline ?? p.poojaPriceOffline ?? 0;
+            list = list
+                .slice()
+                .sort((a, b) => (sortBy === "price-asc" ? price(a) - price(b) : price(b) - price(a)));
+        }
         return list;
-    }, [poojas, activeCat, heroSearch, maxPrice]);
+    }, [poojas, activeCat, heroSearch, maxPrice, sortBy]);
 
     // isFeatured is the same real field the Home page already trusts for
     // "Popular"/"Featured" — reused here for the hero carousel, Trending Today
@@ -500,6 +515,29 @@ export default function BookPujaPage() {
                                     <SlidersHorizontal className="w-4 h-4 text-orange-500" /> Filters
                                 </h3>
 
+                                {/* Puja Type — tab shortcuts styled as checkboxes (per the
+                                    mockup sidebar). Checked state mirrors the active tab;
+                                    toggling simply switches tabs via goToTab(). */}
+                                <div className="mb-4">
+                                    <span className="block text-[11.5px] font-bold text-stone-500 uppercase tracking-wide mb-1.5">Puja Type</span>
+                                    <div className="space-y-2">
+                                        {([
+                                            { key: "home", label: "At Home Puja" },
+                                            { key: "mandir", label: "Live Mandir Puja" },
+                                        ] as const).map(({ key, label }) => (
+                                            <label key={key} className="flex items-center gap-2.5 text-[13px] text-stone-700 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={tab === key}
+                                                    onChange={() => goToTab(key)}
+                                                    className="w-4 h-4 accent-orange-500 cursor-pointer"
+                                                />
+                                                {label}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <div className="mb-4">
                                     <label className="block text-[11.5px] font-bold text-stone-500 uppercase tracking-wide mb-1.5">Purpose</label>
                                     <select
@@ -588,9 +626,35 @@ export default function BookPujaPage() {
                             </div>
 
                             {!loadingHome && (
-                                <p className="text-orange-600 font-bold text-[14px] mt-4 md:text-base md:mt-6">
+                                <p className="text-orange-600 font-bold text-[14px] mt-4 md:hidden">
                                     Found Result: {filteredPoojas.length}
                                 </p>
+                            )}
+
+                            {/* md+ replacement for the mobile "Found Result" line above:
+                                real count heading + client-side sort control. Lives in a
+                                hidden md:flex row, so mobile can never reach this state. */}
+                            {!loadingHome && (
+                                <div className="hidden md:flex items-center justify-between gap-4 mt-6">
+                                    <h2 className="font-bold text-stone-800 text-lg">
+                                        {filteredPoojas.length} {filteredPoojas.length === 1 ? "Puja" : "Pujas"} Found
+                                    </h2>
+                                    <div className="flex items-center gap-2">
+                                        <label htmlFor="puja-sort" className="text-[13px] font-semibold text-stone-500 shrink-0">
+                                            Sort by:
+                                        </label>
+                                        <select
+                                            id="puja-sort"
+                                            value={sortBy}
+                                            onChange={(e) => setSortBy(e.target.value as SortMode)}
+                                            className="bg-white border border-orange-100 rounded-xl px-3 py-2 text-[13px] font-semibold text-stone-700 shadow-sm cursor-pointer outline-none"
+                                        >
+                                            <option value="recommended">Recommended</option>
+                                            <option value="price-asc">Price: Low to High</option>
+                                            <option value="price-desc">Price: High to Low</option>
+                                        </select>
+                                    </div>
+                                </div>
                             )}
 
                             {/* Grid */}
@@ -633,6 +697,16 @@ export default function BookPujaPage() {
                                                     <h3 className="text-[14px] font-bold text-orange-600 leading-tight line-clamp-2 min-h-[36px] md:text-[15.5px] md:min-h-[42px]">
                                                         {p.poojaNameEng}
                                                     </h3>
+                                                    {/* Desktop-only meta row — generic site-wide service claims
+                                                        (same as the trust row), deliberately NOT per-puja data. */}
+                                                    <div className="hidden md:flex items-center gap-3 mt-1.5 text-[11px] text-stone-400">
+                                                        <span className="flex items-center gap-1">
+                                                            <Video className="w-3.5 h-3.5" /> Live Video
+                                                        </span>
+                                                        <span className="flex items-center gap-1">
+                                                            <Gift className="w-3.5 h-3.5" /> Prasad
+                                                        </span>
+                                                    </div>
                                                     <button
                                                         onClick={() => {
                                                             if (window.fbq) {
@@ -661,30 +735,42 @@ export default function BookPujaPage() {
                         </div>
                     </div>
 
-                    {/* Need by Need row (desktop only, new — same category data, navigates to /category/:id) */}
-                    {categories.length > 0 && (
-                        <div className="hidden md:block md:mt-12 md:pb-16">
-                            <h2 className="text-[18px] lg:text-[20px] font-bold text-stone-800 mb-4">Book by Need</h2>
-                            <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
-                                {categories.slice(0, 8).map((cat) => (
-                                    <button
-                                        key={cat._id}
-                                        onClick={() => navigate(`/category/${cat._id}`, { state: { category: cat } })}
-                                        className="bg-white rounded-2xl border border-orange-100 shadow-sm p-3.5 flex items-center gap-2.5 text-left cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-orange-200 transition-all"
-                                    >
-                                        <span className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0 overflow-hidden">
-                                            {cat.category_image ? (
-                                                <img src={cat.category_image} alt={cat.category_name_en} className="w-8 h-8 object-contain" />
-                                            ) : (
-                                                <Sparkles className="w-5 h-5 text-orange-500" />
-                                            )}
-                                        </span>
-                                        <span className="text-[13px] font-bold text-stone-700 leading-tight truncate">{cat.category_name_en}</span>
-                                    </button>
-                                ))}
+                    {/* Need by Need row + Common Questions — side-by-side at lg per the
+                        mockup (wide tile row left, narrow FAQ box right). The wrapper is
+                        style-inert below lg (every class is lg:-prefixed), so md keeps the
+                        previous stacked order and mobile renders nothing here at all. */}
+                    <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-8 lg:items-start lg:mt-12 lg:pb-16">
+                        {/* Need by Need row (desktop only — same category data, navigates to /category/:id) */}
+                        {categories.length > 0 && (
+                            <div className="hidden md:block md:mt-12 md:pb-16 lg:mt-0 lg:pb-0">
+                                <h2 className="text-[18px] lg:text-[20px] font-bold text-stone-800 mb-4">Book by Need</h2>
+                                <div className="grid grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
+                                    {categories.slice(0, 8).map((cat) => (
+                                        <button
+                                            key={cat._id}
+                                            onClick={() => navigate(`/category/${cat._id}`, { state: { category: cat } })}
+                                            className="bg-white rounded-2xl border border-orange-100 shadow-sm p-3.5 flex items-center gap-2.5 text-left cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-orange-200 transition-all"
+                                        >
+                                            <span className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {cat.category_image ? (
+                                                    <img src={cat.category_image} alt={cat.category_name_en} className="w-8 h-8 object-contain" />
+                                                ) : (
+                                                    <Sparkles className="w-5 h-5 text-orange-500" />
+                                                )}
+                                            </span>
+                                            <span className="text-[13px] font-bold text-stone-700 leading-tight truncate">{cat.category_name_en}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
+                        )}
+
+                        {/* Common Questions box — right column at lg on the home tab
+                            (other tabs keep the original full-width block below). */}
+                        <div className="hidden md:block md:pb-16 lg:pb-0">
+                            <CommonQuestions faqOpen={faqOpen} setFaqOpen={setFaqOpen} />
                         </div>
-                    )}
+                    </div>
                 </section>
             )}
 
@@ -858,43 +944,58 @@ export default function BookPujaPage() {
                 </section>
             )}
 
-            {/* ── Common Questions (desktop only, new) ── */}
-            <div className="hidden md:block md:px-8 lg:px-10 md:pb-16">
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-[18px] lg:text-[20px] font-bold text-stone-800 flex items-center gap-2">
-                        <HelpCircle className="w-5 h-5 text-orange-500" /> Common Questions
-                    </h2>
-                    <a href="/#faq" className="text-[12.5px] font-bold text-orange-600 hover:text-orange-700 cursor-pointer">
-                        View All FAQs
-                    </a>
+            {/* ── Common Questions (desktop only). On the "home" tab this box renders
+                inside the section above (beside Book by Need at lg); on every other
+                tab it keeps its original full-width slot here. ── */}
+            {tab !== "home" && (
+                <div className="hidden md:block md:px-8 lg:px-10 md:pb-16">
+                    <CommonQuestions faqOpen={faqOpen} setFaqOpen={setFaqOpen} />
                 </div>
-                <div className="space-y-3">
-                    {COMMON_QUESTIONS.map((faq, index) => {
-                        const isOpen = faqOpen === index;
-                        return (
-                            <div key={faq.question} className="bg-white border border-orange-100 rounded-2xl overflow-hidden">
-                                <button
-                                    onClick={() => setFaqOpen(isOpen ? null : index)}
-                                    className="w-full flex items-center justify-between text-left px-5 py-4 cursor-pointer hover:bg-orange-50/30 transition-colors"
-                                >
-                                    <span className="text-[13.5px] font-bold text-stone-800 leading-snug">{faq.question}</span>
-                                    {isOpen ? (
-                                        <ChevronUp className="w-4.5 h-4.5 text-stone-500 shrink-0 ml-3" />
-                                    ) : (
-                                        <ChevronDown className="w-4.5 h-4.5 text-stone-500 shrink-0 ml-3" />
-                                    )}
-                                </button>
-                                {isOpen && (
-                                    <div className="px-5 pb-4 pt-0">
-                                        <p className="text-[12.5px] text-stone-500 leading-relaxed">{faq.answer}</p>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
+            )}
         </div>
+    );
+}
+
+// Desktop-only FAQ box (heading row + accordion). Extracted so it can render in
+// two slots without duplication: inside the home tab's lg two-column row, and
+// full-width on the other tabs. State stays lifted in BookPujaPage.
+function CommonQuestions({ faqOpen, setFaqOpen }: { faqOpen: number | null; setFaqOpen: (index: number | null) => void }) {
+    return (
+        <>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[18px] lg:text-[20px] font-bold text-stone-800 flex items-center gap-2">
+                    <HelpCircle className="w-5 h-5 text-orange-500" /> Common Questions
+                </h2>
+                <a href="/#faq" className="text-[12.5px] font-bold text-orange-600 hover:text-orange-700 cursor-pointer">
+                    View All FAQs
+                </a>
+            </div>
+            <div className="space-y-3">
+                {COMMON_QUESTIONS.map((faq, index) => {
+                    const isOpen = faqOpen === index;
+                    return (
+                        <div key={faq.question} className="bg-white border border-orange-100 rounded-2xl overflow-hidden">
+                            <button
+                                onClick={() => setFaqOpen(isOpen ? null : index)}
+                                className="w-full flex items-center justify-between text-left px-5 py-4 cursor-pointer hover:bg-orange-50/30 transition-colors"
+                            >
+                                <span className="text-[13.5px] font-bold text-stone-800 leading-snug">{faq.question}</span>
+                                {isOpen ? (
+                                    <ChevronUp className="w-4.5 h-4.5 text-stone-500 shrink-0 ml-3" />
+                                ) : (
+                                    <ChevronDown className="w-4.5 h-4.5 text-stone-500 shrink-0 ml-3" />
+                                )}
+                            </button>
+                            {isOpen && (
+                                <div className="px-5 pb-4 pt-0">
+                                    <p className="text-[12.5px] text-stone-500 leading-relaxed">{faq.answer}</p>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </>
     );
 }
 

@@ -47,7 +47,7 @@ const CONCERN_OPTIONS = [
 // Real pandit photo already used in this codebase (HOLY_PANDITS, Kashi Vrindavan
 // Pandits section) — reused here for the honest, non-named "Meet Your Guide" card.
 const GUIDE_IMAGE =
-  "https://images.unsplash.com/photo-1622030411594-c0b7d4d7b9b8?w=600&q=80&auto=format&fit=crop";
+  "/images/pandit_kashi.jpg";
 
 // Same click-to-chat support line used across the site (AppLayout/SiteFooter/DesktopHeader).
 const WHATSAPP_URL =
@@ -283,18 +283,45 @@ export default function PaidConsultationPage() {
             <p className="text-orange-100 text-xs mt-0.5 md:text-base lg:text-lg md:mt-2">
               Book a dedicated guidance slot with our expert Pandit Ji
             </p>
+            {/* NEW: qualitative glass trust chips under the subtitle — tablet/desktop only */}
+            <div className="hidden md:flex md:flex-wrap md:items-center md:gap-2.5 md:mt-5 md:justify-center lg:justify-start">
+              {[
+                "100% Private & Confidential",
+                "Expert Guidance & Remedies",
+                "Pay Securely via Razorpay",
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  className="bg-white/15 border border-white/25 rounded-full px-3.5 py-1.5 text-white text-[12px] font-semibold"
+                >
+                  ✓ {chip}
+                </span>
+              ))}
+            </div>
           </div>
 
-          {/* NEW: qualitative trust card beside the hero at lg+ — no invented review counts */}
-          <div className="hidden lg:flex lg:items-center lg:gap-3 lg:shrink-0 lg:bg-white/15 lg:border lg:border-white/25 lg:rounded-2xl lg:px-5 lg:py-4 lg:max-w-xs lg:backdrop-blur-sm">
-            <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-white" />
+          {/* NEW: hero pandit photo (same image as Meet Your Guide) with the qualitative
+              trust card overlapping its bottom-left corner — lg+ only, no invented review counts */}
+          <div className="hidden lg:block lg:relative lg:shrink-0">
+            <div className="rounded-3xl overflow-hidden lg:w-[300px] xl:w-[340px] lg:h-[240px] xl:h-[260px] ring-1 ring-white/30 shadow-2xl shadow-orange-900/25">
+              <img
+                src={GUIDE_IMAGE}
+                alt="Our Pandit Ji"
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover"
+              />
             </div>
-            <div>
-              <p className="text-white text-sm font-bold">Trusted by Thousands</p>
-              <p className="text-orange-100 text-xs mt-0.5 leading-snug">
-                Devotees turn to Pandit Ji for honest, personal guidance rooted in Vedic tradition.
-              </p>
+            <div className="absolute -bottom-4 -left-6 flex items-center gap-3 bg-orange-950/45 border border-white/25 rounded-2xl px-5 py-4 max-w-xs backdrop-blur-md shadow-xl">
+              <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-bold">Trusted by Thousands</p>
+                <p className="text-orange-100 text-xs mt-0.5 leading-snug">
+                  Devotees turn to Pandit Ji for honest, personal guidance rooted in Vedic tradition.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -586,14 +613,15 @@ export default function PaidConsultationPage() {
             </div>
 
             {/* NEW: FAQ accordion — tablet/desktop only, small honest static FAQ */}
-            <div className="hidden md:block mt-14 lg:mt-16 max-w-3xl mx-auto">
+            <div className="hidden md:block mt-14 lg:mt-16 max-w-3xl mx-auto lg:max-w-4xl">
               <div className="flex items-center gap-2 justify-center mb-6">
                 <HelpCircle className="w-5 h-5 text-orange-500" />
                 <h3 className="text-xl lg:text-2xl font-bold text-stone-800" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                   Frequently Asked Questions
                 </h3>
               </div>
-              <div className="space-y-3">
+              {/* lg+: two accordion stacks side by side (grid is style-inert below lg) */}
+              <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-3 lg:space-y-0 lg:items-start">
                 {CONSULT_FAQS.map((faq, index) => {
                   const isOpen = openFaq === index;
                   return (

@@ -14,6 +14,9 @@ import {
     Truck,
     RotateCcw,
     Wallet,
+    Gem,
+    HeartHandshake,
+    Users,
 } from "lucide-react";
 import { GooglePlayLogoIcon, WhatsappLogoIcon } from "@phosphor-icons/react";
 import API_URL from "../utils/apiConfig";
@@ -21,6 +24,7 @@ import { productPrice, type ShopifyProduct } from "../components/booking/Shop/sh
 import type { ShopCardItem } from "../components/booking/Shop/ShopProductCard";
 import ShopProductCard from "../components/booking/Shop/ShopProductCard";
 import { useShopifyCart } from "../context/ShopifyCartContext";
+import { HOLY_PANDITS } from "../components/booking/KashiVrindavanPandits/kashiVrindavanData";
 
 // Category rules — products are classified by matching these keywords against
 // their productType / category / title / tags. Order here = order of chips.
@@ -72,6 +76,18 @@ const TRUST_ITEMS: { icon: typeof ShieldCheck; label: string }[] = [
     { icon: RotateCcw, label: "Easy Returns" },
     { icon: Wallet, label: "COD Available" },
 ];
+
+// md+ "Why Our Spiritual Products Are Trusted" band content (mockup copy).
+const WHY_TRUSTED: { icon: typeof ShieldCheck; title: string; desc: string }[] = [
+    { icon: ShieldCheck, title: "Authentic & Certified", desc: "Lab tested & certified for your trust" },
+    { icon: Sparkles, title: "Energized with Mantras", desc: "Charged with powerful Vedic mantras" },
+    { icon: Gem, title: "Handpicked Quality", desc: "Premium quality selected by experts" },
+    { icon: HeartHandshake, title: "Blessed with Sankalp", desc: "Offered with sincere prayers for you" },
+    { icon: Users, title: "Trusted by Thousands", desc: "Join thousands of satisfied devotees" },
+];
+
+// Real image already shipped with the site (KashiVrindavan section) — no new external asset.
+const TRUST_BAND_PANDIT = HOLY_PANDITS[2];
 
 // Reused literally from AppLayout.tsx / SiteFooter.tsx so links stay consistent site-wide.
 const WHATSAPP_URL =
@@ -416,7 +432,7 @@ export default function ShopPage() {
                                     }}
                                     className="text-[11.5px] font-bold text-orange-600 hover:text-orange-700 cursor-pointer"
                                 >
-                                    Clear all
+                                    Reset All
                                 </button>
                             )}
                         </div>
@@ -597,6 +613,45 @@ export default function ShopPage() {
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Why Our Spiritual Products Are Trusted (md+) ── */}
+            <div className="hidden md:block md:px-8 lg:px-10 md:mt-12">
+                <div className="bg-white rounded-3xl border border-orange-100 shadow-sm px-8 py-8 lg:px-10 lg:py-9 lg:flex lg:items-center lg:gap-10">
+                    {/* Left: title + intro */}
+                    <div className="lg:w-[250px] lg:shrink-0">
+                        <h2 className="text-[22px] lg:text-[26px] font-bold text-stone-900 leading-tight" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                            Why Our Spiritual Products Are Trusted
+                        </h2>
+                        <p className="text-[12.5px] text-stone-500 mt-2 leading-relaxed">
+                            Every product at Pandit Ji At Request is carefully selected, authentically sourced, and energized through Vedic rituals for maximum benefits.
+                        </p>
+                    </div>
+
+                    {/* Middle: five icon columns */}
+                    <div className="grid grid-cols-5 gap-4 mt-7 lg:mt-0 lg:flex-1 lg:min-w-0">
+                        {WHY_TRUSTED.map(({ icon: Icon, title, desc }) => (
+                            <div key={title} className="flex flex-col items-center text-center">
+                                <span className="w-11 h-11 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                                    <Icon className="w-5 h-5" />
+                                </span>
+                                <h3 className="text-[12.5px] font-bold text-stone-800 mt-2.5 leading-snug">{title}</h3>
+                                <p className="text-[11px] text-stone-500 mt-1 leading-snug">{desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Right: pandit photo (lg+) — real asset already used by KashiVrindavan section */}
+                    <div className="hidden lg:block lg:w-[170px] lg:shrink-0">
+                        <img
+                            src={TRUST_BAND_PANDIT.image}
+                            alt={TRUST_BAND_PANDIT.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full aspect-[4/5] object-cover rounded-2xl border border-orange-100"
+                        />
                     </div>
                 </div>
             </div>

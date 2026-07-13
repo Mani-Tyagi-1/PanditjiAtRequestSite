@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -78,6 +78,20 @@ interface ReferralBooking {
     bookedAt: string;
 }
 
+// Shape of `/fetch-all-poojas` items — the same real fields HomePage.tsx
+// already relies on. Used only by the desktop-only "Continue Your Spiritual
+// Journey" row. Note: this API carries no original/strike-through price field
+// (see server poojaModel.ts), so no "Offer" badge is rendered below.
+interface FeaturedPooja {
+    _id: string;
+    poojaNameEng: string;
+    poojaCardImage?: string;
+    poojaPriceOnline?: number;
+    poojaPriceOffline?: number;
+    isFeatured?: boolean;
+    featuredRank?: number;
+}
+
 
 const ProfileMenuItem = ({ icon: Icon, title, subtitle, onClick }: any) => (
     <button
@@ -152,6 +166,10 @@ const ProfilePage: React.FC = () => {
     // Payout state
     const [payoutModal, setPayoutModal] = useState<"confirm" | "not-allowed" | null>(null);
     const [payoutDone, setPayoutDone] = useState(false);
+
+    // Desktop-only "Continue Your Spiritual Journey" data — its own state so
+    // none of the existing loading flags the mobile UI depends on are touched.
+    const [featuredPoojas, setFeaturedPoojas] = useState<FeaturedPooja[]>([]);
 
     // Form State
     const [formData, setFormData] = useState<Partial<UserData>>({});
@@ -443,6 +461,36 @@ const ProfilePage: React.FC = () => {
         if (map[tab]) setActiveBookingTab(map[tab]);
     }, [searchParams]);
 
+    // Lightweight fetch for the desktop-only "Continue Your Spiritual Journey"
+    // row — same `/fetch-all-poojas` catalog HomePage.tsx renders, filtered to
+    // isFeatured and ordered by featuredRank. Runs once, keeps its own state
+    // and swallows errors, so the existing loading states (profile / bookings
+    // / referral) are completely undisturbed. The section rendering this is
+    // wrapped in `hidden md:block`, so mobile is untouched.
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const { data } = await axios.get(`${API_URL}/fetch-all-poojas`);
+                if (cancelled) return;
+                const list: FeaturedPooja[] = data?.poojas || [];
+                const rankOf = (p: FeaturedPooja) =>
+                    typeof p.featuredRank === "number" ? p.featuredRank : Number.POSITIVE_INFINITY;
+                setFeaturedPoojas(
+                    list
+                        .filter((p) => p.isFeatured)
+                        .sort((a, b) => rankOf(a) - rankOf(b))
+                        .slice(0, 3)
+                );
+            } catch (err) {
+                console.error("Error fetching recommended poojas:", err);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const handleLogout = () => {
         setIsLogoutModalOpen(true);
     };
@@ -652,10 +700,10 @@ const ProfilePage: React.FC = () => {
                             className="px-4 md:px-8 lg:px-10"
                         >
                             {/* Breadcrumb — tablet/desktop only */}
-                            <nav className="hidden md:flex items-center gap-1.5 pt-8 lg:pt-10 text-xs text-gray-400">
-                                <button onClick={() => navigate("/home")} className="hover:text-[#FF7000] transition-colors cursor-pointer">Home</button>
-                                <ChevronRight className="w-3.5 h-3.5" />
-                                <span className="text-gray-600 font-semibold">My Profile</span>
+                            <nav className="hidden md:flex items-center gap-1.5 pt-8 lg:pt-10 text-[12.5px] text-stone-400">
+                                <Link to="/" className="hover:text-[#FF7000] transition-colors">Home</Link>
+                                <span className="select-none">›</span>
+                                <span className="text-stone-600 font-semibold">My Profile</span>
                             </nav>
 
                             {/* Navigation Header */}
@@ -938,6 +986,45 @@ const ProfilePage: React.FC = () => {
                                                 ))}
                                             </div>
                                         )}
+
+                                        {/* Continue Your Spiritual Journey — tablet/desktop only.
+                                            Real featured pujas from the same `/fetch-all-poojas`
+                                            catalog HomePage renders (isFeatured, featuredRank
+                                            order); prices are the API's own poojaPriceOnline /
+                                            poojaPriceOffline. No "Offer"/strike-through badge —
+                                            the API shape has no original-price field to back one. */}
+                                        {featuredPoojas.length > 0 && (
+                                            <div className="hidden md:block mt-10">
+                                                <h2 className="text-lg font-bold text-gray-800 lg:text-xl">Continue Your Spiritual Journey</h2>
+                                                <p className="text-xs text-stone-400 mt-0.5 mb-4">Recommended for You</p>
+                                                <div className="grid grid-cols-3 gap-4">
+                                                    {featuredPoojas.map((p) => (
+                                                        <button
+                                                            key={p._id}
+                                                            onClick={() => navigate(`/puja/${p._id}`)}
+                                                            className="flex items-center gap-3 bg-white rounded-2xl border border-orange-50 shadow-sm p-3.5 hover:shadow-md hover:border-orange-100 hover:-translate-y-0.5 transition-all text-left cursor-pointer"
+                                                        >
+                                                            {p.poojaCardImage ? (
+                                                                <img
+                                                                    src={p.poojaCardImage}
+                                                                    alt={p.poojaNameEng}
+                                                                    loading="lazy"
+                                                                    className="w-16 h-16 rounded-xl object-cover border border-orange-100 shrink-0"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-16 h-16 rounded-xl bg-orange-50 flex items-center justify-center text-2xl shrink-0">🪔</div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-bold text-gray-800 text-sm truncate">{p.poojaNameEng}</p>
+                                                                <p className="text-xs font-bold text-[#FF7000] mt-1">
+                                                                    ₹{(p.poojaPriceOnline || p.poojaPriceOffline || 0).toLocaleString("en-IN")}
+                                                                </p>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Sidebar — desktop only */}
@@ -1022,6 +1109,16 @@ const ProfilePage: React.FC = () => {
                             exit={{ opacity: 0, x: -20 }}
                             className="min-h-screen bg-[#FFF8F3] md:bg-transparent"
                         >
+                            {/* Breadcrumb — tablet/desktop only. The middle crumb returns to
+                                the profile view via the same setMode("view") the back button
+                                below already uses (no separate route involved). */}
+                            <nav className="hidden md:flex items-center gap-1.5 px-8 lg:px-10 pt-8 lg:pt-10 text-[12.5px] text-stone-400">
+                                <Link to="/" className="hover:text-[#FF7000] transition-colors">Home</Link>
+                                <span className="select-none">›</span>
+                                <button onClick={() => setMode("view")} className="hover:text-[#FF7000] transition-colors cursor-pointer">My Profile</button>
+                                <span className="select-none">›</span>
+                                <span className="text-stone-600 font-semibold">Edit Profile</span>
+                            </nav>
                             {/* Compact Header */}
                             <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-14 relative md:mx-8 lg:mx-10 md:mt-6 md:rounded-3xl md:px-8 md:pt-7 md:pb-16 md:shadow-lg md:shadow-orange-200/50">
                                 <div className="flex items-center gap-3 text-white mb-0">
@@ -1064,11 +1161,22 @@ const ProfilePage: React.FC = () => {
 
                                     {/* Basic Details */}
                                     <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:rounded-3xl md:p-6">
-                                        <div className="flex items-center gap-2 mb-3">
+                                        {/* Mobile header (unchanged) — replaced at md+ by the richer
+                                            icon + title + caption row below, per the desktop mockup. */}
+                                        <div className="flex items-center gap-2 mb-3 md:hidden">
                                             <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
                                                 <User className="w-3.5 h-3.5 text-[#FF7000]" />
                                             </div>
                                             <h2 className="font-bold text-gray-800 text-sm">Basic Details</h2>
+                                        </div>
+                                        <div className="hidden md:flex items-center gap-3 mb-5">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                                <User className="w-5 h-5 text-[#FF7000]" />
+                                            </div>
+                                            <div>
+                                                <h2 className="font-bold text-gray-800 text-base">Personal Details</h2>
+                                                <p className="text-xs text-gray-400">Your name and basic information</p>
+                                            </div>
                                         </div>
 
                                         <EditInput
@@ -1110,11 +1218,21 @@ const ProfilePage: React.FC = () => {
 
                                     {/* Astro Details */}
                                     <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:rounded-3xl md:p-6">
-                                        <div className="flex items-center gap-2 mb-3">
+                                        {/* Mobile header (unchanged) — md+ uses the richer row below. */}
+                                        <div className="flex items-center gap-2 mb-3 md:hidden">
                                             <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
                                                 <Bookmark className="w-3.5 h-3.5 text-[#FF7000]" />
                                             </div>
                                             <h2 className="font-bold text-gray-800 text-sm">Astro Details</h2>
+                                        </div>
+                                        <div className="hidden md:flex items-center gap-3 mb-5">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                                <Bookmark className="w-5 h-5 text-[#FF7000]" />
+                                            </div>
+                                            <div>
+                                                <h2 className="font-bold text-gray-800 text-base">Astro Details</h2>
+                                                <p className="text-xs text-gray-400">Helps Purohit perform Sankalp correctly</p>
+                                            </div>
                                         </div>
 
                                         <EditInput
@@ -1150,11 +1268,21 @@ const ProfilePage: React.FC = () => {
 
                                     {/* Contact */}
                                     <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:rounded-3xl md:p-6">
-                                        <div className="flex items-center gap-2 mb-3">
+                                        {/* Mobile header (unchanged) — md+ uses the richer row below. */}
+                                        <div className="flex items-center gap-2 mb-3 md:hidden">
                                             <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
                                                 <Mail className="w-3.5 h-3.5 text-[#FF7000]" />
                                             </div>
                                             <h2 className="font-bold text-gray-800 text-sm">Contact</h2>
+                                        </div>
+                                        <div className="hidden md:flex items-center gap-3 mb-5">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                                <Mail className="w-5 h-5 text-[#FF7000]" />
+                                            </div>
+                                            <div>
+                                                <h2 className="font-bold text-gray-800 text-base">Contact Details</h2>
+                                                <p className="text-xs text-gray-400">Where we send booking updates &amp; receipts</p>
+                                            </div>
                                         </div>
                                         <div>
                                             <EditInput

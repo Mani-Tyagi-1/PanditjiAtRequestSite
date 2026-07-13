@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import Seo from "../components/seo/Seo";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Search,
+    ChevronLeft,
     ChevronRight,
     Phone,
     Video,
@@ -145,6 +146,16 @@ export default function HomePage() {
         }
     };
 
+    // Desktop "Trending Today" carousel: nudge the row by ~2 card widths.
+    const trendingRowRef = useRef<HTMLDivElement>(null);
+    const scrollTrending = (dir: -1 | 1) => {
+        const row = trendingRowRef.current;
+        if (!row) return;
+        const card = row.firstElementChild as HTMLElement | null;
+        const step = card ? (card.offsetWidth + 24) * 2 : row.clientWidth;
+        row.scrollBy({ left: dir * step, behavior: "smooth" });
+    };
+
     return (
         <div
             className="font-sans"
@@ -274,6 +285,10 @@ export default function HomePage() {
                 <div className="lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
                     {/* Left: headline, search, trust row */}
                     <div>
+                        <p className="mb-3 text-[13px] lg:text-sm font-semibold">
+                            <span className="font-bold text-orange-600">From Sacred Temples.</span>{" "}
+                            <span className="text-stone-500">For Your Peace.</span>
+                        </p>
                         <h1 className="text-4xl lg:text-5xl font-extrabold text-stone-900 leading-tight tracking-tight">
                             Book <span className="text-orange-600">Divine Seva</span> from Sacred Temples
                         </h1>
@@ -282,7 +297,8 @@ export default function HomePage() {
                         </p>
 
                         {/* Search row */}
-                        <div className="mt-7 flex items-center gap-2 bg-white rounded-2xl p-2 shadow-lg border border-orange-100">
+                        <p className="mt-7 mb-2 text-[13px] font-semibold text-stone-600">— What would you like to book today?</p>
+                        <div className="flex items-center gap-2 bg-white rounded-2xl p-2 shadow-lg border border-orange-100">
                             <select
                                 defaultValue=""
                                 onChange={(e) => {
@@ -339,6 +355,7 @@ export default function HomePage() {
                                 alt="Sacred puja at a temple"
                                 className="w-full h-full object-cover"
                                 loading="lazy"
+                                decoding="async"
                             />
                         </div>
 
@@ -352,6 +369,7 @@ export default function HomePage() {
                                 alt={durgaMataPuja.poojaNameEng}
                                 className="w-14 h-14 rounded-xl object-cover shrink-0"
                                 loading="lazy"
+                                decoding="async"
                             />
                             <div className="min-w-0 text-left">
                                 <p className="text-[12.5px] font-bold text-stone-800 leading-tight truncate">
@@ -372,13 +390,19 @@ export default function HomePage() {
             {/* ── Book Puja ── */}
             <section className="px-4 md:w-full md:px-8 lg:px-10 md:pt-8 lg:pt-10">
                 <div className="flex items-center gap-2 md:gap-3">
-                    <h2 className="text-[22px] font-bold text-stone-900 shrink-0 md:text-3xl lg:text-4xl md:tracking-tight">Book Puja</h2>
-                    <Flower2 className="w-5 h-5 text-orange-500 shrink-0 md:w-6 md:h-6" />
-                    <span className="h-px w-6 bg-orange-300 shrink-0 md:w-10" />
-                    <span className="text-[12.5px] text-stone-500 font-medium truncate md:text-sm">Poojas just for you</span>
-                    <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-orange-600 bg-orange-50 border border-orange-100 px-2.5 py-1 rounded-full shrink-0">
-                        <Flame className="w-3 h-3 fill-orange-500 text-orange-500" /> Trending Today
-                    </span>
+                    <h2 className="text-[22px] font-bold text-stone-900 shrink-0 md:hidden">Book Puja</h2>
+                    <Flower2 className="w-5 h-5 text-orange-500 shrink-0 md:hidden" />
+                    <span className="h-px w-6 bg-orange-300 shrink-0 md:hidden" />
+                    <span className="text-[12.5px] text-stone-500 font-medium truncate md:hidden">Poojas just for you</span>
+                    <div className="hidden md:flex items-center gap-3.5 min-w-0">
+                        <span className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-orange-600 shadow-sm flex items-center justify-center shrink-0">
+                            <Flame className="w-5 h-5 lg:w-6 lg:h-6 text-white fill-white" />
+                        </span>
+                        <div className="min-w-0">
+                            <h2 className="text-3xl lg:text-4xl font-bold text-stone-900 tracking-tight leading-tight">Trending Today</h2>
+                            <p className="mt-1 text-sm text-stone-500 truncate">Most booked pujas, chadhavas &amp; live pujas</p>
+                        </div>
+                    </div>
                     <button
                         onClick={() => navigate("/book-puja")}
                         className="ml-auto flex items-center gap-0.5 text-[14px] font-bold text-orange-600 active:scale-95 transition-transform shrink-0 md:hover:text-orange-700"
@@ -387,10 +411,11 @@ export default function HomePage() {
                     </button>
                 </div>
 
-                <div className="mt-3 pb-2 flex gap-3 overflow-x-auto scrollbar-hide snap-x scroll-px-2 [&>*:last-child]:mr-1 md:mt-6 md:grid md:grid-cols-3 lg:grid-cols-4 md:gap-5 lg:gap-6 md:overflow-visible md:pb-0">
+                <div className="relative">
+                <div ref={trendingRowRef} className="mt-3 pb-2 flex gap-3 overflow-x-auto scrollbar-hide snap-x scroll-px-2 [&>*:last-child]:mr-1 md:mt-4 md:py-2 md:gap-5 lg:gap-6">
                     {loading
                         ? Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="shrink-0 w-[38%] bg-white rounded-3xl p-2 shadow-sm animate-pulse md:w-auto">
+                            <div key={i} className="shrink-0 w-[38%] bg-white rounded-3xl p-2 shadow-sm animate-pulse md:w-[225px] lg:w-[240px]">
                                 <div className="h-28 bg-stone-200 rounded-2xl md:h-44 lg:h-48" />
                                 <div className="px-1 pt-3 pb-2 space-y-2">
                                     <div className="h-3 bg-stone-200 rounded w-3/4 mx-auto" />
@@ -402,11 +427,11 @@ export default function HomePage() {
                             <button
                                 key={p._id}
                                 onClick={() => navigate(`/puja/${p._id}`)}
-                                className="shrink-0 w-[38%] bg-white rounded-3xl border border-orange-100 shadow-sm text-center active:scale-[0.98] transition-transform snap-start md:w-auto md:shrink md:snap-none md:transition-all md:duration-300 md:hover:shadow-xl md:hover:-translate-y-1"
+                                className="shrink-0 w-[38%] bg-white rounded-3xl border border-orange-100 shadow-sm text-center active:scale-[0.98] transition-transform snap-start md:w-[225px] lg:w-[240px] md:shrink-0 md:snap-none md:transition-all md:duration-300 md:hover:shadow-xl md:hover:-translate-y-1"
                             >
                                 <div className="relative h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-amber-300 via-orange-300 to-orange-400 md:h-44 lg:h-48">
                                     {p.poojaCardImage && (
-                                        <img src={p.poojaCardImage} alt={p.poojaNameEng} className="w-full h-full object-cover" loading="lazy" />
+                                        <img src={p.poojaCardImage} alt={p.poojaNameEng} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                                     )}
                                     {p.isFeatured && (
                                         <span className="absolute top-2 left-2 flex items-center gap-1 bg-white text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm md:hidden">
@@ -426,12 +451,32 @@ export default function HomePage() {
                                     <p className="mt-1 text-[14px] font-bold text-orange-600 md:text-[16px]">
                                         ₹{priceOf(p).toLocaleString("en-IN")}
                                     </p>
+                                    <span className="hidden md:inline-flex mt-2 items-center justify-center bg-[#E05A10] text-white text-[11.5px] font-bold px-3.5 py-1 rounded-full">
+                                        Book Seva
+                                    </span>
                                 </div>
                             </button>
                         ))}
                     {!loading && poojas.length === 0 && (
-                        <p className="text-[13px] text-stone-400 py-6 md:col-span-3 lg:col-span-4 md:text-sm">No poojas available right now.</p>
+                        <p className="text-[13px] text-stone-400 py-6 md:text-sm">No poojas available right now.</p>
                     )}
+                </div>
+                <button
+                    type="button"
+                    aria-label="Scroll trending pujas left"
+                    onClick={() => scrollTrending(-1)}
+                    className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-9 h-9 items-center justify-center rounded-full bg-white border border-orange-100 shadow-md text-stone-600 transition-all duration-200 hover:text-orange-600 hover:shadow-lg cursor-pointer"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                    type="button"
+                    aria-label="Scroll trending pujas right"
+                    onClick={() => scrollTrending(1)}
+                    className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-9 h-9 items-center justify-center rounded-full bg-white border border-orange-100 shadow-md text-stone-600 transition-all duration-200 hover:text-orange-600 hover:shadow-lg cursor-pointer"
+                >
+                    <ChevronRight className="w-5 h-5" />
+                </button>
                 </div>
             </section>
 

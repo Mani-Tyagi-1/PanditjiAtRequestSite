@@ -17,6 +17,15 @@ const WHATSAPP_URL =
     `https://wa.me/${SUPPORT_PHONE}?text=` +
     encodeURIComponent("🙏 Namaste! I have a question about Chadhava Seva.");
 
+// Quick-question chips in the lg+ "Need Help?" sidebar — each opens WhatsApp
+// (same support number) with the question prefilled.
+const QUICK_QUESTIONS = [
+    "Which Chadhava is best for me?",
+    "How Sankalp is done?",
+    "When will I get Prasad & Video?",
+    "Other Questions",
+];
+
 type Chadhava = {
     id: string;
     slug: string;
@@ -285,6 +294,9 @@ export default function ChadhavaPage() {
     const [error, setError] = useState(false);
     const [selectedTemple, setSelectedTemple] = useState("");
     const [selectedPurpose, setSelectedPurpose] = useState<string | null>(null);
+    // Desktop-only "Sort By" select (md+ controls row). Default "" = Recommended
+    // = no sort, so the mobile list order is byte-identical to before.
+    const [sortBy, setSortBy] = useState<"" | "price-asc" | "price-desc">("");
 
     useEffect(() => {
         (async () => {
@@ -336,21 +348,28 @@ export default function ChadhavaPage() {
 
     // "festival" (default) = all items — kept unfiltered so the default (no
     // query param) view is identical to the original, always-shown list.
-    const tabFilteredItems = useMemo(() => {
+    const tabbedItems = useMemo(() => {
         switch (tab) {
-            case "temple":
-                return selectedTemple ? items.filter((c) => c.templeName === selectedTemple) : items;
             case "upcoming":
                 return [...items].sort((a, b) => earliestAvailableMs(a) - earliestAvailableMs(b));
             case "live":
                 return items.filter(isLiveTagged);
             case "value":
                 return [...items].sort((a, b) => a.startingPrice - b.startingPrice);
+            case "temple":
             case "festival":
             default:
                 return items;
         }
-    }, [items, tab, selectedTemple]);
+    }, [items, tab]);
+
+    // Temple filter — its only control is the md+ select in the "All Chadhava
+    // Seva" controls row, and it now applies on every tab. Default "" ("All
+    // Temples") filters nothing, so mobile output is unchanged.
+    const tabFilteredItems = useMemo(
+        () => (selectedTemple ? tabbedItems.filter((c) => c.templeName === selectedTemple) : tabbedItems),
+        [tabbedItems, selectedTemple]
+    );
 
     const filteredItems = useMemo(() => {
         if (!selectedPurpose) return tabFilteredItems;
@@ -363,6 +382,14 @@ export default function ChadhavaPage() {
             return purpose.keywords.some((k) => haystack.includes(k));
         });
     }, [tabFilteredItems, selectedPurpose]);
+
+    // Sort applied AFTER the tab/temple/purpose filters. Default ""
+    // (Recommended) returns the list as-is — no reorder on mobile.
+    const sortedItems = useMemo(() => {
+        if (sortBy === "price-asc") return [...filteredItems].sort((a, b) => a.startingPrice - b.startingPrice);
+        if (sortBy === "price-desc") return [...filteredItems].sort((a, b) => b.startingPrice - a.startingPrice);
+        return filteredItems;
+    }, [filteredItems, sortBy]);
 
     const trendingItems = useMemo(() => {
         const mostBooked = items.filter((c) => (c.tags || []).includes("Most Booked"));
@@ -441,19 +468,6 @@ export default function ChadhavaPage() {
                             {t.label}
                         </button>
                     ))}
-
-                    {tab === "temple" && (
-                        <select
-                            value={selectedTemple}
-                            onChange={(e) => setSelectedTemple(e.target.value)}
-                            className="ml-1 px-3.5 py-2 rounded-full text-[13px] font-semibold text-stone-600 bg-white border border-orange-100 cursor-pointer focus:outline-none focus:border-orange-300"
-                        >
-                            <option value="">All Temples</option>
-                            {templeOptions.map((name) => (
-                                <option key={name} value={name}>{name}</option>
-                            ))}
-                        </select>
-                    )}
                 </div>
             </section>
 
@@ -513,8 +527,38 @@ export default function ChadhavaPage() {
                 </section>
             )}
 
+            {/* ── Desktop "All Chadhava Seva" controls row (heading + temple / sort selects) ── */}
+            <section className="hidden md:flex items-end justify-between flex-wrap gap-4 md:px-8 lg:px-10 md:pt-10 lg:pt-12">
+                <h2 className="text-2xl lg:text-[28px] font-bold text-[#2E1F15]" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                    All Chadhava Seva
+                </h2>
+                <div className="hidden md:flex items-center gap-2.5">
+                    <select
+                        aria-label="Filter by temple"
+                        value={selectedTemple}
+                        onChange={(e) => setSelectedTemple(e.target.value)}
+                        className="px-3.5 py-2 rounded-full text-[13px] font-semibold text-stone-600 bg-white border border-orange-100 cursor-pointer focus:outline-none focus:border-orange-300 max-w-[220px] truncate"
+                    >
+                        <option value="">All Temples</option>
+                        {templeOptions.map((name) => (
+                            <option key={name} value={name}>{name}</option>
+                        ))}
+                    </select>
+                    <select
+                        aria-label="Sort by"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as "" | "price-asc" | "price-desc")}
+                        className="px-3.5 py-2 rounded-full text-[13px] font-semibold text-stone-600 bg-white border border-orange-100 cursor-pointer focus:outline-none focus:border-orange-300"
+                    >
+                        <option value="">Sort By: Recommended</option>
+                        <option value="price-asc">Price: Low to High</option>
+                        <option value="price-desc">Price: High to Low</option>
+                    </select>
+                </div>
+            </section>
+
             {/* ── List / Main grid (+ "Need Help?" sidebar at lg+) ── */}
-            <section className="px-4 pt-4 space-y-5 pb-8 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 lg:gap-7 md:space-y-0 md:items-stretch md:w-full md:px-8 lg:px-10 md:pt-10 lg:pt-12 md:pb-16 lg:pb-20">
+            <section className="px-4 pt-4 space-y-5 pb-8 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 lg:gap-7 md:space-y-0 md:items-stretch md:w-full md:px-8 lg:px-10 md:pt-5 lg:pt-6 md:pb-16 lg:pb-20">
                 {/* Devshayani Ekadashi combo — frontend-only campaign card (removable).
                     Shown pinned to the top on mobile only (unchanged); on desktop the
                     Hero above already carries this card as the big combo banner. */}
@@ -537,6 +581,20 @@ export default function ChadhavaPage() {
                     <p className="mt-1.5 text-[13px] text-stone-500 leading-relaxed">
                         Talk to our team for guidance on the right Chadhava for your intention.
                     </p>
+                    {/* Quick questions — open WhatsApp with the question prefilled */}
+                    <div className="mt-4 flex flex-col gap-2">
+                        {QUICK_QUESTIONS.map((q) => (
+                            <a
+                                key={q}
+                                href={`https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent(q)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-white rounded-xl border border-orange-100 px-3.5 py-2.5 text-[12.5px] font-semibold text-stone-600 hover:border-orange-300 transition-colors"
+                            >
+                                {q}
+                            </a>
+                        ))}
+                    </div>
                     <a
                         href={WHATSAPP_URL}
                         target="_blank"
@@ -584,7 +642,7 @@ export default function ChadhavaPage() {
                 )}
 
                 {!loading &&
-                    filteredItems.map((c) => {
+                    sortedItems.map((c) => {
                         const eventTag = getEventTag(c);
                         const targetDate = c.availableDates?.[0] || new Date(Date.now() + 13 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000 + 6 * 60 * 1000).toISOString();
                         const displayDate = c.availableDates?.[0] ? formatDate(c.availableDates[0]) : "";

@@ -14,7 +14,6 @@ import {
     Users,
     Flame,
     Sparkles,
-    Grid3x3,
     ChevronRight,
     MessageCircle,
     CheckCircle2,
@@ -78,11 +77,19 @@ const priceOf = (p: Pooja) => p.poojaPriceOnline || p.poojaPriceOffline || 0;
 // Keyword match for Kashi-relevant sevas (case-insensitive).
 const KASHI_SEVA_RE = /rudrabhishek|kaal sarp|mrityunjay|pitra|pitru|dosh|ganga aarti|abhishek|kashi|vishwanath/i;
 
-const TRUST_BADGES = [
-    { icon: ShieldCheck, label: "Verified Kashi Pandits" },
-    { icon: BookOpen, label: "Authentic Vedic Vidhi" },
-    { icon: Zap, label: "Fast Confirmation" },
-    { icon: Video, label: "Live or Video Proof" },
+// Desktop dark-hero content (md+ only). Stats are honest: one real figure
+// ("50,000+ Devotees", already used across this codebase) + qualitative tiles.
+const HERO_TRUST = [
+    { icon: ShieldCheck, top: "Verified", bottom: "Kashi Pandits" },
+    { icon: BookOpen, top: "Authentic", bottom: "Vedic Vidhi" },
+    { icon: Zap, top: "Fast", bottom: "Confirmation" },
+    { icon: Video, top: "Live", bottom: "Video Proof" },
+];
+
+const HERO_STATS = [
+    { icon: Users, title: "50,000+ Devotees", sub: "Trust & Faith" },
+    { icon: ShieldCheck, title: "Verified Pandits", sub: "100% Authentic" },
+    { icon: Video, title: "Live or Video Proof", sub: "Every Ceremony" },
 ];
 
 const HOW_IT_WORKS = [
@@ -249,25 +256,81 @@ export default function KashiPage() {
             {/* Content above backdrop */}
             <div className="relative z-10">
 
+            {/* Hero region — full-bleed dark photo hero at md+ (wrapper is style-inert on mobile) */}
+            <div className="md:relative md:pb-12 lg:pb-16">
+
+            {/* Desktop-only dark hero backdrop, self-contained so the sections below stay light */}
+            <img
+                src={KASHI_BG}
+                alt=""
+                aria-hidden="true"
+                className="hidden md:block absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+            />
+            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/25" />
+
             {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-4 md:px-8 lg:px-10 md:pt-8">
+            <div className="flex items-center justify-between px-4 pt-4 md:px-8 lg:px-10 md:pt-8 md:relative">
                 <button
                     onClick={() => navigate("/home")}
-                    className="w-9 h-9 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer md:w-11 md:h-11 md:hover:bg-white"
+                    className="w-9 h-9 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer md:w-11 md:h-11 md:bg-white/15 md:border md:border-white/25 md:backdrop-blur-sm md:hover:bg-white/30"
                 >
-                    <ArrowLeft className="w-4.5 h-4.5 text-stone-700 md:w-5 md:h-5" />
+                    <ArrowLeft className="w-4.5 h-4.5 text-stone-700 md:w-5 md:h-5 md:text-white" />
                 </button>
-                <h1 className="text-[20px] font-bold text-stone-800 md:text-2xl md:tracking-tight">Kashi Vishwanath Dham</h1>
-                <span className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm text-orange-600 text-xl font-bold">
+                <h1 className="text-[20px] font-bold text-stone-800 md:text-2xl md:tracking-tight md:text-white">Kashi Vishwanath Dham</h1>
+                <span className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm text-orange-600 text-xl font-bold md:bg-white/15 md:border md:border-white/25 md:backdrop-blur-sm md:text-orange-300">
                     ॐ
                 </span>
             </div>
 
             {/* Desktop split: mantra hero left, form right (style-inert on mobile) */}
-            <div className="lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center lg:px-10 lg:w-full lg:mt-12">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center lg:px-10 lg:w-full lg:mt-12 md:relative">
 
-            {/* Mantra */}
-            <div className="text-center px-6 mt-4 md:mt-8 lg:mt-0 lg:px-0 lg:text-left">
+            {/* Desktop hero copy — replaces the mantra block at md+ */}
+            <div className="hidden md:block md:mt-10 md:px-4 md:max-w-xl md:mx-auto md:w-full lg:mt-0 lg:px-0 lg:max-w-none lg:mx-0">
+                <p className="text-[13px] lg:text-sm font-bold text-orange-300">
+                    From the Holy Abode of Lord Kashi Vishwanath
+                </p>
+                <h2
+                    className="mt-3 text-4xl lg:text-5xl font-bold text-white leading-tight"
+                    style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                >
+                    Bring Kashi&apos;s <span className="text-orange-400">Divine Blessings</span> Home
+                </h2>
+                <p className="mt-4 text-[15px] text-white/85 leading-relaxed max-w-md">
+                    Request authentic Vedic Pujas and Sevas in the sacred shrine of Kashi Vishwanath Dham.
+                    Performed by verified Kashi Pandits with traditional vidhi, live darshan or video proof
+                    and complete devotion.
+                </p>
+
+                {/* Trust chip bar */}
+                <div className="mt-7 flex items-stretch divide-x divide-white/10 bg-black/40 border border-white/15 backdrop-blur rounded-2xl overflow-hidden">
+                    {HERO_TRUST.map(({ icon: Icon, top, bottom }) => (
+                        <div key={top} className="flex-1 flex items-center gap-2 px-3 lg:px-4 py-3">
+                            <Icon className="w-4.5 h-4.5 text-orange-400 shrink-0" />
+                            <span className="leading-tight min-w-0">
+                                <span className="block text-[12px] font-bold text-white">{top}</span>
+                                <span className="block text-[11px] text-white/70">{bottom}</span>
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Stats band — one real figure + qualitative tiles (no invented percentages) */}
+                <div className="mt-4 grid grid-cols-3 divide-x divide-stone-100 bg-white rounded-2xl shadow-lg overflow-hidden">
+                    {HERO_STATS.map(({ icon: Icon, title, sub }) => (
+                        <div key={title} className="px-3 lg:px-4 py-3.5 flex flex-col items-center gap-1 text-center">
+                            <Icon className="w-4.5 h-4.5 text-orange-500" />
+                            <span className="text-[13px] font-bold text-stone-800 leading-tight">{title}</span>
+                            <span className="text-[11px] text-stone-500 font-medium">{sub}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Mantra (mobile — hidden at md+ where the desktop hero copy above renders) */}
+            <div className="text-center px-6 mt-4 md:mt-8 lg:mt-0 lg:px-0 lg:text-left md:hidden">
                 <h2 className="text-[30px] font-bold text-orange-700 md:text-4xl lg:text-[44px] xl:text-5xl md:tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     || हर हर महादेव ||
                 </h2>
@@ -303,7 +366,7 @@ export default function KashiPage() {
                         </button>
                     </div>
                 ) : (
-                    <div className="bg-white/45 rounded-3xl shadow-lg border border-white/60 p-5 md:p-8 md:rounded-[28px] md:backdrop-blur-md md:shadow-xl">
+                    <div className="bg-white/45 rounded-3xl shadow-lg border border-white/60 p-5 md:p-8 md:rounded-[28px] md:backdrop-blur-md md:shadow-xl md:bg-white/95">
                         {/* Card title */}
                         <div className="flex items-center justify-center gap-2">
                             <span className="w-9 h-9 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center">🪔</span>
@@ -362,6 +425,10 @@ export default function KashiPage() {
                         >
                             🔱 {submitting ? "Submitting…" : "Request Pandit / Pooja Booking"}
                         </button>
+
+                        <p className="hidden md:block mt-3 text-[11.5px] text-stone-400 text-center">
+                            🔒 Your details are secure &amp; confidential
+                        </p>
                     </div>
                 )}
             </div>
@@ -369,40 +436,7 @@ export default function KashiPage() {
             {/* end desktop split wrapper */}
             </div>
 
-            {/* ── Trust badges + stats (hero enrichment, desktop only) ── */}
-            <div className="hidden md:block md:px-8 lg:px-10 mt-10 lg:mt-14">
-                <div className="grid grid-cols-4 gap-4 lg:gap-5">
-                    {TRUST_BADGES.map(({ icon: Icon, label }) => (
-                        <div
-                            key={label}
-                            className="bg-white/70 backdrop-blur-sm border border-orange-100 rounded-2xl py-4 px-3 flex flex-col items-center gap-2 text-center shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
-                        >
-                            <span className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                                <Icon className="w-5 h-5" />
-                            </span>
-                            <span className="text-[13px] font-bold text-stone-700 leading-tight">{label}</span>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Stats row — real, computed figures only (no fabricated numbers) */}
-                <div className="mt-6 grid grid-cols-3 gap-4 lg:gap-5">
-                    <div className="bg-white border border-orange-100 rounded-2xl py-4 px-3 flex flex-col items-center gap-1 text-center shadow-sm">
-                        <Users className="w-5 h-5 text-orange-500" />
-                        <span className="text-lg font-bold text-stone-800">50,000+</span>
-                        <span className="text-[12px] text-stone-500 font-medium">Devotees</span>
-                    </div>
-                    <div className="bg-white border border-orange-100 rounded-2xl py-4 px-3 flex flex-col items-center gap-1 text-center shadow-sm">
-                        <Flame className="w-5 h-5 text-orange-500" />
-                        <span className="text-lg font-bold text-stone-800">{loadingPoojas ? "…" : `${poojas.length}+`}</span>
-                        <span className="text-[12px] text-stone-500 font-medium">Sevas Available</span>
-                    </div>
-                    <div className="bg-white border border-orange-100 rounded-2xl py-4 px-3 flex flex-col items-center gap-1 text-center shadow-sm">
-                        <Grid3x3 className="w-5 h-5 text-orange-500" />
-                        <span className="text-lg font-bold text-stone-800">{loadingCategories ? "…" : categories.length}</span>
-                        <span className="text-[12px] text-stone-500 font-medium">Puja Categories</span>
-                    </div>
-                </div>
+            {/* end hero region wrapper */}
             </div>
 
             {/* ── Popular Kashi Sevas ── */}

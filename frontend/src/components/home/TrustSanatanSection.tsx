@@ -1,4 +1,4 @@
-import { Shield, Calendar, Headphones, CreditCard, User, Lock, Users, Check, Star } from "lucide-react";
+import { Shield, Calendar, Headphones, CreditCard, User, Lock, Users, Check, Star, BadgeCheck, ShieldCheck, IndianRupee, Video, Gift, Headset } from "lucide-react";
 import SectionHeader from "./SectionHeader";
 
 interface TrustItem {
@@ -35,6 +35,16 @@ const TRUST_LIST: TrustItem[] = [
     }
 ];
 
+// Desktop-only (md+) trust tiles — six-in-a-row band per the desktop mockup.
+const DESKTOP_TRUST_TILES = [
+    { icon: BadgeCheck, label: "Authentic Vidhi", sub: "As per Vedic Scriptures" },
+    { icon: ShieldCheck, label: "Verified Pandits", sub: "Experienced & Trusted" },
+    { icon: IndianRupee, label: "Transparent Pricing", sub: "No Hidden Charges" },
+    { icon: Video, label: "Live Video Proof", sub: "Watch or Get Recording" },
+    { icon: Gift, label: "Prasad Delivered", sub: "Pure & Blessed Prasad" },
+    { icon: Headset, label: "Dedicated Support", sub: "Always Here for You" },
+];
+
 export default function TrustSanatanSection() {
     return (
         <section className="px-4 pt-6 md:px-8 lg:px-10 md:pt-12 lg:pt-16 md:w-full">
@@ -48,8 +58,8 @@ export default function TrustSanatanSection() {
                         subtitle="Our commitment to authenticity"
                     />
 
-                    {/* Grid of Trust items matching screenshot */}
-                    <div className="mt-3.5 grid grid-cols-2 gap-2.5 md:mt-6 md:gap-4 lg:grid-cols-4 lg:gap-5">
+                    {/* Grid of Trust items matching screenshot (mobile only) */}
+                    <div className="mt-3.5 grid grid-cols-2 gap-2.5 md:hidden">
                         {TRUST_LIST.map((t) => {
                             const IconComp = t.icon;
                             return (
@@ -71,6 +81,24 @@ export default function TrustSanatanSection() {
                                 </div>
                             );
                         })}
+                    </div>
+
+                    {/* Desktop-only six-tile trust band per mockup */}
+                    <div className="hidden md:grid md:mt-6 md:grid-cols-3 lg:grid-cols-6 md:gap-4">
+                        {DESKTOP_TRUST_TILES.map(({ icon: IconComp, label, sub }) => (
+                            <div
+                                key={label}
+                                className="bg-white border border-orange-100 rounded-2xl p-4 flex flex-col items-start gap-2.5 shadow-sm text-left transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-orange-200"
+                            >
+                                <span className="w-10 h-10 rounded-xl bg-[#FFFBF6] border border-orange-100/60 flex items-center justify-center text-[#F0780A] shrink-0">
+                                    <IconComp className="w-5 h-5 stroke-[2.2]" />
+                                </span>
+                                <div>
+                                    <h4 className="text-[13.5px] font-bold text-stone-800 leading-tight">{label}</h4>
+                                    <p className="text-[11px] text-stone-400 mt-1 leading-snug">{sub}</p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
                     {/* Puja Samagri Included nested section */}

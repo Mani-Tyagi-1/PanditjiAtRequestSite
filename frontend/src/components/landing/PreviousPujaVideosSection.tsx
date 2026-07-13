@@ -23,7 +23,7 @@ const VIDEOS: PujaVideo[] = [
     city: "Noida Sector 62",
     panditName: "Pandit Rajesh Shastri",
     duration: "2:45",
-    thumbnail: "https://images.unsplash.com/photo-1609137922983-b570c0aaeaa6?w=400&h=260&fit=crop",
+    thumbnail: "https://images.unsplash.com/photo-1545128485-c400e7702796?w=400&h=260&fit=crop",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
   },
   {

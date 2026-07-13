@@ -14,9 +14,12 @@ import {
     Menu,
     X,
     User,
+    ShieldCheck,
+    Users,
+    PackageCheck,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
-import { DURGA_MATA_PUJA_SLUG } from "../data/durgaMataPuja";
+import { DURGA_MATA_PUJA_SLUG, durgaMataPuja } from "../data/durgaMataPuja";
 import { useAuth } from "../context/AuthContext";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
@@ -26,6 +29,10 @@ import Testimonials from "../components/booking/Testimonials";
 import FAQSection from "../components/home/FAQSection";
 import TrustSanatanSection from "../components/home/TrustSanatanSection";
 import CTASection from "../components/home/CTASection";
+import LiveNowSection from "../components/home/LiveNowSection";
+import BookByNeedRow from "../components/home/BookByNeedRow";
+import HowItWorksSection from "../components/booking/HowItWorksSection";
+import { LIVE_MANDIR_PUJAS } from "../components/booking/LiveMandirPujas/liveMandirData";
 
 const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
@@ -49,6 +56,23 @@ const CONSULTATIONS = [
     { icon: Phone, label: "Talk on Call", sub: "Speak Directly", path: "/paid-consultation?type=voice", tint: "bg-orange-100 text-orange-600" },
     { icon: Video, label: "Video Call", sub: "Face to Face", path: "/paid-consultation?type=video", tint: "bg-green-100 text-green-600" },
     { icon: MessageSquare, label: "Chat", sub: "Instant Answers", path: "/free-consultation", tint: "bg-sky-100 text-sky-600" },
+];
+
+// Desktop hero's "I want to book" quick-jump select.
+const HERO_BOOK_OPTIONS = [
+    { label: "Puja", to: "/book-puja" },
+    { label: "Chadhava", to: "/chadhava" },
+    { label: "Consultation", to: "/paid-consultation" },
+    { label: "Puja Samagri", to: "/shop" },
+];
+
+// Desktop hero trust row — reuses the same "50,000+ Devotees" figure already
+// used elsewhere in this codebase (pages/BookPujaPage.tsx) for consistency.
+const HERO_TRUST_ITEMS = [
+    { icon: ShieldCheck, label: "Verified Pandits", sub: "Authentic & Trusted" },
+    { icon: Video, label: "Live Video Proof", sub: "Watch Real-time" },
+    { icon: Users, label: "50,000+ Devotees", sub: "Trust & Faith" },
+    { icon: PackageCheck, label: "Prasad Included", sub: "Delivered to You" },
 ];
 
 export default function HomePage() {
@@ -96,7 +120,7 @@ export default function HomePage() {
 
         const queryTokens = searchQuery
             .toLowerCase()
-            .replace(/[^\w\s\u0900-\u097F]/g, "") // support English and Devanagari/Hindi chars
+            .replace(/[^\w\sऀ-ॿ]/g, "") // support English and Devanagari/Hindi chars
             .split(/\s+/)
             .filter(Boolean);
 
@@ -110,6 +134,16 @@ export default function HomePage() {
     }, [searchQuery, allPoojas]);
 
     const priceOf = (p: Pooja) => p.poojaPriceOnline || p.poojaPriceOffline || 0;
+
+    // Desktop hero search: jump straight to the first live match, else the
+    // full Book Puja catalog (reuses the same search state as the dropdown).
+    const handleHeroSearch = () => {
+        if (searchResults.length > 0) {
+            navigate(`/puja/${searchResults[0]._id}`);
+        } else {
+            navigate("/book-puja");
+        }
+    };
 
     return (
         <div
@@ -130,9 +164,9 @@ export default function HomePage() {
             />
 
 
-            {/* ── Header ── */}
+            {/* ── Header (mobile only — DesktopHeader from AppLayout takes over at md+) ── */}
             <div
-                className="sticky top-0 z-30 px-4 pt-3 pb-4 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100/30"
+                className="md:hidden sticky top-0 z-30 px-4 pt-3 pb-4 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100/30"
             >
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -235,26 +269,129 @@ export default function HomePage() {
                 </div>
             </div>
 
+            {/* ── Hero (md+ only — supersedes the mobile sticky search header above) ── */}
+            <section className="hidden md:block md:w-full md:px-8 lg:px-10 md:pt-10 lg:pt-14 md:pb-16 lg:pb-20">
+                <div className="lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
+                    {/* Left: headline, search, trust row */}
+                    <div>
+                        <h1 className="text-4xl lg:text-5xl font-extrabold text-stone-900 leading-tight tracking-tight">
+                            Book <span className="text-orange-600">Divine Seva</span> from Sacred Temples
+                        </h1>
+                        <p className="mt-4 text-stone-500 text-base lg:text-lg leading-relaxed max-w-md">
+                            Verified Pandits will perform Pujas &amp; Chadhavas with your name and gotra. Watch Live or get Video Proof.
+                        </p>
+
+                        {/* Search row */}
+                        <div className="mt-7 flex items-center gap-2 bg-white rounded-2xl p-2 shadow-lg border border-orange-100">
+                            <select
+                                defaultValue=""
+                                onChange={(e) => {
+                                    const to = e.target.value;
+                                    if (to) navigate(to);
+                                }}
+                                aria-label="I want to book"
+                                className="h-12 shrink-0 px-3 rounded-xl bg-orange-50 text-[13.5px] font-semibold text-stone-700 border-none outline-none cursor-pointer"
+                            >
+                                <option value="" disabled>I want to book</option>
+                                {HERO_BOOK_OPTIONS.map((opt) => (
+                                    <option key={opt.to} value={opt.to}>{opt.label}</option>
+                                ))}
+                            </select>
+                            <div className="flex-1 flex items-center gap-2 px-2 min-w-0">
+                                <Search className="w-4.5 h-4.5 text-stone-400 shrink-0" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search puja, temple, or seva…"
+                                    className="w-full bg-transparent text-[13.5px] text-stone-800 placeholder-stone-400 outline-hidden"
+                                />
+                            </div>
+                            <button
+                                onClick={handleHeroSearch}
+                                className="h-12 shrink-0 flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[13.5px] px-5 rounded-xl shadow-md transition-all duration-200 cursor-pointer"
+                            >
+                                <Search className="w-4 h-4" /> Search
+                            </button>
+                        </div>
+
+                        {/* Trust row */}
+                        <div className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            {HERO_TRUST_ITEMS.map(({ icon: Icon, label, sub }) => (
+                                <div key={label} className="flex items-center gap-2.5">
+                                    <span className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                                        <Icon className="w-5 h-5" />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="text-[12.5px] font-bold text-stone-800 leading-tight truncate">{label}</p>
+                                        <p className="text-[11px] text-stone-400 truncate">{sub}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Right: hero image + floating Chintpurni promo card */}
+                    <div className="hidden md:block relative mt-10 lg:mt-0">
+                        <div className="relative rounded-[32px] overflow-hidden shadow-xl h-[380px] lg:h-[440px]">
+                            <img
+                                src={LIVE_MANDIR_PUJAS[0].image}
+                                alt="Sacred puja at a temple"
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                            />
+                        </div>
+
+                        <button
+                            onClick={() => navigate(`/${DURGA_MATA_PUJA_SLUG}`)}
+                            aria-label={`Book ${durgaMataPuja.poojaNameEng}`}
+                            className="absolute -bottom-6 left-6 lg:left-8 flex items-center gap-3 bg-white rounded-2xl shadow-xl border border-orange-100 p-3 max-w-[260px] cursor-pointer transition-transform duration-200 hover:-translate-y-1"
+                        >
+                            <img
+                                src={durgaMataPuja.poojaCardImage}
+                                alt={durgaMataPuja.poojaNameEng}
+                                className="w-14 h-14 rounded-xl object-cover shrink-0"
+                                loading="lazy"
+                            />
+                            <div className="min-w-0 text-left">
+                                <p className="text-[12.5px] font-bold text-stone-800 leading-tight truncate">
+                                    {durgaMataPuja.poojaNameEng}
+                                </p>
+                                <p className="text-orange-600 font-extrabold text-[15px] mt-0.5">
+                                    ₹{durgaMataPuja.poojaPriceOnline}
+                                </p>
+                                <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-orange-600 mt-0.5">
+                                    Book Now <ChevronRight className="w-3 h-3" />
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
             {/* ── Book Puja ── */}
-            <section className="px-4">
-                <div className="flex items-center gap-2">
-                    <h2 className="text-[22px] font-bold text-stone-900 shrink-0">Book Puja</h2>
-                    <Flower2 className="w-5 h-5 text-orange-500 shrink-0" />
-                    <span className="h-px w-6 bg-orange-300 shrink-0" />
-                    <span className="text-[12.5px] text-stone-500 font-medium truncate">Poojas just for you</span>
+            <section className="px-4 md:w-full md:px-8 lg:px-10 md:pt-8 lg:pt-10">
+                <div className="flex items-center gap-2 md:gap-3">
+                    <h2 className="text-[22px] font-bold text-stone-900 shrink-0 md:text-3xl lg:text-4xl md:tracking-tight">Book Puja</h2>
+                    <Flower2 className="w-5 h-5 text-orange-500 shrink-0 md:w-6 md:h-6" />
+                    <span className="h-px w-6 bg-orange-300 shrink-0 md:w-10" />
+                    <span className="text-[12.5px] text-stone-500 font-medium truncate md:text-sm">Poojas just for you</span>
+                    <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-orange-600 bg-orange-50 border border-orange-100 px-2.5 py-1 rounded-full shrink-0">
+                        <Flame className="w-3 h-3 fill-orange-500 text-orange-500" /> Trending Today
+                    </span>
                     <button
                         onClick={() => navigate("/book-puja")}
-                        className="ml-auto flex items-center gap-0.5 text-[14px] font-bold text-orange-600 active:scale-95 transition-transform shrink-0"
+                        className="ml-auto flex items-center gap-0.5 text-[14px] font-bold text-orange-600 active:scale-95 transition-transform shrink-0 md:hover:text-orange-700"
                     >
                         View All <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
 
-                <div className="mt-3 pb-2 flex gap-3 overflow-x-auto scrollbar-hide snap-x scroll-px-2 [&>*:last-child]:mr-1">
+                <div className="mt-3 pb-2 flex gap-3 overflow-x-auto scrollbar-hide snap-x scroll-px-2 [&>*:last-child]:mr-1 md:mt-6 md:grid md:grid-cols-3 lg:grid-cols-4 md:gap-5 lg:gap-6 md:overflow-visible md:pb-0">
                     {loading
                         ? Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="shrink-0 w-[38%] bg-white rounded-3xl p-2 shadow-sm animate-pulse">
-                                <div className="h-28 bg-stone-200 rounded-2xl" />
+                            <div key={i} className="shrink-0 w-[38%] bg-white rounded-3xl p-2 shadow-sm animate-pulse md:w-auto">
+                                <div className="h-28 bg-stone-200 rounded-2xl md:h-44 lg:h-48" />
                                 <div className="px-1 pt-3 pb-2 space-y-2">
                                     <div className="h-3 bg-stone-200 rounded w-3/4 mx-auto" />
                                     <div className="h-3.5 bg-stone-200 rounded w-1/2 mx-auto" />
@@ -265,46 +402,57 @@ export default function HomePage() {
                             <button
                                 key={p._id}
                                 onClick={() => navigate(`/puja/${p._id}`)}
-                                className="shrink-0 w-[38%] bg-white rounded-3xl border border-orange-100 shadow-sm text-center active:scale-[0.98] transition-transform snap-start"
+                                className="shrink-0 w-[38%] bg-white rounded-3xl border border-orange-100 shadow-sm text-center active:scale-[0.98] transition-transform snap-start md:w-auto md:shrink md:snap-none md:transition-all md:duration-300 md:hover:shadow-xl md:hover:-translate-y-1"
                             >
-                                <div className="relative h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-amber-300 via-orange-300 to-orange-400">
+                                <div className="relative h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-amber-300 via-orange-300 to-orange-400 md:h-44 lg:h-48">
                                     {p.poojaCardImage && (
                                         <img src={p.poojaCardImage} alt={p.poojaNameEng} className="w-full h-full object-cover" loading="lazy" />
                                     )}
                                     {p.isFeatured && (
-                                        <span className="absolute top-2 left-2 flex items-center gap-1 bg-white text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                        <span className="absolute top-2 left-2 flex items-center gap-1 bg-white text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm md:hidden">
                                             <Flame className="w-3 h-3 fill-orange-500 text-orange-500" /> Popular
+                                        </span>
+                                    )}
+                                    {p.isFeatured && (
+                                        <span className="hidden md:flex absolute top-2.5 left-2.5 items-center gap-1 bg-white text-orange-600 text-[10.5px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                                            <Flame className="w-3 h-3 fill-orange-500 text-orange-500" /> Most Booked
                                         </span>
                                     )}
                                 </div>
                                 <div className="px-1 pt-3 pb-2">
-                                    <h3 className="text-[13px] font-bold text-stone-800 leading-tight line-clamp-2 min-h-[32px]">
+                                    <h3 className="text-[13px] font-bold text-stone-800 leading-tight line-clamp-2 min-h-[32px] md:text-[15px]">
                                         {p.poojaNameEng}
                                     </h3>
-                                    <p className="mt-1 text-[14px] font-bold text-orange-600">
+                                    <p className="mt-1 text-[14px] font-bold text-orange-600 md:text-[16px]">
                                         ₹{priceOf(p).toLocaleString("en-IN")}
                                     </p>
                                 </div>
                             </button>
                         ))}
                     {!loading && poojas.length === 0 && (
-                        <p className="text-[13px] text-stone-400 py-6">No poojas available right now.</p>
+                        <p className="text-[13px] text-stone-400 py-6 md:col-span-3 lg:col-span-4 md:text-sm">No poojas available right now.</p>
                     )}
                 </div>
             </section>
 
+            {/* ── Live Now / Upcoming Live Pujas (md+ only) ── */}
+            <LiveNowSection />
+
+            {/* ── Book by Need (md+ only) ── */}
+            <BookByNeedRow />
+
             {/* ── Featured Puja banner (Maa Chintpurni) ── */}
             {FEATURED_PUJA_BANNER && (
-                <section className="px-4 pt-6">
+                <section className="px-4 pt-6 md:w-full md:px-8 lg:px-10 md:pt-14 lg:pt-16">
                     <button
                         onClick={() => navigate(`/${DURGA_MATA_PUJA_SLUG}`)}
                         aria-label="Book Maa Chintpurni Pooja"
-                        className="block w-full active:scale-[0.99] transition-transform cursor-pointer"
+                        className="block w-full active:scale-[0.99] transition-transform cursor-pointer md:max-w-3xl md:mx-auto md:transition-all md:duration-300 md:hover:-translate-y-1 md:hover:shadow-2xl"
                     >
                         <img
                             src={FEATURED_PUJA_BANNER}
                             alt="Maa Chintpurni Pooja — Book Now"
-                            className="w-full h-auto rounded-2xl shadow-md"
+                            className="w-full h-auto rounded-2xl shadow-md md:rounded-3xl"
                             loading="lazy"
                         />
                     </button>
@@ -318,14 +466,14 @@ export default function HomePage() {
             <SacredChadhavaSewa />
 
             {/* ── Consultation ── */}
-            <section className="px-4 pt-6">
+            <section className="px-4 pt-6 md:w-full md:px-8 lg:px-10 md:pt-14 lg:pt-16">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-[22px] font-bold text-stone-900 shrink-0">Consultation</h2>
-                    <MessageSquare className="w-5 h-5 text-orange-500 shrink-0" />
-                    <span className="h-px w-6 bg-orange-300 shrink-0" />
-                    <span className="text-[12.5px] text-stone-500 font-medium truncate">Talk to experienced pandit ji</span>
+                    <h2 className="text-[22px] font-bold text-stone-900 shrink-0 md:text-3xl lg:text-4xl md:tracking-tight">Consultation</h2>
+                    <MessageSquare className="w-5 h-5 text-orange-500 shrink-0 md:w-6 md:h-6" />
+                    <span className="h-px w-6 bg-orange-300 shrink-0 md:w-10" />
+                    <span className="text-[12.5px] text-stone-500 font-medium truncate md:text-sm">Talk to experienced pandit ji</span>
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-3">
+                <div className="mt-3 grid grid-cols-3 gap-3 md:mt-6 md:gap-5">
                     {CONSULTATIONS.map(({ icon: Icon, label, sub, path, tint }) => (
                         <button
                             key={label}
@@ -342,13 +490,13 @@ export default function HomePage() {
                                     navigate(path);
                                 }
                             }}
-                            className="bg-white rounded-2xl py-2 px-2 flex flex-col items-center gap-1 border border-orange-100 shadow-sm active:scale-95 transition-transform cursor-pointer"
+                            className="bg-white rounded-2xl py-2 px-2 flex flex-col items-center gap-1 border border-orange-100 shadow-sm active:scale-95 transition-transform cursor-pointer md:py-8 md:px-6 md:gap-2 md:transition-all md:duration-300 md:hover:shadow-lg md:hover:-translate-y-1"
                         >
-                            <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${tint}`}>
-                                <Icon className="w-5 h-5" />
+                            <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${tint} md:w-14 md:h-14 md:rounded-2xl`}>
+                                <Icon className="w-5 h-5 md:w-7 md:h-7" />
                             </span>
-                            <span className="text-[13px] font-bold text-stone-800">{label}</span>
-                            <span className="text-[10.5px] font-medium text-stone-400">{sub}</span>
+                            <span className="text-[13px] font-bold text-stone-800 md:text-lg">{label}</span>
+                            <span className="text-[10.5px] font-medium text-stone-400 md:text-[13px]">{sub}</span>
                         </button>
                     ))}
                 </div>
@@ -372,10 +520,15 @@ export default function HomePage() {
             {/* ── Why Devotees Trust Us & Sanatan App ── */}
             <TrustSanatanSection />
 
+            {/* ── How It Works (md+ only) ── */}
+            <div className="hidden md:block md:w-full md:px-8 lg:px-10 md:pt-12 lg:pt-16">
+                <HowItWorksSection />
+            </div>
+
             {/* ── Call To Action Banner ── */}
             <CTASection />
 
-            <footer className="px-4 pt-1 pb-6 text-center">
+            <footer className="px-4 pt-1 pb-6 text-center md:hidden">
                 <p className="text-[13px] font-medium text-stone-400">
                     &copy; {new Date().getFullYear()} VEDICVAIBHAV DOT COM PRIVATE LIMITED. All Rights Reserved.
                 </p>
@@ -389,7 +542,7 @@ export default function HomePage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[99] max-w-md mx-auto"
+                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[99] max-w-md mx-auto md:max-w-none"
                             onClick={() => setIsMenuOpen(false)}
                         />
                         <motion.div

@@ -19,7 +19,7 @@ function SkeletonCard() {
       className="w-full bg-white animate-pulse overflow-hidden flex flex-col"
       style={{ borderRadius: 20 }}
     >
-      <div className="bg-gray-200" style={{ height: 130 }} />
+      <div className="bg-gray-200 md:h-48!" style={{ height: 130 }} />
       <div className="p-4">
         <div className="h-4 bg-gray-200 rounded w-4/5 mb-3" />
         <div className="h-3 bg-gray-200 rounded w-full mb-2" />
@@ -70,9 +70,9 @@ export default function BlogsPage() {
         .blog-card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
       `}</style>
 
-      <section className="blog-body-font bg-[#FFFAF3] py-10">
+      <section className="blog-body-font bg-[#FFFAF3] py-10 md:py-16 lg:py-20">
         {/* Header */}
-        <div className="text-center mb-6 px-4">
+        <div className="text-center mb-6 px-4 md:mb-10">
           <div className="flex items-center gap-2 justify-center mb-2">
             <div className="h-px flex-1 max-w-[40px] bg-gradient-to-r from-transparent to-orange-200" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500 flex items-center gap-1 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full">
@@ -81,7 +81,7 @@ export default function BlogsPage() {
             <div className="h-px flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-orange-200" />
           </div>
           <h2
-            className="text-xl font-bold text-stone-800"
+            className="text-xl font-bold text-stone-800 md:text-3xl lg:text-4xl md:tracking-tight"
             style={{ fontFamily: "'Cormorant Garamond', serif" }}
           >
             Insights &{" "}
@@ -89,15 +89,15 @@ export default function BlogsPage() {
               Stories
             </span>
           </h2>
-          <p className="text-[12px] text-stone-500 text-center mt-1 font-light">
+          <p className="text-[12px] text-stone-500 text-center mt-1 font-light md:text-[15px] md:mt-2 md:max-w-2xl md:mx-auto">
             Explore Vedic wisdom, spiritual guides, and puja insights from our pandits.
           </p>
         </div>
 
         {/* Cards Auto-Scroll Area */}
-        <div className="blog-scroll overflow-x-auto overflow-y-hidden pl-5 pr-4 pb-12">
+        <div className="blog-scroll overflow-x-auto overflow-y-hidden pl-5 pr-4 pb-12 md:overflow-visible md:px-8 lg:px-10 md:pb-14">
           <div
-            className="grid gap-4 py-2"
+            className="grid gap-4 py-2 md:grid-flow-row! md:grid-cols-2 lg:grid-cols-3 md:gap-6"
             style={{
               gridTemplateRows: "auto",
               gridAutoFlow: "column",
@@ -122,11 +122,12 @@ export default function BlogsPage() {
                       <img
                         src={b.blogImages[0]}
                         alt={b.blogName}
+                        className="md:h-48!"
                         style={{ width: "100%", height: 130, objectFit: "cover", display: "block" }}
                       />
                     ) : (
                       <div
-                        className="flex items-center justify-center bg-orange-50 w-full"
+                        className="flex items-center justify-center bg-orange-50 w-full md:h-48!"
                         style={{ height: 130 }}
                       >
                         <svg viewBox="0 0 24 24" fill="#F97316" className="w-10 h-10 opacity-40">
@@ -136,10 +137,10 @@ export default function BlogsPage() {
                     )}
 
                     {/* Card body */}
-                    <div className="p-4 flex flex-col flex-grow">
+                    <div className="p-4 flex flex-col flex-grow md:p-5">
                       {/* Title */}
                       <h3
-                        className="blog-title-font text-stone-800 font-semibold leading-snug mb-2 line-clamp-2"
+                        className="blog-title-font text-stone-800 font-semibold leading-snug mb-2 line-clamp-2 md:text-[17px]!"
                         style={{ fontSize: 15 }}
                       >
                         {b.blogName}
@@ -147,7 +148,7 @@ export default function BlogsPage() {
 
                       {/* Description */}
                       <p
-                        className="text-stone-500 leading-relaxed line-clamp-2 mb-4 flex-grow"
+                        className="text-stone-500 leading-relaxed line-clamp-2 mb-4 flex-grow md:text-[14px]!"
                         style={{ fontSize: 13 }}
                       >
                         {stripHtml(b.blogDescription)}

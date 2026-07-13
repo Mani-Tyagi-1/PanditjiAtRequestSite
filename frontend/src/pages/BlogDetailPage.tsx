@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
+import DesktopHeader from "../components/layout/DesktopHeader";
+import SiteFooter from "../components/layout/SiteFooter";
 
 interface Blog {
   _id: string;
@@ -45,23 +47,29 @@ export default function BlogDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFFAF3] flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-4 border-orange-200 border-t-orange-500 animate-spin" />
-      </div>
+      <>
+        <DesktopHeader />
+        <div className="min-h-screen bg-[#FFFAF3] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full border-4 border-orange-200 border-t-orange-500 animate-spin" />
+        </div>
+      </>
     );
   }
 
   if (!blog) {
     return (
-      <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-stone-500 text-sm">Blog not found.</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="text-orange-600 text-sm font-medium underline underline-offset-2"
-        >
-          Go back
-        </button>
-      </div>
+      <>
+        <DesktopHeader />
+        <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <p className="text-stone-500 text-sm">Blog not found.</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="text-orange-600 text-sm font-medium underline underline-offset-2 cursor-pointer"
+          >
+            Go back
+          </button>
+        </div>
+      </>
     );
   }
 
@@ -74,32 +82,37 @@ export default function BlogDetailPage() {
         .blog-detail-body  { font-family: 'DM Sans', sans-serif; }
       `}</style>
 
+      <DesktopHeader />
+
       <div className="blog-detail-body flex flex-col items-center min-h-screen bg-[#FFFAF3]">
         {/* Sticky header */}
-        <div className="sticky w-md top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-orange-100 flex items-center gap-3 px-4 py-3">
+        <div className="sticky w-md top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-orange-100 flex items-center gap-3 px-4 py-3 md:static md:z-auto md:w-full md:max-w-3xl md:mx-auto md:bg-transparent md:backdrop-blur-none md:border-0 md:px-8 md:pt-8 md:pb-0">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex-shrink-0"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex-shrink-0 cursor-pointer md:w-10 md:h-10 md:hover:bg-orange-100 md:transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <span
-            className="blog-detail-title text-stone-700 font-semibold line-clamp-1 text-sm flex-1"
+            className="blog-detail-title text-stone-700 font-semibold line-clamp-1 text-sm flex-1 md:hidden"
           >
             {blog.blogName}
           </span>
+          <span className="hidden md:inline text-[13px] font-medium text-stone-400">
+            Back to articles
+          </span>
         </div>
 
-        <div className="max-w-md mx-auto px-4 pb-12">
+        <div className="max-w-md mx-auto px-4 pb-12 md:max-w-3xl md:w-full md:px-8 md:pb-20">
           {/* Image carousel */}
           {blog.blogImages && blog.blogImages.length > 0 && (
-            <div className="relative mt-4 rounded-2xl overflow-hidden shadow-md">
+            <div className="relative mt-4 rounded-2xl overflow-hidden shadow-md md:mt-6 md:rounded-3xl md:shadow-lg">
               <img
                 src={blog.blogImages[imgIndex]}
                 alt={blog.blogName}
-                className="w-full object-cover"
+                className="w-full object-cover md:h-[400px]!"
                 style={{ height: 220 }}
               />
               {blog.blogImages.length > 1 && (
@@ -107,7 +120,7 @@ export default function BlogDetailPage() {
                   <button
                     onClick={() => setImgIndex((i) => Math.max(0, i - 1))}
                     disabled={imgIndex === 0}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 text-white flex items-center justify-center disabled:opacity-30"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 text-white flex items-center justify-center disabled:opacity-30 cursor-pointer md:left-4 md:w-9 md:h-9 md:hover:bg-black/60 md:transition-colors"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -116,7 +129,7 @@ export default function BlogDetailPage() {
                   <button
                     onClick={() => setImgIndex((i) => Math.min(blog.blogImages.length - 1, i + 1))}
                     disabled={imgIndex === blog.blogImages.length - 1}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 text-white flex items-center justify-center disabled:opacity-30"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/40 text-white flex items-center justify-center disabled:opacity-30 cursor-pointer md:right-4 md:w-9 md:h-9 md:hover:bg-black/60 md:transition-colors"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -128,7 +141,7 @@ export default function BlogDetailPage() {
                       <button
                         key={i}
                         onClick={() => setImgIndex(i)}
-                        className={`w-1.5 h-1.5 rounded-full transition-all ${
+                        className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${
                           i === imgIndex ? "bg-white w-3" : "bg-white/50"
                         }`}
                       />
@@ -140,7 +153,7 @@ export default function BlogDetailPage() {
           )}
 
           {/* Meta row */}
-          <div className="flex items-center gap-2 mt-4 flex-wrap">
+          <div className="flex items-center gap-2 mt-4 flex-wrap md:mt-7 md:gap-3">
             {blog.authorName && (
               <span className="flex items-center gap-1 text-xs text-stone-500 bg-orange-50 rounded-full px-2.5 py-1">
                 ✍ {blog.authorName}
@@ -153,39 +166,43 @@ export default function BlogDetailPage() {
 
           {/* Title */}
           <h1
-            className="blog-detail-title text-stone-800 font-bold leading-snug mt-4 mb-4"
+            className="blog-detail-title text-stone-800 font-bold leading-snug mt-4 mb-4 md:text-[34px]! lg:text-[38px]! md:leading-tight md:mt-6 md:mb-6 md:tracking-tight"
             style={{ fontSize: 22 }}
           >
             {blog.blogName}
           </h1>
 
           {/* Divider */}
-          <div className="h-px bg-gradient-to-r from-orange-300 via-orange-100 to-transparent mb-5" />
+          <div className="h-px bg-gradient-to-r from-orange-300 via-orange-100 to-transparent mb-5 md:mb-8" />
 
           {/* Content */}
           <div
-            className="text-stone-700 leading-relaxed prose prose-sm max-w-none"
+            className="text-stone-700 leading-relaxed prose prose-sm max-w-none md:text-[17px]! md:leading-relaxed"
             style={{ fontSize: 15 }}
             dangerouslySetInnerHTML={{ __html: blog.blogDescription }}
           />
 
           {/* Linked Pooja CTA */}
           {blog.pooja?.name && (
-            <div className="mt-8 bg-orange-50 border border-orange-100 rounded-2xl p-4">
+            <div className="mt-8 bg-orange-50 border border-orange-100 rounded-2xl p-4 md:mt-12 md:p-6 md:rounded-3xl">
               <p className="text-xs text-orange-500 font-medium uppercase tracking-wider mb-1">
                 Related Puja
               </p>
-              <p className="blog-detail-title text-stone-800 font-semibold text-base mb-3">
+              <p className="blog-detail-title text-stone-800 font-semibold text-base mb-3 md:text-xl md:mb-4">
                 {blog.pooja.name}
               </p>
               <button
                 onClick={() => navigate(`/puja/${blog.pooja!.id}`)}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm font-semibold rounded-xl py-2.5 shadow-sm active:scale-95 transition-transform"
+                className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm font-semibold rounded-xl py-2.5 shadow-sm active:scale-95 transition-transform cursor-pointer md:w-auto md:px-10 md:py-3 md:text-base md:transition-all md:hover:shadow-lg md:hover:brightness-105"
               >
                 Book this Puja
               </button>
             </div>
           )}
+        </div>
+
+        <div className="md:w-full md:mt-auto">
+          <SiteFooter />
         </div>
       </div>
     </>

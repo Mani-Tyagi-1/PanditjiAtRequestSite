@@ -1,5 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
+import DesktopHeader from "../components/layout/DesktopHeader";
+import SiteFooter from "../components/layout/SiteFooter";
 
 // Blog articles data — replace with API call when backend is ready
 const blogPosts = [
@@ -86,36 +88,44 @@ export default function BlogListPage() {
         <link rel="canonical" href="https://panditjiatrequest.com/blog" />
       </Helmet>
 
+      <DesktopHeader />
+
       {/* Header */}
-      <div className="bg-gradient-to-b from-orange-600 to-orange-500 text-white px-4 pt-8 pb-12">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-bold">Puja Guides & Resources</h1>
-          <p className="mt-2 text-orange-100 text-sm">
+      <div className="bg-gradient-to-b from-orange-600 to-orange-500 text-white px-4 pt-8 pb-12 md:px-8 lg:px-10 md:pt-14 md:pb-24 lg:pt-16">
+        <div>
+          <h1 className="text-2xl font-bold md:text-4xl lg:text-5xl md:tracking-tight">Puja Guides & Resources</h1>
+          <p className="mt-2 text-orange-100 text-sm md:mt-3 md:text-base md:max-w-2xl">
             Learn about Hindu ceremonies, rituals, and how to book verified pandits online.
           </p>
         </div>
       </div>
 
       {/* Blog List */}
-      <div className="max-w-3xl mx-auto px-4 -mt-6 pb-12">
+      <div className="px-4 -mt-6 pb-12 md:px-8 lg:px-10 md:-mt-12 md:pb-16 lg:pb-20 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 md:items-stretch">
         {blogPosts.map((post) => (
           <Link
             key={post.id}
             to={`/blog/${post.id}`}
-            className="block bg-white rounded-xl shadow-sm mb-4 overflow-hidden hover:shadow-md transition-shadow"
+            className="block bg-white rounded-xl shadow-sm mb-4 overflow-hidden hover:shadow-md transition-shadow md:mb-0 md:rounded-2xl md:flex md:flex-col md:h-full md:border md:border-orange-100/60 md:transition-all md:duration-300 md:hover:shadow-xl md:hover:-translate-y-1"
           >
-            <div className="flex">
-              <div className="flex-1 p-4">
-                <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
+            <img
+              src={post.image}
+              alt={post.title}
+              loading="lazy"
+              className="hidden md:block w-full h-44 object-cover"
+            />
+            <div className="flex md:flex-1">
+              <div className="flex-1 p-4 md:p-5 md:flex md:flex-col">
+                <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded-full md:self-start">
                   {post.category}
                 </span>
-                <h2 className="mt-2 text-base font-semibold text-stone-800 line-clamp-2">
+                <h2 className="mt-2 text-base font-semibold text-stone-800 line-clamp-2 md:mt-3 md:text-lg">
                   {post.title}
                 </h2>
-                <p className="mt-1 text-sm text-stone-500 line-clamp-2">
+                <p className="mt-1 text-sm text-stone-500 line-clamp-2 md:mt-2">
                   {post.excerpt}
                 </p>
-                <div className="mt-3 flex items-center gap-3 text-xs text-stone-400">
+                <div className="mt-3 flex items-center gap-3 text-xs text-stone-400 md:mt-auto md:pt-4">
                   <span>{post.date}</span>
                   <span>•</span>
                   <span>{post.readTime}</span>
@@ -125,6 +135,8 @@ export default function BlogListPage() {
           </Link>
         ))}
       </div>
+
+      <SiteFooter />
     </div>
   );
 }

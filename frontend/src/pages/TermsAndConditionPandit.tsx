@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ScrollText } from 'lucide-react';
 import { Navigation } from '../components/landing/Navigation';
+import DesktopHeader from '../components/layout/DesktopHeader';
 
 const SectionCard = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
   <motion.div
@@ -9,15 +10,15 @@ const SectionCard = ({ number, title, children }: { number: string; title: strin
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ duration: 0.4 }}
-    className="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden"
+    className="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden md:rounded-3xl md:hover:shadow-md md:hover:border-orange-200/80 md:transition-all md:duration-300"
   >
-    <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
+    <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100 md:px-8 md:py-5">
       <span className="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white text-xs font-bold shrink-0">
         {number}
       </span>
-      <h2 className="text-base md:text-lg font-bold text-orange-800">{title}</h2>
+      <h2 className="text-base md:text-lg font-bold text-orange-800 lg:text-xl">{title}</h2>
     </div>
-    <div className="px-6 py-5 text-sm text-stone-700 leading-relaxed space-y-3">
+    <div className="px-6 py-5 text-sm text-stone-700 leading-relaxed space-y-3 md:px-8 md:py-6 md:text-[15px] md:leading-relaxed">
       {children}
     </div>
   </motion.div>
@@ -45,12 +46,15 @@ const WarningBox = ({ children }: { children: React.ReactNode }) => (
 export default function TermsAndConditionPandit() {
   return (
     <>
-      <Navigation />
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 mt-20">
+      <div className="md:hidden">
+        <Navigation />
+      </div>
+      <DesktopHeader />
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 mt-20 md:mt-0">
 
         {/* Header */}
         <header className="bg-gradient-to-r from-orange-50 via-white to-orange-50 border-b border-orange-200/50">
-          <div className="max-w-4xl mx-auto px-6 py-12">
+          <div className="px-6 py-12 lg:py-16">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -66,7 +70,7 @@ export default function TermsAndConditionPandit() {
                 <ScrollText className="w-5 h-5" />
                 <span className="text-sm font-medium">Partner Terms</span>
               </motion.div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent md:tracking-tight">
                 Terms &amp; Conditions
               </h1>
               <p className="text-lg text-gray-700 font-medium">Pandit Ji : Pandit Ji At Req</p>
@@ -76,14 +80,14 @@ export default function TermsAndConditionPandit() {
         </header>
 
         {/* Content */}
-        <main className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-5">
+        <main className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-5 md:max-w-3xl md:py-14 md:space-y-6">
 
           {/* Intro */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-2xl border border-orange-100 shadow-sm px-6 py-5 text-sm text-stone-700 leading-relaxed space-y-3"
+            className="bg-white rounded-2xl border border-orange-100 shadow-sm px-6 py-5 text-sm text-stone-700 leading-relaxed space-y-3 md:rounded-3xl md:px-8 md:py-6 md:text-[15px] md:leading-relaxed"
           >
             <p className="font-bold text-orange-800 text-base">Terms &amp; Conditions – Pandit Ji : Pandit Ji At Req</p>
             <p>
@@ -526,7 +530,7 @@ export default function TermsAndConditionPandit() {
 
         {/* Footer */}
         <footer className="bg-gradient-to-r from-orange-50 via-white to-orange-50 border-t-2 border-orange-200/50 mt-12">
-          <div className="max-w-4xl mx-auto px-6 py-8 text-center">
+          <div className="px-6 py-8 text-center">
             <p className="text-gray-700 font-medium">
               © 2026 Vedic Vaibhav Dot Com Pvt Ltd. All rights reserved.
             </p>

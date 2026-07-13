@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Share2, ChevronRight } from "lucide-react";
+import { Share2, ChevronRight, PhoneCall, Sparkles } from "lucide-react";
 import axios from "axios";
 import { CHADHAVA_FALLBACK, Chadhava } from "./chadhavaFallback";
 import API_URL from "../../utils/apiConfig";
+import { HOLY_PANDITS } from "../booking/KashiVrindavanPandits/kashiVrindavanData";
+
+// Same intro-consultation price already shown as the default amount on
+// PaidConsultationPage.tsx (voice consultation) — reused here, not invented.
+const CONSULT_INTRO_PRICE = 101;
+// Reuse a real pandit photo already used elsewhere in this codebase.
+const CONSULT_PANDIT_IMAGE = HOLY_PANDITS[0]?.image;
 
 const CHADHAVA_LIST_URL = `${API_URL}/config/get-all-new-chadhava-proxy`;
 
@@ -192,26 +199,27 @@ export default function SacredChadhavaSewa() {
     if (!loading && items.length === 0) return null;
 
     return (
-        <section className="px-4 pt-6">
+        <section className="px-4 pt-6 md:w-full md:px-8 lg:px-10 md:pt-12 lg:pt-16">
             {/* Custom Header matching screenshot style */}
-            <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-[22px] font-black text-[#2E1F15] tracking-tight shrink-0 flex items-center gap-1.5" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            <div className="flex items-center gap-2 mb-4 md:mb-6">
+                <h2 className="text-[22px] font-black text-[#2E1F15] tracking-tight shrink-0 flex items-center gap-1.5 md:text-3xl lg:text-4xl" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     Sacred Chadhava Sewa
                 </h2>
                 <span className="h-[1px] w-6 bg-stone-300 shrink-0" />
-                <span className="text-[12.5px] text-stone-500 font-medium truncate">Direct Temple Offerings</span>
+                <span className="text-[12.5px] text-stone-500 font-medium truncate md:text-sm">Direct Temple Offerings</span>
                 <button
                     onClick={() => navigate("/chadhava")}
-                    className="ml-auto flex items-center gap-0.5 text-[14px] font-bold text-orange-600 active:scale-95 transition-transform shrink-0 cursor-pointer"
+                    className="ml-auto flex items-center gap-0.5 text-[14px] font-bold text-orange-600 active:scale-95 transition-transform shrink-0 cursor-pointer md:text-[15px] md:transition-all md:hover:text-orange-700"
                 >
                     View All <ChevronRight className="w-4 h-4" />
                 </button>
             </div>
 
-            <div className="mt-3 flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x scroll-px-4 [&>*:last-child]:mr-1">
+            <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">
+            <div className="mt-3 flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x scroll-px-4 [&>*:last-child]:mr-1 md:grid md:grid-cols-3 lg:grid-cols-4 md:gap-5 lg:gap-6 md:overflow-visible md:mx-0 md:px-0 md:pb-0 md:snap-none md:[&>*:last-child]:mr-0">
                 {loading
                     ? Array.from({ length: 2 }).map((_, i) => (
-                        <div key={i} className="shrink-0 w-[78%] max-w-[290px] md:w-[300px] bg-[#FFFDF9] rounded-[32px] overflow-hidden border border-[#FFEFE2] animate-pulse snap-start">
+                        <div key={i} className="shrink-0 w-[78%] max-w-[290px] md:w-auto md:max-w-none md:shrink md:snap-none bg-[#FFFDF9] rounded-[32px] overflow-hidden border border-[#FFEFE2] animate-pulse snap-start">
                             <div className="h-44 bg-stone-200" />
                             <div className="p-4 space-y-3">
                                 <div className="h-4 bg-stone-200 rounded w-3/4" />
@@ -229,10 +237,10 @@ export default function SacredChadhavaSewa() {
                             <div 
                                 key={c.id} 
                                 onClick={() => navigate(`/chadhava/${c.id}`)}
-                                className="shrink-0 w-[65%] max-w-[290px] md:w-[300px] bg-[#FFFDF9] rounded-[20px] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.12)] cursor-pointer active:scale-[0.99] transition-transform snap-start flex flex-col justify-between"
+                                className="shrink-0 w-[65%] max-w-[290px] md:w-auto md:max-w-none md:shrink md:snap-none bg-[#FFFDF9] rounded-[20px] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.12)] cursor-pointer active:scale-[0.99] transition-transform snap-start flex flex-col justify-between md:hover:shadow-xl md:hover:-translate-y-1 md:transition-all md:duration-300"
                             >
                                 {/* Banner / Image Area */}
-                                <div className="relative w-full h-35 overflow-hidden rounded-t-[20px]">
+                                <div className="relative w-full h-35 overflow-hidden rounded-t-[20px] md:h-40 lg:h-44">
                                     <img 
                                         src={c.image} 
                                         alt={c.deity} 
@@ -245,7 +253,7 @@ export default function SacredChadhavaSewa() {
                                     {/* Top-Right Share Button */}
                                     <button 
                                         onClick={(e) => handleShare(e, c)}
-                                        className="absolute top-2 right-2 w-6 h-6  bg-white/95 rounded-full flex items-center justify-center shadow-md border border-stone-100/50 active:scale-90 transition-transform"
+                                        className="absolute top-2 right-2 w-6 h-6  bg-white/95 rounded-full flex items-center justify-center shadow-md border border-stone-100/50 active:scale-90 transition-transform cursor-pointer md:w-7 md:h-7 md:hover:scale-110"
                                     >
                                         <Share2 className="w-4 h-4 text-stone-700" />
                                     </button>
@@ -264,7 +272,7 @@ export default function SacredChadhavaSewa() {
                                 <div className="p-3 pt-1 flex flex-col gap-2.5">
                                     {/* Title */}
                                     <h3 
-                                        className="text-[16px] font-bold text-[#2E1F15] tracking-tight line-clamp-1 text-left"
+                                        className="text-[16px] font-bold text-[#2E1F15] tracking-tight line-clamp-1 text-left md:text-[17px]"
                                         title={c.deity}
                                     >
                                         {c.deity}
@@ -272,7 +280,7 @@ export default function SacredChadhavaSewa() {
 
                                     {/* Price and Action Row */}
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[25px] font-extrabold text-[#D85C0E]">
+                                        <span className="text-[25px] font-extrabold text-[#D85C0E] md:text-[20px] lg:text-[22px]">
                                             ₹{c.startingPrice.toLocaleString("en-IN")}
                                         </span>
                                         <button
@@ -289,7 +297,7 @@ export default function SacredChadhavaSewa() {
                                                 }
                                                 navigate(`/chadhava/${c.id}`);
                                             }}
-                                            className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[13px] px-7 py-1 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200"
+                                            className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[13px] px-7 py-1 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 cursor-pointer md:px-5 md:py-1.5"
                                         >
                                             Offer Now
                                         </button>
@@ -298,6 +306,36 @@ export default function SacredChadhavaSewa() {
                             </div>
                         );
                     })}
+            </div>
+
+            {/* Consult a Pandit Ji promo — lg: sibling aside beside the chadhava grid */}
+            <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:rounded-[28px] lg:p-6 lg:bg-gradient-to-br lg:from-[#FFF3E4] lg:to-[#FFE3C2] lg:border lg:border-orange-200/60 lg:shadow-sm">
+                <div>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-orange-700 bg-white/70 px-2.5 py-1 rounded-full">
+                        <Sparkles className="w-3 h-3" /> Consult a Pandit Ji
+                    </span>
+                    {CONSULT_PANDIT_IMAGE && (
+                        <div className="mt-4 w-16 h-16 rounded-full overflow-hidden border-2 border-white shadow-md">
+                            <img src={CONSULT_PANDIT_IMAGE} alt="Pandit Ji" className="w-full h-full object-cover" loading="lazy" />
+                        </div>
+                    )}
+                    <h3
+                        className="mt-3 text-xl font-bold text-[#2E1F15] leading-snug"
+                        style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                    >
+                        Get answers. Find clarity. Get peace.
+                    </h3>
+                    <p className="mt-2 text-[13px] text-stone-600 leading-relaxed">
+                        Intro Consultation Only ₹{CONSULT_INTRO_PRICE} for 30-Minute Personalized Guidance
+                    </p>
+                </div>
+                <button
+                    onClick={() => navigate("/paid-consultation")}
+                    className="mt-5 w-full flex items-center justify-center gap-2 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[13.5px] py-3 rounded-xl shadow-md transition-all duration-200 cursor-pointer"
+                >
+                    <PhoneCall className="w-4 h-4" /> Talk to Pandit Ji Now
+                </button>
+            </aside>
             </div>
         </section>
     );

@@ -74,16 +74,18 @@ export default function Testimonials() {
   if (!loading && testimonials.length === 0) return null;
 
   return (
-    <section className="px-4 pt-6 pb-2">
-      <SectionHeader
-        title="Devotee Testimonials"
-        icon={MessageSquare}
-        subtitle="What our devotees say about us"
-      />
+    <section className="px-4 pt-6 pb-2 md:w-full md:px-8 lg:px-10 md:pt-12 lg:pt-16 md:pb-8">
+      <div className="md:[&_h2]:text-3xl lg:[&_h2]:text-4xl md:[&_h2]:tracking-tight">
+        <SectionHeader
+          title="Devotee Testimonials"
+          icon={MessageSquare}
+          subtitle="What our devotees say about us"
+        />
+      </div>
 
       <div
         ref={scrollRef}
-        className="mt-3 flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-4 -mx-4"
+        className="mt-3 flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-4 -mx-4 md:mt-6 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 md:overflow-visible md:mx-0 md:px-0 md:pb-0"
         onTouchStart={() => { isUserScrolling.current = true; }}
         onTouchEnd={() => setTimeout(() => { isUserScrolling.current = false; }, 4000)}
         onMouseDown={() => { isUserScrolling.current = true; }}
@@ -93,7 +95,7 @@ export default function Testimonials() {
           Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className="shrink-0 w-[290px] h-[168px] bg-white border border-orange-100 rounded-[24px] p-4 flex flex-col justify-between animate-pulse"
+              className="shrink-0 w-[290px] h-[168px] md:w-auto md:shrink md:h-[184px] md:p-5 bg-white border border-orange-100 rounded-[24px] p-4 flex flex-col justify-between animate-pulse"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -120,7 +122,7 @@ export default function Testimonials() {
             return (
               <div
                 key={t._id}
-                className="shrink-0 w-[290px] h-[168px] bg-white border border-orange-200/50 rounded-[24px] p-4 flex flex-col justify-between shadow-[0_4px_16px_-4px_rgba(255,138,42,0.05)] active:scale-[0.98] transition-transform"
+                className="shrink-0 w-[290px] h-[168px] md:w-auto md:shrink md:h-[184px] md:p-5 md:hover:shadow-lg md:hover:-translate-y-1 md:transition-all md:duration-300 bg-white border border-orange-200/50 rounded-[24px] p-4 flex flex-col justify-between shadow-[0_4px_16px_-4px_rgba(255,138,42,0.05)] active:scale-[0.98] transition-transform"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -140,7 +142,7 @@ export default function Testimonials() {
                       </span>
                     )}
                     <div className="min-w-0">
-                      <h4 className="text-[14.5px] font-bold text-[#2E1E12] leading-tight truncate">
+                      <h4 className="text-[14.5px] font-bold text-[#2E1E12] leading-tight truncate md:text-[15.5px]">
                         {t.user_name}
                       </h4>
                       <p className="text-[11px] text-stone-400 truncate mt-0.5">
@@ -154,7 +156,7 @@ export default function Testimonials() {
                 {/* Quote Text */}
                 <div className="mt-2 flex-1 flex flex-col justify-start min-h-0 overflow-hidden">
                   <span className="text-[#FF8A2A] text-[20px] font-bold leading-none select-none">"</span>
-                  <p className="text-[12.5px] text-stone-600 leading-[17px] font-medium -mt-1 pl-1 line-clamp-3 overflow-hidden">
+                  <p className="text-[12.5px] text-stone-600 leading-[17px] font-medium -mt-1 pl-1 line-clamp-3 overflow-hidden md:text-[13.5px] md:leading-[19px] md:line-clamp-4">
                     {t.user_testimonial}
                   </p>
                 </div>

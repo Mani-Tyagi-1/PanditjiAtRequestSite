@@ -104,7 +104,7 @@ export default function PujaCard({
       `}</style>
 
             <div
-                className="puja-card group relative bg-white rounded-2xl overflow-visible shadow-sm hover:shadow-xl transition-shadow duration-400 border border-stone-100 flex flex-col cursor-pointer h-full"
+                className="puja-card group relative bg-white rounded-2xl overflow-visible shadow-sm hover:shadow-xl transition-shadow duration-400 border border-stone-100 flex flex-col cursor-pointer h-full md:transition-all md:duration-300 md:hover:-translate-y-1 md:hover:border-orange-200"
                 onClick={handleCardClick}
             >
 
@@ -116,7 +116,7 @@ export default function PujaCard({
                 )} */}
 
                 {/* Image */}
-                <div className="relative h-[120px] overflow-hidden bg-amber-50 rounded-t-2xl flex items-center justify-center ">
+                <div className="relative h-[120px] md:h-[170px] lg:h-[190px] overflow-hidden bg-amber-50 rounded-t-2xl flex items-center justify-center ">
                     <img
                         src={image}
                         alt={title}
@@ -131,7 +131,7 @@ export default function PujaCard({
 
                     {/* Duration pill */}
                     {duration && (
-                        <span className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <span className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[10px] md:text-[11px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
                             <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                 <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
                             </svg>
@@ -141,13 +141,13 @@ export default function PujaCard({
                 </div>
 
                 {/* Body */}
-                <div className="flex flex-col flex-1 p-1.5 gap-1.5">
+                <div className="flex flex-col flex-1 p-1.5 gap-1.5 md:p-3 md:gap-2">
                     <h3 className="puja-title text-stone-800 font-semibold leading-snug line-clamp-1" style={{ fontSize: "16px" }}>
                         {title}
                     </h3>
 
                     {/* CTA row */}
-                    <div className="flex items-center w-full mt-auto px-1 pb-2">
+                    <div className="flex items-center w-full mt-auto px-1 pb-2 md:px-0 md:pb-0">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -156,7 +156,7 @@ export default function PujaCard({
                             }}
                             onMouseDown={(e) => { e.stopPropagation(); setPressed(true); }}
                             onMouseUp={(e) => { e.stopPropagation(); setPressed(false); }}
-                            className="book-btn w-full bg-orange-500 hover:bg-orange-600 text-white text-[17px] font-medium px-1 py-1 rounded-xl shadow-md shadow-orange-200 flex items-center justify-center gap-1.5"
+                            className="book-btn w-full bg-orange-500 hover:bg-orange-600 text-white text-[17px] font-medium px-1 py-1 rounded-xl shadow-md shadow-orange-200 flex items-center justify-center gap-1.5 cursor-pointer md:py-2 md:gap-2 md:shadow-lg md:shadow-orange-200/70"
                         >
                             Book Now
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

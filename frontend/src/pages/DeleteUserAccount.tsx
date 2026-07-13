@@ -3,6 +3,7 @@ import axios from "axios";
 import { Phone, Shield, Trash2, ChevronLeft, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import DesktopHeader from "../components/layout/DesktopHeader";
 import API_URL from "../utils/apiConfig";
 
 const DeleteUserAccount: React.FC = () => {
@@ -51,25 +52,26 @@ const DeleteUserAccount: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FFF8F3] flex flex-col">
+      <DesktopHeader />
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-8">
-        <div className="flex items-center gap-3 text-white">
+      <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-8 md:px-8 md:pt-10 md:pb-16">
+        <div className="flex items-center gap-3 text-white md:max-w-xl md:mx-auto">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+            className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20 cursor-pointer"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-lg font-bold leading-tight">Delete Account</h1>
-            <p className="text-white/75 text-[10px]">This action is permanent and cannot be undone</p>
+            <h1 className="text-lg font-bold leading-tight md:text-2xl">Delete Account</h1>
+            <p className="text-white/75 text-[10px] md:text-sm">This action is permanent and cannot be undone</p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 px-4 -mt-4 pb-10 max-w-md mx-auto w-full">
+      <div className="flex-1 px-4 -mt-4 pb-10 max-w-md mx-auto w-full md:max-w-xl md:-mt-8 md:pb-20">
         {step === "done" ? (
-          <div className="mt-8 bg-white rounded-[28px] p-8 shadow-sm border border-orange-50 text-center">
+          <div className="mt-8 bg-white rounded-[28px] p-8 shadow-sm border border-orange-50 text-center md:p-10 md:shadow-md">
             <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
               <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center">
                 <Shield className="w-7 h-7 text-green-500" />
@@ -81,7 +83,7 @@ const DeleteUserAccount: React.FC = () => {
             </p>
             <button
               onClick={() => navigate("/")}
-              className="mt-8 w-full bg-[#FF7000] text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all text-sm"
+              className="mt-8 w-full bg-[#FF7000] text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all text-sm cursor-pointer md:hover:bg-[#E05A10] md:hover:shadow-lg"
             >
               Go to Home
             </button>
@@ -89,7 +91,7 @@ const DeleteUserAccount: React.FC = () => {
         ) : (
           <>
             {/* Warning card */}
-            <div className="mt-6 bg-red-50 border border-red-100 rounded-2xl p-4 flex gap-3 mb-4">
+            <div className="mt-6 bg-red-50 border border-red-100 rounded-2xl p-4 flex gap-3 mb-4 md:p-5 md:mb-6">
               <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
               <p className="text-red-600 text-xs leading-relaxed">
                 Deleting your account will permanently remove all your bookings, referral earnings, and personal data. This cannot be undone.
@@ -97,7 +99,7 @@ const DeleteUserAccount: React.FC = () => {
             </div>
 
             {/* Step card */}
-            <div className="bg-white rounded-[28px] p-6 shadow-sm border border-orange-50">
+            <div className="bg-white rounded-[28px] p-6 shadow-sm border border-orange-50 md:p-9 md:shadow-md">
               {step === "phone" && (
                 <>
                   <div className="flex items-center gap-3 mb-5">
@@ -135,7 +137,7 @@ const DeleteUserAccount: React.FC = () => {
                   <button
                     onClick={handleSendOtp}
                     disabled={loading}
-                    className="w-full bg-[#FF7000] disabled:opacity-60 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all text-sm"
+                    className="w-full bg-[#FF7000] disabled:opacity-60 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all text-sm cursor-pointer md:hover:bg-[#E05A10] md:hover:shadow-lg"
                   >
                     {loading ? "Sending OTP..." : "Send OTP"}
                   </button>
@@ -178,7 +180,7 @@ const DeleteUserAccount: React.FC = () => {
                   <button
                     onClick={handleDeleteAccount}
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 bg-red-500 disabled:opacity-60 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-red-100 active:scale-[0.98] transition-all text-sm"
+                    className="w-full flex items-center justify-center gap-2 bg-red-500 disabled:opacity-60 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-red-100 active:scale-[0.98] transition-all text-sm cursor-pointer md:hover:bg-red-600 md:hover:shadow-lg"
                   >
                     <Trash2 className="w-4 h-4" />
                     {loading ? "Deleting..." : "Confirm & Delete Account"}
@@ -186,7 +188,7 @@ const DeleteUserAccount: React.FC = () => {
 
                   <button
                     onClick={() => { setStep("phone"); setOtp(""); setError(""); }}
-                    className="w-full mt-3 py-3 text-gray-500 font-semibold text-sm active:scale-[0.98] transition-all"
+                    className="w-full mt-3 py-3 text-gray-500 font-semibold text-sm active:scale-[0.98] transition-all cursor-pointer md:hover:text-gray-700"
                   >
                     Change Phone Number
                   </button>

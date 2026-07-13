@@ -90,12 +90,12 @@ export default function PujaEnquiryModal({
 
     return (
         <div
-            className="fixed inset-0 z-[200] flex items-end justify-center"
+            className="fixed inset-0 z-[200] flex items-end justify-center md:items-center md:p-6"
             style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
             onClick={onClose}
         >
             <div
-                className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden"
+                className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden md:rounded-3xl md:max-w-lg lg:max-w-xl md:shadow-2xl"
                 style={{ maxHeight: "92vh", animation: "slideUp 0.32s cubic-bezier(0.32,0.72,0,1) both" }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -107,7 +107,7 @@ export default function PujaEnquiryModal({
                 `}</style>
 
                 {/* Header */}
-                <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 pt-5 pb-4">
+                <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 pt-5 pb-4 md:px-7 md:pt-6 md:pb-5">
                     <div className="flex items-start justify-between">
                         <div className="flex-1 pr-3">
                             <p className="text-orange-100 text-[10px] font-semibold uppercase tracking-widest mb-0.5">
@@ -125,7 +125,7 @@ export default function PujaEnquiryModal({
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white shrink-0 mt-0.5"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white shrink-0 mt-0.5 cursor-pointer md:transition-colors md:hover:bg-white/30"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -151,13 +151,13 @@ export default function PujaEnquiryModal({
                             </p>
                             <button
                                 onClick={onClose}
-                                className="mt-6 bg-orange-500 text-white font-semibold px-8 py-3 rounded-2xl text-sm"
+                                className="mt-6 bg-orange-500 text-white font-semibold px-8 py-3 rounded-2xl text-sm cursor-pointer md:transition-colors md:hover:bg-orange-600"
                             >
                                 Done
                             </button>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4">
+                        <form onSubmit={handleSubmit} className="px-5 py-5 space-y-4 md:px-7 md:py-6">
                             {/* Full Name */}
                             <div>
                                 <label className={LABEL_CLASS}>
@@ -198,7 +198,7 @@ export default function PujaEnquiryModal({
                                             key={val}
                                             type="button"
                                             onClick={() => setForm((f) => ({ ...f, astrologerAdvised: val }))}
-                                            className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150 ${
+                                            className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all duration-150 cursor-pointer md:hover:border-orange-300 ${
                                                 form.astrologerAdvised === val
                                                     ? "border-orange-500 bg-orange-50 text-orange-600"
                                                     : "border-stone-200 bg-stone-50 text-stone-500"
@@ -216,7 +216,7 @@ export default function PujaEnquiryModal({
                                     When do you want to do the Pooja?{" "}
                                     <span className="text-red-400">*</span>
                                 </label>
-                                <div className="mt-2 flex flex-col gap-2">
+                                <div className="mt-2 flex flex-col gap-2 md:grid md:grid-cols-3 md:gap-3">
                                     {(
                                         [
                                             { val: "immediately", label: "⚡ Immediately" },
@@ -228,7 +228,7 @@ export default function PujaEnquiryModal({
                                             key={val}
                                             type="button"
                                             onClick={() => setForm((f) => ({ ...f, timing: val }))}
-                                            className={`w-full py-2.5 px-4 rounded-xl border-2 text-sm font-semibold text-left transition-all duration-150 ${
+                                            className={`w-full py-2.5 px-4 md:px-2 rounded-xl border-2 text-sm font-semibold text-left md:text-center transition-all duration-150 cursor-pointer md:hover:border-orange-300 ${
                                                 form.timing === val
                                                     ? "border-orange-500 bg-orange-50 text-orange-600"
                                                     : "border-stone-200 bg-stone-50 text-stone-500"
@@ -260,7 +260,7 @@ export default function PujaEnquiryModal({
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 text-sm disabled:opacity-60 mb-2"
+                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 text-sm md:text-base disabled:opacity-60 mb-2 cursor-pointer"
                             >
                                 {submitting ? "Submitting..." : "Submit Enquiry 🙏"}
                             </button>

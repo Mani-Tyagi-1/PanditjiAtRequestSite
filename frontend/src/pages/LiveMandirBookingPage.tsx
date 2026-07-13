@@ -7,6 +7,7 @@ import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveM
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
+import DesktopHeader from "../components/layout/DesktopHeader";
 
 // Puja handed over from LiveMandirPujaDetailPage via navigate(..., { state }).
 // Carried in router state (not the URL) so a direct hit / refresh — which has no
@@ -314,8 +315,9 @@ export default function LiveMandirBookingPage() {
         }
     };
 
-    return (
-        <div className="lmb-page min-h-screen bg-[#FFFAF3] w-full max-w-md mx-auto border-x border-orange-100 relative pb-28">
+    return (<>
+        <DesktopHeader />
+        <div className="lmb-page min-h-screen bg-[#FFFAF3] w-full max-w-md mx-auto border-x border-orange-100 relative pb-28 md:max-w-3xl md:min-h-0 md:my-10 md:rounded-[28px] md:border md:border-orange-100 md:shadow-xl md:shadow-orange-100/50 md:pb-32">
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .lmb-page { font-family: 'DM Sans', sans-serif; }
@@ -325,18 +327,18 @@ export default function LiveMandirBookingPage() {
                 <title>{`Complete your booking — ${puja.pujaName} at ${puja.templeName} | Pandit Ji At Request`}</title>
             </Helmet>
 
-            {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3">
+            {/* Header — sticky back-bar on mobile, calm breadcrumb row inside the card at md+ */}
+            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3 md:static md:bg-transparent md:backdrop-blur-none md:px-8 md:pt-7 md:pb-4">
                 <button
                     onClick={() => navigate(-1)}
                     aria-label="Go back"
-                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform shrink-0"
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform shrink-0 cursor-pointer md:w-9 md:h-9 md:hover:bg-orange-50"
                 >
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Mandir Puja</h1>
-                    <p className="text-[11px] text-stone-500 flex items-center gap-1">
+                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate md:text-xl">Complete Your Mandir Puja</h1>
+                    <p className="text-[11px] text-stone-500 flex items-center gap-1 md:text-[12.5px] md:mt-0.5">
                         <MapPin className="w-3 h-3 text-orange-500 shrink-0" />
                         <span className="truncate">{puja.templeName}{puja.templeLocation ? ` · ${puja.templeLocation}` : ""}</span>
                     </p>
@@ -344,22 +346,22 @@ export default function LiveMandirBookingPage() {
             </div>
 
             {/* Content */}
-            <div className="px-5 pt-4 space-y-6">
+            <div className="px-5 pt-4 space-y-6 md:px-8 md:pt-5 md:pb-6 md:space-y-7">
                 {step === "details" ? (
                     <div className="space-y-6">
                         {/* Base Puja price info */}
-                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
+                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm md:p-5 md:rounded-3xl">
                             <div className="flex items-start justify-between gap-2">
-                                <p className="text-[13.5px] font-bold text-stone-800 leading-snug">{puja.pujaName}</p>
+                                <p className="text-[13.5px] font-bold text-stone-800 leading-snug md:text-[16px]">{puja.pujaName}</p>
                                 <span className="flex items-center gap-1 shrink-0 bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 text-[11px] font-bold">
                                     <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                                     4.5
                                 </span>
                             </div>
-                            {puja.pujaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5">{puja.pujaNameHindi}</p>}
+                            {puja.pujaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5 md:text-[13px]">{puja.pujaNameHindi}</p>}
                             <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
-                                <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
-                                <span className="text-xl font-bold text-stone-900">₹{basePrice.toLocaleString("en-IN")}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400 md:text-[11px]">Base Seva</span>
+                                <span className="text-xl font-bold text-stone-900 md:text-2xl">₹{basePrice.toLocaleString("en-IN")}</span>
                             </div>
                         </div>
 
@@ -368,13 +370,13 @@ export default function LiveMandirBookingPage() {
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">01</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Devotee Details</h3>
-                                    <p className="text-[11px] text-stone-400">For the main Sankalp</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px] md:text-[15px]">Devotee Details</h3>
+                                    <p className="text-[11px] text-stone-400 md:text-[12px]">For the main Sankalp</p>
                                 </div>
                             </div>
-                            <div className="space-y-3">
+                            <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
                                 {/* Mobile Number input (required if user not logged in or edit allowed) */}
-                                <div>
+                                <div className="md:col-span-2">
                                     <label className={LABEL}>Mobile Number *</label>
                                     <input
                                         value={form.phone}
@@ -410,8 +412,8 @@ export default function LiveMandirBookingPage() {
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">02</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Family Sankalp</h3>
-                                    <p className="text-[11px] text-stone-400">Add members at ₹101 each</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px] md:text-[15px]">Family Sankalp</h3>
+                                    <p className="text-[11px] text-stone-400 md:text-[12px]">Add members at ₹101 each</p>
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -450,8 +452,8 @@ export default function LiveMandirBookingPage() {
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Puja Date</h3>
-                                    <p className="text-[11px] text-stone-400">Scheduled date for this puja</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px] md:text-[15px]">Puja Date</h3>
+                                    <p className="text-[11px] text-stone-400 md:text-[12px]">Scheduled date for this puja</p>
                                 </div>
                             </div>
                             <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
@@ -465,12 +467,12 @@ export default function LiveMandirBookingPage() {
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">04</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Prasad Delivery</h3>
-                                    <p className="text-[11px] text-stone-400">Optional delivery at your address</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px] md:text-[15px]">Prasad Delivery</h3>
+                                    <p className="text-[11px] text-stone-400 md:text-[12px]">Optional delivery at your address</p>
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-3 bg-white border border-orange-100 rounded-2xl p-4 shadow-sm cursor-pointer select-none">
+                            <label className="flex items-center gap-3 bg-white border border-orange-100 rounded-2xl p-4 shadow-sm cursor-pointer select-none md:p-5 md:rounded-3xl md:transition-colors md:hover:border-orange-300">
                                 <input
                                     type="checkbox"
                                     checked={form.prasadAdded}
@@ -492,7 +494,7 @@ export default function LiveMandirBookingPage() {
                                             {addresses.map(addr => (
                                                 <label
                                                     key={addr._id}
-                                                    className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-orange-500 bg-orange-50/20" : "border-stone-100"}`}
+                                                    className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-orange-500 bg-orange-50/20" : "border-stone-100 md:hover:border-orange-200"}`}
                                                 >
                                                     <input
                                                         type="radio"
@@ -518,7 +520,7 @@ export default function LiveMandirBookingPage() {
 
                                     {/* Address Input fields */}
                                     {(!user || showNewAddressForm) && (
-                                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm space-y-3">
+                                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm space-y-3 md:p-5 md:rounded-3xl">
                                             <div className="flex items-center justify-between pb-1 border-b border-stone-50">
                                                 <span className="text-[12px] font-bold text-stone-850">Delivery Address Details</span>
                                                 {user && addresses.length > 0 && (
@@ -602,11 +604,11 @@ export default function LiveMandirBookingPage() {
                         <h3 className="lmb-serif font-bold text-stone-850 mt-5 text-2xl">
                             Booking Confirmed! 🙏
                         </h3>
-                        <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
+                        <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed md:max-w-md md:text-sm">
                             Your <span className="font-semibold text-stone-700">{puja.pujaName}</span> at{" "}
                             <span className="font-semibold text-stone-700">{puja.templeName}</span> is reserved. Our pandit ji will WhatsApp the live link &amp; details shortly.
                         </p>
-                        <button onClick={() => navigate("/account?tab=live")} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
+                        <button onClick={() => navigate("/account?tab=live")} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer md:max-w-xs md:hover:bg-stone-700">
                             Done
                         </button>
                     </motion.div>
@@ -615,7 +617,7 @@ export default function LiveMandirBookingPage() {
 
             {/* Sticky Footer */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-stone-100 px-5 py-4">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-stone-100 px-5 py-4 md:max-w-3xl md:px-8 md:rounded-t-2xl md:border-x md:border-orange-100 md:shadow-[0_-10px_30px_rgba(224,90,16,0.08)]">
                     {/* Error is shown here (always visible) so the user gets feedback
                         even when the form is not scrolled to the bottom. */}
                     {error && (
@@ -623,8 +625,8 @@ export default function LiveMandirBookingPage() {
                     )}
                     <div className="flex items-center justify-between">
                         <div>
-                            <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D85C0E]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <span className="text-[10px] text-stone-400 font-semibold uppercase block md:text-[11px]">TOTAL TO PAY</span>
+                            <span className="text-[20px] font-extrabold text-[#D85C0E] md:text-2xl">₹{totalPrice.toLocaleString("en-IN")}</span>
                         </div>
                         <button
                             onClick={handleConfirm}
@@ -641,5 +643,5 @@ export default function LiveMandirBookingPage() {
                 </div>
             )}
         </div>
-    );
+    </>);
 }

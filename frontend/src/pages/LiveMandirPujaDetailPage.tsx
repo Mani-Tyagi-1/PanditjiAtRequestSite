@@ -8,6 +8,8 @@ import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
 import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
+import DesktopHeader from "../components/layout/DesktopHeader";
+import SiteFooter from "../components/layout/SiteFooter";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -125,14 +127,14 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
                     setOpen(next);
                     if (next) track("puja_accordion_open", { section: title }, true);
                 }}
-                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-orange-400 outline-none cursor-pointer md:px-5 md:py-4"
             >
-                <span className="flex items-center gap-2 text-[14px] font-bold text-stone-800">
+                <span className="flex items-center gap-2 text-[14px] font-bold text-stone-800 md:text-[15px]">
                     {icon}{title}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-orange-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
-            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-stone-600 leading-relaxed border-t border-orange-50">
+            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-stone-600 leading-relaxed border-t border-orange-50 md:px-5 md:pb-5 md:text-[13.5px]">
                 {children}
             </div>
         </div>
@@ -141,7 +143,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
 
 function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
-        <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">
+        <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2 md:text-[13px] md:mb-3">
             {icon}{children}
         </h3>
     );
@@ -151,18 +153,18 @@ function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: Re
 function ReviewMarquee({ reviews }: { reviews: LiveMandirReview[] }) {
     const items = [...reviews, ...reviews]; // duplicated for a seamless loop
     return (
-        <div className="overflow-hidden -mx-4 px-4">
+        <div className="overflow-hidden -mx-4 px-4 md:mx-0 md:px-0">
             <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
-            <div className="review-track flex gap-2.5">
+            <div className="review-track flex gap-2.5 md:gap-4">
                 {items.map((r, i) => (
-                    <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 rounded-xl p-3 shadow-sm">
+                    <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 rounded-xl p-3 shadow-sm md:w-64 md:p-4 md:rounded-2xl">
                         <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-stone-800 text-[12px]">{r.name}</span>
+                            <span className="font-bold text-stone-800 text-[12px] md:text-[13px]">{r.name}</span>
                             {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
-                            <span className="ml-auto text-[9px] text-stone-400">{r.date}</span>
+                            <span className="ml-auto text-[9px] text-stone-400 md:text-[10px]">{r.date}</span>
                         </div>
                         <Stars value={r.rating} className="w-3 h-3" />
-                        <p className="text-[11.5px] text-stone-600 mt-1 leading-snug line-clamp-3">{r.text}</p>
+                        <p className="text-[11.5px] text-stone-600 mt-1 leading-snug line-clamp-3 md:text-[12.5px]">{r.text}</p>
                     </div>
                 ))}
             </div>
@@ -238,28 +240,34 @@ export default function LiveMandirPujaDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#FFFAF3] flex flex-col w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 animate-pulse">
-                <div className="h-52 bg-stone-200 m-2 rounded-[10px]" />
-                <div className="px-4 space-y-3">
-                    <div className="h-6 bg-stone-200 rounded w-2/3" />
-                    <div className="h-4 bg-stone-200 rounded w-1/2" />
-                    <div className="h-24 bg-stone-200 rounded-2xl w-full" />
-                    <div className="h-20 bg-stone-200 rounded-2xl w-full" />
+            <>
+                <DesktopHeader />
+                <div className="min-h-screen bg-[#FFFAF3] flex flex-col w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 animate-pulse md:max-w-2xl md:border-x-0 md:shadow-none">
+                    <div className="h-52 bg-stone-200 m-2 rounded-[10px] md:h-80 md:rounded-2xl md:mt-8" />
+                    <div className="px-4 space-y-3">
+                        <div className="h-6 bg-stone-200 rounded w-2/3" />
+                        <div className="h-4 bg-stone-200 rounded w-1/2" />
+                        <div className="h-24 bg-stone-200 rounded-2xl w-full" />
+                        <div className="h-20 bg-stone-200 rounded-2xl w-full" />
+                    </div>
                 </div>
-            </div>
+            </>
         );
     }
 
     if (error || !puja) {
         return (
-            <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center p-6 text-center w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
-                <span className="text-4xl">🪔</span>
-                <h2 className="text-lg font-bold text-stone-800 mt-4">Error Loading Puja</h2>
-                <p className="text-xs text-stone-500 mt-2 max-w-[280px]">{error || "The requested live puja does not exist."}</p>
-                <button onClick={() => navigate("/")} className="mt-6 bg-orange-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all">
-                    Go to Homepage
-                </button>
-            </div>
+            <>
+                <DesktopHeader />
+                <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center p-6 text-center w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 md:max-w-2xl md:border-x-0 md:shadow-none">
+                    <span className="text-4xl">🪔</span>
+                    <h2 className="text-lg font-bold text-stone-800 mt-4">Error Loading Puja</h2>
+                    <p className="text-xs text-stone-500 mt-2 max-w-[280px]">{error || "The requested live puja does not exist."}</p>
+                    <button onClick={() => navigate("/")} className="mt-6 bg-orange-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all cursor-pointer md:hover:bg-orange-700">
+                        Go to Homepage
+                    </button>
+                </div>
+            </>
         );
     }
 
@@ -284,51 +292,57 @@ export default function LiveMandirPujaDetailPage() {
         { icon: Gift, title: "Prasad at your home", sub: "Sacred prasad couriered to you" },
     ];
 
-    return (
-        <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
+    return (<>
+        <DesktopHeader />
+        <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 md:max-w-none md:mx-0 md:border-x-0 md:shadow-none md:pb-36 lg:pb-16">
             <Helmet>
                 <title>{`${puja.pujaName} at ${puja.templeName} | Pandit Ji At Request`}</title>
                 <meta name="description" content={`Book online ${puja.pujaName} at ${puja.templeName}. ${puja.benefits.slice(0, 3).join(", ")}. Verified pandits, live video proof.`} />
             </Helmet>
 
-            {/* ── Sticky header ── */}
-            <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3">
+            {/* ── Sticky header (mobile only — DesktopHeader takes over at md+) ── */}
+            <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3 md:hidden">
                 <button onClick={() => navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <h1 className="text-sm font-bold text-stone-800 truncate">{puja.pujaName}</h1>
             </div>
 
+            {/* md+: page container · lg+: two-column split with sticky booking rail (style-inert on mobile) */}
+            <div className="md:w-full md:px-8 lg:px-10 md:pt-8 lg:pt-10">
+            <div className="lg:grid lg:grid-cols-[1fr_400px] lg:gap-10 lg:items-start">
+            <div className="lg:min-w-0">
+
             {/* ── Hero banner ── */}
-            <div className="relative h-52 overflow-hidden p-2 rounded-[10px]">
-                <img src={optimizedImg(puja.image, 800)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={`${puja.pujaName} at ${puja.templeName}`} loading="eager" fetchPriority="high" decoding="async" className="w-full h-full object-cover rounded-[10px]" />
-                <span className="absolute top-3 left-3 bg-red-500 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
+            <div className="relative h-52 overflow-hidden p-2 rounded-[10px] md:h-80 md:p-0 md:rounded-2xl lg:h-[400px] lg:rounded-3xl">
+                <img src={optimizedImg(puja.image, 800)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={`${puja.pujaName} at ${puja.templeName}`} loading="eager" fetchPriority="high" decoding="async" className="w-full h-full object-cover rounded-[10px] md:rounded-2xl lg:rounded-3xl" />
+                <span className="absolute top-3 left-3 bg-red-500 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm md:top-4 md:left-4 md:text-[11px] md:px-3">
                     {statusLabel}
                 </span>
             </div>
 
-            <div className="px-4 pt-3 pb-4 space-y-4">
+            <div className="px-4 pt-3 pb-4 space-y-4 md:px-0 md:pt-6 md:pb-8 md:space-y-6">
                 {/* ── Puja name + meta (rating / temple / date) ── */}
                 <div>
-                    <h2 className="text-xl font-bold font-serif text-stone-900 leading-tight">{puja.pujaName}</h2>
-                    <p className="text-[13px] text-orange-500 font-medium mt-0.5">{puja.pujaNameHindi}</p>
-                    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
-                        <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{puja.deity}</span>
-                        <span className="flex items-center gap-1 text-[12px]">
+                    <h2 className="text-xl font-bold font-serif text-stone-900 leading-tight md:text-3xl lg:text-4xl md:tracking-tight">{puja.pujaName}</h2>
+                    <p className="text-[13px] text-orange-500 font-medium mt-0.5 md:text-[15px] md:mt-1">{puja.pujaNameHindi}</p>
+                    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 md:mt-3">
+                        <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full md:text-xs md:px-3 md:py-1">{puja.deity}</span>
+                        <span className="flex items-center gap-1 text-[12px] md:text-[13px]">
                             <Stars value={puja.rating} />
                             <span className="font-bold text-stone-700">{puja.rating}</span>
                             <span className="text-stone-400">· {devoteesLabel} devotees</span>
                         </span>
                     </div>
-                    <div className="flex items-center gap-3 mt-1.5 text-[12px] text-stone-500">
+                    <div className="flex items-center gap-3 mt-1.5 text-[12px] text-stone-500 md:text-[13px] md:mt-2">
                         <span className="flex items-center gap-1"><Mountain className="w-3.5 h-3.5 text-orange-500" />{mandirName}</span>
                         <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-orange-500" />{displayDate}</span>
                     </div>
                 </div>
 
                 {/* ── Countdown (honest — real puja date) — compact single row ── */}
-                <div className="flex  items-center justify-center gap-6 bg-white border border-orange-100 rounded-xl px-3 py-2 shadow-sm">
-                    <span className="text-[10.5px] font-bold text-orange-600 leading-tight shrink-0">Bookings close soon</span>
+                <div className="flex  items-center justify-center gap-6 bg-white border border-orange-100 rounded-xl px-3 py-2 shadow-sm md:gap-10 md:py-3 md:rounded-2xl">
+                    <span className="text-[10.5px] font-bold text-orange-600 leading-tight shrink-0 md:text-[13px]">Bookings close soon</span>
                     {cd ? (
                         <div className="flex items-center gap-1">
                             {[
@@ -336,23 +350,23 @@ export default function LiveMandirPujaDetailPage() {
                                 { v: cd.min, l: "Min" }, { v: cd.sec, l: "Sec" },
                             ].map((u, i, arr) => (
                                 <div key={u.l} className="flex items-center gap-1">
-                                    <div className="min-w-[32px] bg-stone-50 border border-stone-100 rounded-lg px-1 py-0.5 text-center">
-                                        <div className="text-[15px] leading-none font-bold text-stone-900 tabular-nums">{pad2(u.v)}</div>
-                                        <div className="text-[8px] uppercase tracking-wide text-stone-400 mt-0.5">{u.l}</div>
+                                    <div className="min-w-[32px] bg-stone-50 border border-stone-100 rounded-lg px-1 py-0.5 text-center md:min-w-[44px] md:px-2 md:py-1">
+                                        <div className="text-[15px] leading-none font-bold text-stone-900 tabular-nums md:text-lg">{pad2(u.v)}</div>
+                                        <div className="text-[8px] uppercase tracking-wide text-stone-400 mt-0.5 md:text-[9.5px]">{u.l}</div>
                                     </div>
                                     {i < arr.length - 1 && <span className="text-stone-300 font-semibold text-xs">:</span>}
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <span className="text-[12px] text-stone-500">
+                        <span className="text-[12px] text-stone-500 md:text-[13px]">
                             {puja.status === "live" ? "🔴 Live now" : puja.status === "daily" ? "Daily Seva" : "Booking open"}
                         </span>
                     )}
                 </div>
 
                 {/* ── WhatsApp reassurance line (replaces the price section) ── */}
-                <div className="flex items-center justify-center gap-1 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-1 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center md:text-[13.5px] md:py-2.5 md:rounded-xl md:gap-2">
                     <MessageCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
                     Receive puja video with your name &amp; gotra on WhatsApp
                 </div>
@@ -364,11 +378,11 @@ export default function LiveMandirPujaDetailPage() {
                 </div>
 
                 {/* ── Why perform this puja (quick outcomes) ── */}
-                <div className="rounded-2xl border border-orange-100 bg-white p-3 shadow-sm">
+                <div className="rounded-2xl border border-orange-100 bg-white p-3 shadow-sm md:p-6 md:rounded-3xl">
                     <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-orange-400" />}>Why perform this puja</SectionTitle>
-                    <div className="grid grid-cols-1 gap-1.5">
+                    <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2 md:gap-x-8 md:gap-y-3">
                         {puja.benefits.slice(0, 4).map((b, i) => (
-                            <div key={i} className="flex items-start gap-2 text-[12.5px] text-stone-700">
+                            <div key={i} className="flex items-start gap-2 text-[12.5px] text-stone-700 md:text-[13.5px]">
                                 <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />
                                 <span>{b}</span>
                             </div>
@@ -377,18 +391,18 @@ export default function LiveMandirPujaDetailPage() {
                 </div>
 
                 {/* ── Mandir card ── */}
-                <div className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-white p-3 shadow-sm">
-                    <div className="w-11 h-11 rounded-full border border-amber-200 bg-white overflow-hidden shrink-0 flex items-center justify-center">
+                <div className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-white p-3 shadow-sm md:p-5 md:gap-4 md:rounded-3xl">
+                    <div className="w-11 h-11 rounded-full border border-amber-200 bg-white overflow-hidden shrink-0 flex items-center justify-center md:w-14 md:h-14">
                         {puja.image ? <img src={optimizedImg(puja.image, 96)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={puja.templeName} loading="lazy" className="w-full h-full object-cover" /> : <Mountain className="w-6 h-6 text-amber-600/70" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-[14px] font-bold text-stone-900 leading-snug truncate">{mandirName}</h3>
-                        <div className="flex items-center gap-1.5 mt-0.5 text-[11.5px]">
+                        <h3 className="text-[14px] font-bold text-stone-900 leading-snug truncate md:text-base">{mandirName}</h3>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[11.5px] md:text-[12.5px]">
                             <Calendar className="w-3 h-3 text-orange-500 shrink-0" />
                             <span className="text-stone-700 font-medium">{displayDate}</span>
                             {puja.durationMins ? <span className="text-stone-400">· <Clock className="w-3 h-3 inline -mt-0.5" /> {puja.durationMins} min</span> : null}
                         </div>
-                        <p className="text-[10px] text-stone-400 mt-0.5 truncate">Performed with Vedic rituals &amp; complete devotion</p>
+                        <p className="text-[10px] text-stone-400 mt-0.5 truncate md:text-[11.5px]">Performed with Vedic rituals &amp; complete devotion</p>
                     </div>
                 </div>
 
@@ -410,9 +424,9 @@ export default function LiveMandirPujaDetailPage() {
                 {/* ── Temple details (About / History tabs) ── */}
                 <div>
                     <SectionTitle icon={<Mountain className="w-3.5 h-3.5 text-orange-400" />}>Temple details</SectionTitle>
-                    <div className="rounded-2xl border border-orange-100 bg-white overflow-hidden shadow-sm">
-                        <img src={optimizedImg(puja.image, 640)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={puja.templeName} loading="lazy" className="w-full h-32 object-cover" />
-                        <div className="p-3">
+                    <div className="rounded-2xl border border-orange-100 bg-white overflow-hidden shadow-sm md:rounded-3xl">
+                        <img src={optimizedImg(puja.image, 640)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={puja.templeName} loading="lazy" className="w-full h-32 object-cover md:h-52" />
+                        <div className="p-3 md:p-5">
                             <div role="tablist" aria-label="Temple information" className="flex gap-2 mb-2">
                                 {(["about", "history"] as const).map((tab) => (
                                     <button
@@ -420,11 +434,11 @@ export default function LiveMandirPujaDetailPage() {
                                         role="tab"
                                         aria-selected={templeTab === tab}
                                         onClick={() => setTempleTab(tab)}
-                                        className={`text-[12px] font-semibold px-3 py-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-orange-400 outline-none ${templeTab === tab ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-600"}`}
+                                        className={`text-[12px] font-semibold px-3 py-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-orange-400 outline-none cursor-pointer md:text-[13px] md:px-4 md:py-1.5 ${templeTab === tab ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-600 md:hover:bg-orange-100"}`}
                                     >{tab === "about" ? "About" : "History"}</button>
                                 ))}
                             </div>
-                            <div role="tabpanel" className="text-[12.5px] text-stone-600 leading-relaxed">
+                            <div role="tabpanel" className="text-[12.5px] text-stone-600 leading-relaxed md:text-[13.5px]">
                                 {templeTab === "about"
                                     ? (puja.templeAbout
                                         /* TODO: wire templeAbout from API */
@@ -440,14 +454,14 @@ export default function LiveMandirPujaDetailPage() {
                 {/* ── What you'll get ── */}
                 <div>
                     <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-orange-400" />}>What you'll get</SectionTitle>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-2 md:gap-5">
                         {whatYouGet.map(({ icon: Icon, title, sub }) => (
-                            <div key={title} className="bg-white border border-orange-100 rounded-xl p-2.5 text-center shadow-sm">
-                                <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 flex items-center justify-center mb-1.5">
-                                    <Icon className="w-4 h-4 text-orange-600" />
+                            <div key={title} className="bg-white border border-orange-100 rounded-xl p-2.5 text-center shadow-sm md:p-5 md:rounded-2xl md:hover:shadow-lg md:hover:-translate-y-1 md:transition-all md:duration-300">
+                                <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 flex items-center justify-center mb-1.5 md:w-12 md:h-12 md:mb-3">
+                                    <Icon className="w-4 h-4 text-orange-600 md:w-5 md:h-5" />
                                 </div>
-                                <p className="text-[11px] font-bold text-stone-800 leading-tight">{title}</p>
-                                <p className="text-[9.5px] text-stone-400 leading-tight mt-0.5">{sub}</p>
+                                <p className="text-[11px] font-bold text-stone-800 leading-tight md:text-[13.5px]">{title}</p>
+                                <p className="text-[9.5px] text-stone-400 leading-tight mt-0.5 md:text-[11.5px] md:mt-1">{sub}</p>
                             </div>
                         ))}
                     </div>
@@ -457,9 +471,9 @@ export default function LiveMandirPujaDetailPage() {
                 {videos.length ? (
                     <div>
                         <SectionTitle icon={<Video className="w-3.5 h-3.5 text-orange-400" />}>Video proof of performed pujas</SectionTitle>
-                        <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                        <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible" style={{ scrollbarWidth: "none" }}>
                             {videos.map((src, i) => (
-                                <video key={i} src={src} controls playsInline preload="none" className="shrink-0 w-60 h-36 rounded-2xl border border-orange-100 object-cover bg-black" />
+                                <video key={i} src={src} controls playsInline preload="none" className="shrink-0 w-60 h-36 rounded-2xl border border-orange-100 object-cover bg-black md:w-auto md:shrink md:h-40" />
                             ))}
                         </div>
                     </div>
@@ -467,21 +481,21 @@ export default function LiveMandirPujaDetailPage() {
                 {/* TODO: video proof gallery hidden — backend doesn't return puja.videos for live-mandir pujas yet. */}
 
                 {/* ── Trust row ── */}
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-3 gap-2 text-center md:gap-5">
                     {[
                         { icon: Video, label: "Live HD Video" },
                         { icon: Gift, label: "Prasad at Home" },
                         { icon: ShieldCheck, label: "Verified Pandit" },
                     ].map(({ icon: Icon, label }) => (
-                        <div key={label} className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm">
-                            <Icon className="w-4 h-4 text-orange-500" />
-                            <span className="text-[9.5px] font-semibold text-stone-500 leading-tight">{label}</span>
+                        <div key={label} className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm md:py-4 md:rounded-2xl md:gap-1.5">
+                            <Icon className="w-4 h-4 text-orange-500 md:w-5 md:h-5" />
+                            <span className="text-[9.5px] font-semibold text-stone-500 leading-tight md:text-[11.5px]">{label}</span>
                         </div>
                     ))}
                 </div>
 
-                {/* ── Footer / ecosystem ── */}
-                <footer className="pt-3 mt-2 border-t border-orange-100 text-[11px] text-stone-500 space-y-2">
+                {/* ── Footer / ecosystem (mobile only — SiteFooter takes over at md+) ── */}
+                <footer className="pt-3 mt-2 border-t border-orange-100 text-[11px] text-stone-500 space-y-2 md:hidden">
                     {/* TODO: confirm registered legal entity name */}
                     <p className="font-bold text-stone-700">PanditJiAtRequest</p>
                     <p>1031, Tricity Trade Tower, Zirakpur, Punjab 140603, India</p>
@@ -495,17 +509,71 @@ export default function LiveMandirPujaDetailPage() {
                 </footer>
             </div>
 
-            {/* ── Sticky bottom CTA ── */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-100 max-w-md mx-auto shadow-lg">
-                <div className="px-4 pt-2 pb-2.5">
-                    <div className="flex items-center gap-3">
-                        <div className="shrink-0">
-                            <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
-                            <span className="text-[19px] font-extrabold text-orange-600">₹{puja.price.toLocaleString("en-IN")}</span>
+            {/* left column ends */}
+            </div>
+
+            {/* ── Desktop booking rail (lg+) — mirrors the mobile bottom CTA ── */}
+            <aside className="hidden lg:block lg:sticky lg:top-24">
+                <div className="bg-white border border-orange-100 rounded-3xl shadow-xl shadow-orange-900/5 overflow-hidden">
+                    <div className="h-1.5 bg-gradient-to-r from-orange-600 via-amber-400 to-orange-600" />
+                    <div className="p-6 space-y-5">
+                        <div>
+                            <h3 className="text-lg font-bold font-serif text-stone-900 leading-snug">{puja.pujaName}</h3>
+                            <div className="flex items-center gap-2 mt-2 text-[13px] text-stone-500">
+                                <Mountain className="w-4 h-4 text-orange-500 shrink-0" />
+                                <span className="truncate">{mandirName}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5 text-[13px] text-stone-500">
+                                <Calendar className="w-4 h-4 text-orange-500 shrink-0" />
+                                <span>{displayDate}{puja.scheduledTime ? ` · ${puja.scheduledTime}` : ""}</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2.5 border-t border-orange-100/70 pt-4">
+                            {whatYouGet.map(({ icon: Icon, title }) => (
+                                <div key={title} className="flex items-center gap-2.5 text-[13px] text-stone-700">
+                                    <span className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 flex items-center justify-center shrink-0">
+                                        <Icon className="w-3.5 h-3.5 text-orange-600" />
+                                    </span>
+                                    {title}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex items-end justify-between border-t border-orange-100/70 pt-4">
+                            <div>
+                                <span className="text-[11px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
+                                <span className="text-[26px] font-extrabold text-orange-600">₹{puja.price.toLocaleString("en-IN")}</span>
+                            </div>
+                            {cd && (
+                                <span className="text-[11px] font-bold text-orange-600 mb-1.5 tabular-nums">Closes in {cd.days}d {pad2(cd.hrs)}h {pad2(cd.min)}m</span>
+                            )}
                         </div>
                         <button
                             onClick={openBooking}
-                            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+                            className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3.5 rounded-xl shadow-md shadow-orange-200/70 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+                        >Participate Now</button>
+                        <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-400">
+                            <Lock className="w-3.5 h-3.5 text-emerald-500" />
+                            100% secure payment
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            {/* grid + container end */}
+            </div>
+            </div>
+
+            {/* ── Sticky bottom CTA ── */}
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-100 max-w-md mx-auto shadow-lg md:max-w-2xl md:bottom-6 md:rounded-2xl md:border md:border-orange-100 md:shadow-2xl lg:hidden">
+                <div className="px-4 pt-2 pb-2.5 md:px-6 md:pt-3 md:pb-3">
+                    <div className="flex items-center gap-3">
+                        <div className="shrink-0">
+                            <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none md:text-[11px]">Offering</span>
+                            <span className="text-[19px] font-extrabold text-orange-600 md:text-[22px]">₹{puja.price.toLocaleString("en-IN")}</span>
+                        </div>
+                        <button
+                            onClick={openBooking}
+                            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none cursor-pointer md:hover:shadow-lg"
                         >Participate Now</button>
                     </div>
                     <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-stone-400">
@@ -515,5 +583,6 @@ export default function LiveMandirPujaDetailPage() {
                 </div>
             </div>
         </div>
-    );
+        <SiteFooter />
+    </>);
 }

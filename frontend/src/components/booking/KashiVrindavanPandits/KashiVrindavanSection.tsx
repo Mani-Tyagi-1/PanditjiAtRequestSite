@@ -60,7 +60,7 @@ export default function KashiVrindavanSection() {
     // };
 
     return (
-        <section className="kvp-section relative py-6 overflow-hidden bg-gradient-to-b from-[#F5F4FF] to-[#FAFAFF]">
+        <section className="kvp-section relative py-6 overflow-hidden bg-gradient-to-b from-[#F5F4FF] to-[#FAFAFF] md:py-14 lg:py-16">
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .kvp-section { font-family: 'DM Sans', sans-serif; }
@@ -72,22 +72,22 @@ export default function KashiVrindavanSection() {
             <div className="pointer-events-none absolute -top-10 -right-10 w-44 h-44 rounded-full bg-indigo-200/30 blur-3xl" />
 
             {/* Header */}
-            <div className="px-5 mb-3">
-                <h2 className="text-stone-900 font-bold leading-tight text-center" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "27px" }}>
+            <div className="px-5 mb-3 md:mb-5">
+                <h2 className="text-stone-900 font-bold leading-tight text-center text-[27px] md:text-4xl lg:text-[40px] md:tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     Book {" "}
                     <span className="italic bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">Pandit Ji</span>
                 </h2>
             </div>
 
             {/* City filter */}
-            <div className="px-5 mb-1 flex gap-2">
+            <div className="px-5 mb-1 flex gap-2 md:justify-center md:gap-3 md:mb-3">
                 {HOLY_CITIES.map((c) => (
                     <button
                         key={c}
                         onClick={() => setCity(c)}
-                        className={`text-[12px] font-bold px-4 py-1.5 rounded-full transition-colors ${city === c
+                        className={`text-[12px] font-bold px-4 py-1.5 rounded-full transition-colors cursor-pointer md:text-[13px] md:px-5 md:py-2 ${city === c
                             ? "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-sm"
-                            : "bg-white text-stone-600 border border-stone-200"}`}
+                            : "bg-white text-stone-600 border border-stone-200 md:hover:border-indigo-200 md:hover:text-indigo-600"}`}
                     >
                         {c === "All" ? "All Pandits" : c}
                     </button>
@@ -95,21 +95,25 @@ export default function KashiVrindavanSection() {
             </div>
 
             {/* Card rail */}
-            <div className="kvp-rail overflow-x-auto overflow-y-visible">
-                <div className="flex gap-4 px-5 py-5">
+            <div className="kvp-rail overflow-x-auto overflow-y-visible md:overflow-visible">
+                <div className="flex gap-4 px-5 py-5 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-6 lg:gap-7 md:py-7 md:px-8 lg:px-10">
                     {loading && (
                         <>
                             <PanditCardSkeleton />
                             <PanditCardSkeleton />
+                            {/* Third skeleton balances the lg 3-column grid */}
+                            <div className="hidden lg:contents">
+                                <PanditCardSkeleton />
+                            </div>
                         </>
                     )}
 
                     {error && (
-                        <div className="w-full text-center py-6 bg-red-50 border border-red-100 rounded-2xl mx-1 shrink-0">
+                        <div className="w-full text-center py-6 bg-red-50 border border-red-100 rounded-2xl mx-1 shrink-0 md:col-span-full md:mx-0">
                             <p className="text-red-600 text-[13px] font-semibold">{error}</p>
                             <button
                                 onClick={fetchPandits}
-                                className="mt-2 text-xs font-bold text-red-700 underline"
+                                className="mt-2 text-xs font-bold text-red-700 underline cursor-pointer"
                             >
                                 Try Again
                             </button>
@@ -117,13 +121,13 @@ export default function KashiVrindavanSection() {
                     )}
 
                     {!loading && !error && filtered.length === 0 && (
-                        <p className="w-full text-center text-stone-400 text-sm py-6 shrink-0">No pandits available in this city yet.</p>
+                        <p className="w-full text-center text-stone-400 text-sm py-6 shrink-0 md:col-span-full">No pandits available in this city yet.</p>
                     )}
 
                     {!loading && !error && filtered.map((pandit) => (
                         <PanditCard key={pandit.id} pandit={pandit} />
                     ))}
-                    <div className="shrink-0 w-1" />
+                    <div className="shrink-0 w-1 md:hidden" />
                 </div>
             </div>
 
@@ -138,7 +142,7 @@ export default function KashiVrindavanSection() {
 
 function PanditCardSkeleton() {
     return (
-        <div className="shrink-0 w-[76vw] max-w-[290px] rounded-[24px] bg-white overflow-hidden border border-indigo-100/80 shadow-md animate-pulse">
+        <div className="shrink-0 w-[76vw] max-w-[290px] rounded-[24px] bg-white overflow-hidden border border-indigo-100/80 shadow-md animate-pulse md:w-auto md:max-w-none md:shrink">
             <div className="p-4 flex gap-3.5">
                 <div className="w-16 h-16 rounded-2xl bg-stone-200 shrink-0" />
                 <div className="flex-1 min-w-0 pt-0.5 space-y-2">

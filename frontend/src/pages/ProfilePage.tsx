@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,11 +29,22 @@ import {
     Video,
     Star,
     Loader2,
+    MessageCircle,
+    ShieldCheck,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { decryptData, encryptPayload } from "../utils/encryption";
 import API_URL from "../utils/apiConfig";
+import DesktopHeader from "../components/layout/DesktopHeader";
+import TopPromoBar from "../components/layout/TopPromoBar";
+
+// Click-to-chat / call support line — same number used across the site
+// (AppLayout.tsx, SiteFooter.tsx, BookPujaPage.tsx, KashiPage.tsx, etc.).
+const WHATSAPP_URL =
+    "https://wa.me/919056955311?text=" +
+    encodeURIComponent("🙏 Namaste! I need help with my PanditJi At Request account.");
+const SUPPORT_TEL = "tel:+919056955311";
 
 interface UserData {
     _id: string;
@@ -71,15 +82,15 @@ interface ReferralBooking {
 const ProfileMenuItem = ({ icon: Icon, title, subtitle, onClick }: any) => (
     <button
         onClick={onClick}
-        className="w-full flex items-center justify-between p-4 bg-white rounded-2xl mb-3 shadow-sm border border-orange-50 active:scale-[0.98] transition-all"
+        className="w-full flex items-center justify-between p-4 bg-white rounded-2xl mb-3 shadow-sm border border-orange-50 active:scale-[0.98] transition-all cursor-pointer md:mb-0 md:p-5 md:rounded-3xl md:hover:shadow-md md:hover:border-orange-100 md:hover:-translate-y-0.5 md:duration-200"
     >
         <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center md:w-12 md:h-12">
                 <Icon className="w-5 h-5 text-[#FF7000]" />
             </div>
             <div className="text-left">
-                <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
-                <p className="text-xs text-gray-400">{subtitle}</p>
+                <h3 className="font-semibold text-gray-800 text-sm md:text-base">{title}</h3>
+                <p className="text-xs text-gray-400 md:text-sm">{subtitle}</p>
             </div>
         </div>
         <ChevronRight className="w-5 h-5 text-gray-300" />
@@ -88,7 +99,7 @@ const ProfileMenuItem = ({ icon: Icon, title, subtitle, onClick }: any) => (
 
 const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text", placeholder }: any) => (
     <div className="mb-4">
-        <label className="block text-xs font-semibold text-gray-700 mb-2 ml-1">{label}</label>
+        <label className="block text-xs font-semibold text-gray-700 mb-2 ml-1 md:text-sm">{label}</label>
         <div className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${disabled ? 'bg-gray-50 border-gray-100' : 'bg-white border-orange-100 focus-within:border-[#FF7000] shadow-sm'}`}>
             <Icon className={`w-4 h-4 ${disabled ? 'text-gray-400' : 'text-[#FF7000]'}`} />
             <input
@@ -97,7 +108,7 @@ const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text"
                 onChange={(e) => onChange(e.target.value)}
                 disabled={disabled}
                 placeholder={placeholder}
-                className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-300"
+                className="w-full bg-transparent outline-none text-sm text-gray-800 placeholder:text-gray-300 md:text-base"
             />
         </div>
     </div>
@@ -106,6 +117,13 @@ const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text"
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const location = useLocation();
+    // ProfilePage is mounted on two routes: /account (inside AppLayout, which
+    // already renders TopPromoBar + DesktopHeader) and /profile (standalone,
+    // no AppLayout). On the standalone route we must render both ourselves so
+    // the md:h-[calc(100vh-115px)] locked-view sizing lines up with the real
+    // TopPromoBar (h-10 = 40px) + DesktopHeader (~75px) stacked above it.
+    const isStandaloneRoute = location.pathname === "/profile";
     const { logout } = useAuth();
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -478,6 +496,115 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    // ── Desktop/tablet-only derived data — every value below is computed
+    // from state this file already fetches (fetchUserProfile / fetchUserBookings
+    // / fetchReferralData). Nothing here is fabricated; anything without a real
+    // source (streak, wishlist, "verified" flag) is simply omitted upstream.
+
+    // "Member Since" — decoded from the Mongo ObjectId's embedded creation
+    // timestamp (first 4 hex bytes), so it's a real value even though the
+    // profile response has no separate createdAt/joinDate field.
+    const memberSince = (() => {
+        if (!user?._id || !/^[0-9a-fA-F]{24}$/.test(user._id)) return null;
+        const ts = parseInt(user._id.substring(0, 8), 16) * 1000;
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return null;
+        return d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+    })();
+
+    const totalBookingsCount =
+        poojaBookings.length + liveBookings.length + directBookings.length + chadhavaBookings.length + shopifyOrders.length;
+
+    const upcomingSevaCount = (() => {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        return [...poojaBookings, ...liveBookings].filter((b: any) => {
+            if (!b.bookingDate) return false;
+            const d = new Date(b.bookingDate);
+            d.setHours(0, 0, 0, 0);
+            return !isNaN(d.getTime()) && d.getTime() >= startOfToday.getTime();
+        }).length;
+    })();
+
+    type RecentBookingItem = {
+        id: string;
+        icon: string;
+        title: string;
+        subtitle: string;
+        date: Date;
+        status: string;
+        tab: "pooja" | "direct" | "live" | "chadhava" | "shopify";
+    };
+
+    // Merge every already-fetched booking type into one recency-sorted list
+    // for the "Recent Bookings" panel — reuses the exact same arrays the
+    // bookings tabs below already render, just re-sliced for a preview.
+    const recentBookings: RecentBookingItem[] = (() => {
+        const items: RecentBookingItem[] = [];
+        poojaBookings.forEach((b: any) => {
+            if (!b.bookingDate) return;
+            const d = new Date(b.bookingDate);
+            if (isNaN(d.getTime())) return;
+            items.push({
+                id: b._id, icon: "🪔", title: b.poojaNameEng || "Puja Service",
+                subtitle: b.bhaktName || b.userName || "Devotee", date: d,
+                status: b.status || (b.isPaymentDone ? "confirmed" : "pending"), tab: "pooja",
+            });
+        });
+        liveBookings.forEach((b: any) => {
+            const raw = b.bookingDate || b.addedOn || b.createdAt;
+            if (!raw) return;
+            const d = new Date(raw);
+            if (isNaN(d.getTime())) return;
+            items.push({
+                id: b._id, icon: "📺", title: b.poojaNameEng || b.pujaName || "Live Mandir Puja",
+                subtitle: b.templeName || "", date: d,
+                status: b.status || (b.isPaymentDone ? "confirmed" : "pending"), tab: "live",
+            });
+        });
+        chadhavaBookings.forEach((b: any) => {
+            if (!b.addedOn) return;
+            const d = new Date(b.addedOn);
+            if (isNaN(d.getTime())) return;
+            items.push({
+                id: b._id, icon: "🌸", title: b.deity || "Chadhava Seva",
+                subtitle: b.templeName || "", date: d,
+                status: b.paymentStatus || "pending", tab: "chadhava",
+            });
+        });
+        directBookings.forEach((b: any) => {
+            if (!b.createdAt) return;
+            const d = new Date(b.createdAt);
+            if (isNaN(d.getTime())) return;
+            items.push({
+                id: b._id, icon: b.isKashi ? "🛕" : "🙏",
+                title: b.isKashi ? "Kashi Ji Pandit Request" : "Pandit Direct Booking",
+                subtitle: b.isKashi ? "Kashi Vishwanath Dham" : (b.panditName || "Assigned Pandit"),
+                date: d, status: b.status || "pending", tab: "direct",
+            });
+        });
+        shopifyOrders.forEach((o: any) => {
+            const raw = o.addedOn || o.createdAt;
+            if (!raw) return;
+            const d = new Date(raw);
+            if (isNaN(d.getTime())) return;
+            items.push({
+                id: o._id, icon: "🛍️", title: "Shop Order",
+                subtitle: o.items?.[0]?.title || "", date: d,
+                status: o.status || "pending", tab: "shopify",
+            });
+        });
+        return items.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 5);
+    })();
+
+    const statusBadgeClass = (status: string) => {
+        const s = (status || "").toLowerCase();
+        if (["confirmed", "approved", "paid"].includes(s)) return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+        if (s === "completed" || s === "delivered") return "bg-blue-50 text-blue-600 border border-blue-100";
+        if (["cancelled", "rejected", "failed"].includes(s)) return "bg-red-50 text-red-600 border border-red-100";
+        return "bg-orange-50 text-orange-600 border border-orange-100";
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#FFFAF5]">
@@ -506,8 +633,15 @@ const ProfilePage: React.FC = () => {
     const isLockedView = mode === "referral-bookings" || mode === "bookings";
 
     return (
-        <div className={`font-sans flex justify-center ${isLockedView ? "h-screen overflow-hidden" : "min-h-screen"}`}>
-            <div className={`w-full max-w-md bg-white shadow-sm relative ${isLockedView ? "h-screen overflow-hidden" : "min-h-screen pb-24"}`}>
+        <>
+        {/* /profile is not wrapped by AppLayout, so it gets no shared desktop
+            header (or promo bar); render both here (hidden md:block — inert
+            on mobile). On /account AppLayout already renders them, so skip
+            to avoid doubling. */}
+        {isStandaloneRoute && <TopPromoBar />}
+        {isStandaloneRoute && <DesktopHeader />}
+        <div className={`font-sans flex justify-center ${isLockedView ? "h-screen overflow-hidden md:h-[calc(100vh-115px)]" : "min-h-screen"}`}>
+            <div className={`w-full max-w-md md:max-w-none bg-white md:bg-transparent shadow-sm md:shadow-none relative ${isLockedView ? "h-screen overflow-hidden md:h-[calc(100vh-115px)]" : "min-h-screen pb-24 md:pb-16"}`}>
                 <AnimatePresence mode="wait">
                     {mode === "view" && (
                         <motion.div
@@ -515,27 +649,34 @@ const ProfilePage: React.FC = () => {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            className="px-4"
+                            className="px-4 md:px-8 lg:px-10"
                         >
+                            {/* Breadcrumb — tablet/desktop only */}
+                            <nav className="hidden md:flex items-center gap-1.5 pt-8 lg:pt-10 text-xs text-gray-400">
+                                <button onClick={() => navigate("/home")} className="hover:text-[#FF7000] transition-colors cursor-pointer">Home</button>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                                <span className="text-gray-600 font-semibold">My Profile</span>
+                            </nav>
+
                             {/* Navigation Header */}
-                            <div className="flex items-center gap-4 pt-6 pb-2">
+                            <div className="flex items-center gap-4 pt-6 pb-2 md:pt-4 md:pb-4">
                                 <button
                                     onClick={() => navigate("/home")}
-                                    className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000]"
+                                    className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000] cursor-pointer md:hover:bg-orange-50 md:hover:shadow-md"
                                 >
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
-                                <h1 className="text-xl font-bold text-gray-800">Profile</h1>
+                                <h1 className="text-xl font-bold text-gray-800 md:text-3xl lg:text-4xl md:tracking-tight">Profile</h1>
                             </div>
 
                             {/* Header Profile Card */}
-                            <div className="mt-4 mb-8">
-                                <div className="relative bg-[#FFEDE0] rounded-[32px] p-6 pt-10 overflow-hidden border border-orange-100 shadow-sm">
+                            <div className="mt-4 mb-8 md:mt-6 md:mb-10">
+                                <div className="relative bg-[#FFEDE0] rounded-[32px] p-6 pt-10 overflow-hidden border border-orange-100 shadow-sm md:p-10">
                                     {/* Decorative circles */}
                                     <div className="absolute top-0 left-0 w-32 h-32 bg-orange-200/30 rounded-full -translate-x-12 -translate-y-12" />
 
                                     <div className="flex items-center gap-6 relative z-10">
-                                        <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-orange-100">
+                                        <div className="w-24 h-24 rounded-full border-4 border-white shadow-md overflow-hidden bg-orange-100 md:w-32 md:h-32">
                                             <img
                                                 src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
                                                 alt="Profile"
@@ -543,16 +684,22 @@ const ProfilePage: React.FC = () => {
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <h2 className="text-2xl font-bold text-gray-800 leading-tight">
+                                            <h2 className="text-2xl font-bold text-gray-800 leading-tight md:text-3xl lg:text-4xl">
                                                 {user?.given_name} {user?.family_name}
                                             </h2>
-                                            <div className="flex items-center gap-1 mt-1 text-gray-500 mb-4">
+                                            <p className="hidden md:block text-gray-500 text-sm mt-1">Namaste 🙏 — here's your seva dashboard at a glance.</p>
+                                            <div className="flex items-center gap-1 mt-1 text-gray-500 mb-4 md:flex-wrap">
                                                 <Phone className="w-3.5 h-3.5" />
-                                                <span className="text-sm">+91 {user?.phone}</span>
+                                                <span className="text-sm md:text-base">+91 {user?.phone}</span>
+                                                {memberSince && (
+                                                    <span className="hidden md:inline-flex items-center gap-1 ml-3 text-xs font-semibold text-orange-500 bg-white/70 px-2.5 py-1 rounded-full border border-orange-200">
+                                                        Member since {memberSince}
+                                                    </span>
+                                                )}
                                             </div>
                                             <button
                                                 onClick={() => setMode("edit")}
-                                                className="flex items-center gap-2 bg-[#FF7000] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-200 active:scale-95 transition-all"
+                                                className="flex items-center gap-2 bg-[#FF7000] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-orange-200 active:scale-95 transition-all cursor-pointer md:px-6 md:py-3 md:text-base md:hover:bg-[#e56200] md:hover:shadow-xl"
                                             >
                                                 <Edit3 className="w-4 h-4" />
                                                 Edit Profile
@@ -562,9 +709,96 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Stats Row — tablet/desktop only, every number below comes from
+                                real fetched state (bookings arrays / referralData), see the
+                                derived-data block above. No fabricated figures. */}
+                            <div className="hidden md:grid md:grid-cols-4 md:gap-4 md:mb-8">
+                                <div className="bg-white rounded-2xl border border-orange-50 shadow-sm p-5 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                        <Calendar className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800 leading-none">{totalBookingsCount}</p>
+                                        <p className="text-xs text-gray-400 mt-1">Total Bookings</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-2xl border border-orange-50 shadow-sm p-5 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                        <CalendarClock className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800 leading-none">{upcomingSevaCount}</p>
+                                        <p className="text-xs text-gray-400 mt-1">Upcoming Seva</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-2xl border border-orange-50 shadow-sm p-5 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                        <IndianRupee className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800 leading-none">₹{referralData?.referralEarnings ?? 0}</p>
+                                        <p className="text-xs text-gray-400 mt-1">Referral Earnings</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-2xl border border-orange-50 shadow-sm p-5 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                        <Users className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <div>
+                                        <p className="text-xl font-bold text-gray-800 leading-none">{referralData?.totalReferredPujas ?? 0}</p>
+                                        <p className="text-xs text-gray-400 mt-1">Pujas Referred</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Quick Actions — tablet/desktop only, each tile reuses an
+                                existing handler/route already wired elsewhere on this page. */}
+                            <div className="hidden md:grid md:grid-cols-4 md:gap-4 md:mb-8">
+                                <button
+                                    onClick={() => setMode("edit")}
+                                    className="flex flex-col items-center gap-2 bg-white rounded-2xl border border-orange-50 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                                >
+                                    <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center">
+                                        <Edit3 className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-700">Edit Profile</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setMode("bookings");
+                                        const stored = localStorage.getItem("user_data");
+                                        if (stored) fetchUserBookings(JSON.parse(stored).phone);
+                                    }}
+                                    className="flex flex-col items-center gap-2 bg-white rounded-2xl border border-orange-50 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                                >
+                                    <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center">
+                                        <CalendarClock className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-700">My Bookings</span>
+                                </button>
+                                <button
+                                    onClick={handleNativeShare}
+                                    className="flex flex-col items-center gap-2 bg-white rounded-2xl border border-orange-50 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                                >
+                                    <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center">
+                                        <Share2 className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-700">Refer &amp; Earn</span>
+                                </button>
+                                <button
+                                    onClick={() => navigate("/free-consultation")}
+                                    className="flex flex-col items-center gap-2 bg-white rounded-2xl border border-orange-50 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                                >
+                                    <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center">
+                                        <MessageCircle className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                    <span className="text-sm font-bold text-gray-700">Free Consultation</span>
+                                </button>
+                            </div>
+
                             {/* Referral Rewards Card */}
                             {referralData && (
-                                <div className="mb-4 bg-white rounded-2xl shadow-sm border border-orange-50 overflow-hidden">
+                                <div className="mb-4 bg-white rounded-2xl shadow-sm border border-orange-50 overflow-hidden md:mb-6 md:rounded-3xl md:hover:shadow-md md:transition-shadow">
                                     {/* Top row */}
                                     <div className="flex items-center justify-between px-4 pt-4 pb-3">
                                         <div className="flex items-center gap-3">
@@ -585,21 +819,21 @@ const ProfilePage: React.FC = () => {
 
                                     {/* Stats row */}
                                     <div className="flex items-center border-t border-orange-50">
-                                        <div className="flex-1 flex flex-col items-center py-3">
-                                            <span className="text-lg font-bold text-[#FF7000]">₹{referralData.referralEarnings}</span>
-                                            <span className="text-[11px] text-gray-400 mt-0.5">Total Earned</span>
+                                        <div className="flex-1 flex flex-col items-center py-3 md:py-5">
+                                            <span className="text-lg font-bold text-[#FF7000] md:text-2xl">₹{referralData.referralEarnings}</span>
+                                            <span className="text-[11px] text-gray-400 mt-0.5 md:text-xs">Total Earned</span>
                                         </div>
                                         <div className="w-px h-10 bg-orange-100" />
-                                        <div className="flex-1 flex flex-col items-center py-3">
-                                            <span className="text-lg font-bold text-[#FF7000]">{referralData.totalReferredPujas}</span>
-                                            <span className="text-[11px] text-gray-400 mt-0.5">Pujas Referred</span>
+                                        <div className="flex-1 flex flex-col items-center py-3 md:py-5">
+                                            <span className="text-lg font-bold text-[#FF7000] md:text-2xl">{referralData.totalReferredPujas}</span>
+                                            <span className="text-[11px] text-gray-400 mt-0.5 md:text-xs">Pujas Referred</span>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
                             {/* Menu Items */}
-                            <div className="space-y-1">
+                            <div className="space-y-1 md:grid md:grid-cols-3 md:gap-5 md:space-y-0">
                                 <ProfileMenuItem
                                     icon={User}
                                     title="My Profile"
@@ -648,11 +882,125 @@ const ProfilePage: React.FC = () => {
                             /> */}
                             </div>
 
+                            {/* Recent Bookings + sidebar — tablet/desktop only. All data here
+                                is the same real, already-fetched arrays the "My Bookings" view
+                                below renders as cards; this is just a recency-sorted preview. */}
+                            <div className="hidden md:block md:mt-10">
+                                <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-8 lg:items-start">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-lg font-bold text-gray-800 lg:text-xl">Recent Bookings</h2>
+                                            <button
+                                                onClick={() => {
+                                                    setMode("bookings");
+                                                    const stored = localStorage.getItem("user_data");
+                                                    if (stored) fetchUserBookings(JSON.parse(stored).phone);
+                                                }}
+                                                className="flex items-center gap-1 text-xs font-bold text-[#FF7000] hover:underline cursor-pointer"
+                                            >
+                                                View All <ChevronRight className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+
+                                        {bookingsLoading ? (
+                                            <div className="flex justify-center py-10">
+                                                <Loader2 className="w-7 h-7 text-[#FF7000] animate-spin" />
+                                            </div>
+                                        ) : recentBookings.length === 0 ? (
+                                            <div className="bg-white rounded-2xl border border-orange-50 shadow-sm p-8 text-center">
+                                                <p className="text-gray-500 text-sm">No bookings yet — explore our services to get started.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {recentBookings.map((item) => (
+                                                    <button
+                                                        key={`${item.tab}-${item.id}`}
+                                                        onClick={() => {
+                                                            setMode("bookings");
+                                                            setActiveBookingTab(item.tab);
+                                                        }}
+                                                        className="w-full flex items-center gap-4 bg-white rounded-2xl border border-orange-50 shadow-sm p-4 hover:shadow-md hover:border-orange-100 transition-all text-left cursor-pointer"
+                                                    >
+                                                        <div className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-xl shrink-0">
+                                                            {item.icon}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-gray-800 text-sm truncate">{item.title}</p>
+                                                            <p className="text-xs text-gray-400 truncate">
+                                                                {item.subtitle ? `${item.subtitle} · ` : ""}
+                                                                {item.date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                                                            </p>
+                                                        </div>
+                                                        <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${statusBadgeClass(item.status)}`}>
+                                                            {item.status}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Sidebar — desktop only */}
+                                    <aside className="hidden lg:flex lg:flex-col lg:gap-5 lg:mt-9">
+                                        {referralData && (
+                                            <div className="bg-white rounded-2xl border border-orange-50 shadow-sm p-5">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
+                                                        <Gift className="w-4 h-4 text-[#FF7000]" />
+                                                    </div>
+                                                    <h3 className="font-bold text-gray-800 text-sm">Referral Progress</h3>
+                                                </div>
+                                                <div className="space-y-2.5 mb-4">
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-gray-500">Total Earned</span>
+                                                        <span className="font-bold text-[#FF7000]">₹{referralData.referralEarnings}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-gray-500">Pujas Referred</span>
+                                                        <span className="font-bold text-gray-700">{referralData.totalReferredPujas}</span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="text-gray-500">Reward Rate</span>
+                                                        <span className="font-bold text-gray-700">{referralData.referralPercentage}%</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={handleNativeShare}
+                                                    className="w-full flex items-center justify-center gap-2 bg-[#FF7000] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-[#e56200] transition-all cursor-pointer"
+                                                >
+                                                    <Share2 className="w-3.5 h-3.5" />
+                                                    Share Referral Code
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <div className="bg-[#FFF6EC] rounded-2xl border border-orange-100 p-5">
+                                            <h3 className="font-bold text-gray-800 text-sm mb-1">Need Help?</h3>
+                                            <p className="text-xs text-gray-500 mb-3.5">Our team is here for any booking or account questions.</p>
+                                            <a
+                                                href={WHATSAPP_URL}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center justify-center gap-2 bg-[#25D366] text-white text-xs font-bold py-2.5 rounded-xl mb-2.5 hover:brightness-105 transition-all cursor-pointer"
+                                            >
+                                                <MessageCircle className="w-4 h-4" /> WhatsApp Us
+                                            </a>
+                                            <a
+                                                href={SUPPORT_TEL}
+                                                className="flex items-center justify-center gap-2 bg-white border border-orange-200 text-orange-600 text-xs font-bold py-2.5 rounded-xl hover:bg-orange-50 transition-all cursor-pointer"
+                                            >
+                                                <Phone className="w-4 h-4" /> Call Now
+                                            </a>
+                                        </div>
+                                    </aside>
+                                </div>
+                            </div>
+
                             {/* Logout Section */}
-                            <div className="mt-12 flex flex-col items-center gap-6">
+                            <div className="mt-12 flex flex-col items-center gap-6 md:mt-16 md:gap-8">
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-2 px-8 py-3 rounded-full border-2 border-red-100 text-red-500 font-bold bg-white shadow-sm active:scale-95 transition-all"
+                                    className="flex items-center gap-2 px-8 py-3 rounded-full border-2 border-red-100 text-red-500 font-bold bg-white shadow-sm active:scale-95 transition-all cursor-pointer md:hover:bg-red-50 md:hover:border-red-200"
                                 >
                                     <LogOut className="w-5 h-5" />
                                     Log Out
@@ -672,28 +1020,28 @@ const ProfilePage: React.FC = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="min-h-screen bg-[#FFF8F3]"
+                            className="min-h-screen bg-[#FFF8F3] md:bg-transparent"
                         >
                             {/* Compact Header */}
-                            <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-14 relative">
+                            <div className="bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-14 relative md:mx-8 lg:mx-10 md:mt-6 md:rounded-3xl md:px-8 md:pt-7 md:pb-16 md:shadow-lg md:shadow-orange-200/50">
                                 <div className="flex items-center gap-3 text-white mb-0">
                                     <button
                                         onClick={() => setMode("view")}
-                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20 cursor-pointer"
                                         aria-label="Back to Profile"
                                     >
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
                                     <div>
-                                        <h1 className="text-lg font-bold leading-tight">Edit Profile</h1>
-                                        <p className="text-white/75 text-[10px]">Personal & astro details for accurate Pooja</p>
+                                        <h1 className="text-lg font-bold leading-tight md:text-2xl lg:text-3xl">Edit Profile</h1>
+                                        <p className="text-white/75 text-[10px] md:text-sm">Personal & astro details for accurate Pooja</p>
                                     </div>
                                 </div>
 
                                 {/* Profile card overlap */}
-                                <div className="absolute left-4 right-4 -bottom-10">
-                                    <div className="bg-white rounded-2xl px-5 py-3 flex items-center gap-4 shadow-lg border border-orange-100">
-                                        <div className="w-14 h-14 rounded-full border-2 border-orange-200 overflow-hidden bg-orange-50 flex-shrink-0">
+                                <div className="absolute left-4 right-4 -bottom-10 md:left-8 md:right-8">
+                                    <div className="bg-white rounded-2xl px-5 py-3 flex items-center gap-4 shadow-lg border border-orange-100 md:px-6 md:py-4">
+                                        <div className="w-14 h-14 rounded-full border-2 border-orange-200 overflow-hidden bg-orange-50 flex-shrink-0 md:w-16 md:h-16">
                                             <img
                                                 src={user?.picture || "https://static.vecteezy.com/system/resources/previews/019/896/008/original/male-user-avatar-icon-in-flat-design-style-person-signs-illustration-png.png"}
                                                 alt="Profile"
@@ -701,19 +1049,21 @@ const ProfilePage: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <h3 className="text-gray-800 font-bold text-sm leading-tight">{user?.given_name} {user?.family_name}</h3>
-                                            <p className="text-orange-400 text-xs">{user?.phone ? `+91 ${user.phone}` : ""}</p>
+                                            <h3 className="text-gray-800 font-bold text-sm leading-tight md:text-base">{user?.given_name} {user?.family_name}</h3>
+                                            <p className="text-orange-400 text-xs md:text-sm">{user?.phone ? `+91 ${user.phone}` : ""}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Form — desktop gets 2-col grid */}
-                            <div className="px-4 mt-12 pb-6 mx-auto">
-                                <div className="grid grid-cols-1 gap-3">
+                            {/* Form — desktop gets 2-col grid, lg+ adds a trust/help sidebar */}
+                            <div className="px-4 mt-12 pb-6 md:px-8 lg:px-10 md:mt-16 md:pb-12 md:w-full">
+                            <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-10 lg:items-start">
+                            <div>
+                                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 md:items-start">
 
                                     {/* Basic Details */}
-                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:rounded-3xl md:p-6">
                                         <div className="flex items-center gap-2 mb-3">
                                             <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
                                                 <User className="w-3.5 h-3.5 text-[#FF7000]" />
@@ -759,7 +1109,7 @@ const ProfilePage: React.FC = () => {
                                     </div>
 
                                     {/* Astro Details */}
-                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:rounded-3xl md:p-6">
                                         <div className="flex items-center gap-2 mb-3">
                                             <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
                                                 <Bookmark className="w-3.5 h-3.5 text-[#FF7000]" />
@@ -799,7 +1149,7 @@ const ProfilePage: React.FC = () => {
                                     </div>
 
                                     {/* Contact */}
-                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50">
+                                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-orange-50 md:rounded-3xl md:p-6">
                                         <div className="flex items-center gap-2 mb-3">
                                             <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center">
                                                 <Mail className="w-3.5 h-3.5 text-[#FF7000]" />
@@ -819,18 +1169,65 @@ const ProfilePage: React.FC = () => {
                                 </div>
 
                                 {/* Save Button + note */}
-                                <div className="mt-3">
+                                <div className="mt-3 md:mt-8 md:max-w-md md:mx-auto lg:max-w-full lg:mx-0">
                                     <button
                                         onClick={handleSave}
                                         disabled={isSaving}
-                                        className="w-full bg-[#FF7000] hover:bg-[#e56200] disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 transition-all active:scale-[0.98] text-sm"
+                                        className="w-full bg-[#FF7000] hover:bg-[#e56200] disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 transition-all active:scale-[0.98] text-sm cursor-pointer md:py-4 md:text-base"
                                     >
                                         {isSaving ? "Saving..." : "Save Changes"}
                                     </button>
-                                    <p className="text-center text-[10px] text-gray-400 mt-2">
+                                    <p className="text-center text-[10px] text-gray-400 mt-2 md:text-xs">
                                         Your details are used only to perform Pooja correctly and securely.
                                     </p>
                                 </div>
+                            </div>
+
+                            {/* Trust / Help sidebar — desktop only, static copy + real contacts */}
+                            <aside className="hidden lg:flex lg:flex-col lg:gap-6">
+                                <div className="bg-white rounded-3xl border border-orange-50 shadow-sm p-6">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
+                                            <ShieldCheck className="w-4 h-4 text-[#FF7000]" />
+                                        </div>
+                                        <h3 className="font-bold text-gray-800 text-sm">Your Privacy, Our Promise</h3>
+                                    </div>
+                                    <ul className="space-y-2.5 text-xs text-gray-500 leading-relaxed">
+                                        <li className="flex items-start gap-2">
+                                            <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                                            Your details are used only to perform your Pooja correctly.
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                                            We never share your information with third parties.
+                                        </li>
+                                        <li className="flex items-start gap-2">
+                                            <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                                            Your mobile number stays private and cannot be edited here.
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-[#FFF6EC] rounded-3xl border border-orange-100 p-6">
+                                    <h3 className="font-bold text-gray-800 text-sm mb-1">Need Help?</h3>
+                                    <p className="text-xs text-gray-500 mb-3.5">Having trouble updating your details? We're here for you.</p>
+                                    <a
+                                        href={WHATSAPP_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center gap-2 bg-[#25D366] text-white text-xs font-bold py-2.5 rounded-xl mb-2.5 hover:brightness-105 transition-all cursor-pointer"
+                                    >
+                                        <MessageCircle className="w-4 h-4" /> WhatsApp Us
+                                    </a>
+                                    <a
+                                        href={SUPPORT_TEL}
+                                        className="flex items-center justify-center gap-2 bg-white border border-orange-200 text-orange-600 text-xs font-bold py-2.5 rounded-xl hover:bg-orange-50 transition-all cursor-pointer"
+                                    >
+                                        <Phone className="w-4 h-4" /> Call Now
+                                    </a>
+                                </div>
+                            </aside>
+                            </div>
                             </div>
                         </motion.div>
                     )}
@@ -841,7 +1238,7 @@ const ProfilePage: React.FC = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="h-screen bg-[#FFF8F3] relative flex flex-col overflow-hidden"
+                            className="h-screen bg-[#FFF8F3] relative flex flex-col overflow-hidden md:h-full md:bg-transparent"
                         >
                             {/* Background watermark emblem */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
@@ -854,42 +1251,42 @@ const ProfilePage: React.FC = () => {
                             </div>
 
                             {/* Header — fixed height, never scrolls */}
-                            <div className="relative z-10 flex-shrink-0 bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-6">
+                            <div className="relative z-10 flex-shrink-0 bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-6 md:mx-8 lg:mx-10 md:mt-6 md:rounded-3xl md:px-8 md:pt-6 md:pb-7 md:shadow-lg md:shadow-orange-200/50">
                                 <div className="flex items-center gap-3 text-white">
                                     <button
                                         onClick={() => setMode("view")}
-                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20 cursor-pointer"
                                     >
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
                                     <div>
-                                        <h1 className="text-lg font-bold leading-tight">Referral Bookings</h1>
-                                        <p className="text-white/75 text-[10px]">Pujas booked via your referral code</p>
+                                        <h1 className="text-lg font-bold leading-tight md:text-2xl lg:text-3xl">Referral Bookings</h1>
+                                        <p className="text-white/75 text-[10px] md:text-sm">Pujas booked via your referral code</p>
                                     </div>
                                 </div>
 
                                 {/* Summary pills */}
                                 {referralData && (
-                                    <div className="flex gap-3 mt-4">
-                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5">
+                                    <div className="flex gap-3 mt-4 md:gap-4 md:mt-5">
+                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5 md:gap-3 md:px-5 md:py-3.5">
                                             <IndianRupee className="w-4 h-4 text-white/80 shrink-0" />
                                             <div>
-                                                <p className="text-white font-bold text-base leading-none">₹{referralData.referralEarnings}</p>
-                                                <p className="text-white/70 text-[10px] mt-0.5">Total Earned</p>
+                                                <p className="text-white font-bold text-base leading-none md:text-xl">₹{referralData.referralEarnings}</p>
+                                                <p className="text-white/70 text-[10px] mt-0.5 md:text-xs">Total Earned</p>
                                             </div>
                                         </div>
-                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5">
+                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5 md:gap-3 md:px-5 md:py-3.5">
                                             <Users className="w-4 h-4 text-white/80 shrink-0" />
                                             <div>
-                                                <p className="text-white font-bold text-base leading-none">{referralData.totalReferredPujas}</p>
-                                                <p className="text-white/70 text-[10px] mt-0.5">Pujas Referred</p>
+                                                <p className="text-white font-bold text-base leading-none md:text-xl">{referralData.totalReferredPujas}</p>
+                                                <p className="text-white/70 text-[10px] mt-0.5 md:text-xs">Pujas Referred</p>
                                             </div>
                                         </div>
-                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5">
+                                        <div className="flex-1 flex items-center gap-2 bg-white/20 rounded-2xl px-3 py-2.5 md:gap-3 md:px-5 md:py-3.5">
                                             <Percent className="w-4 h-4 text-white/80 shrink-0" />
                                             <div>
-                                                <p className="text-white font-bold text-base leading-none">{referralData.referralPercentage}%</p>
-                                                <p className="text-white/70 text-[10px] mt-0.5">Reward Rate</p>
+                                                <p className="text-white font-bold text-base leading-none md:text-xl">{referralData.referralPercentage}%</p>
+                                                <p className="text-white/70 text-[10px] mt-0.5 md:text-xs">Reward Rate</p>
                                             </div>
                                         </div>
                                     </div>
@@ -897,13 +1294,13 @@ const ProfilePage: React.FC = () => {
                             </div>
 
                             {/* List — scrolls independently, header stays fixed */}
-                            <div className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-28 space-y-3 scrollbar-hide">
+                            <div className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-28 space-y-3 scrollbar-hide md:px-8 lg:px-10 md:pt-6 md:pb-28 md:grid md:grid-cols-2 md:gap-5 md:space-y-0 md:content-start md:items-start">
                                 {referralBookingsLoading ? (
-                                    <div className="flex justify-center py-16">
+                                    <div className="flex justify-center py-16 md:col-span-2">
                                         <div className="w-9 h-9 border-4 border-[#FF7000] border-t-transparent rounded-full animate-spin" />
                                     </div>
                                 ) : referralBookings.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                                    <div className="flex flex-col items-center justify-center py-16 text-center md:col-span-2">
                                         <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
                                             <Gift className="w-8 h-8 text-orange-300" />
                                         </div>
@@ -916,7 +1313,7 @@ const ProfilePage: React.FC = () => {
                                     referralBookings.map((booking) => (
                                         <div
                                             key={booking.bookingId}
-                                            className="bg-white rounded-2xl border border-orange-50 shadow-sm overflow-hidden"
+                                            className="bg-white rounded-2xl border border-orange-50 shadow-sm overflow-hidden md:hover:shadow-md md:transition-shadow"
                                         >
                                             {/* Top row */}
                                             <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-2">
@@ -958,8 +1355,8 @@ const ProfilePage: React.FC = () => {
 
                             {/* Sticky payout button */}
                             {referralData && referralData.referralEarnings > 0 && (
-                                <div className="fixed bottom-0 left-0 right-0 z-40">
-                                    <div className="w-full max-w-md mx-auto px-4 py-3 bg-white/90 backdrop-blur-md border-t border-orange-100">
+                                <div className="fixed bottom-0 left-0 right-0 z-40 md:bottom-6 md:px-8">
+                                    <div className="w-full max-w-md mx-auto px-4 py-3 bg-white/90 backdrop-blur-md border-t border-orange-100 md:max-w-2xl md:rounded-2xl md:border md:border-orange-100 md:shadow-2xl md:shadow-orange-200/40">
                                         {payoutDone ? (
                                             <div className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl bg-green-50 border border-green-100 text-green-600 font-bold text-sm">
                                                 <CheckCircle2 className="w-5 h-5" />
@@ -968,7 +1365,7 @@ const ProfilePage: React.FC = () => {
                                         ) : (
                                             <button
                                                 onClick={handlePayoutRequest}
-                                                className="w-full flex items-center justify-center gap-2 bg-[#FF7000] text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all text-sm"
+                                                className="w-full flex items-center justify-center gap-2 bg-[#FF7000] text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.98] transition-all text-sm cursor-pointer md:text-base md:hover:bg-[#e56200]"
                                             >
                                                 <Wallet className="w-4 h-4" />
                                                 Request Payout  •  ₹{referralData.referralEarnings}
@@ -986,7 +1383,7 @@ const ProfilePage: React.FC = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="h-screen bg-[#FFF8F3] relative flex flex-col overflow-hidden"
+                            className="h-screen bg-[#FFF8F3] relative flex flex-col overflow-hidden md:h-full md:bg-transparent"
                         >
                             {/* Background watermark emblem */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
@@ -999,25 +1396,25 @@ const ProfilePage: React.FC = () => {
                             </div>
 
                             {/* Header */}
-                            <div className="relative z-10 flex-shrink-0 bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-5">
+                            <div className="relative z-10 flex-shrink-0 bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-5 md:mx-8 lg:mx-10 md:mt-6 md:rounded-3xl md:px-8 md:pt-6 md:pb-6 md:shadow-lg md:shadow-orange-200/50">
                                 <div className="flex items-center gap-3 text-white">
                                     <button
                                         onClick={() => setMode("view")}
-                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20 cursor-pointer"
                                     >
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
                                     <div>
-                                        <h1 className="text-lg font-bold leading-tight">My Bookings</h1>
-                                        <p className="text-white/75 text-[10px]">Track and view all your sacred bookings</p>
+                                        <h1 className="text-lg font-bold leading-tight md:text-2xl lg:text-3xl">My Bookings</h1>
+                                        <p className="text-white/75 text-[10px] md:text-sm">Track and view all your sacred bookings</p>
                                     </div>
                                 </div>
 
                                 {/* Custom Tab Switcher */}
-                                <div className="flex bg-white/10 p-1 rounded-2xl mt-4 border border-white/10 overflow-x-auto scrollbar-hide">
+                                <div className="flex bg-white/10 p-1 rounded-2xl mt-4 border border-white/10 overflow-x-auto scrollbar-hide md:mt-5 md:p-1.5">
                                     <button
                                         onClick={() => setActiveBookingTab("pooja")}
-                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 cursor-pointer md:py-2.5 md:px-4 md:text-sm ${
                                             activeBookingTab === "pooja"
                                                 ? "bg-white text-[#FF7000] shadow-sm"
                                                 : "text-white hover:bg-white/5"
@@ -1027,7 +1424,7 @@ const ProfilePage: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={() => setActiveBookingTab("direct")}
-                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 cursor-pointer md:py-2.5 md:px-4 md:text-sm ${
                                             activeBookingTab === "direct"
                                                 ? "bg-white text-[#FF7000] shadow-sm"
                                                 : "text-white hover:bg-white/5"
@@ -1037,7 +1434,7 @@ const ProfilePage: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={() => setActiveBookingTab("live")}
-                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 cursor-pointer md:py-2.5 md:px-4 md:text-sm ${
                                             activeBookingTab === "live"
                                                 ? "bg-white text-[#FF7000] shadow-sm"
                                                 : "text-white hover:bg-white/5"
@@ -1047,7 +1444,7 @@ const ProfilePage: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={() => setActiveBookingTab("chadhava")}
-                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 cursor-pointer md:py-2.5 md:px-4 md:text-sm ${
                                             activeBookingTab === "chadhava"
                                                 ? "bg-white text-[#FF7000] shadow-sm"
                                                 : "text-white hover:bg-white/5"
@@ -1057,7 +1454,7 @@ const ProfilePage: React.FC = () => {
                                     </button>
                                     <button
                                         onClick={() => setActiveBookingTab("shopify")}
-                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 cursor-pointer md:py-2.5 md:px-4 md:text-sm ${
                                             activeBookingTab === "shopify"
                                                 ? "bg-white text-[#FF7000] shadow-sm"
                                                 : "text-white hover:bg-white/5"
@@ -1069,9 +1466,9 @@ const ProfilePage: React.FC = () => {
                             </div>
 
                             {/* Bookings List Container */}
-                            <div className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-28 space-y-3.5 scrollbar-hide">
+                            <div className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-28 space-y-3.5 scrollbar-hide md:px-8 lg:px-10 md:pt-6 md:grid md:grid-cols-2 md:gap-5 md:space-y-0 md:content-start md:items-start">
                                 {bookingsLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                    <div className="flex flex-col items-center justify-center py-20 gap-3 md:col-span-2">
                                         <Loader2 className="w-9 h-9 text-[#FF7000] animate-spin" />
                                         <p className="text-xs text-orange-400 font-semibold">Loading bookings...</p>
                                     </div>
@@ -1395,6 +1792,7 @@ const ProfilePage: React.FC = () => {
                 </div>
             )}
         </div>
+        </>
     );
 };
 
@@ -1402,7 +1800,7 @@ export default ProfilePage;
 
 // Helper component for Empty Bookings
 const EmptyBookingsState = ({ type }: { type: string }) => (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="flex flex-col items-center justify-center py-16 text-center md:col-span-2">
         <div className="w-16 h-16 bg-orange-50/50 rounded-full flex items-center justify-center mb-4">
             <Calendar className="w-7 h-7 text-orange-300" />
         </div>
@@ -1450,7 +1848,7 @@ const PoojaBookingCard = ({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
-            className={`bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-50/70 transition-all ${
+            className={`bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-50/70 transition-all md:hover:shadow-lg ${
                 isPast ? "opacity-75 grayscale-[20%] scale-[0.99]" : ""
             }`}
         >
@@ -1611,7 +2009,7 @@ const LiveBookingCard = ({ booking, index }: { booking: any; index: number }) =>
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
-            className="bg-white rounded-3xl shadow-sm border border-orange-50/70 relative overflow-hidden"
+            className="bg-white rounded-3xl shadow-sm border border-orange-50/70 relative overflow-hidden md:hover:shadow-md md:transition-shadow"
         >
             {/* Decorative gradient accent */}
             <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-red-400 to-amber-400" />
@@ -1693,7 +2091,7 @@ const ChadhavaBookingCard = ({ booking, index }: { booking: any; index: number }
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
-            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden md:p-5 md:hover:shadow-md md:transition-shadow"
         >
             {/* Top row */}
             <div className="flex items-start justify-between gap-3">
@@ -1792,7 +2190,7 @@ const DirectBookingCard = ({ booking, index }: { booking: any; index: number }) 
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
-            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden md:p-5 md:hover:shadow-md md:transition-shadow"
         >
             {/* Top row */}
             <div className="flex items-start justify-between gap-3">
@@ -1867,7 +2265,7 @@ const ShopifyOrderCard = ({ order, index }: { order: any; index: number }) => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
-            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden md:p-5 md:hover:shadow-md md:transition-shadow"
         >
             {/* Top row */}
             <div className="flex items-start justify-between gap-3">

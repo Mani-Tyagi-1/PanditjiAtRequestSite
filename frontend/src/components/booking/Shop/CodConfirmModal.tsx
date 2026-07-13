@@ -43,14 +43,14 @@ export default function CodConfirmModal({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[300] max-w-md mx-auto flex items-end sm:items-center justify-center">
+        <div className="fixed inset-0 z-[300] max-w-md mx-auto flex items-end sm:items-center justify-center md:max-w-none md:p-6">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" onClick={() => !isSubmitting && onClose()} />
 
-            <div className="relative w-full bg-[#FFFAF3] rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 animate-in slide-in-from-bottom duration-300">
+            <div className="relative w-full bg-[#FFFAF3] rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 animate-in slide-in-from-bottom duration-300 md:max-w-lg md:p-7 md:rounded-3xl">
                 <button
                     type="button"
                     onClick={() => !isSubmitting && onClose()}
-                    className="absolute right-4 top-4 p-1 rounded-full bg-stone-100 text-stone-500 active:scale-90"
+                    className="absolute right-4 top-4 p-1 rounded-full bg-stone-100 text-stone-500 active:scale-90 cursor-pointer md:right-5 md:top-5 md:p-1.5 md:hover:bg-stone-200 md:transition-colors"
                 >
                     <X className="w-4.5 h-4.5" />
                 </button>
@@ -68,7 +68,7 @@ export default function CodConfirmModal({
                     <p className="text-[10px] font-black uppercase tracking-wider text-stone-400 mb-1.5">
                         Order Summary ({itemCount} {itemCount === 1 ? "item" : "items"})
                     </p>
-                    <div className="bg-white border border-orange-100 rounded-2xl p-2.5 shadow-xs space-y-2 max-h-44 overflow-y-auto">
+                    <div className="bg-white border border-orange-100 rounded-2xl p-2.5 shadow-xs space-y-2 max-h-44 overflow-y-auto md:max-h-56 md:p-3">
                         {items.map((it, idx) => (
                             <div key={idx} className="flex items-center gap-2.5">
                                 <div className="w-11 h-11 bg-orange-50/30 rounded-xl border border-orange-100 overflow-hidden shrink-0">
@@ -123,7 +123,7 @@ export default function CodConfirmModal({
                         type="button"
                         onClick={() => !isSubmitting && onClose()}
                         disabled={isSubmitting}
-                        className="flex-1 border-2 border-stone-200 text-stone-600 font-bold py-3 rounded-2xl active:scale-95 transition-all text-sm disabled:opacity-60"
+                        className="flex-1 border-2 border-stone-200 text-stone-600 font-bold py-3 rounded-2xl active:scale-95 transition-all text-sm disabled:opacity-60 cursor-pointer md:hover:bg-stone-50 md:hover:border-stone-300"
                     >
                         Go Back
                     </button>
@@ -131,7 +131,7 @@ export default function CodConfirmModal({
                         type="button"
                         onClick={onConfirm}
                         disabled={isSubmitting}
-                        className="flex-[1.4] bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 rounded-2xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+                        className="flex-[1.4] bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 rounded-2xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60 cursor-pointer md:hover:shadow-lg md:hover:brightness-105"
                     >
                         {isSubmitting ? (
                             <><Loader2 className="w-4 h-4 animate-spin" /> Placing Order...</>

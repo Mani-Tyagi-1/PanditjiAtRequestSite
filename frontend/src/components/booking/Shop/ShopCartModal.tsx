@@ -109,7 +109,7 @@ export default function ShopCartModal({
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[200] flex items-end justify-center shop-modal">
+                <div className="fixed inset-0 z-[200] flex items-end justify-center shop-modal md:items-center md:p-6">
                     <style>{`
                         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                         .shop-modal { font-family: 'DM Sans', sans-serif; }
@@ -125,14 +125,14 @@ export default function ShopCartModal({
                     <motion.div
                         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 32, stiffness: 320 }}
-                        className="relative w-full max-w-md bg-[#FFFAF3] rounded-t-3xl flex flex-col overflow-hidden"
+                        className="relative w-full max-w-md bg-[#FFFAF3] rounded-t-3xl flex flex-col overflow-hidden md:max-w-lg lg:max-w-xl md:rounded-3xl md:shadow-2xl"
                         style={{ maxHeight: "92vh" }}
                     >
                         {/* Header */}
-                        <div className="shrink-0 px-5 pt-4 pb-3 bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-between">
+                        <div className="shrink-0 px-5 pt-4 pb-3 bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-between md:px-7 md:pt-5 md:pb-4">
                             <div className="flex items-center gap-2 text-white">
                                 {step === "checkout" ? (
-                                    <button onClick={() => setStep("cart")} className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full bg-white/20 active:scale-95">
+                                    <button onClick={() => setStep("cart")} className="w-8 h-8 -ml-1 flex items-center justify-center rounded-full bg-white/20 active:scale-95 cursor-pointer md:hover:bg-white/30 md:transition-colors">
                                         <ChevronLeft className="w-4.5 h-4.5" />
                                     </button>
                                 ) : (
@@ -142,13 +142,13 @@ export default function ShopCartModal({
                                     {step === "cart" ? `Your Cart (${itemCount})` : step === "checkout" ? "Delivery Details" : "Order Placed"}
                                 </h2>
                             </div>
-                            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white active:scale-95">
+                            <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white active:scale-95 cursor-pointer md:hover:bg-white/30 md:transition-colors">
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         {/* Body */}
-                        <div className="flex-1 overflow-y-auto px-5 py-4">
+                        <div className="flex-1 overflow-y-auto px-5 py-4 md:px-7 md:py-6">
                             <AnimatePresence mode="wait">
                                 {/* CART */}
                                 {step === "cart" && (
@@ -174,15 +174,15 @@ export default function ShopCartModal({
                                                             </div>
                                                             <div className="flex items-center justify-between mt-1.5">
                                                                 <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-1 py-0.5">
-                                                                    <button onClick={() => onRemove(line.product)} className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-amber-600">
+                                                                    <button onClick={() => onRemove(line.product)} className="w-6 h-6 flex items-center justify-center rounded-md bg-white text-amber-600 cursor-pointer md:hover:bg-amber-100 md:transition-colors">
                                                                         <Minus className="w-3 h-3" strokeWidth={3} />
                                                                     </button>
                                                                     <span className="text-[13px] font-bold text-stone-800 min-w-[18px] text-center">{line.qty}</span>
-                                                                    <button onClick={() => onAdd(line.product)} className="w-6 h-6 flex items-center justify-center rounded-md bg-amber-500 text-white">
+                                                                    <button onClick={() => onAdd(line.product)} className="w-6 h-6 flex items-center justify-center rounded-md bg-amber-500 text-white cursor-pointer md:hover:bg-amber-600 md:transition-colors">
                                                                         <Plus className="w-3 h-3" strokeWidth={3} />
                                                                     </button>
                                                                 </div>
-                                                                <button onClick={() => onDelete(line.product)} className="text-stone-400 hover:text-red-500 transition-colors p-1">
+                                                                <button onClick={() => onDelete(line.product)} className="text-stone-400 hover:text-red-500 transition-colors p-1 cursor-pointer">
                                                                     <Trash2 className="w-4 h-4" />
                                                                 </button>
                                                             </div>
@@ -267,7 +267,7 @@ export default function ShopCartModal({
                                         <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
                                             Thank you, <span className="font-semibold text-stone-700">{form.name}</span>. Your order of {itemCount} item{itemCount > 1 ? "s" : ""} is confirmed. We'll WhatsApp tracking details on <span className="font-semibold text-stone-700">+91 {form.phone}</span>.
                                         </p>
-                                        <button onClick={handleSuccessClose} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform">
+                                        <button onClick={handleSuccessClose} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer md:max-w-xs md:hover:bg-stone-700">
                                             Continue Shopping
                                         </button>
                                     </motion.div>
@@ -281,17 +281,17 @@ export default function ShopCartModal({
 
                         {/* Footer */}
                         {step !== "success" && cart.length > 0 && (
-                            <div className="shrink-0 bg-white/90 backdrop-blur-sm border-t border-stone-100 px-5 py-3.5 flex items-center gap-3">
+                            <div className="shrink-0 bg-white/90 backdrop-blur-sm border-t border-stone-100 px-5 py-3.5 flex items-center gap-3 md:px-7 md:py-5">
                                 <div className="leading-none">
                                     <span className="text-[10px] text-stone-400 font-semibold uppercase">Total</span>
                                     <p className="text-[18px] font-bold text-stone-900">₹{total.toLocaleString("en-IN")}</p>
                                 </div>
                                 {step === "cart" ? (
-                                    <button onClick={goCheckout} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform">
+                                    <button onClick={goCheckout} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform cursor-pointer md:hover:shadow-xl md:hover:brightness-105 md:transition-all">
                                         Proceed to Checkout
                                     </button>
                                 ) : (
-                                    <button onClick={placeOrder} disabled={submitting} className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform disabled:opacity-60">
+                                    <button onClick={placeOrder} disabled={submitting} className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform disabled:opacity-60 cursor-pointer md:hover:shadow-xl md:hover:brightness-105 md:transition-all">
                                         {submitting ? (
                                             <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Placing…</>
                                         ) : (

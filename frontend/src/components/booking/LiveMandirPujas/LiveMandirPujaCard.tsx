@@ -27,10 +27,10 @@ export default function LiveMandirPujaCard({ puja }: Props) {
         <motion.div
             whileTap={{ scale: 0.98 }}
             onClick={() => navigate(`/live-mandir-puja/${puja.id}`)}
-            className="lmp-card group relative shrink-0 w-[68vw] max-w-[260px] cursor-pointer rounded-[24px] bg-[#FFFDF9] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.1)] hover:shadow-[0_16px_40px_-10px_rgba(224,90,16,0.16)] transition-all duration-300 flex flex-col justify-between"
+            className="lmp-card group relative shrink-0 w-[68vw] max-w-[260px] cursor-pointer rounded-[24px] bg-[#FFFDF9] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.1)] hover:shadow-[0_16px_40px_-10px_rgba(224,90,16,0.16)] transition-all duration-300 flex flex-col justify-between md:w-auto md:max-w-none md:shrink md:hover:-translate-y-1 md:hover:border-orange-200"
         >
             {/* Image & Overlay */}
-            <div className="relative h-[135px] overflow-hidden rounded-t-[24px]">
+            <div className="relative h-[135px] overflow-hidden rounded-t-[24px] md:h-[170px] lg:h-[185px]">
                 <img
                     src={puja.image}
                     alt={`${puja.pujaName} at ${puja.templeName}`}
@@ -71,12 +71,12 @@ export default function LiveMandirPujaCard({ puja }: Props) {
             </div>
 
             {/* Card Body */}
-            <div className="p-3.5 flex flex-col justify-between flex-1">
+            <div className="p-3.5 flex flex-col justify-between flex-1 md:p-4">
                 <div>
                     {/* Temple Name */}
                     <div className="flex items-center gap-1 text-orange-600">
                         <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="text-[10px] font-bold uppercase tracking-wide truncate">
+                        <span className="text-[10px] font-bold uppercase tracking-wide truncate md:text-[11px]">
                             {puja.templeName}
                         </span>
                     </div>
@@ -102,7 +102,7 @@ export default function LiveMandirPujaCard({ puja }: Props) {
                 <div className="flex items-center justify-between mt-1">
                     <div className="flex flex-col leading-none">
                         <div className="flex items-baseline gap-1">
-                            <span className="text-[17px] font-extrabold text-[#D85C0E]">
+                            <span className="text-[17px] font-extrabold text-[#D85C0E] md:text-[19px]">
                                 ₹{puja.price.toLocaleString("en-IN")}
                             </span>
                             {puja.originalPrice && (
@@ -119,7 +119,7 @@ export default function LiveMandirPujaCard({ puja }: Props) {
                             e.stopPropagation();
                             navigate(`/live-mandir-puja/${puja.id}`);
                         }}
-                        className="flex items-center justify-center bg-[#E05A10] hover:bg-[#C94D0C] text-white p-2 rounded-full shadow-md active:scale-90 transition-all cursor-pointer shrink-0"
+                        className="flex items-center justify-center bg-[#E05A10] hover:bg-[#C94D0C] text-white p-2 rounded-full shadow-md active:scale-90 transition-all cursor-pointer shrink-0 md:p-2.5 md:hover:shadow-lg"
                     >
                         <ChevronRight className="w-4 h-4" />
                     </button>

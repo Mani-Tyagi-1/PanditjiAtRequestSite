@@ -48,7 +48,7 @@ export default function ChadhavaSection() {
     // };
 
     return (
-        <section className="cdv-section relative py-6 overflow-hidden bg-gradient-to-b from-[#FFF6F4] to-[#FFFAF6]">
+        <section className="cdv-section relative py-6 overflow-hidden bg-gradient-to-b from-[#FFF6F4] to-[#FFFAF6] md:py-12 lg:py-16">
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .cdv-section { font-family: 'DM Sans', sans-serif; }
@@ -60,8 +60,8 @@ export default function ChadhavaSection() {
             <div className="pointer-events-none absolute -top-10 -left-10 w-44 h-44 rounded-full bg-rose-200/30 blur-3xl" />
 
             {/* ── Header ── */}
-            <div className="px-5 mb-1">
-                <h2 className="text-stone-900 font-bold leading-tight text-center" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "27px" }}>
+            <div className="px-5 mb-1 md:mb-4">
+                <h2 className="text-stone-900 font-bold leading-tight text-center text-[27px] md:text-4xl lg:text-[40px] md:tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     Offer{" "}
                     <span className="italic bg-gradient-to-r from-rose-600 to-pink-500 bg-clip-text text-transparent">
                         Chadhava
@@ -70,8 +70,8 @@ export default function ChadhavaSection() {
             </div>
 
             {/* ── Card rail ── */}
-            <div className="cdv-rail overflow-x-auto overflow-y-visible">
-                <div className="flex gap-4 px-5 py-5">
+            <div className="cdv-rail overflow-x-auto overflow-y-visible md:overflow-visible">
+                <div className="flex gap-4 px-5 py-5 md:grid md:grid-cols-3 lg:grid-cols-4 md:gap-5 lg:gap-6 md:w-full md:px-8 lg:px-10 md:py-8">
                     {loading && (
                         <>
                             <ChadhavaCardSkeleton />
@@ -81,7 +81,7 @@ export default function ChadhavaSection() {
                     )}
 
                     {error && (
-                        <div className="w-full text-center py-6 bg-red-50 border border-red-100 rounded-2xl mx-1 shrink-0">
+                        <div className="w-full text-center py-6 bg-red-50 border border-red-100 rounded-2xl mx-1 shrink-0 md:col-span-3 lg:col-span-4 md:mx-0">
                             <p className="text-red-600 text-[13px] font-semibold">{error}</p>
                             <button
                                 onClick={fetchChadhavas}
@@ -93,7 +93,7 @@ export default function ChadhavaSection() {
                     )}
 
                     {!loading && !error && chadhavas.length === 0 && (
-                        <div className="w-full text-center py-10 text-stone-500 text-sm shrink-0">
+                        <div className="w-full text-center py-10 text-stone-500 text-sm shrink-0 md:col-span-3 lg:col-span-4">
                             No chadhava offerings available at this time. Please check back later. 🙏
                         </div>
                     )}
@@ -101,7 +101,7 @@ export default function ChadhavaSection() {
                     {!loading && !error && chadhavas.map((chadhava) => (
                         <ChadhavaCard key={chadhava.id} chadhava={chadhava} />
                     ))}
-                    <div className="shrink-0 w-1" />
+                    <div className="shrink-0 w-1 md:hidden" />
                 </div>
             </div>
         </section>
@@ -110,8 +110,8 @@ export default function ChadhavaSection() {
 
 function ChadhavaCardSkeleton() {
     return (
-        <div className="shrink-0 w-[68vw] max-w-[260px] rounded-[20px] bg-white overflow-hidden border border-rose-100/80 shadow-md animate-pulse">
-            <div className="h-[140px] bg-stone-200" />
+        <div className="shrink-0 w-[68vw] max-w-[260px] rounded-[20px] bg-white overflow-hidden border border-rose-100/80 shadow-md animate-pulse md:w-auto md:shrink md:max-w-none">
+            <div className="h-[140px] bg-stone-200 md:h-[168px]" />
             <div className="p-3 space-y-3">
                 <div className="h-3 bg-stone-200 rounded w-1/3" />
                 <div className="h-5 bg-stone-200 rounded w-3/4" />

@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Star, MapPin, Languages, BadgeCheck, ArrowLeft, Calendar, Briefcase, Smartphone, Globe, X, User, Phone, Check } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
+import DesktopHeader from "../components/layout/DesktopHeader";
+import SiteFooter from "../components/layout/SiteFooter";
 
 interface Pandit {
   _id: string;
@@ -73,11 +75,11 @@ const formatDate = (dateStr: string) => {
 
 function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="px-4 py-3 flex items-start gap-3">
+    <div className="px-4 py-3 flex items-start gap-3 md:px-6 md:py-4">
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div>
-        <p className="text-[11px] text-stone-400 font-medium">{label}</p>
-        <p className="text-xs text-stone-700 font-semibold leading-snug">{value}</p>
+        <p className="text-[11px] text-stone-400 font-medium md:text-xs">{label}</p>
+        <p className="text-xs text-stone-700 font-semibold leading-snug md:text-sm">{value}</p>
       </div>
     </div>
   );
@@ -197,26 +199,32 @@ export default function PanditDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center w-full max-w-md mx-auto shadow-xl border-x border-orange-100">
+      <>
+      <DesktopHeader />
+      <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center w-full max-w-md mx-auto shadow-xl border-x border-orange-100 md:max-w-none md:mx-0 md:border-x-0 md:shadow-none md:min-h-[calc(100vh-72px)]">
         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-stone-500 mt-3 font-medium">Loading Profile...</p>
+        <p className="text-xs text-stone-500 mt-3 font-medium md:text-sm">Loading Profile...</p>
       </div>
+      </>
     );
   }
 
   if (!pandit) {
     return (
-      <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center px-6 text-center w-full max-w-md mx-auto shadow-xl border-x border-orange-100">
+      <>
+      <DesktopHeader />
+      <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center px-6 text-center w-full max-w-md mx-auto shadow-xl border-x border-orange-100 md:max-w-none md:mx-0 md:border-x-0 md:shadow-none md:min-h-[calc(100vh-72px)]">
         <span className="text-5xl block mb-2">🙏</span>
-        <h2 className="text-sm font-bold text-stone-700">Profile Not Found</h2>
-        <p className="text-xs text-stone-400 mt-1">This Pandit Ji profile could not be loaded or doesn't exist.</p>
+        <h2 className="text-sm font-bold text-stone-700 md:text-lg">Profile Not Found</h2>
+        <p className="text-xs text-stone-400 mt-1 md:text-sm">This Pandit Ji profile could not be loaded or doesn't exist.</p>
         <button
           onClick={() => navigate("/")}
-          className="mt-4 bg-orange-500 text-white font-bold text-xs px-6 py-2.5 rounded-full active:scale-95 transition-transform shadow-sm"
+          className="mt-4 bg-orange-500 text-white font-bold text-xs px-6 py-2.5 rounded-full active:scale-95 transition-transform shadow-sm cursor-pointer md:text-sm md:px-8 md:py-3 md:hover:bg-orange-600 md:hover:shadow-md"
         >
           Go Back Home
         </button>
       </div>
+      </>
     );
   }
 
@@ -226,10 +234,13 @@ export default function PanditDetailPage() {
     .join(", ");
 
   return (
-    <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 flex flex-col justify-between">
-      <div>
+    <>
+    <DesktopHeader />
+    <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 flex flex-col justify-between md:max-w-none md:mx-0 md:border-x-0 md:shadow-none lg:pb-16">
+      <div className="md:w-full md:px-8 md:pt-10 lg:px-10 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10 lg:items-start">
+        <div className="lg:min-w-0">
         {/* Hero image header */}
-        <div className="relative h-64 bg-gradient-to-br from-orange-100 to-amber-100 shrink-0 shadow-sm border-b border-orange-100/50">
+        <div className="relative h-64 bg-gradient-to-br from-orange-100 to-amber-100 shrink-0 shadow-sm border-b border-orange-100/50 md:h-96 lg:h-[440px] md:rounded-3xl md:overflow-hidden md:border md:border-orange-100/60 md:shadow-md">
           {pandit.profileImage ? (
             <img
               src={pandit.profileImage}
@@ -245,20 +256,20 @@ export default function PanditDetailPage() {
           {/* Close/Back button */}
           <button
             onClick={() => navigate(-1)}
-            className="absolute top-5 left-4 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md border border-orange-200/40 active:scale-90 transition-transform"
+            className="absolute top-5 left-4 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md border border-orange-200/40 active:scale-90 transition-transform cursor-pointer md:w-10 md:h-10 md:hover:bg-white md:hover:shadow-lg"
           >
-            <ArrowLeft className="w-4.5 h-4.5 text-stone-700" />
+            <ArrowLeft className="w-4.5 h-4.5 text-stone-700 md:w-5 md:h-5" />
           </button>
 
           {/* Name overlay */}
-          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
+          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 md:px-7 md:pb-6">
             <div className="flex items-end justify-between">
               <div>
-                <h1 className="text-white font-bold text-2xl leading-tight drop-shadow">{fullName}</h1>
+                <h1 className="text-white font-bold text-2xl leading-tight drop-shadow md:text-4xl md:tracking-tight">{fullName}</h1>
                 {location && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                    <span className="text-orange-100 text-xs font-medium">{location}</span>
+                  <div className="flex items-center gap-1.5 mt-1 md:mt-2">
+                    <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0 md:w-4 md:h-4" />
+                    <span className="text-orange-100 text-xs font-medium md:text-sm">{location}</span>
                   </div>
                 )}
               </div>
@@ -273,33 +284,33 @@ export default function PanditDetailPage() {
         </div>
 
         {/* Info Body */}
-        <div className="px-4 py-5 space-y-4">
-          
+        <div className="px-4 py-5 space-y-4 md:px-0 md:py-8 md:space-y-5">
+
           {/* Quick Metrics */}
-          <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-orange-100/70">
+          <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-orange-100/70 md:rounded-3xl md:px-8 md:py-5">
             <div className="text-center flex flex-col items-center">
               <StarRating rating={pandit.rating ?? 5} size="md" />
-              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Rating</p>
+              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider md:text-[11px]">Rating</p>
             </div>
-            <div className="w-px h-8 bg-stone-100" />
+            <div className="w-px h-8 bg-stone-100 md:h-10" />
             <div className="text-center">
-              <p className="text-lg font-black text-orange-600 leading-none">{pandit.experienceInYears || 3}+</p>
-              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Yrs Exp</p>
+              <p className="text-lg font-black text-orange-600 leading-none md:text-2xl">{pandit.experienceInYears || 3}+</p>
+              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider md:text-[11px]">Yrs Exp</p>
             </div>
-            <div className="w-px h-8 bg-stone-100" />
+            <div className="w-px h-8 bg-stone-100 md:h-10" />
             {/* <div className="text-center">
               <p className="text-sm font-bold text-stone-700 leading-none">{pandit.age || "—"}</p>
               <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Age</p>
             </div> */}
-            <div className="w-px h-8 bg-stone-100" />
+            <div className="w-px h-8 bg-stone-100 md:h-10" />
             <div className="text-center">
-              <p className="text-sm font-bold text-stone-700 leading-none capitalize">{pandit.gender || "—"}</p>
-              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Gender</p>
+              <p className="text-sm font-bold text-stone-700 leading-none capitalize md:text-base">{pandit.gender || "—"}</p>
+              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider md:text-[11px]">Gender</p>
             </div>
           </div>
 
           {/* Details Card */}
-          <div className="bg-white rounded-2xl border border-orange-100/70 shadow-sm divide-y divide-stone-100">
+          <div className="bg-white rounded-2xl border border-orange-100/70 shadow-sm divide-y divide-stone-100 md:rounded-3xl">
             
             {pandit.dob && (
               <DetailRow icon={<Calendar className="w-4 h-4 text-orange-500 shrink-0" />} label="Date of Birth" value={formatDate(pandit.dob)} />
@@ -314,15 +325,15 @@ export default function PanditDetailPage() {
             )}
 
             {pandit.serviceModes?.length > 0 && (
-              <div className="px-4 py-3 flex items-start gap-3">
+              <div className="px-4 py-3 flex items-start gap-3 md:px-6 md:py-4">
                 <Briefcase className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <p className="text-[11px] text-stone-400 font-medium mb-1.5">Service Modes</p>
+                  <p className="text-[11px] text-stone-400 font-medium mb-1.5 md:text-xs">Service Modes</p>
                   <div className="flex flex-wrap gap-1.5">
                     {pandit.serviceModes.map((mode) => (
                       <span
                         key={mode}
-                        className="text-[10px] font-bold px-2.5 py-0.8 rounded-full bg-orange-50 text-orange-600 border border-orange-100/50"
+                        className="text-[10px] font-bold px-2.5 py-0.8 rounded-full bg-orange-50 text-orange-600 border border-orange-100/50 md:text-[11px] md:px-3 md:py-1"
                       >
                         {mode}
                       </span>
@@ -346,7 +357,7 @@ export default function PanditDetailPage() {
           </div>
 
           {/* Active status banner */}
-          <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border text-xs font-bold shadow-sm ${
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border text-xs font-bold shadow-sm md:rounded-3xl md:px-5 md:py-4 md:text-sm ${
             pandit.isActive
               ? "bg-green-50/60 border-green-200 text-green-700"
               : "bg-stone-50 border-stone-200 text-stone-500"
@@ -355,20 +366,91 @@ export default function PanditDetailPage() {
             {pandit.isActive ? "Currently Active & Available for Puja" : "Currently Offline / Unavailable"}
           </div>
         </div>
+        </div>
+
+        {/* Desktop sticky booking card (mirrors the mobile bottom CTA) */}
+        <aside className="hidden lg:block lg:sticky lg:top-24">
+          <div className="bg-white rounded-3xl border border-orange-100/70 shadow-lg shadow-orange-100/50 overflow-hidden">
+            <div className="relative overflow-hidden bg-gradient-to-br from-[#FFEDD5] via-[#FFF7ED] to-[#FEF3C7] px-6 pt-7 pb-6 text-center border-b border-orange-100/50">
+              <div className="absolute inset-0 opacity-40">
+                <div className="absolute -top-10 -left-10 h-28 w-28 rounded-full bg-orange-200 blur-2xl" />
+                <div className="absolute top-8 right-0 h-24 w-24 rounded-full bg-amber-200 blur-2xl" />
+              </div>
+              <div className="relative z-10 flex flex-col items-center">
+                {pandit.profileImage ? (
+                  <div className="mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-orange-400 bg-white shadow-md">
+                    <img
+                      src={pandit.profileImage}
+                      alt={fullName}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      className="h-full w-full object-cover object-top"
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-md text-3xl border border-orange-200">
+                    🙏
+                  </div>
+                )}
+                {pandit.isVerified && (
+                  <span className="mb-2 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-orange-600 bg-white/90 border border-orange-200 px-2.5 py-0.5 rounded-full">
+                    <BadgeCheck className="w-3.5 h-3.5 text-orange-500" />
+                    Verified
+                  </span>
+                )}
+                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider leading-none">Specialist Assigned</p>
+                <h2 className="text-xl font-bold text-stone-800 mt-1.5">
+                  {pandit.prefix} {pandit.firstName}
+                </h2>
+                <div className="mt-2">
+                  <StarRating rating={pandit.rating ?? 5} size="md" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-6 space-y-5">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <Briefcase className="w-4 h-4 text-orange-500 shrink-0" />
+                  <span className="text-sm text-stone-600 font-semibold">{pandit.experienceInYears || 3}+ Yrs Exp</span>
+                </div>
+                {pandit.languages?.length > 0 && (
+                  <div className="flex items-center gap-2.5">
+                    <Languages className="w-4 h-4 text-orange-500 shrink-0" />
+                    <span className="text-sm text-stone-600 font-semibold truncate">{pandit.languages.join(", ")}</span>
+                  </div>
+                )}
+                {location && (
+                  <div className="flex items-center gap-2.5">
+                    <MapPin className="w-4 h-4 text-orange-500 shrink-0" />
+                    <span className="text-sm text-stone-600 font-semibold truncate">{location}</span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={handleOpenModal}
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-sm py-3.5 rounded-2xl shadow-md shadow-orange-100 text-center uppercase tracking-wider cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.01] active:scale-[0.98]"
+              >
+                Select Pandit Ji
+              </button>
+              <p className="text-[11px] text-stone-400 italic text-center leading-relaxed">
+                * Zero advance fees required. Pay securely on WhatsApp post-ritual coordination.
+              </p>
+            </div>
+          </div>
+        </aside>
       </div>
 
       {/* Sticky Bottom booking CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-orange-100/80 px-4 py-3.5 flex items-center justify-between shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+        <div className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-orange-100/80 px-4 py-3.5 flex items-center justify-between shadow-lg md:max-w-3xl md:rounded-t-2xl md:border-x md:border-orange-100/80 md:px-8">
           <div className="flex-1 pr-4">
-            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider leading-none">Specialist Assigned</p>
-            <p className="text-[13px] text-stone-800 font-bold mt-1.5 truncate">
+            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider leading-none md:text-[11px]">Specialist Assigned</p>
+            <p className="text-[13px] text-stone-800 font-bold mt-1.5 truncate md:text-[15px]">
               {pandit.prefix} {pandit.firstName}
             </p>
           </div>
           <button
             onClick={handleOpenModal}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs py-3 rounded-2xl shadow-md shadow-orange-100 active:scale-[0.98] transition-transform text-center uppercase tracking-wider"
+            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs py-3 rounded-2xl shadow-md shadow-orange-100 active:scale-[0.98] transition-transform text-center uppercase tracking-wider cursor-pointer md:text-sm md:py-3.5 md:hover:shadow-lg"
           >
             Select Pandit Ji
           </button>
@@ -385,7 +467,7 @@ export default function PanditDetailPage() {
           />
 
           {/* Modal content */}
-          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[28px] border border-orange-100 bg-[#FFFAF3] shadow-2xl transition-all duration-300 transform scale-100 flex flex-col max-h-[90vh]">
+          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[28px] border border-orange-100 bg-[#FFFAF3] shadow-2xl transition-all duration-300 transform scale-100 flex flex-col max-h-[90vh] md:max-w-md">
             
             {/* Top marigold banner */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#FFEDD5] via-[#FFF7ED] to-[#FEF3C7] px-5 pb-5 pt-6 text-center border-b border-orange-100/50 shrink-0">
@@ -559,7 +641,7 @@ export default function PanditDetailPage() {
           />
 
           {/* Modal Content */}
-          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[28px] border border-orange-100 bg-[#FFFAF3] shadow-2xl transition-all duration-300 transform scale-100 flex flex-col p-6 text-center">
+          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[28px] border border-orange-100 bg-[#FFFAF3] shadow-2xl transition-all duration-300 transform scale-100 flex flex-col p-6 text-center md:max-w-md">
             {/* Top marigold success icon */}
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50 border border-green-200 text-green-500 shadow-md">
               <Check className="w-7 h-7 stroke-[3]" />
@@ -628,6 +710,8 @@ export default function PanditDetailPage() {
         </div>
       )}
     </div>
+    <SiteFooter />
+    </>
   );
 }
 

@@ -25,7 +25,7 @@ export default function OrderSuccessModal({ mode, onContinueShopping, onSeeOrder
     const isCod = mode === "cod";
 
     return (
-        <div className="fixed inset-0 z-[400] max-w-md mx-auto flex items-center justify-center p-5">
+        <div className="fixed inset-0 z-[400] max-w-md mx-auto flex items-center justify-center p-5 md:max-w-none md:p-6">
             <style>{`
                 @keyframes pjar-confetti-fall {
                     0%   { transform: translateY(-12vh) rotate(0deg); opacity: 1; }
@@ -60,7 +60,7 @@ export default function OrderSuccessModal({ mode, onContinueShopping, onSeeOrder
                 initial={{ opacity: 0, scale: 0.85, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 280, damping: 22 }}
-                className="relative w-full bg-[#FFFAF3] rounded-3xl shadow-2xl p-7 text-center overflow-hidden"
+                className="relative w-full bg-[#FFFAF3] rounded-3xl shadow-2xl p-7 text-center overflow-hidden md:max-w-md lg:max-w-lg md:p-10"
             >
                 {/* Animated badge */}
                 <motion.div
@@ -73,7 +73,7 @@ export default function OrderSuccessModal({ mode, onContinueShopping, onSeeOrder
                 </motion.div>
 
                 <p className="text-3xl mb-1">🎉</p>
-                <h2 className="text-2xl font-bold text-stone-850">Congratulations!</h2>
+                <h2 className="text-2xl font-bold text-stone-850 md:text-3xl md:tracking-tight">Congratulations!</h2>
                 <p className="text-[13px] font-bold text-orange-600 mt-1">
                     {isCod ? "Your COD order is placed" : "Your order is confirmed"}
                 </p>
@@ -99,14 +99,14 @@ export default function OrderSuccessModal({ mode, onContinueShopping, onSeeOrder
                     <button
                         type="button"
                         onClick={onSeeOrders}
-                        className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-100 active:scale-95 transition-all text-sm"
+                        className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-md shadow-orange-100 active:scale-95 transition-all text-sm cursor-pointer md:hover:shadow-lg md:hover:brightness-105"
                     >
                         See My Orders
                     </button>
                     <button
                         type="button"
                         onClick={onContinueShopping}
-                        className="w-full bg-white border-2 border-orange-200 text-orange-600 font-bold py-3 rounded-2xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2"
+                        className="w-full bg-white border-2 border-orange-200 text-orange-600 font-bold py-3 rounded-2xl active:scale-95 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer md:hover:bg-orange-50 md:hover:border-orange-300"
                     >
                         <ShoppingBag className="w-4 h-4" /> Continue Shopping
                     </button>

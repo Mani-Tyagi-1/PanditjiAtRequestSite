@@ -7,6 +7,7 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { durgaMataPuja, DURGA_MATA_PUJA_SLUG, PRASAD_BOX_PRICE } from "../data/durgaMataPuja";
+import DesktopHeader from "../components/layout/DesktopHeader";
 
 type Step = "details" | "success";
 
@@ -280,7 +281,9 @@ export default function DurgaMataPujaBookingPage() {
     };
 
     return (
-        <div className="dmb-page min-h-screen bg-[#FFFAF3] w-full max-w-md mx-auto border-x border-orange-100 relative pb-28">
+        <>
+        <DesktopHeader />
+        <div className="dmb-page min-h-screen bg-[#FFFAF3] w-full max-w-md mx-auto border-x border-orange-100 relative pb-28 md:max-w-3xl md:shadow-sm md:pb-32">
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .dmb-page { font-family: 'DM Sans', sans-serif; }
@@ -291,17 +294,17 @@ export default function DurgaMataPujaBookingPage() {
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3">
+            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3 md:static md:bg-transparent md:backdrop-blur-none md:border-b-0 md:px-8 md:pt-8 md:pb-2">
                 <button
                     onClick={() => navigate(-1)}
                     aria-label="Go back"
-                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform shrink-0"
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform shrink-0 md:w-9 md:h-9 md:hover:bg-orange-50 md:hover:border-orange-300 cursor-pointer"
                 >
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Online Puja</h1>
-                    <p className="text-[11px] text-stone-500 flex items-center gap-1">
+                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate md:text-xl">Complete Your Online Puja</h1>
+                    <p className="text-[11px] text-stone-500 flex items-center gap-1 md:text-[13px] md:mt-0.5">
                         <MapPin className="w-3 h-3 text-orange-500 shrink-0" />
                         <span className="truncate">{puja.templeName} · {puja.templeLocation}</span>
                     </p>
@@ -309,41 +312,41 @@ export default function DurgaMataPujaBookingPage() {
             </div>
 
             {/* Content */}
-            <div className="px-5 pt-4 space-y-6">
+            <div className="px-5 pt-4 space-y-6 md:px-8 md:pt-5 md:space-y-8 md:pb-8">
                 {step === "details" ? (
                     <div className="space-y-6">
                         {/* Order summary — itemises the prasad box when added */}
-                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
+                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm md:p-6 md:rounded-3xl">
                             <div className="flex items-start justify-between gap-2">
-                                <p className="text-[13.5px] font-bold text-stone-800 leading-snug">{puja.poojaNameEng}</p>
+                                <p className="text-[13.5px] font-bold text-stone-800 leading-snug md:text-base">{puja.poojaNameEng}</p>
                                 <span className="flex items-center gap-1 shrink-0 bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 text-[11px] font-bold">
                                     ★ {puja.rating}
                                 </span>
                             </div>
-                            {puja.poojaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5">{puja.poojaNameHindi}</p>}
+                            {puja.poojaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5 md:text-[13px]">{puja.poojaNameHindi}</p>}
 
                             {form.prasadAdded ? (
                                 <div className="mt-2.5 pt-2.5 border-t border-orange-100/60 space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-stone-600 font-medium">Base Seva</span>
-                                        <span className="text-[13px] font-bold text-stone-800">₹{basePrice.toLocaleString("en-IN")}</span>
+                                        <span className="text-[12.5px] text-stone-600 font-medium md:text-sm">Base Seva</span>
+                                        <span className="text-[13px] font-bold text-stone-800 md:text-sm">₹{basePrice.toLocaleString("en-IN")}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-1.5">
+                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-1.5 md:text-sm">
                                             <Gift className="w-3.5 h-3.5 text-orange-500" />
                                             Sacred Prasad Box
                                         </span>
-                                        <span className="text-[13px] font-bold text-stone-800">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
+                                        <span className="text-[13px] font-bold text-stone-800 md:text-sm">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
                                     </div>
                                     <div className="flex items-baseline justify-between pt-2 border-t border-orange-100/60">
-                                        <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Total</span>
-                                        <span className="text-xl font-extrabold text-orange-600">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400 md:text-[11px]">Total</span>
+                                        <span className="text-xl font-extrabold text-orange-600 md:text-2xl">₹{totalPrice.toLocaleString("en-IN")}</span>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
-                                    <span className="text-xl font-bold text-stone-900">₹{basePrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400 md:text-[11px]">Base Seva</span>
+                                    <span className="text-xl font-bold text-stone-900 md:text-2xl">₹{basePrice.toLocaleString("en-IN")}</span>
                                 </div>
                             )}
                         </div>
@@ -353,12 +356,12 @@ export default function DurgaMataPujaBookingPage() {
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">01</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Devotee Details</h3>
-                                    <p className="text-[11px] text-stone-400">For the main Sankalp</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px] md:text-[15px]">Devotee Details</h3>
+                                    <p className="text-[11px] text-stone-400 md:text-xs">For the main Sankalp</p>
                                 </div>
                             </div>
-                            <div className="space-y-3">
-                                <div>
+                            <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+                                <div className="md:col-span-2">
                                     <label className={LABEL}>Mobile Number *</label>
                                     <input
                                         value={form.phone}
@@ -394,12 +397,12 @@ export default function DurgaMataPujaBookingPage() {
                             <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">02</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Prasad Delivery</h3>
-                                    <p className="text-[11px] text-stone-400">Optional delivery at your address</p>
+                                    <h3 className="font-bold text-stone-800 text-[14px] md:text-[15px]">Prasad Delivery</h3>
+                                    <p className="text-[11px] text-stone-400 md:text-xs">Optional delivery at your address</p>
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-3 bg-white border border-orange-100 rounded-2xl p-4 shadow-sm cursor-pointer select-none">
+                            <label className="flex items-center gap-3 bg-white border border-orange-100 rounded-2xl p-4 shadow-sm cursor-pointer select-none md:p-5 md:hover:border-orange-300 md:transition-colors">
                                 <input
                                     type="checkbox"
                                     checked={form.prasadAdded}
@@ -407,8 +410,8 @@ export default function DurgaMataPujaBookingPage() {
                                     className="w-4 h-4 rounded text-orange-500 focus:ring-orange-400 border-orange-200"
                                 />
                                 <div>
-                                    <p className="text-xs font-bold text-stone-800">Add Sacred Prasad</p>
-                                    <p className="text-[11px] text-stone-400 mt-0.5">Blessed at Maa Chintpurni Dham · +₹{PRASAD_BOX_PRICE}</p>
+                                    <p className="text-xs font-bold text-stone-800 md:text-sm">Add Sacred Prasad</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5 md:text-xs">Blessed at Maa Chintpurni Dham · +₹{PRASAD_BOX_PRICE}</p>
                                 </div>
                             </label>
 
@@ -427,7 +430,7 @@ export default function DurgaMataPujaBookingPage() {
                                                 onChange={() => setSelectedAddressId(addr._id)}
                                                 className="mt-1 text-orange-500 focus:ring-orange-400 border-orange-200"
                                             />
-                                            <div className="text-[12.5px] text-stone-700 leading-relaxed">
+                                            <div className="text-[12.5px] text-stone-700 leading-relaxed md:text-[13px]">
                                                 <span className="font-bold text-[11px] text-orange-600 uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
                                                 {addr.addressLine1 || addr.houseNo}, {addr.addressLine2 || addr.street}, {addr.city}, {addr.state} - {addr.pincode}
                                             </div>
@@ -443,9 +446,9 @@ export default function DurgaMataPujaBookingPage() {
                             )}
 
                             {form.prasadAdded && (!user || showNewAddressForm) && (
-                                <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm space-y-3">
-                                    <div className="flex items-center justify-between pb-1 border-b border-stone-50">
-                                        <span className="text-[12px] font-bold text-stone-800">Delivery Address Details</span>
+                                <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm space-y-3 md:p-6 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
+                                    <div className="flex items-center justify-between pb-1 border-b border-stone-50 md:col-span-2">
+                                        <span className="text-[12px] font-bold text-stone-800 md:text-[13px]">Delivery Address Details</span>
                                         {user && addresses.length > 0 && (
                                             <button
                                                 onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
@@ -473,7 +476,7 @@ export default function DurgaMataPujaBookingPage() {
                                             className={INPUT}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-2 gap-3 md:col-span-2 md:gap-4">
                                         <div>
                                             <label className={LABEL}>City *</label>
                                             <input
@@ -512,7 +515,7 @@ export default function DurgaMataPujaBookingPage() {
                         key="success"
                         initial={{ opacity: 0, scale: 0.96 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="flex flex-col items-center text-center py-10 px-2"
+                        className="flex flex-col items-center text-center py-10 px-2 md:py-16"
                     >
                         <motion.div
                             initial={{ scale: 0 }}
@@ -525,10 +528,10 @@ export default function DurgaMataPujaBookingPage() {
                         <h3 className="dmb-serif font-bold text-stone-800 mt-5 text-2xl">
                             Booking Confirmed! 🙏
                         </h3>
-                        <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
+                        <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed md:text-sm md:max-w-md">
                             Your <span className="font-semibold text-stone-700">{puja.poojaNameEng}</span> at <span className="font-semibold text-stone-700">{puja.templeName}</span> is booked. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
                         </p>
-                        <button onClick={() => navigate("/account?tab=pooja")} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
+                        <button onClick={() => navigate("/account?tab=pooja")} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer md:max-w-xs md:hover:bg-stone-700">
                             Done
                         </button>
                     </motion.div>
@@ -537,14 +540,14 @@ export default function DurgaMataPujaBookingPage() {
 
             {/* Sticky Footer */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-stone-100 px-5 py-4">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-stone-100 px-5 py-4 md:max-w-3xl md:px-8 md:border-x md:border-x-orange-100">
                     {error && (
-                        <p className="text-red-500 text-[12px] font-semibold mb-3 text-center">{error}</p>
+                        <p className="text-red-500 text-[12px] font-semibold mb-3 text-center md:text-[13px]">{error}</p>
                     )}
                     <div className="flex items-center justify-between">
                         <div>
-                            <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D85C0E]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <span className="text-[10px] text-stone-400 font-semibold uppercase block md:text-[11px]">TOTAL TO PAY</span>
+                            <span className="text-[20px] font-extrabold text-[#D85C0E] md:text-2xl">₹{totalPrice.toLocaleString("en-IN")}</span>
                         </div>
                         <button
                             onClick={handleConfirm}
@@ -561,6 +564,7 @@ export default function DurgaMataPujaBookingPage() {
                 </div>
             )}
         </div>
+        </>
     );
 }
 

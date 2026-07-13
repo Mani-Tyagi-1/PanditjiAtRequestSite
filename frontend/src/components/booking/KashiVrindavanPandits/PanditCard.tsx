@@ -13,16 +13,16 @@ export default function PanditCard({ pandit }: Props) {
         <motion.div
             whileTap={{ scale: 0.985 }}
             onClick={() => navigate(`/holy-pandit/${pandit.id}`)}
-            className="kvp-card group relative shrink-0 w-[80vw] max-w-[300px] cursor-pointer rounded-[20px] bg-white overflow-hidden border border-indigo-100/80 shadow-[0_10px_34px_-12px_rgba(67,56,202,0.28)]"
+            className="kvp-card group relative shrink-0 w-[80vw] max-w-[300px] cursor-pointer rounded-[20px] bg-white overflow-hidden border border-indigo-100/80 shadow-[0_10px_34px_-12px_rgba(67,56,202,0.28)] md:w-auto md:max-w-none md:shrink md:transition-all md:duration-300 md:hover:-translate-y-1 md:hover:border-indigo-200 md:hover:shadow-[0_18px_44px_-14px_rgba(67,56,202,0.38)]"
         >
             {/* ── Header: photo + identity ── */}
-            <div className="relative p-3 flex gap-3 bg-gradient-to-br from-indigo-50 to-violet-50">
+            <div className="relative p-3 flex gap-3 bg-gradient-to-br from-indigo-50 to-violet-50 md:p-4">
                 <div className="relative shrink-0">
                     <img
                         src={pandit.image}
                         alt={pandit.name}
                         loading="lazy"
-                        className="w-[72px] h-[72px] rounded-2xl object-cover border-2 border-white shadow-sm"
+                        className="w-[72px] h-[72px] rounded-2xl object-cover border-2 border-white shadow-sm md:w-20 md:h-20"
                     />
                     {pandit.verified && (
                         <span className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow">
@@ -54,11 +54,11 @@ export default function PanditCard({ pandit }: Props) {
             </div>
 
             {/* ── Body ── */}
-            <div className="p-3">
+            <div className="p-3 md:p-4">
                 {/* Specializations */}
                 <div className="flex flex-wrap gap-1.5">
                     {pandit.specializations.slice(0, 3).map((s) => (
-                        <span key={s} className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">
+                        <span key={s} className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full md:text-[11px]">
                             {s}
                         </span>
                     ))}
@@ -85,7 +85,7 @@ export default function PanditCard({ pandit }: Props) {
                             e.stopPropagation();
                             navigate(`/holy-pandit/${pandit.id}`);
                         }}
-                        className="flex items-center gap-1 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-[13px] font-bold pl-4 pr-3 py-2.5 rounded-xl shadow-lg shadow-indigo-200/70 active:scale-95 transition-transform"
+                        className="flex items-center gap-1 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-[13px] font-bold pl-4 pr-3 py-2.5 rounded-xl shadow-lg shadow-indigo-200/70 active:scale-95 transition-transform cursor-pointer md:transition-all md:hover:shadow-xl md:hover:brightness-110"
                     >
                         Book Pandit
                         <ChevronRight className="w-4 h-4" />

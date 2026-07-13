@@ -47,7 +47,7 @@ export default function ShopProductModal({
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[210] flex items-end justify-center shop-pdp">
+                <div className="fixed inset-0 z-[210] flex items-end justify-center shop-pdp md:items-center md:p-6">
                     <style>{`
                         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                         .shop-pdp { font-family: 'DM Sans', sans-serif; }
@@ -63,21 +63,21 @@ export default function ShopProductModal({
                     <motion.div
                         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 32, stiffness: 320 }}
-                        className="relative w-full max-w-md bg-[#FFFAF3] rounded-t-3xl flex flex-col overflow-hidden"
+                        className="relative w-full max-w-md bg-[#FFFAF3] rounded-t-3xl flex flex-col overflow-hidden md:max-w-3xl lg:max-w-4xl md:rounded-3xl md:shadow-2xl md:h-auto! md:max-h-[88vh]"
                         style={{ height: "94vh" }}
                     >
                         {/* Close */}
                         <button
                             onClick={onClose}
-                            className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/35 backdrop-blur-sm text-white active:scale-95 transition-transform"
+                            className="absolute top-3 right-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/35 backdrop-blur-sm text-white active:scale-95 transition-transform cursor-pointer md:top-4 md:right-4 md:hover:bg-black/55"
                         >
                             <X className="w-4.5 h-4.5" />
                         </button>
 
                         {/* Scrollable content */}
-                        <div className="flex-1 overflow-y-auto">
+                        <div className="flex-1 overflow-y-auto md:grid md:grid-cols-2">
                             {/* Hero image */}
-                            <div className="relative aspect-square bg-amber-50">
+                            <div className="relative aspect-square bg-amber-50 md:sticky md:top-0 md:self-start">
                                 <img
                                     src={product.image}
                                     alt={product.name}
@@ -101,7 +101,7 @@ export default function ShopProductModal({
                             </div>
 
                             {/* Details */}
-                            <div className="px-5 py-4">
+                            <div className="px-5 py-4 md:px-8 md:py-7">
                                 <span className="text-[11px] font-bold uppercase tracking-wide text-amber-600">{product.category}</span>
                                 <h2 className="shop-pdp-serif font-bold text-stone-900 leading-tight mt-0.5" style={{ fontSize: "26px" }}>
                                     {product.name}
@@ -136,11 +136,11 @@ export default function ShopProductModal({
                                     <div className="flex items-center justify-between mt-4">
                                         <span className="text-[13px] font-bold text-stone-700">Quantity</span>
                                         <div className="flex items-center gap-3 bg-white border border-stone-200 rounded-xl px-1.5 py-1">
-                                            <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-50 text-stone-600 active:scale-90 transition-transform">
+                                            <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-stone-50 text-stone-600 active:scale-90 transition-transform cursor-pointer md:hover:bg-stone-100">
                                                 <Minus className="w-4 h-4" strokeWidth={3} />
                                             </button>
                                             <span className="text-[15px] font-bold text-stone-800 min-w-[26px] text-center">{qty}</span>
-                                            <button onClick={() => setQty((q) => Math.min(10, q + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500 text-white active:scale-90 transition-transform">
+                                            <button onClick={() => setQty((q) => Math.min(10, q + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-amber-500 text-white active:scale-90 transition-transform cursor-pointer md:hover:bg-amber-600">
                                                 <Plus className="w-4 h-4" strokeWidth={3} />
                                             </button>
                                         </div>
@@ -185,7 +185,7 @@ export default function ShopProductModal({
                         </div>
 
                         {/* Sticky footer */}
-                        <div className="shrink-0 bg-white/95 backdrop-blur-sm border-t border-stone-100 px-4 py-3">
+                        <div className="shrink-0 bg-white/95 backdrop-blur-sm border-t border-stone-100 px-4 py-3 md:px-8 md:py-4">
                             {soldOut ? (
                                 <button disabled className="w-full bg-stone-100 text-stone-400 font-bold py-3.5 rounded-2xl cursor-not-allowed">
                                     Sold Out — Notify Me
@@ -194,7 +194,7 @@ export default function ShopProductModal({
                                 <div className="flex items-center gap-3">
                                     <button
                                         onClick={handleAdd}
-                                        className={`flex-1 flex items-center justify-center gap-1.5 font-bold py-3.5 rounded-2xl border-2 transition-colors ${justAdded ? "border-emerald-500 bg-emerald-50 text-emerald-600" : "border-amber-500 text-amber-600 bg-white"}`}
+                                        className={`flex-1 flex items-center justify-center gap-1.5 font-bold py-3.5 rounded-2xl border-2 transition-colors cursor-pointer ${justAdded ? "border-emerald-500 bg-emerald-50 text-emerald-600" : "border-amber-500 text-amber-600 bg-white md:hover:bg-amber-50"}`}
                                     >
                                         {justAdded ? (
                                             <><Check className="w-4 h-4" strokeWidth={3} /> Added {cartQty > 0 ? `(${cartQty})` : ""}</>
@@ -204,7 +204,7 @@ export default function ShopProductModal({
                                     </button>
                                     <button
                                         onClick={() => onBuyNow(product, qty)}
-                                        className="flex-1 flex flex-col items-center justify-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform leading-none"
+                                        className="flex-1 flex flex-col items-center justify-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform leading-none cursor-pointer md:hover:shadow-xl md:hover:brightness-105 md:transition-all"
                                     >
                                         <span className="text-[14px]">Buy Now</span>
                                         <span className="text-[10px] font-semibold text-amber-50/90 mt-0.5">₹{lineTotal.toLocaleString("en-IN")}</span>

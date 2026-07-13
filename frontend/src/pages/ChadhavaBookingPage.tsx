@@ -6,6 +6,7 @@ import { type Chadhava, type ChadhavaSelection } from "../components/booking/Cha
 import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
+import DesktopHeader from "../components/layout/DesktopHeader";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 
@@ -19,8 +20,8 @@ interface BookingState {
     prasadPrice: number;
 }
 
-const INPUT_CONTAINER = "relative bg-white border border-stone-200 rounded-xl px-4 py-2.5 flex items-center gap-3 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all";
-const INPUT_FIELD = "w-full bg-transparent text-sm text-stone-800 placeholder-stone-400 focus:outline-none";
+const INPUT_CONTAINER = "relative bg-white border border-stone-200 rounded-xl px-4 py-2.5 flex items-center gap-3 focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-100 transition-all md:py-3";
+const INPUT_FIELD = "w-full bg-transparent text-sm text-stone-800 placeholder-stone-400 focus:outline-none md:text-[15px]";
 
 const normalizeIndianPhone = (value: string) => {
     let digits = value.replace(/\D/g, "");
@@ -385,66 +386,70 @@ export default function ChadhavaBookingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FFFAF6] font-sans w-full max-w-md mx-auto border-x border-rose-100 relative pb-28">
+        <>
+        <DesktopHeader />
+        {/* Desktop-only warm backdrop behind the centered checkout column */}
+        <div className="hidden md:block fixed inset-0 -z-10 bg-gradient-to-b from-[#FFF3E6] via-[#FFFAF6] to-[#FFF6EC]" aria-hidden="true" />
+        <div className="min-h-screen bg-[#FFFAF6] font-sans w-full max-w-md mx-auto border-x border-rose-100 relative pb-28 md:max-w-3xl md:pb-36 md:shadow-[0_0_50px_-12px_rgba(224,90,16,0.18)]">
             <Helmet>
                 <title>{`Complete your Seva — ${chadhava.deity} Chadhava | Pandit Ji At Request`}</title>
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-white border-b border-[#FFEFE2] px-4 py-4 flex items-center gap-3">
-                <button onClick={() => navigate(-1)} aria-label="Go back" className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center active:scale-90 transition-transform">
-                    <ArrowLeft className="w-4 h-4 text-stone-700" />
+            <div className="sticky top-0 z-40 bg-white border-b border-[#FFEFE2] px-4 py-4 flex items-center gap-3 md:static md:bg-transparent md:border-b-0 md:px-8 md:pt-8 md:pb-2">
+                <button onClick={() => navigate(-1)} aria-label="Go back" className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center active:scale-90 transition-transform cursor-pointer md:w-10 md:h-10 md:hover:bg-stone-200 md:transition-all">
+                    <ArrowLeft className="w-4 h-4 text-stone-700 md:w-5 md:h-5" />
                 </button>
-                <h1 className="text-[17px] font-bold text-stone-800">Complete your Seva</h1>
+                <h1 className="text-[17px] font-bold text-stone-800 md:text-[26px] md:tracking-tight">Complete your Seva</h1>
             </div>
 
-            <div className="px-4 py-4 space-y-4">
+            <div className="px-4 py-4 space-y-4 md:px-8 md:py-6 md:space-y-5">
                 {done ? (
-                    <div className="flex flex-col items-center text-center py-12">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-xl shadow-green-200">
-                            <Check className="w-10 h-10 text-white" strokeWidth={3} />
+                    <div className="flex flex-col items-center text-center py-12 md:py-24">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-xl shadow-green-200 md:w-24 md:h-24">
+                            <Check className="w-10 h-10 text-white md:w-12 md:h-12" strokeWidth={3} />
                         </div>
-                        <h3 className="text-[24px] font-bold text-stone-800 mt-5" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                        <h3 className="text-[24px] font-bold text-stone-800 mt-5 md:text-4xl md:mt-7" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                             Chadhava Booked! 🙏
                         </h3>
-                        <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
+                        <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed md:text-[15px] md:max-w-md">
                             Your seva will be offered to <span className="font-semibold text-stone-700">{chadhava.deity}</span>.
                             We'll WhatsApp the proof on <span className="font-semibold text-stone-700">+91 {form.phone}</span>.
                         </p>
-                        <button onClick={() => navigate("/account?tab=chadhava")} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform">
+                        <button onClick={() => navigate("/account?tab=chadhava")} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer md:max-w-xs md:hover:bg-stone-900 md:transition-all">
                             Done
                         </button>
                     </div>
                 ) : (
                     <>
                         {/* Section 01: Your Selections */}
-                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm">
+                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm md:p-7 md:rounded-[28px]">
                             <div className="flex justify-between items-start mb-3.5">
                                 <div className="text-left">
-                                    <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2">
-                                        <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold">🌸</span>
+                                    <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2 md:text-[17px]">
+                                        <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold md:w-6 md:h-6 md:text-[13px]">🌸</span>
                                         Your Selections
                                     </h3>
-                                    <p className="text-[11px] text-stone-400 mt-0.5">Review offerings included in this Seva</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5 md:text-xs">Review offerings included in this Seva</p>
                                 </div>
-                                <span className="text-[12.5px] font-extrabold text-[#E05A10]">01</span>
+                                <span className="text-[12.5px] font-extrabold text-[#E05A10] md:text-sm">01</span>
                             </div>
 
                             <div className="space-y-1">
                                 {selections.map((s) => (
-                                    <div key={s.code} className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px]">
+                                    <div key={s.code} className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px] md:text-[14.5px] md:py-1.5">
                                         <span className="text-stone-700 font-medium text-left">{s.name} (x{s.quantity})</span>
                                         <span className="font-bold text-stone-800">₹{(s.unitPrice * s.quantity).toLocaleString("en-IN")}</span>
                                     </div>
                                 ))}
                                 {addPrasad && (
-                                    <div className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px]">
+                                    <div className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px] md:text-[14.5px] md:py-1.5">
                                         <span className="text-stone-700 font-medium text-left">Mandir Prasad Box</span>
                                         <span className="font-bold text-stone-800">₹298</span>
                                     </div>
                                 )}
                                 {activeFamilyCount > 0 && (
-                                    <div className="flex items-center justify-between py-2 border-b border-stone-50 text-[13.5px]">
+                                    <div className="flex items-center justify-between py-2 border-b border-stone-50 text-[13.5px] md:text-[14.5px]">
                                         <span className="text-stone-700 font-medium text-left">Family Members ({activeFamilyCount})</span>
                                         <span className="font-bold text-stone-800">₹{familyCost}</span>
                                     </div>
@@ -457,7 +462,7 @@ export default function ChadhavaBookingPage() {
                                     <button
                                         type="button"
                                         onClick={() => setPrasadBoxOpen((o) => !o)}
-                                        className="w-full flex items-center justify-between px-3.5 py-3 text-left"
+                                        className="w-full flex items-center justify-between px-3.5 py-3 text-left cursor-pointer md:hover:bg-amber-50/70 md:transition-colors"
                                     >
                                         <div className="flex items-center gap-2.5">
                                             <span className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
@@ -489,26 +494,26 @@ export default function ChadhavaBookingPage() {
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-[#FFEFE2]">
-                                <span className="font-bold text-stone-800 text-[13px] uppercase tracking-wide">Total Amount</span>
-                                <span className="font-extrabold text-[#E05A10] text-[20px]">₹{total.toLocaleString("en-IN")}</span>
+                            <div className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-[#FFEFE2] md:mt-5 md:pt-5">
+                                <span className="font-bold text-stone-800 text-[13px] uppercase tracking-wide md:text-sm">Total Amount</span>
+                                <span className="font-extrabold text-[#E05A10] text-[20px] md:text-2xl">₹{total.toLocaleString("en-IN")}</span>
                             </div>
                         </div>
 
                         {/* Section 02: Devotee Details */}
-                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm">
+                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm md:p-7 md:rounded-[28px]">
                             <div className="flex justify-between items-start mb-3.5">
                                 <div className="text-left">
-                                    <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2">
-                                        <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold">👤</span>
+                                    <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2 md:text-[17px]">
+                                        <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold md:w-6 md:h-6 md:text-[13px]">👤</span>
                                         Devotee Details
                                     </h3>
-                                    <p className="text-[11px] text-stone-400 mt-0.5">Details used for your personal Sankalp</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5 md:text-xs">Details used for your personal Sankalp</p>
                                 </div>
-                                <span className="text-[12.5px] font-extrabold text-[#E05A10]">02</span>
+                                <span className="text-[12.5px] font-extrabold text-[#E05A10] md:text-sm">02</span>
                             </div>
 
-                            <div className="space-y-3 text-left">
+                            <div className="space-y-3 text-left md:grid md:grid-cols-2 md:gap-x-5 md:gap-y-4 md:space-y-0">
                                 {/* WhatsApp Phone */}
                                 <div>
                                     <label className="text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1 block">WhatsApp Number</label>
@@ -557,7 +562,7 @@ export default function ChadhavaBookingPage() {
                                 </div>
 
                                 {/* Don't know Gotra checkbox */}
-                                <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                                <label className="flex items-center gap-2 mt-2 cursor-pointer md:mt-0 md:self-end md:pb-3">
                                     <input
                                         type="checkbox"
                                         checked={dontKnowGotra}
@@ -570,16 +575,16 @@ export default function ChadhavaBookingPage() {
                         </div>
 
                         {/* Section 03: Family Members */}
-                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm">
+                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm md:p-7 md:rounded-[28px]">
                             <div className="flex justify-between items-start mb-3.5">
                                 <div className="text-left">
-                                    <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2">
-                                        <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold">👥</span>
+                                    <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2 md:text-[17px]">
+                                        <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold md:w-6 md:h-6 md:text-[13px]">👥</span>
                                         Family Members
                                     </h3>
-                                    <p className="text-[11px] text-stone-400 mt-0.5">Include names in the Sankalp at ₹50 each</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5 md:text-xs">Include names in the Sankalp at ₹50 each</p>
                                 </div>
-                                <span className="text-[12.5px] font-extrabold text-[#E05A10]">03</span>
+                                <span className="text-[12.5px] font-extrabold text-[#E05A10] md:text-sm">03</span>
                             </div>
 
                             <div className="space-y-3 text-left">
@@ -587,7 +592,7 @@ export default function ChadhavaBookingPage() {
                                     <span>{activeFamilyCount} members added</span>
                                     <button
                                         onClick={() => setShowFamilyAdd(!showFamilyAdd)}
-                                        className="text-[#E05A10] hover:text-[#C94D0C] text-[12px] font-bold flex items-center gap-1"
+                                        className="text-[#E05A10] hover:text-[#C94D0C] text-[12px] font-bold flex items-center gap-1 cursor-pointer md:text-[13px]"
                                     >
                                         <Plus className="w-4 h-4" /> Add Member
                                     </button>
@@ -599,11 +604,11 @@ export default function ChadhavaBookingPage() {
                                             value={familyInput}
                                             onChange={(e) => setFamilyInput(e.target.value)}
                                             placeholder="Enter family member name"
-                                            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-800 focus:outline-none focus:border-orange-500"
+                                            className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs text-stone-800 focus:outline-none focus:border-orange-500 md:text-sm md:py-2.5"
                                         />
                                         <button
                                             onClick={addFamilyMember}
-                                            className="bg-[#E05A10] text-white text-xs font-bold px-4 py-2 rounded-xl shrink-0"
+                                            className="bg-[#E05A10] text-white text-xs font-bold px-4 py-2 rounded-xl shrink-0 cursor-pointer md:text-sm md:px-6 md:py-2.5 md:hover:bg-[#C94D0C] md:transition-colors"
                                         >
                                             Add
                                         </button>
@@ -615,7 +620,7 @@ export default function ChadhavaBookingPage() {
                                         {familyMembers.map((name, idx) => (
                                             <span key={idx} className="bg-stone-50 border border-stone-200 text-stone-700 text-[11.5px] px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium">
                                                 {name}
-                                                <button onClick={() => removeFamilyMember(idx)} className="text-red-400 hover:text-red-600">
+                                                <button onClick={() => removeFamilyMember(idx)} className="text-red-400 hover:text-red-600 cursor-pointer">
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
                                             </span>
@@ -627,24 +632,24 @@ export default function ChadhavaBookingPage() {
 
                         {/* Section 04: Delivery Address (Only shown if Prasad is added) */}
                         {addPrasad && (
-                            <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm">
+                            <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm md:p-7 md:rounded-[28px]">
                                 <div className="flex justify-between items-start mb-3.5">
                                     <div className="text-left">
-                                        <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2">
-                                            <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold">📍</span>
+                                        <h3 className="text-[15px] font-bold text-[#2E1F15] flex items-center gap-2 md:text-[17px]">
+                                            <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold md:w-6 md:h-6 md:text-[13px]">📍</span>
                                             Delivery Address
                                         </h3>
-                                        <p className="text-[11px] text-stone-400 mt-0.5">
+                                        <p className="text-[11px] text-stone-400 mt-0.5 md:text-xs">
                                             Choose where your sacred Prasad should arrive
                                         </p>
                                     </div>
-                                    <span className="text-[12.5px] font-extrabold text-[#E05A10]">04</span>
+                                    <span className="text-[12.5px] font-extrabold text-[#E05A10] md:text-sm">04</span>
                                 </div>
 
                                 <div className="space-y-3.5 text-left">
                                     {/* Saved Address List */}
                                     {!showNewAddressForm && addresses.length > 0 && (
-                                        <div className="space-y-2.5">
+                                        <div className="space-y-2.5 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
                                             {addresses.map((a) => {
                                                 const isSelected = (a._id || a.id) === selectedAddressId;
                                                 return (
@@ -652,7 +657,7 @@ export default function ChadhavaBookingPage() {
                                                         key={a._id || a.id}
                                                         onClick={() => setSelectedAddressId(a._id || a.id)}
                                                         className={`rounded-2xl border p-4 flex gap-3 cursor-pointer transition-all ${
-                                                            isSelected ? "border-[#E05A10] bg-[#FFF8F2]" : "border-stone-200"
+                                                            isSelected ? "border-[#E05A10] bg-[#FFF8F2]" : "border-stone-200 md:hover:border-orange-300"
                                                         }`}
                                                     >
                                                         <span className="w-8 h-8 rounded-xl bg-orange-100/60 flex items-center justify-center shrink-0 mt-0.5">
@@ -686,7 +691,7 @@ export default function ChadhavaBookingPage() {
                                     {!showNewAddressForm && (
                                         <button
                                             onClick={() => setShowNewAddressForm(true)}
-                                            className="w-full text-center text-[#E05A10] hover:text-[#C94D0C] text-[12.5px] font-bold py-1 flex items-center justify-center gap-1 mt-1"
+                                            className="w-full text-center text-[#E05A10] hover:text-[#C94D0C] text-[12.5px] font-bold py-1 flex items-center justify-center gap-1 mt-1 cursor-pointer md:text-[13.5px] md:py-2"
                                         >
                                             <Plus className="w-4 h-4" /> Add New Address
                                         </button>
@@ -694,13 +699,13 @@ export default function ChadhavaBookingPage() {
 
                                     {/* New Address Form */}
                                     {showNewAddressForm && (
-                                        <div className="space-y-2.5 p-3.5 bg-stone-50 border border-stone-200 rounded-2xl">
+                                        <div className="space-y-2.5 p-3.5 bg-stone-50 border border-stone-200 rounded-2xl md:p-5 md:space-y-3">
                                             <div className="flex items-center justify-between mb-1">
                                                 <h5 className="text-[12.5px] font-bold text-stone-800">New Delivery Address</h5>
                                                 {addresses.length > 0 && (
                                                     <button
                                                         onClick={() => setShowNewAddressForm(false)}
-                                                        className="text-stone-400 hover:text-stone-600 text-xs font-medium"
+                                                        className="text-stone-400 hover:text-stone-600 text-xs font-medium cursor-pointer md:text-[13px]"
                                                     >
                                                         Cancel
                                                     </button>
@@ -710,26 +715,26 @@ export default function ChadhavaBookingPage() {
                                                 value={newAddress.houseNo}
                                                 onChange={(e) => setNewAddress(na => ({ ...na, houseNo: e.target.value }))}
                                                 placeholder="House/Flat No, Building Name"
-                                                className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500"
+                                                className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500 md:text-sm md:py-2.5"
                                             />
                                             <input
                                                 value={newAddress.street}
                                                 onChange={(e) => setNewAddress(na => ({ ...na, street: e.target.value }))}
                                                 placeholder="Street address, Colony"
-                                                className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500"
+                                                className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500 md:text-sm md:py-2.5"
                                             />
                                             <div className="grid grid-cols-2 gap-2">
                                                 <input
                                                     value={newAddress.city}
                                                     onChange={(e) => setNewAddress(na => ({ ...na, city: e.target.value }))}
                                                     placeholder="City"
-                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500"
+                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500 md:text-sm md:py-2.5"
                                                 />
                                                 <input
                                                     value={newAddress.state}
                                                     onChange={(e) => setNewAddress(na => ({ ...na, state: e.target.value }))}
                                                     placeholder="State"
-                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500"
+                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500 md:text-sm md:py-2.5"
                                                 />
                                             </div>
                                             <div className="grid grid-cols-2 gap-2">
@@ -738,12 +743,12 @@ export default function ChadhavaBookingPage() {
                                                     onChange={(e) => setNewAddress(na => ({ ...na, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
                                                     placeholder="PIN Code"
                                                     inputMode="numeric"
-                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500"
+                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500 md:text-sm md:py-2.5"
                                                 />
                                                 <select
                                                     value={newAddress.saveAs}
                                                     onChange={(e) => setNewAddress(na => ({ ...na, saveAs: e.target.value }))}
-                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500 text-stone-700"
+                                                    className="w-full bg-white border border-stone-200 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-orange-500 text-stone-700 md:text-sm md:py-2.5 cursor-pointer"
                                                 >
                                                     <option value="Home">Home</option>
                                                     <option value="Work">Work</option>
@@ -758,21 +763,21 @@ export default function ChadhavaBookingPage() {
                         )}
 
                         {/* Sankalp intentions */}
-                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm text-left">
-                            <label className="text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">Your Wish / Prayer (optional)</label>
+                        <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm md:p-7 md:rounded-[28px] text-left">
+                            <label className="text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block md:text-xs">Your Wish / Prayer (optional)</label>
                             <textarea
                                 value={form.wish}
                                 onChange={(e) => setForm((f) => ({ ...f, wish: e.target.value }))}
                                 placeholder="Share the intention behind this offering…"
                                 rows={2}
-                                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#E05A10] resize-none"
+                                className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#E05A10] resize-none md:text-[15px]"
                             />
                         </div>
 
                         {/* Guarantee Info */}
-                        <div className="bg-white border border-[#FFEFE2] rounded-2xl p-4 flex items-start gap-2.5 text-left">
-                            <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                            <p className="text-[11.5px] text-stone-500 leading-snug">
+                        <div className="bg-white border border-[#FFEFE2] rounded-2xl p-4 flex items-start gap-2.5 text-left md:p-5 md:items-center md:gap-3">
+                            <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 md:w-6 md:h-6 md:mt-0" />
+                            <p className="text-[11.5px] text-stone-500 leading-snug md:text-[13px]">
                                 You'll receive a photo/video of your chadhava being offered. 100% secure payment & refund guarantee if the ritual is not performed.
                             </p>
                         </div>
@@ -784,15 +789,15 @@ export default function ChadhavaBookingPage() {
 
             {/* Footer Bottom Bar */}
             {!done && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#FFEFE2] px-5 py-4 flex items-center justify-between">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#FFEFE2] px-5 py-4 flex items-center justify-between md:max-w-3xl md:rounded-t-2xl md:border-x md:px-8 md:py-5 md:shadow-[0_-12px_40px_-12px_rgba(224,90,16,0.25)]">
                     <div className="leading-none text-left">
-                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wide">Total to Pay</span>
-                        <p className="text-[20px] font-extrabold text-[#E05A10] mt-0.5">₹{total.toLocaleString("en-IN")}</p>
+                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wide md:text-[11px]">Total to Pay</span>
+                        <p className="text-[20px] font-extrabold text-[#E05A10] mt-0.5 md:text-[26px] md:mt-1">₹{total.toLocaleString("en-IN")}</p>
                     </div>
                     <button
                         onClick={handlePay}
                         disabled={submitting}
-                        className="flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold px-8 py-3.5 rounded-full shadow-lg shadow-orange-100 active:scale-95 transition-transform disabled:opacity-60 disabled:shadow-none"
+                        className="flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold px-8 py-3.5 rounded-full shadow-lg shadow-orange-100 active:scale-95 transition-transform disabled:opacity-60 disabled:shadow-none cursor-pointer md:px-12 md:py-4 md:text-[16px] md:transition-all md:hover:shadow-xl md:hover:shadow-orange-200"
                     >
                         {submitting ? (
                             <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> Paying...</>
@@ -803,5 +808,6 @@ export default function ChadhavaBookingPage() {
                 </div>
             )}
         </div>
+        </>
     );
 }

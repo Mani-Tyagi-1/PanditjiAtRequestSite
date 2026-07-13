@@ -17,10 +17,10 @@ export default function ChadhavaCard({ chadhava }: Props) {
         <motion.div
             whileTap={{ scale: 0.985 }}
             onClick={() => navigate(`/chadhava/${chadhava.id}`)}
-            className="cdv-card group relative shrink-0 w-[68vw] max-w-[260px] cursor-pointer rounded-[20px] bg-white overflow-hidden border border-rose-100/80 shadow-[0_10px_34px_-12px_rgba(190,18,60,0.28)]"
+            className="cdv-card group relative shrink-0 w-[68vw] max-w-[260px] cursor-pointer rounded-[20px] bg-white overflow-hidden border border-rose-100/80 shadow-[0_10px_34px_-12px_rgba(190,18,60,0.28)] md:w-auto md:shrink md:max-w-none md:transition-all md:duration-300 md:hover:-translate-y-1 md:hover:border-rose-200 md:hover:shadow-[0_20px_44px_-14px_rgba(190,18,60,0.38)]"
         >
             {/* ── Image header ── */}
-            <div className="relative h-[140px] overflow-hidden">
+            <div className="relative h-[140px] overflow-hidden md:h-[168px]">
                 <img
                     src={chadhava.image}
                     alt={`Chadhava for ${chadhava.deity} at ${chadhava.templeName}`}
@@ -56,7 +56,7 @@ export default function ChadhavaCard({ chadhava }: Props) {
             </div>
 
             {/* ── Body ── */}
-            <div className="p-3">
+            <div className="p-3 md:p-4">
                 {/* Temple */}
                 <div className="flex items-center gap-1 text-rose-600">
                     <MapPin className="w-3.5 h-3.5 shrink-0" />
@@ -109,7 +109,7 @@ export default function ChadhavaCard({ chadhava }: Props) {
                             e.stopPropagation();
                             navigate(`/chadhava/${chadhava.id}`);
                         }}
-                        className="flex items-center gap-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[13px] font-bold pl-4 pr-3 py-2.5 rounded-xl shadow-lg shadow-rose-200/70 active:scale-95 transition-transform"
+                        className="flex items-center gap-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[13px] font-bold pl-4 pr-3 py-2.5 rounded-xl shadow-lg shadow-rose-200/70 active:scale-95 transition-transform cursor-pointer md:transition-all md:hover:shadow-xl md:hover:shadow-rose-300/60 md:hover:brightness-105"
                     >
                         Offer Now
                         <ChevronRight className="w-4 h-4" />

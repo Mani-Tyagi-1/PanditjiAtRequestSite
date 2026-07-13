@@ -120,7 +120,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[200] flex items-end justify-center kvp-modal">
+                <div className="fixed inset-0 z-[200] flex items-end justify-center kvp-modal md:items-center md:p-6">
                     <style>{`
                         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                         .kvp-modal { font-family: 'DM Sans', sans-serif; }
@@ -136,15 +136,15 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                     <motion.div
                         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 32, stiffness: 320 }}
-                        className="relative w-full max-w-md bg-[#FAFAFF] rounded-t-3xl flex flex-col overflow-hidden"
+                        className="relative w-full max-w-md bg-[#FAFAFF] rounded-t-3xl flex flex-col overflow-hidden md:rounded-3xl md:max-w-lg lg:max-w-xl md:shadow-2xl md:shadow-indigo-950/40"
                         style={{ maxHeight: "94vh" }}
                     >
                         {/* ── Header ── */}
-                        <div className="relative shrink-0 bg-gradient-to-br from-indigo-600 to-violet-600 px-5 pt-5 pb-4">
-                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/40" />
+                        <div className="relative shrink-0 bg-gradient-to-br from-indigo-600 to-violet-600 px-5 pt-5 pb-4 md:px-7 md:pt-6 md:pb-5">
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-white/40 md:hidden" />
                             <button
                                 onClick={onClose}
-                                className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white active:scale-95 transition-transform"
+                                className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/20 text-white active:scale-95 transition-transform cursor-pointer md:transition-all md:hover:bg-white/30"
                             >
                                 <X className="w-4.5 h-4.5" />
                             </button>
@@ -168,7 +168,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
 
                         {/* ── Step indicator ── */}
                         {step !== "success" && (
-                            <div className="flex items-center gap-1.5 px-5 py-3 shrink-0">
+                            <div className="flex items-center gap-1.5 px-5 py-3 shrink-0 md:px-7">
                                 {STEP_ORDER.map((s, i) => (
                                     <div key={s} className="flex-1 flex items-center gap-1.5">
                                         <div className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${i <= stepIndex ? "bg-indigo-600" : "bg-stone-200"}`} />
@@ -178,7 +178,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                         )}
 
                         {/* ── Content ── */}
-                        <div className="flex-1 overflow-y-auto px-5 pb-3">
+                        <div className="flex-1 overflow-y-auto px-5 pb-3 md:px-7 md:pb-4">
                             <AnimatePresence mode="wait">
                                 {/* STEP 1 — SERVICE */}
                                 {step === "service" && (
@@ -194,7 +194,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                                     <button
                                                         key={svc.id}
                                                         onClick={() => setSelected(svc)}
-                                                        className={`relative w-full text-left rounded-2xl border-2 p-3.5 transition-all ${active ? "border-indigo-500 bg-indigo-50/60 shadow-md shadow-indigo-100" : "border-stone-200 bg-white"}`}
+                                                        className={`relative w-full text-left rounded-2xl border-2 p-3.5 transition-all cursor-pointer ${active ? "border-indigo-500 bg-indigo-50/60 shadow-md shadow-indigo-100" : "border-stone-200 bg-white md:hover:border-indigo-300 md:hover:bg-indigo-50/30"}`}
                                                     >
                                                         {svc.popular && (
                                                             <span className="absolute -top-2.5 right-3 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">★ Most Booked</span>
@@ -330,7 +330,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                                 <p className="text-[11px] text-stone-500">{form.date} · {form.city}</p>
                                             </div>
                                         </div>
-                                        <button onClick={onClose} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform">Done</button>
+                                        <button onClick={onClose} className="mt-6 w-full bg-stone-800 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer md:transition-all md:hover:bg-stone-700">Done</button>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -342,9 +342,9 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
 
                         {/* ── Sticky footer ── */}
                         {step !== "success" && (
-                            <div className="shrink-0 bg-white/90 backdrop-blur-sm border-t border-stone-100 px-5 py-3.5 flex items-center gap-3">
+                            <div className="shrink-0 bg-white/90 backdrop-blur-sm border-t border-stone-100 px-5 py-3.5 flex items-center gap-3 md:px-7 md:py-4">
                                 {step !== "service" && (
-                                    <button onClick={goBack} className="w-12 h-12 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 active:scale-95 transition-transform shrink-0">
+                                    <button onClick={goBack} className="w-12 h-12 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 active:scale-95 transition-transform shrink-0 cursor-pointer md:transition-all md:hover:bg-stone-50 md:hover:text-stone-700">
                                         <ChevronLeft className="w-5 h-5" />
                                     </button>
                                 )}
@@ -354,7 +354,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                         <p className="text-[18px] font-bold text-stone-900">₹{amount.toLocaleString("en-IN")}</p>
                                     </div>
                                     {step === "review" ? (
-                                        <button onClick={handleConfirm} disabled={submitting} className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform disabled:opacity-60">
+                                        <button onClick={handleConfirm} disabled={submitting} className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform disabled:opacity-60 cursor-pointer md:transition-all md:hover:shadow-xl md:hover:brightness-110">
                                             {submitting ? (
                                                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Booking…</>
                                             ) : (
@@ -362,7 +362,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                             )}
                                         </button>
                                     ) : (
-                                        <button onClick={goNext} className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-7 py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform">
+                                        <button onClick={goNext} className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-7 py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform cursor-pointer md:transition-all md:hover:shadow-xl md:hover:brightness-110">
                                             Continue <ChevronRight className="w-4 h-4" />
                                         </button>
                                     )}

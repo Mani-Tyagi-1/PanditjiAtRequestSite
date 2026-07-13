@@ -8,6 +8,8 @@ import { optimizedImg } from "../utils/img";
 import { type Chadhava, type ChadhavaSelection } from "../components/booking/ChadhavaBooking/chadhavaData";
 // Devshayani Ekadashi combo (frontend-only offering — remove to disable)
 import { devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_TEMPLES, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
+import DesktopHeader from "../components/layout/DesktopHeader";
+import SiteFooter from "../components/layout/SiteFooter";
 
 function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" | "goldbar" }) {
     const [timeLeft, setTimeLeft] = useState("");
@@ -422,50 +424,62 @@ export default function ChadhavaDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#FFFAF6] w-full max-w-md mx-auto border-x border-rose-100 animate-pulse">
-                <div className="h-56 bg-stone-200" />
-                <div className="p-5 space-y-4">
-                    <div className="h-6 bg-stone-200 rounded w-1/3" />
-                    <div className="h-24 bg-stone-200 rounded-2xl" />
-                    <div className="h-24 bg-stone-200 rounded-2xl" />
+            <>
+                <DesktopHeader />
+                <div className="min-h-screen bg-[#FFFAF6] w-full max-w-md mx-auto border-x border-rose-100 animate-pulse md:max-w-3xl md:border-x-0">
+                    <div className="h-56 bg-stone-200 md:h-72 md:rounded-b-[28px]" />
+                    <div className="p-5 space-y-4">
+                        <div className="h-6 bg-stone-200 rounded w-1/3" />
+                        <div className="h-24 bg-stone-200 rounded-2xl" />
+                        <div className="h-24 bg-stone-200 rounded-2xl" />
+                    </div>
                 </div>
-            </div>
+            </>
         );
     }
 
     if (error || !chadhava) {
         return (
-            <div className="min-h-screen bg-[#FFFAF6] flex flex-col items-center justify-center p-6 text-center w-full max-w-md mx-auto border-x border-rose-100">
-                <span className="text-4xl">🌺</span>
-                <h2 className="text-lg font-bold text-stone-800 mt-4">Error Loading Chadhava</h2>
-                <p className="text-xs text-stone-500 mt-2 max-w-[280px]">{error || "The requested chadhava does not exist."}</p>
-                <button onClick={() => navigate("/chadhava")} className="mt-6 bg-rose-600 text-white font-bold px-6 py-2.5 rounded-xl active:scale-95 transition-all">
-                    Back to Chadhava
-                </button>
-            </div>
+            <>
+                <DesktopHeader />
+                <div className="min-h-screen bg-[#FFFAF6] flex flex-col items-center justify-center p-6 text-center w-full max-w-md mx-auto border-x border-rose-100 md:max-w-3xl md:border-x-0">
+                    <span className="text-4xl">🌺</span>
+                    <h2 className="text-lg font-bold text-stone-800 mt-4">Error Loading Chadhava</h2>
+                    <p className="text-xs text-stone-500 mt-2 max-w-[280px]">{error || "The requested chadhava does not exist."}</p>
+                    <button onClick={() => navigate("/chadhava")} className="mt-6 bg-rose-600 text-white font-bold px-6 py-2.5 rounded-xl active:scale-95 transition-all md:cursor-pointer md:hover:bg-rose-700">
+                        Back to Chadhava
+                    </button>
+                </div>
+            </>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#FFFAF6] pb-36 font-sans w-full max-w-md mx-auto border-x border-rose-100 relative">
+        <>
+        <DesktopHeader />
+        <div className="min-h-screen bg-[#FFFAF6] pb-36 font-sans w-full max-w-md mx-auto border-x border-rose-100 relative md:max-w-none md:mx-0 md:border-x-0 lg:pb-16">
             <Helmet>
                 <title>{`${chadhava.deity} Chadhava at ${chadhava.templeName} | Pandit Ji At Request`}</title>
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFFAF6]/95 backdrop-blur-md border-b border-rose-100 px-4 py-3 flex items-center gap-3">
-                <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-rose-200/50 shadow-sm active:scale-90 transition-transform">
+            <div className="sticky top-0 z-40 bg-[#FFFAF6]/95 backdrop-blur-md border-b border-rose-100 px-4 py-3 flex items-center gap-3 md:static md:z-auto md:bg-transparent md:backdrop-blur-none md:border-b-0 md:max-w-3xl md:mx-auto md:w-full md:px-6 md:pt-8 md:pb-0 lg:max-w-6xl lg:px-10">
+                <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-rose-200/50 shadow-sm active:scale-90 transition-transform md:w-10 md:h-10 md:transition-all md:hover:bg-orange-50 md:hover:shadow-md md:cursor-pointer">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
-                <h1 className="text-[15px] font-bold text-stone-800">Chadhava Details</h1>
+                <h1 className="text-[15px] font-bold text-stone-800 md:text-lg">Chadhava Details</h1>
             </div>
+
+            {/* Content container (md) / two-column grid with sticky booking rail (lg) — wrappers are style-inert on mobile */}
+            <div className="md:w-full lg:px-10 lg:pt-2 lg:pb-8 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10 lg:items-start">
+            <div className="lg:min-w-0">
 
             {/* Hero banner carousel */}
             {(() => {
                 const banners = chadhava.bannerImages?.length ? chadhava.bannerImages : [chadhava.image];
                 return (
-                    <div className="px-3 pt-3">
-                        <div className="relative rounded-[22px] overflow-hidden shadow-[0_10px_30px_-12px_rgba(224,90,16,0.25)]">
+                    <div className="px-3 pt-3 md:pt-5">
+                        <div className="relative rounded-[22px] overflow-hidden shadow-[0_10px_30px_-12px_rgba(224,90,16,0.25)] md:rounded-[28px]">
                             <div
                                 className="flex items-start overflow-x-auto snap-x snap-mandatory scrollbar-none"
                                 onScroll={(e) => {
@@ -518,25 +532,25 @@ export default function ChadhavaDetailPage() {
             })()}
 
             {/* Title + temple + date */}
-            <div className="px-4 pt-3">
+            <div className="px-4 pt-3 md:pt-6">
                 <div className="flex items-start justify-between gap-3">
-                    <h2 className="text-[18px] font-bold text-[#2E1F15] leading-snug text-left flex-1">
+                    <h2 className="text-[18px] font-bold text-[#2E1F15] leading-snug text-left flex-1 md:text-2xl md:tracking-tight lg:text-[26px]">
                         {chadhava.deity}
                     </h2>
-                    <button onClick={(e) => handleShare(e, chadhava)} className="w-9 h-9 rounded-xl bg-[#FFF1E6] flex items-center justify-center shrink-0 active:scale-90 transition-transform">
+                    <button onClick={(e) => handleShare(e, chadhava)} className="w-9 h-9 rounded-xl bg-[#FFF1E6] flex items-center justify-center shrink-0 active:scale-90 transition-transform md:w-10 md:h-10 md:transition-all md:hover:bg-[#FFE7D4] md:cursor-pointer">
                         <Share2 className="w-4 h-4 text-[#E05A10]" />
                     </button>
                 </div>
                 {chadhava.deityHindi && (
-                    <p className="text-[13px] text-stone-500 mt-1 text-left">{chadhava.deityHindi}</p>
+                    <p className="text-[13px] text-stone-500 mt-1 text-left md:text-[15px]">{chadhava.deityHindi}</p>
                 )}
                 <div className="mt-3 space-y-1.5">
-                    <div className="flex items-center gap-2 text-[13px] text-stone-700">
+                    <div className="flex items-center gap-2 text-[13px] text-stone-700 md:text-sm">
                         <MapPin className="w-4 h-4 text-[#E05A10] shrink-0" />
                         <span className="font-semibold text-left">{chadhava.templeName}{chadhava.templeLocation ? `, ${chadhava.templeLocation}` : ""}</span>
                     </div>
                     {(formatOfferingDate(chadhava.availableDates?.[0]) || chadhava.offeringDay) && (
-                        <div className="flex items-center gap-2 text-[13px] text-stone-600">
+                        <div className="flex items-center gap-2 text-[13px] text-stone-600 md:text-sm">
                             <CalendarDays className="w-4 h-4 text-[#E05A10] shrink-0" />
                             <span className="font-medium text-left">{formatOfferingDate(chadhava.availableDates?.[0]) || chadhava.offeringDay}</span>
                         </div>
@@ -545,8 +559,8 @@ export default function ChadhavaDetailPage() {
             </div>
 
             {/* WhatsApp reassurance line */}
-            <div className="px-4 pt-3">
-                <div className="relative flex items-center gap-2.5 py-2 pl-3 pr-24 bg-green-50 border border-green-200 text-green-700 rounded-xl text-[12px] font-semibold text-start">
+            <div className="px-4 pt-3 md:pt-6">
+                <div className="relative flex items-center gap-2.5 py-2 pl-3 pr-24 bg-green-50 border border-green-200 text-green-700 rounded-xl text-[12px] font-semibold text-start md:py-2.5 md:text-[13px]">
                     <MessageCircle className="w-4 h-4 text-green-600 shrink-0" />
                     <span>Receive chadhava video with your name &amp; gotra on <span className="font-bold">WhatsApp</span></span>
                     <img
@@ -574,9 +588,9 @@ export default function ChadhavaDetailPage() {
                     return (
                         <div
                             key={item.code}
-                            className={`bg-white rounded-2xl border shadow-sm p-1.5 flex flex-col transition-colors ${count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"}`}
+                            className={`bg-white rounded-2xl border shadow-sm p-1.5 flex flex-col transition-colors md:p-2 md:transition-all md:hover:shadow-md ${count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"}`}
                         >
-                            <div className="relative w-full h-[70px] rounded-xl overflow-hidden bg-[#FFFDF9] mb-1">
+                            <div className="relative w-full h-[70px] rounded-xl overflow-hidden bg-[#FFFDF9] mb-1 md:h-28 lg:h-24">
                                 <img
                                     src={optimizedImg(item.itemImage, 200)}
                                     onError={(e) => { e.currentTarget.src = item.itemImage; }}
@@ -588,23 +602,23 @@ export default function ChadhavaDetailPage() {
                                     <span className="absolute top-1 left-1 bg-amber-400 text-amber-950 text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase">★</span>
                                 )}
                             </div>
-                            <h5 className="text-[11px] font-bold text-[#2E1F15] leading-tight line-clamp-2 text-center">{item.itemName}</h5>
-                            <span className="text-[12px] font-bold text-[#C1272D] text-center mt-0.5">₹{item.itemPrice}/-</span>
+                            <h5 className="text-[11px] font-bold text-[#2E1F15] leading-tight line-clamp-2 text-center md:text-[13px]">{item.itemName}</h5>
+                            <span className="text-[12px] font-bold text-[#C1272D] text-center mt-0.5 md:text-sm">₹{item.itemPrice}/-</span>
                             <div className="mt-1">
                                 {count === 0 ? (
                                     <button
                                         onClick={() => setItemQty(item.code, 1)}
-                                        className="w-full bg-[#9B1B1B] text-white text-[11.5px] font-bold py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
+                                        className="w-full bg-[#9B1B1B] text-white text-[11.5px] font-bold py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform md:text-[13px] md:py-2 md:transition-all md:hover:bg-[#7F1414] md:cursor-pointer"
                                     >
                                         Add+
                                     </button>
                                 ) : (
                                     <div className="flex items-center justify-between bg-white border border-[#9B1B1B] rounded-lg px-2 py-1 shadow-sm">
-                                        <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
+                                        <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90 md:cursor-pointer">
                                             <Minus className="w-3.5 h-3.5" strokeWidth={3} />
                                         </button>
                                         <span className="text-[12px] font-bold text-stone-800">{count}</span>
-                                        <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
+                                        <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90 md:cursor-pointer">
                                             <Plus className="w-3.5 h-3.5" strokeWidth={3} />
                                         </button>
                                     </div>
@@ -615,10 +629,10 @@ export default function ChadhavaDetailPage() {
                 };
 
                 return (
-                    <div className="px-4 pt-3">
+                    <div className="px-4 pt-3 md:pt-6">
                         {/* First row of regular offerings (up to 3) */}
                         {firstRowItems.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2.5 mt-3">
+                            <div className="grid grid-cols-3 gap-2.5 mt-3 md:gap-4 md:mt-4">
                                 {firstRowItems.map(renderItemCard)}
                             </div>
                         )}
@@ -640,7 +654,7 @@ export default function ChadhavaDetailPage() {
                                             src={optimizedImg(item.itemImage, 700)}
                                             onError={(e) => { e.currentTarget.src = item.itemImage; }}
                                             alt={item.itemName}
-                                            className="w-full h-[160px] object-cover object-bottom"
+                                            className="w-full h-[160px] object-cover object-bottom md:h-64 lg:h-52"
                                             loading="lazy"
                                         />
                                         <span className="absolute top-2 left-2 bg-[#E8A22A] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
@@ -654,12 +668,12 @@ export default function ChadhavaDetailPage() {
                                     </div>
 
                                     {/* Details */}
-                                    <div className="px-4 py-2 text-left">
-                                        <h5 className="text-[15px] font-bold text-[#2E1F15] leading-snug">
+                                    <div className="px-4 py-2 text-left md:px-5 md:py-3">
+                                        <h5 className="text-[15px] font-bold text-[#2E1F15] leading-snug md:text-[17px]">
                                             {item.itemName}
                                         </h5>
                                         {item.itemDesc && item.itemDesc !== item.itemName && (
-                                            <p className="text-[12px] text-stone-500 mt-0.5 leading-snug line-clamp-1">
+                                            <p className="text-[12px] text-stone-500 mt-0.5 leading-snug line-clamp-1 md:text-[13px]">
                                                 {item.itemDesc}
                                             </p>
                                         )}
@@ -667,7 +681,7 @@ export default function ChadhavaDetailPage() {
                                         {/* Price & Action */}
                                         <div className="flex items-center justify-between mt-1">
                                             <div className="flex items-baseline gap-2">
-                                                <span className="text-[18px] font-extrabold text-[#C1272D]">₹ {item.itemPrice}/-</span>
+                                                <span className="text-[18px] font-extrabold text-[#C1272D] md:text-xl">₹ {item.itemPrice}/-</span>
                                                 {item.originalPrice && (
                                                     <span className="text-[13px] text-stone-400 line-through">₹{item.originalPrice}/-</span>
                                                 )}
@@ -676,17 +690,17 @@ export default function ChadhavaDetailPage() {
                                             {count === 0 ? (
                                                 <button
                                                     onClick={() => setItemQty(item.code, 1)}
-                                                    className="bg-[#9B1B1B] text-white text-[13px] font-bold px-6 py-2 rounded-xl active:scale-95 transition-transform shadow-md"
+                                                    className="bg-[#9B1B1B] text-white text-[13px] font-bold px-6 py-2 rounded-xl active:scale-95 transition-transform shadow-md md:text-sm md:px-8 md:transition-all md:hover:bg-[#7F1414] md:cursor-pointer"
                                                 >
                                                     Add+
                                                 </button>
                                             ) : (
                                                 <div className="flex items-center gap-3 bg-white border border-[#9B1B1B] rounded-xl px-3 py-1.5 shadow-md">
-                                                    <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
+                                                    <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90 md:cursor-pointer">
                                                         <Minus className="w-4 h-4" strokeWidth={3} />
                                                     </button>
                                                     <span className="text-[14px] font-bold text-stone-800 w-4 text-center">{count}</span>
-                                                    <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
+                                                    <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90 md:cursor-pointer">
                                                         <Plus className="w-4 h-4" strokeWidth={3} />
                                                     </button>
                                                 </div>
@@ -699,7 +713,7 @@ export default function ChadhavaDetailPage() {
 
                         {/* Remaining regular offerings (after the combo pack) */}
                         {remainingItems.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2.5 mt-3">
+                            <div className="grid grid-cols-3 gap-2.5 mt-3 md:gap-4 md:mt-4">
                                 {remainingItems.map(renderItemCard)}
                             </div>
                         )}
@@ -710,17 +724,17 @@ export default function ChadhavaDetailPage() {
 
             {/* Prasad add-on */}
             {chadhava.prasad?.enabled && (
-                <div className="px-4 pt-5">
+                <div className="px-4 pt-5 md:pt-8">
                     <button
                         onClick={() => setAddPrasad((v) => !v)}
-                        className={`w-full text-left bg-white rounded-2xl border-2 p-3 flex gap-3 items-center transition-colors ${addPrasad ? "border-emerald-400 bg-emerald-50/40" : "border-dashed border-amber-300"}`}
+                        className={`w-full text-left bg-white rounded-2xl border-2 p-3 flex gap-3 items-center transition-colors md:p-4 md:transition-all md:hover:shadow-md md:cursor-pointer ${addPrasad ? "border-emerald-400 bg-emerald-50/40" : "border-dashed border-amber-300"}`}
                     >
                         <span className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
                             <Gift className="w-5 h-5 text-amber-600" />
                         </span>
                         <div className="flex-1 min-w-0">
-                            <h5 className="text-[13.5px] font-bold text-stone-800">{chadhava.prasad.name}</h5>
-                            <p className="text-[11px] text-stone-500 leading-snug">{chadhava.prasad.desc}</p>
+                            <h5 className="text-[13.5px] font-bold text-stone-800 md:text-[15px]">{chadhava.prasad.name}</h5>
+                            <p className="text-[11px] text-stone-500 leading-snug md:text-[12.5px]">{chadhava.prasad.desc}</p>
                         </div>
                         <span className={`flex items-center gap-1 text-[12px] font-bold px-3 py-1.5 rounded-lg ${addPrasad ? "bg-emerald-500 text-white" : "bg-amber-500 text-white"}`}>
                             {addPrasad ? <><Check className="w-3.5 h-3.5" strokeWidth={3} /> Added</> : `Add ₹${chadhava.prasad.price}`}
@@ -731,19 +745,19 @@ export default function ChadhavaDetailPage() {
 
             {/* Devshayani combo — "offered at three dhams" strip (scoped) */}
             {isDevshayaniCombo && (
-                <div className="px-4 pt-4">
+                <div className="px-4 pt-4 md:pt-8">
                     <div className="flex items-center gap-2 mb-2.5">
                         <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#E7C38A]" />
-                        <span className="text-[12px] font-bold text-[#9B1B1B] uppercase tracking-wide">Offered at Three Sacred Dhams</span>
+                        <span className="text-[12px] font-bold text-[#9B1B1B] uppercase tracking-wide md:text-[13px]">Offered at Three Sacred Dhams</span>
                         <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#E7C38A]" />
                     </div>
-                    <div className="grid grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-3 gap-2.5 md:gap-4">
                         {COMBO_TEMPLES.map((t) => (
-                            <div key={t.name} className="bg-white rounded-2xl border border-[#F4E7DC] overflow-hidden shadow-sm">
-                                <img src={t.image} alt={t.name} className="w-full h-16 object-cover" loading="lazy" />
+                            <div key={t.name} className="bg-white rounded-2xl border border-[#F4E7DC] overflow-hidden shadow-sm md:transition-all md:hover:shadow-md">
+                                <img src={t.image} alt={t.name} className="w-full h-16 object-cover md:h-24" loading="lazy" />
                                 <div className="p-2 text-center">
-                                    <p className="text-[11px] font-bold text-[#2E1F15] leading-tight">{t.name}</p>
-                                    <p className="text-[9px] text-stone-400 mt-0.5">{t.location}</p>
+                                    <p className="text-[11px] font-bold text-[#2E1F15] leading-tight md:text-[12.5px]">{t.name}</p>
+                                    <p className="text-[9px] text-stone-400 mt-0.5 md:text-[11px]">{t.location}</p>
                                 </div>
                             </div>
                         ))}
@@ -752,19 +766,19 @@ export default function ChadhavaDetailPage() {
             )}
 
             {/* Devotee reviews */}
-            <div className="px-4 pt-5">
-                <h3 className="text-[16px] font-bold text-[#2E1F15] mb-3 text-left">Loved by devotees</h3>
+            <div className="px-4 pt-5 md:pt-8">
+                <h3 className="text-[16px] font-bold text-[#2E1F15] mb-3 text-left md:text-xl">Loved by devotees</h3>
                 <ReviewMarquee reviews={reviews} />
             </div>
 
             {/* About Chadhava */}
             {chadhava.description && (
-                <div className="px-4 pt-5">
-                    <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm">
-                        <h3 className="text-[16px] font-bold text-[#2E1F15] mb-2 text-left">
+                <div className="px-4 pt-5 md:pt-8">
+                    <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm md:p-6">
+                        <h3 className="text-[16px] font-bold text-[#2E1F15] mb-2 text-left md:text-xl">
                             About Chadhava
                         </h3>
-                        <p className="text-[12.5px] text-stone-600 leading-relaxed text-left whitespace-pre-line">
+                        <p className="text-[12.5px] text-stone-600 leading-relaxed text-left whitespace-pre-line md:text-sm">
                             {chadhava.description}
                         </p>
                     </div>
@@ -773,14 +787,14 @@ export default function ChadhavaDetailPage() {
 
             {/* Benefits */}
             {!!chadhava.benefits?.length && (
-                <div className="px-4 pt-5">
-                    <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm">
-                        <h3 className="text-[16px] font-bold text-[#2E1F15] mb-3 text-left">
+                <div className="px-4 pt-5 md:pt-8">
+                    <div className="bg-white rounded-[24px] border border-[#FFEFE2] p-5 shadow-sm md:p-6">
+                        <h3 className="text-[16px] font-bold text-[#2E1F15] mb-3 text-left md:text-xl">
                             Benefits
                         </h3>
-                        <div className="space-y-2.5">
+                        <div className="space-y-2.5 md:space-y-0 md:grid md:grid-cols-2 md:gap-3">
                             {chadhava.benefits.map((benefit, i) => (
-                                <div key={i} className="flex items-center gap-2.5 text-[12.5px] text-stone-700">
+                                <div key={i} className="flex items-center gap-2.5 text-[12.5px] text-stone-700 md:text-[13.5px]">
                                     <span className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
                                         <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />
                                     </span>
@@ -794,10 +808,10 @@ export default function ChadhavaDetailPage() {
 
             {/* Temple Details Bottom Section (About/History Tabs) */}
             {(chadhava.mandirSectionIntro || chadhava.mandirSectionHistory) && (
-                <div className="px-4 pt-5">
+                <div className="px-4 pt-5 md:pt-8">
                     <div className="bg-white rounded-[24px] border border-[#FFEFE2] overflow-hidden shadow-sm">
                         {chadhava.mandirAppImage && (
-                            <div className="w-full h-36 overflow-hidden">
+                            <div className="w-full h-36 overflow-hidden md:h-56">
                                 <img 
                                     src={optimizedImg(chadhava.mandirAppImage, 700)}
                                     onError={(e) => { e.currentTarget.src = chadhava.mandirAppImage || ""; }}
@@ -808,12 +822,12 @@ export default function ChadhavaDetailPage() {
                             </div>
                         )}
                         
-                        <div className="p-5">
+                        <div className="p-5 md:p-6">
                             {/* Tab Headers */}
                             <div className="flex border-b border-[#FFEFE2] mb-3.5 gap-6">
                                 <button
                                     onClick={() => setActiveTab("about")}
-                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative ${
+                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative md:text-[15px] md:cursor-pointer ${
                                         activeTab === "about" ? "text-[#E05A10]" : "text-stone-400"
                                     }`}
                                 >
@@ -824,7 +838,7 @@ export default function ChadhavaDetailPage() {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab("history")}
-                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative ${
+                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative md:text-[15px] md:cursor-pointer ${
                                         activeTab === "history" ? "text-[#E05A10]" : "text-stone-400"
                                     }`}
                                 >
@@ -836,7 +850,7 @@ export default function ChadhavaDetailPage() {
                             </div>
 
                             {/* Tab Content */}
-                            <div className="text-[12.5px] text-stone-600 leading-relaxed text-left whitespace-pre-line">
+                            <div className="text-[12.5px] text-stone-600 leading-relaxed text-left whitespace-pre-line md:text-sm">
                                 {activeTab === "about" 
                                     ? chadhava.mandirSectionIntro 
                                     : chadhava.mandirSectionHistory
@@ -848,36 +862,115 @@ export default function ChadhavaDetailPage() {
             )}
 
             {/* Trust badges */}
-            <div className="px-4 pt-5">
-                <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="px-4 pt-5 md:pt-8">
+                <div className="grid grid-cols-3 gap-2 text-center md:gap-3">
                     {[
                         { icon: Camera, label: "Photo/Video Proof" },
                         { icon: Gift, label: "Prasad at Home" },
                         { icon: ShieldCheck, label: "Verified Temple" },
                     ].map(({ icon: Icon, label }) => (
-                        <div key={label} className="bg-white border border-[#FFEFE2] rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm">
-                            <Icon className="w-4 h-4 text-[#E05A10]" />
-                            <span className="text-[9.5px] font-semibold text-stone-500 leading-tight">{label}</span>
+                        <div key={label} className="bg-white border border-[#FFEFE2] rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm md:py-4 md:gap-1.5">
+                            <Icon className="w-4 h-4 text-[#E05A10] md:w-5 md:h-5" />
+                            <span className="text-[9.5px] font-semibold text-stone-500 leading-tight md:text-[11.5px]">{label}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
             {/* Trust */}
-            <div className="px-4 pt-5">
+            <div className="px-4 pt-5 md:pt-8">
                 <div className="bg-white border border-[#FFEFE2] rounded-2xl py-3.5 px-4 flex items-start gap-2.5">
                     <ShieldCheck className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                    <p className="text-[11.5px] text-stone-500 leading-snug text-left">
+                    <p className="text-[11.5px] text-stone-500 leading-snug text-left md:text-[12.5px]">
                         You'll receive a photo/video of your chadhava being offered. 100% secure payment & refund guarantee if the ritual is not performed.
                     </p>
                 </div>
             </div>
 
+            </div>
+
+            {/* Desktop booking rail (lg+) — replicates the mobile countdown + pay bars with the same handlers */}
+            <aside className="hidden lg:block lg:sticky lg:top-24 lg:pt-6">
+                <div className="rounded-[28px] bg-white border border-[#FFE0CC] shadow-[0_24px_60px_-30px_rgba(224,90,16,0.45)] overflow-hidden">
+                    {isDevshayaniCombo ? (
+                        <div className="bg-gradient-to-r from-[#F6E3B4] via-[#F3D488] to-[#F6E3B4] border-b border-[#E4C577] py-2.5 flex items-center justify-center gap-3">
+                            <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Lotus.webp" alt="Timer" className="w-5 h-5 shrink-0" />
+                            <CountdownTimer targetDate={targetDate} variant="goldbar" />
+                            <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Lotus.webp" alt="Timer" className="w-5 h-5 shrink-0" />
+                        </div>
+                    ) : (
+                        <div className="bg-gradient-to-r from-[#B5290F] to-[#E0531A] py-2.5 flex items-center justify-center">
+                            <CountdownTimer targetDate={targetDate} variant="bar" />
+                        </div>
+                    )}
+
+                    <div className="p-6">
+                        <h3 className="text-[17px] font-bold text-[#2E1F15] text-left">Your Chadhava</h3>
+                        <div className="mt-2.5 space-y-1.5">
+                            <div className="flex items-center gap-2 text-[13px] text-stone-700">
+                                <MapPin className="w-4 h-4 text-[#E05A10] shrink-0" />
+                                <span className="font-semibold text-left">{chadhava.templeName}{chadhava.templeLocation ? `, ${chadhava.templeLocation}` : ""}</span>
+                            </div>
+                            {(formatOfferingDate(chadhava.availableDates?.[0]) || chadhava.offeringDay) && (
+                                <div className="flex items-center gap-2 text-[13px] text-stone-600">
+                                    <CalendarDays className="w-4 h-4 text-[#E05A10] shrink-0" />
+                                    <span className="font-medium text-left">{formatOfferingDate(chadhava.availableDates?.[0]) || chadhava.offeringDay}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {selections.length > 0 ? (
+                            <div className="mt-4 pt-4 border-t border-dashed border-[#FFE0CC] space-y-2">
+                                {selections.map((s) => (
+                                    <div key={s.code} className="flex items-start justify-between gap-3 text-[13px]">
+                                        <span className="text-stone-600 font-medium text-left leading-snug">
+                                            {s.name} <span className="text-stone-400">× {s.quantity}</span>
+                                        </span>
+                                        <span className="font-bold text-stone-800 shrink-0">₹{(s.unitPrice * s.quantity).toLocaleString("en-IN")}</span>
+                                    </div>
+                                ))}
+                                {addPrasad && (
+                                    <div className="flex items-start justify-between gap-3 text-[13px]">
+                                        <span className="text-stone-600 font-medium text-left">Mandir Prasad Box</span>
+                                        <span className="font-bold text-stone-800 shrink-0">₹298</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="mt-4 pt-4 border-t border-dashed border-[#FFE0CC] text-[12.5px] text-stone-400 text-left leading-snug">
+                                Select a seva to begin your offering.
+                            </p>
+                        )}
+
+                        <div className="mt-4 pt-4 border-t border-[#FFE0CC] flex items-end justify-between">
+                            <span className="text-[13px] text-stone-600 font-semibold">Total</span>
+                            <span className="text-[24px] leading-none font-extrabold text-[#C1272D]">₹{grandTotal.toLocaleString("en-IN")}/-</span>
+                        </div>
+
+                        <button
+                            onClick={() => setPrasadUpsellOpen(true)}
+                            disabled={sevasSelected === 0}
+                            className="mt-5 w-full bg-gradient-to-r from-orange-600 to-amber-500 text-white font-bold tracking-wide py-3.5 rounded-xl shadow-lg shadow-orange-200/70 transition-all hover:shadow-xl hover:brightness-105 active:scale-95 disabled:opacity-50 disabled:shadow-none cursor-pointer"
+                        >
+                            Participate Now
+                        </button>
+
+                        <div className="mt-4 flex items-start gap-2.5">
+                            <ShieldCheck className="w-4.5 h-4.5 text-emerald-500 shrink-0 mt-0.5" />
+                            <p className="text-[11.5px] text-stone-500 leading-snug text-left">
+                                You'll receive a photo/video of your chadhava being offered. 100% secure payment & refund guarantee if the ritual is not performed.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            </div>
+
             {/* Floating scroll-down button */}
-            <div className="fixed bottom-[128px] left-0 right-0 z-40 max-w-md mx-auto pointer-events-none">
+            <div className="fixed bottom-[128px] left-0 right-0 z-40 max-w-md mx-auto pointer-events-none md:max-w-3xl lg:hidden">
                 <button
                     onClick={() => window.scrollTo({ top: window.scrollY + window.innerHeight * 0.7, behavior: "smooth" })}
-                    className="pointer-events-auto absolute right-4 w-10 h-10 rounded-full bg-[#E0531A] text-white flex items-center justify-center shadow-lg shadow-orange-200/70 active:scale-90 transition-transform"
+                    className="pointer-events-auto absolute right-4 w-10 h-10 rounded-full bg-[#E0531A] text-white flex items-center justify-center shadow-lg shadow-orange-200/70 active:scale-90 transition-transform md:cursor-pointer"
                     aria-label="Scroll down"
                 >
                     <ChevronDown className="w-5 h-5" />
@@ -886,43 +979,43 @@ export default function ChadhavaDetailPage() {
 
             {/* Countdown bar */}
             {isDevshayaniCombo ? (
-                <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#F6E3B4] via-[#F3D488] to-[#F6E3B4] border-t border-[#E4C577] py-2 flex items-center justify-center gap-3">
+                <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#F6E3B4] via-[#F3D488] to-[#F6E3B4] border-t border-[#E4C577] py-2 flex items-center justify-center gap-3 md:max-w-3xl md:rounded-t-2xl md:border-x lg:hidden">
                     <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Lotus.webp" alt="Timer" className="w-5 h-5 shrink-0" />
                     <CountdownTimer targetDate={targetDate} variant="goldbar" />
                     <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Lotus.webp" alt="Timer" className="w-5 h-5 shrink-0" />
 
                 </div>
             ) : (
-                <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#B5290F] to-[#E0531A] py-2 flex items-center justify-center">
+                <div className="fixed bottom-[68px] left-0 right-0 z-40 max-w-md mx-auto bg-gradient-to-r from-[#B5290F] to-[#E0531A] py-2 flex items-center justify-center md:max-w-3xl md:rounded-t-2xl lg:hidden">
                     <CountdownTimer targetDate={targetDate} variant="bar" />
                 </div>
             )}
 
             {/* Bottom pay bar */}
             {isDevshayaniCombo ? (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF7EC] border-t border-[#EAD3A0] px-4 py-3 flex items-center justify-between">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF7EC] border-t border-[#EAD3A0] px-4 py-3 flex items-center justify-between md:max-w-3xl md:border-x md:px-6 lg:hidden">
                     <div className="leading-tight text-left">
-                        <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
-                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
+                        <span className="text-[12px] text-stone-600 font-semibold md:text-[13px]">Your Chadhava</span>
+                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5 md:text-[22px]">₹{grandTotal.toLocaleString("en-IN")}/-</p>
                     </div>
                     <button
                         onClick={() => setPrasadUpsellOpen(true)}
                         disabled={sevasSelected === 0}
-                        className="relative overflow-hidden bg-gradient-to-r from-[#F0A128] via-[#E9861C] to-[#E0531A] text-white font-bold tracking-wide pl-9 pr-9 py-3 rounded-full shadow-lg shadow-amber-300/50 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none"
+                        className="relative overflow-hidden bg-gradient-to-r from-[#F0A128] via-[#E9861C] to-[#E0531A] text-white font-bold tracking-wide pl-9 pr-9 py-3 rounded-full shadow-lg shadow-amber-300/50 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none md:transition-all md:hover:brightness-105 md:hover:shadow-xl md:cursor-pointer"
                     >
                         Participate Now
                     </button>
                 </div>
             ) : (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF3E9] border-t border-[#FFE0CC] px-4 py-3 flex items-center justify-between">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF3E9] border-t border-[#FFE0CC] px-4 py-3 flex items-center justify-between md:max-w-3xl md:border-x md:px-6 lg:hidden">
                     <div className="leading-tight text-left">
-                        <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
-                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
+                        <span className="text-[12px] text-stone-600 font-semibold md:text-[13px]">Your Chadhava</span>
+                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5 md:text-[22px]">₹{grandTotal.toLocaleString("en-IN")}/-</p>
                     </div>
                     <button
                         onClick={() => setPrasadUpsellOpen(true)}
                         disabled={sevasSelected === 0}
-                        className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold tracking-wide px-10 py-3 rounded-xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none"
+                        className="bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold tracking-wide px-10 py-3 rounded-xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform disabled:opacity-50 disabled:shadow-none md:transition-all md:hover:brightness-105 md:hover:shadow-xl md:cursor-pointer"
                     >
                         Participate Now
                     </button>
@@ -932,7 +1025,7 @@ export default function ChadhavaDetailPage() {
             {/* Prasad Upsell Modal */}
             <AnimatePresence>
                 {prasadUpsellOpen && (
-                    <div className="fixed inset-0 z-[200] flex items-end justify-center">
+                    <div className="fixed inset-0 z-[200] flex items-end justify-center md:items-center md:p-6">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -945,10 +1038,10 @@ export default function ChadhavaDetailPage() {
                             animate={{ y: 0 }}
                             exit={{ y: "100%" }}
                             transition={{ type: "spring", damping: 32, stiffness: 320 }}
-                            className="relative w-full max-w-md bg-white rounded-t-[32px] p-6 text-center shadow-2xl z-10"
+                            className="relative w-full max-w-md bg-white rounded-t-[32px] p-6 text-center shadow-2xl z-10 md:max-w-lg md:rounded-[32px]"
                         >
                             {/* Drag Indicator */}
-                            <div className="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-5" />
+                            <div className="w-12 h-1 bg-stone-200 rounded-full mx-auto mb-5 md:hidden" />
 
                             <h3 className="text-[20px] font-bold text-[#2E1F15] flex items-center justify-center gap-1">
                                 Complete Your Devotion 🙏
@@ -1005,7 +1098,7 @@ export default function ChadhavaDetailPage() {
                                         setPrasadUpsellOpen(false);
                                         navigate(`/chadhava/${slug}/booking`, { state: { chadhava, selections, addPrasad: true, prasadPrice: 298 } });
                                     }}
-                                    className="w-full bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold py-3.5 rounded-full active:scale-95 transition-transform shadow-md shadow-orange-100/50"
+                                    className="w-full bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold py-3.5 rounded-full active:scale-95 transition-transform shadow-md shadow-orange-100/50 md:transition-all md:cursor-pointer"
                                 >
                                     Add Prasad & Proceed ›
                                 </button>
@@ -1025,5 +1118,11 @@ export default function ChadhavaDetailPage() {
                 )}
             </AnimatePresence>
         </div>
+
+        {/* Desktop footer — shown at lg where the fixed CTA bars are hidden */}
+        <div className="hidden lg:block">
+            <SiteFooter />
+        </div>
+        </>
     );
 }

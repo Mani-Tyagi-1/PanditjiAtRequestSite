@@ -1338,13 +1338,13 @@ export default function BookingModal({
         />
 
         <div
-          className={`relative w-full sm:max-w-md h-[95vh] sm:h-[85vh] bg-[#FFFAF3] sm:rounded-2xl rounded-t-2xl flex flex-col overflow-hidden ${isOpen ? "slide-up" : "slide-down"
+          className={`relative w-full sm:max-w-md md:max-w-2xl lg:max-w-3xl h-[95vh] sm:h-[85vh] bg-[#FFFAF3] sm:rounded-2xl rounded-t-2xl md:shadow-2xl flex flex-col overflow-hidden ${isOpen ? "slide-up" : "slide-down"
             }`}
         >
-          <div className="relative px-4 pt-4 pb-4 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 shrink-0 shadow-sm">
+          <div className="relative px-4 pt-4 pb-4 md:px-8 md:pt-6 md:pb-6 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 shrink-0 shadow-sm">
             <button
               onClick={onClose}
-              className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm active:scale-95 transition-transform"
+              className="absolute left-4 top-4 md:left-6 md:top-6 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm active:scale-95 transition-transform cursor-pointer md:hover:bg-white"
             >
               <svg className="w-4 h-4 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -1356,23 +1356,23 @@ export default function BookingModal({
               {pooja?.poojaNameEng}
             </h2>
             <div className="flex items-center justify-center gap-3 mt-1.5">
-              <div className="h-[2px] w-10 bg-gradient-to-r from-transparent to-orange-400/50" />
+              <div className="h-[2px] w-10 md:w-16 bg-gradient-to-r from-transparent to-orange-400/50" />
               <span className="text-orange-500 text-xs">🕉</span>
-              <div className="h-[2px] w-10 bg-gradient-to-l from-transparent to-orange-400/50" />
+              <div className="h-[2px] w-10 md:w-16 bg-gradient-to-l from-transparent to-orange-400/50" />
             </div>
           </div>
 
           <div
             ref={scrollContainerRef}
             onScroll={handleBodyScroll}
-            className="flex-1 overflow-y-auto pb-6 bg-[#FFFAF3]"
+            className="flex-1 overflow-y-auto pb-6 md:pb-8 bg-[#FFFAF3]"
           >
-            <div className="px-4 py-4 ">
+            <div className="px-4 py-4 md:px-8 md:py-5 ">
               <div className="relative">
                 <div className="bm-section-label"><span>Your Preferences</span><div /></div>
 
                 <div className="flex items-start">
-                  <div className="flex-1 space-y-3 pr-28 sm:pr-32">
+                  <div className="flex-1 space-y-3 pr-28 sm:pr-32 md:pr-44 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
                     <input type="date" min={minDateStr} value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       className="bm-input appearance-none" />
@@ -1381,7 +1381,7 @@ export default function BookingModal({
                       className="bm-input appearance-none" />
                   </div>
 
-                  <div className="absolute right-0 bottom-[-10px] w-[110px] sm:w-[130px] pointer-events-none">
+                  <div className="absolute right-0 bottom-[-10px] w-[110px] sm:w-[130px] md:w-[150px] pointer-events-none">
                     <img
                       src="https://png.pngtree.com/png-vector/20250731/ourmid/pngtree-indian-pujari-priest-cartoon-illustration-vector-png-image_16949581.webp"
                       alt="Pandit Ji"
@@ -1412,13 +1412,13 @@ export default function BookingModal({
               </p>
             </div> */}
 
-            <div className="px-4 py-6 space-y-6">
+            <div className="px-4 py-6 md:px-8 md:py-8 space-y-6">
               <div>
                 {!isDeathRitual ? (
                   <>
                     <div className="bm-section-label"><span>Bhakt Details</span><div /></div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
                       <input type="text" placeholder="Your full name*" value={bhaktName}
                         onChange={(e) => setBhaktName(e.target.value)}
                         onBlur={trackCustomerDetails}
@@ -1440,7 +1440,7 @@ export default function BookingModal({
                   <div className="space-y-6">
                     <div>
                       <div className="bm-section-label"><span>Select Ritual Place</span><div /></div>
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-3 gap-3 md:gap-4">
                         {RITUAL_PLACES.map((place) => {
                           const selected = selectedRitualPlace === place.id;
                           return (
@@ -1448,13 +1448,13 @@ export default function BookingModal({
                               key={place.id}
                               type="button"
                               onClick={() => setSelectedRitualPlace(place.id)}
-                              className={`relative overflow-hidden rounded-2xl border text-left transition-all ${
+                              className={`relative overflow-hidden rounded-2xl border text-left transition-all cursor-pointer md:duration-300 md:hover:shadow-md md:hover:-translate-y-0.5 ${
                                 selected
                                   ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
                                   : "bg-white border-stone-200 hover:border-orange-200"
                               }`}
                             >
-                              <div className="w-30 h-18 bg-orange-50">
+                              <div className="w-30 h-18 md:w-full md:h-24 bg-orange-50">
                                 {place.imageUrl ? (
                                   <img
                                     src={place.imageUrl}
@@ -1487,12 +1487,12 @@ export default function BookingModal({
 
                     <div>
                       <div className="bm-section-label"><span>Deceased Person Details</span><div /></div>
-                      <p className="text-[11px] text-stone-500 -mt-2 mb-3">
+                      <p className="text-[11px] md:text-xs text-stone-500 -mt-2 mb-3">
                         Add name, gotra and your relation for each deceased person. Add another deceased person for ₹1,100.
                       </p>
                       <div className="space-y-3">
                         {deceasedPersons.map((person, idx) => (
-                          <div key={idx} className="rounded-2xl border border-orange-100 bg-white/70 p-3 space-y-3">
+                          <div key={idx} className="rounded-2xl border border-orange-100 bg-white/70 p-3 space-y-3 md:p-4 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
                             <input
                               type="text"
                               placeholder="Name of deceased*"
@@ -1530,7 +1530,7 @@ export default function BookingModal({
                                   )
                                 )
                               }
-                              className="bm-input"
+                              className="bm-input md:col-span-2"
                             />
                             {deceasedPersons.length > 1 && (
                               <button
@@ -1540,7 +1540,7 @@ export default function BookingModal({
                                     prev.filter((_, itemIdx) => itemIdx !== idx)
                                   )
                                 }
-                                className="text-red-500 text-xs font-bold"
+                                className="text-red-500 text-xs font-bold cursor-pointer md:col-span-2 md:justify-self-start md:hover:text-red-600 md:transition-colors"
                               >
                                 Remove
                               </button>
@@ -1556,7 +1556,7 @@ export default function BookingModal({
                             { name: "", gotra: "", relation: "" },
                           ])
                         }
-                        className="mt-3 text-orange-600 text-sm font-bold"
+                        className="mt-3 text-orange-600 text-sm font-bold cursor-pointer md:hover:text-orange-700 md:transition-colors"
                       >
                         + Add Another Deceased Person (₹1,100)
                       </button>
@@ -1564,10 +1564,10 @@ export default function BookingModal({
 
                     <div>
                       <div className="bm-section-label"><span>Ritual Performer Details</span><div /></div>
-                      <p className="text-[11px] text-stone-500 -mt-2 mb-3">
+                      <p className="text-[11px] md:text-xs text-stone-500 -mt-2 mb-3">
                         Name and gotra of the person performing the ritual.
                       </p>
-                      <div className="space-y-3">
+                      <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
                         <input
                           type="text"
                           placeholder="Performer's name*"
@@ -1822,7 +1822,7 @@ export default function BookingModal({
             </div>
           </div>
 
-          <div className="w-full bg-white/95 backdrop-blur-md shrink-0 border-t border-orange-100 px-4 pt-3 pb-4 shadow-[0_-12px_24px_-8px_rgba(249,115,22,0.12)]">
+          <div className="w-full bg-white/95 backdrop-blur-md shrink-0 border-t border-orange-100 px-4 pt-3 pb-4 md:px-8 md:pt-4 md:pb-5 shadow-[0_-12px_24px_-8px_rgba(249,115,22,0.12)]">
             {/* <button
               onClick={() => setIsSummaryOpen(!isSummaryOpen)}
               className="w-full flex items-center justify-between mb-2 pb-1 focus:outline-none"
@@ -1885,9 +1885,9 @@ export default function BookingModal({
             <button
               onClick={handleCheckout}
               disabled={isProcessing}
-              className={`w-full active:scale-[0.98] text-white rounded-2xl py-3.5 px-5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-200 mb-1 ${isProcessing ? "bg-orange-400" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"}`}
+              className={`w-full active:scale-[0.98] text-white rounded-2xl py-3.5 px-5 md:py-4 flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-200 mb-1 cursor-pointer md:hover:shadow-xl ${isProcessing ? "bg-orange-400" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"}`}
             >
-              <span className="text-sm font-bold tracking-wide text-orange-50">
+              <span className="text-sm md:text-base font-bold tracking-wide text-orange-50">
                 {isProcessing ? "Processing..." : "Schedule Pandit Ji"}
               </span>
               {!isProcessing && (
@@ -1963,7 +1963,7 @@ export default function BookingModal({
 
       {showSuccessModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative slide-up border border-orange-100">
+          <div className="bg-white rounded-3xl p-8 max-w-sm md:max-w-md w-full text-center shadow-2xl relative slide-up border border-orange-100">
             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner animate-pulse">
               <svg
                 className="w-10 h-10"
@@ -2110,7 +2110,7 @@ export default function BookingModal({
       )}
       {isCouponsModalOpen && (
         <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl relative slide-up border border-stone-100 flex flex-col max-h-[80vh]">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm md:max-w-md w-full shadow-2xl relative slide-up border border-stone-100 flex flex-col max-h-[80vh]">
             <button
               onClick={() => setIsCouponsModalOpen(false)}
               className="absolute top-6 right-6 p-2 text-stone-400 hover:text-stone-600 transition-colors"

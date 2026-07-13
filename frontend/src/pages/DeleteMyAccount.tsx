@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import DesktopHeader from "../components/layout/DesktopHeader";
 import API_URL from "../utils/apiConfig";
 
 const DeleteMyAccount = () => {
@@ -71,8 +72,10 @@ const DeleteMyAccount = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100 py-10 px-4">
-      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6 space-y-6">
+    <>
+    <DesktopHeader />
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 py-10 px-4 md:min-h-[calc(100vh-74px)] md:py-16">
+      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6 space-y-6 md:max-w-lg md:rounded-2xl md:p-10 md:shadow-xl">
         <h1 className="text-2xl font-bold text-center text-gray-800">
           Delete My Account
         </h1>
@@ -114,7 +117,7 @@ const DeleteMyAccount = () => {
                 />
                 <button
                   onClick={sendOtp}
-                  className="w-full mt-4 bg-indigo-600 text-white p-3 rounded-md hover:bg-indigo-700 transition"
+                  className="w-full mt-4 bg-indigo-600 text-white p-3 rounded-md hover:bg-indigo-700 transition cursor-pointer md:hover:shadow-lg"
                 >
                   Send OTP
                 </button>
@@ -134,7 +137,7 @@ const DeleteMyAccount = () => {
                 />
                 <button
                   onClick={handleDeleteAccount}
-                  className="w-full mt-4 bg-red-600 text-white p-3 rounded-md hover:bg-red-700 transition"
+                  className="w-full mt-4 bg-red-600 text-white p-3 rounded-md hover:bg-red-700 transition cursor-pointer md:hover:shadow-lg"
                 >
                   Confirm Account Deletion
                 </button>
@@ -144,6 +147,7 @@ const DeleteMyAccount = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

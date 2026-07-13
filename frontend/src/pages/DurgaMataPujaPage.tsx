@@ -11,6 +11,8 @@ import PujaEnquiryModal from "../components/booking/PujaEnquiryModal";
 import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { durgaMataPuja, DURGA_MATA_PUJA_SLUG } from "../data/durgaMataPuja";
+import DesktopHeader from "../components/layout/DesktopHeader";
+import SiteFooter from "../components/layout/SiteFooter";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -78,14 +80,14 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
                     setOpen(next);
                     if (next) track("puja_accordion_open", { section: title }, true);
                 }}
-                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-orange-400 outline-none md:px-5 md:py-4 cursor-pointer"
             >
-                <span className="flex items-center gap-2 text-[14px] font-bold text-stone-800">
+                <span className="flex items-center gap-2 text-[14px] font-bold text-stone-800 md:text-[15px]">
                     {icon}{title}
                 </span>
                 <ChevronDown className={`w-4 h-4 text-orange-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
-            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-stone-600 leading-relaxed border-t border-orange-50">
+            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-stone-600 leading-relaxed border-t border-orange-50 md:px-5 md:pb-5 md:text-[13.5px]">
                 {children}
             </div>
         </div>
@@ -94,7 +96,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
 
 function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
-        <h3 className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-orange-600 mb-2.5">
+        <h3 className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-orange-600 mb-2.5 md:text-sm md:mb-4">
             {icon}{children}
         </h3>
     );
@@ -103,22 +105,38 @@ function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: Re
 function ReviewMarquee({ reviews }: { reviews: Review[] }) {
     const items = [...reviews, ...reviews]; // duplicated for a seamless loop
     return (
-        <div className="overflow-hidden -mx-4 px-4">
-            <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
-            <div className="review-track flex gap-2.5">
-                {items.map((r, i) => (
-                    <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 rounded-xl p-3 shadow-sm">
-                        <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-stone-800 text-[12px]">{r.name}</span>
-                            {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
-                            <span className="ml-auto text-[9px] text-stone-400">{r.date}</span>
+        <>
+            <div className="overflow-hidden -mx-4 px-4 md:hidden">
+                <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
+                <div className="review-track flex gap-2.5">
+                    {items.map((r, i) => (
+                        <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 rounded-xl p-3 shadow-sm">
+                            <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-stone-800 text-[12px]">{r.name}</span>
+                                {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                                <span className="ml-auto text-[9px] text-stone-400">{r.date}</span>
+                            </div>
+                            <Stars value={r.rating} className="w-3 h-3" />
+                            <p className="text-[11.5px] text-stone-600 mt-1 leading-snug line-clamp-3">{r.text}</p>
                         </div>
-                        <Stars value={r.rating} className="w-3 h-3" />
-                        <p className="text-[11.5px] text-stone-600 mt-1 leading-snug line-clamp-3">{r.text}</p>
+                    ))}
+                </div>
+            </div>
+            {/* Desktop/tablet: static testimonial grid (marquee stays mobile-only) */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4">
+                {reviews.slice(0, 6).map((r, i) => (
+                    <div key={i} className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm transition-all duration-300 md:hover:shadow-lg md:hover:-translate-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-stone-800 text-[13px]">{r.name}</span>
+                            {r.verified && <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />}
+                            <span className="ml-auto text-[10px] text-stone-400">{r.date}</span>
+                        </div>
+                        <Stars value={r.rating} className="w-3.5 h-3.5" />
+                        <p className="text-[12.5px] text-stone-600 mt-1.5 leading-snug line-clamp-4">{r.text}</p>
                     </div>
                 ))}
             </div>
-        </div>
+        </>
     );
 }
 
@@ -215,7 +233,9 @@ export default function DurgaMataPujaPage() {
     };
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50 via-[#FFF6EA] to-orange-50/70 pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
+      <>
+      <DesktopHeader />
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 via-[#FFF6EA] to-orange-50/70 pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 md:max-w-none md:mx-0 md:border-x-0 md:shadow-none md:pb-44 lg:pb-20">
         <Helmet>
           <title>{`${puja.poojaNameEng} at ${puja.templeName} | Pandit Ji At Request`}</title>
           <meta
@@ -237,24 +257,24 @@ export default function DurgaMataPujaPage() {
         />
 
         {/* ── Sticky header ── */}
-        <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3">
+        <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3 md:static md:z-auto md:bg-transparent md:backdrop-blur-none md:border-b-0 md:max-w-3xl lg:max-w-6xl md:mx-auto md:w-full md:px-6 lg:px-10 md:pt-6 md:pb-0">
           <button
             onClick={() =>
               location.key !== "default" ? navigate(-1) : navigate("/")
             }
             aria-label="Go back"
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform md:w-9 md:h-9 md:hover:bg-orange-50 md:hover:border-orange-300 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 text-stone-700" />
           </button>
-          <h1 className="text-sm font-bold text-stone-800 truncate flex-1">
+          <h1 className="text-sm font-bold text-stone-800 truncate flex-1 md:text-base">
             {puja.poojaNameEng}
           </h1>
           <button
             onClick={handleShare}
             disabled={isSharing}
             aria-label="Share"
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform disabled:opacity-60"
+            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform disabled:opacity-60 md:w-9 md:h-9 md:hover:bg-orange-50 md:hover:border-orange-300 cursor-pointer"
           >
             {shareCopied ? (
               <Check className="w-4 h-4 text-emerald-500" />
@@ -264,8 +284,12 @@ export default function DurgaMataPujaPage() {
           </button>
         </div>
 
+        {/* ── md+: centered container · lg: two-column grid with sticky booking rail ── */}
+        <div className="md:w-full md:px-6 md:pt-4 lg:px-10 lg:pt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-10 lg:items-start">
+        {/* Left column: hero + details */}
+        <div className="lg:min-w-0">
         {/* ── Hero banner ── */}
-        <div className="relative h-52 overflow-hidden p-2 rounded-[10px]">
+        <div className="relative h-52 overflow-hidden p-2 rounded-[10px] md:h-80 lg:h-[420px] md:p-0 md:rounded-2xl lg:rounded-3xl">
           <img
             src={image}
             width={432}
@@ -274,27 +298,27 @@ export default function DurgaMataPujaPage() {
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            className="w-full h-full object-cover rounded-[10px]"
+            className="w-full h-full object-cover rounded-[10px] md:rounded-2xl lg:rounded-3xl"
           />
-          <span className="absolute top-3 left-3 bg-orange-600 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
+          <span className="absolute top-3 left-3 bg-orange-600 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm md:top-4 md:left-4 md:text-[11px] md:px-3 md:py-1.5">
             Online Puja
           </span>
         </div>
 
-        <div className="px-4 pt-1 pb-4 space-y-4">
+        <div className="px-4 pt-1 pb-4 space-y-4 md:px-0 md:pt-6 md:pb-10 md:space-y-6 lg:space-y-7">
           {/* ── Puja name + meta ── */}
           <div>
-            <h2 className="text-xl font-bold font-serif text-stone-900 leading-tight">
+            <h2 className="text-xl font-bold font-serif text-stone-900 leading-tight md:text-3xl lg:text-4xl md:tracking-tight">
               {puja.poojaNameEng}
             </h2>
-            <p className="text-[13px] text-orange-500 font-medium mt-0.5">
+            <p className="text-[13px] text-orange-500 font-medium mt-0.5 md:text-[15px] md:mt-1">
               {puja.poojaNameHindi}
             </p>
             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
-              <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+              <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full md:text-xs md:px-3 md:py-1">
                 {puja.deity}
               </span>
-              <span className="flex items-center gap-1 text-[12px]">
+              <span className="flex items-center gap-1 text-[12px] md:text-[13px]">
                 <Stars value={puja.rating} />
                 <span className="font-bold text-stone-700">{puja.rating}</span>
                 <span className="text-stone-400">
@@ -302,7 +326,7 @@ export default function DurgaMataPujaPage() {
                 </span>
               </span>
             </div>
-            <div className="flex flex-col gap-1 mt-2 text-[12px] text-stone-600">
+            <div className="flex flex-col gap-1 mt-2 text-[12px] text-stone-600 md:text-[13px] md:gap-1.5 md:mt-3">
               <span className="flex items-start gap-1.5">
                 <Mountain className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
                 <span className="leading-snug">{mandirName}</span>
@@ -315,14 +339,14 @@ export default function DurgaMataPujaPage() {
           </div>
 
           {/* ── Hero value props + primary CTA (first-screen sell) ── */}
-          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3.5 shadow-sm">
-            <div className="space-y-1.5">
+          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3.5 shadow-sm md:p-5 md:rounded-3xl">
+            <div className="space-y-1.5 md:grid md:grid-cols-3 md:gap-4 md:space-y-0">
               {[
                 "Personalized Sankalp in your name & gotra",
                 "Puja video shared on WhatsApp",
                 "Optional prasad delivered at home",
               ].map((t) => (
-                <div key={t} className="flex items-start gap-2 text-[12.5px] text-stone-700">
+                <div key={t} className="flex items-start gap-2 text-[12.5px] text-stone-700 md:text-[13.5px]">
                   <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />
                   <span>{t}</span>
                 </div>
@@ -347,8 +371,8 @@ export default function DurgaMataPujaPage() {
           </div>
 
           {/* ── Countdown to the puja date ── */}
-          <div className="flex flex-col items-center gap-2 bg-white border border-orange-100 rounded-xl px-3 py-2.5 shadow-sm">
-            <span className="text-[11px] font-bold text-orange-600 leading-tight text-center">
+          <div className="flex flex-col items-center gap-2 bg-white border border-orange-100 rounded-xl px-3 py-2.5 shadow-sm md:flex-row md:justify-between md:rounded-2xl md:px-5 md:py-4">
+            <span className="text-[11px] font-bold text-orange-600 leading-tight text-center md:text-sm md:text-left">
               Limited slots for {puja.pujaDate}
             </span>
             {cd ? (
@@ -360,11 +384,11 @@ export default function DurgaMataPujaPage() {
                   { v: cd.sec, l: "Sec" },
                 ].map((u, i, arr) => (
                   <div key={u.l} className="flex items-center gap-1.5">
-                    <div className="min-w-[40px] bg-stone-50 border border-stone-100 rounded-lg px-1.5 py-1 text-center">
-                      <div className="text-[16px] leading-none font-bold text-stone-900 tabular-nums">
+                    <div className="min-w-[40px] bg-stone-50 border border-stone-100 rounded-lg px-1.5 py-1 text-center md:min-w-[56px] md:rounded-xl md:px-2.5 md:py-1.5">
+                      <div className="text-[16px] leading-none font-bold text-stone-900 tabular-nums md:text-2xl">
                         {pad2(u.v)}
                       </div>
-                      <div className="text-[8px] uppercase tracking-wide text-stone-400 mt-0.5">
+                      <div className="text-[8px] uppercase tracking-wide text-stone-400 mt-0.5 md:text-[10px]">
                         {u.l}
                       </div>
                     </div>
@@ -382,7 +406,7 @@ export default function DurgaMataPujaPage() {
           </div>
 
           {/* ── Online-puja reassurance line ── */}
-          <div className="flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
+          <div className="flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center md:text-[13px] md:py-2.5 md:rounded-xl">
             <MessageCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
             Puja performed at {puja.templeName} · receive the video with your
             name &amp; gotra on WhatsApp
@@ -399,13 +423,13 @@ export default function DurgaMataPujaPage() {
           </div>
 
           {/* ── How it works ── */}
-          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3.5 shadow-sm">
+          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3.5 shadow-sm md:p-5 md:rounded-3xl">
             <SectionTitle
               icon={<Sparkles className="w-3.5 h-3.5 text-orange-400" />}
             >
               How your puja will happen
             </SectionTitle>
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 md:space-y-3.5">
               {[
                 "Enter your name, gotra and phone number",
                 `Pandit ji performs the puja at ${puja.templeName}`,
@@ -414,27 +438,27 @@ export default function DurgaMataPujaPage() {
                 "Optional prasad is delivered to your home",
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-2.5">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[11px] font-bold mt-0.5">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-[11px] font-bold mt-0.5 md:w-6 md:h-6 md:text-[12px]">
                     {i + 1}
                   </span>
-                  <span className="text-[12.5px] text-stone-700 leading-snug">{step}</span>
+                  <span className="text-[12.5px] text-stone-700 leading-snug md:text-sm">{step}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* ── Why perform this puja ── */}
-          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3 shadow-sm">
+          <div className="rounded-2xl border border-orange-100 bg-gradient-to-br from-white via-amber-50/40 to-orange-50/60 p-3 shadow-sm md:p-5 md:rounded-3xl">
             <SectionTitle
               icon={<Sparkles className="w-3.5 h-3.5 text-orange-400" />}
             >
               Why perform this puja
             </SectionTitle>
-            <div className="grid grid-cols-1 gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2 md:gap-3">
               {puja.benefits.slice(0, 4).map((b, i) => (
                 <div
                   key={i}
-                  className="flex items-start gap-2 text-[12.5px] text-stone-700"
+                  className="flex items-start gap-2 text-[12.5px] text-stone-700 md:text-[13.5px]"
                 >
                   <Check
                     className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5"
@@ -449,7 +473,7 @@ export default function DurgaMataPujaPage() {
           {/* ── Support link (low-emphasis — keeps direct booking as the main path) ── */}
           <button
             onClick={() => setIsEnquiryOpen(true)}
-            className="w-full flex items-center justify-center gap-1.5 text-stone-500 hover:text-green-700 font-semibold text-[12.5px] py-1"
+            className="w-full flex items-center justify-center gap-1.5 text-stone-500 hover:text-green-700 font-semibold text-[12.5px] py-1 md:text-sm md:py-2 cursor-pointer transition-colors"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Need help? Chat on WhatsApp
@@ -482,19 +506,19 @@ export default function DurgaMataPujaPage() {
             >
               What you'll get
             </SectionTitle>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 md:gap-4">
               {whatYouGet.map(({ icon: Icon, title, sub }) => (
                 <div
                   key={title}
-                  className="bg-white border border-orange-100 rounded-xl p-2.5 text-center shadow-sm"
+                  className="bg-white border border-orange-100 rounded-xl p-2.5 text-center shadow-sm md:p-4 md:rounded-2xl md:hover:shadow-md md:transition-shadow md:duration-300"
                 >
-                  <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 flex items-center justify-center mb-1.5">
-                    <Icon className="w-4 h-4 text-orange-600" />
+                  <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 flex items-center justify-center mb-1.5 md:w-11 md:h-11 md:mb-2.5">
+                    <Icon className="w-4 h-4 text-orange-600 md:w-5 md:h-5" />
                   </div>
-                  <p className="text-[11px] font-bold text-stone-800 leading-tight">
+                  <p className="text-[11px] font-bold text-stone-800 leading-tight md:text-[13px]">
                     {title}
                   </p>
-                  <p className="text-[9.5px] text-stone-400 leading-tight mt-0.5">
+                  <p className="text-[9.5px] text-stone-400 leading-tight mt-0.5 md:text-[11px] md:mt-1">
                     {sub}
                   </p>
                 </div>
@@ -521,7 +545,7 @@ export default function DurgaMataPujaPage() {
           )}
 
           {/* ── Trust row ── */}
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-3 gap-2 text-center md:gap-4">
             {[
               { icon: Video, label: "Puja Video Proof" },
               { icon: Gift, label: "Prasad at Home" },
@@ -529,18 +553,18 @@ export default function DurgaMataPujaPage() {
             ].map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm"
+                className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm md:py-4 md:gap-1.5 md:rounded-2xl md:hover:shadow-md md:transition-shadow md:duration-300"
               >
-                <Icon className="w-4 h-4 text-orange-500" />
-                <span className="text-[9.5px] font-semibold text-stone-500 leading-tight">
+                <Icon className="w-4 h-4 text-orange-500 md:w-5 md:h-5" />
+                <span className="text-[9.5px] font-semibold text-stone-500 leading-tight md:text-xs">
                   {label}
                 </span>
               </div>
             ))}
           </div>
 
-          {/* ── Footer / ecosystem ── */}
-          <footer className="pt-3 mt-2 border-t border-orange-100 text-[11px] text-stone-500 space-y-2">
+          {/* ── Footer / ecosystem (mobile only — SiteFooter renders at md+) ── */}
+          <footer className="pt-3 mt-2 border-t border-orange-100 text-[11px] text-stone-500 space-y-2 md:hidden">
             <p className="font-bold text-stone-700">PanditJiAtRequest</p>
             <p>1031, Tricity Trade Tower, Zirakpur, Punjab 140603, India</p>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
@@ -575,10 +599,66 @@ export default function DurgaMataPujaPage() {
             </div>
           </footer>
         </div>
+        </div>
+
+        {/* ── Desktop-only sticky booking rail (same CTA as the bottom bar) ── */}
+        <aside className="hidden lg:block lg:sticky lg:top-24">
+          <div className="bg-white/90 backdrop-blur border border-orange-100 rounded-3xl shadow-lg p-6 space-y-5">
+            <div>
+              <span className="bg-orange-600 text-white text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
+                Online Puja
+              </span>
+              <h3 className="text-xl font-bold font-serif text-stone-900 leading-tight mt-3">
+                {puja.poojaNameEng}
+              </h3>
+              <div className="flex flex-col gap-1.5 mt-2 text-[13px] text-stone-600">
+                <span className="flex items-start gap-1.5">
+                  <Mountain className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                  <span className="leading-snug">{mandirName}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-orange-500 shrink-0" />
+                  {puja.pujaDate}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2 border-t border-orange-100/70 pt-4">
+              {[
+                "Personalized Sankalp in your name & gotra",
+                "Puja video shared on WhatsApp",
+                "Optional prasad delivered at home",
+              ].map((t) => (
+                <div key={t} className="flex items-start gap-2 text-[13px] text-stone-700">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" strokeWidth={3} />
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-orange-100/70 pt-4">
+              <span className="text-[10px] text-stone-400 font-semibold uppercase block leading-none">
+                Total
+              </span>
+              <span className="text-3xl font-extrabold text-orange-600">
+                ₹{price.toLocaleString("en-IN")}
+              </span>
+            </div>
+            <button
+              onClick={openBooking}
+              className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-orange-400 outline-none cursor-pointer"
+            >
+              Book Puja for ₹{price.toLocaleString("en-IN")}
+            </button>
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-stone-400">
+              <Lock className="w-3.5 h-3.5 text-emerald-500" />
+              100% secure payment
+            </div>
+          </div>
+        </aside>
+        </div>
 
         {/* ── Sticky bottom CTA ── */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-100 max-w-md mx-auto shadow-lg">
-          <div className="px-4 pt-2 pb-2.5">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-100 max-w-md mx-auto shadow-lg md:max-w-2xl md:bottom-6 md:rounded-2xl md:border md:border-orange-100 md:shadow-2xl lg:hidden">
+          <div className="px-4 pt-2 pb-2.5 md:px-6 md:pt-3 md:pb-3">
             <div className="flex items-center gap-3">
               <div className="shrink-0">
                 <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">
@@ -590,7 +670,7 @@ export default function DurgaMataPujaPage() {
               </div>
               <button
                 onClick={openBooking}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none md:hover:shadow-lg cursor-pointer"
               >
                 Book Puja for ₹{price.toLocaleString("en-IN")}
               </button>
@@ -602,5 +682,7 @@ export default function DurgaMataPujaPage() {
           </div>
         </div>
       </div>
+      <SiteFooter />
+      </>
     );
 }

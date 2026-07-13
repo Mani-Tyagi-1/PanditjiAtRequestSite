@@ -7,6 +7,8 @@ import {
 } from "react-router-dom";
 import PujaCard from "./UI/PujaCard";
 import ConsultancyModal from "./ConsultancyModal";
+import DesktopHeader from "../layout/DesktopHeader";
+import SiteFooter from "../layout/SiteFooter";
 import { useAuth } from "../../context/AuthContext";
 
 interface PujaData {
@@ -251,13 +253,15 @@ export default function CategoryPage() {
         prefillPhone={user?.phone || user?.mobileNumber || ""}
       />
 
+      <DesktopHeader />
+
       <div className="puja-page flex justify-center">
-        <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm">
+        <div className="w-full max-w-md md:max-w-none md:shadow-none bg-[#FFFAF3] min-h-screen relative shadow-sm">
           {/* Header */}
-          <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
+          <div className="relative px-4 pt-3 pb-3 md:px-8 md:pt-10 md:pb-12 lg:pt-12 lg:pb-14 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] md:rounded-b-[100px] mb-5 md:mb-10 shadow-sm">
             <button
               onClick={() => navigate("/")}
-              className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
+              className="absolute left-4 top-4 md:left-10 md:top-10 w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm cursor-pointer md:transition-colors md:hover:bg-white"
             >
               <svg
                 className="w-4 h-4 text-stone-600"
@@ -275,7 +279,7 @@ export default function CategoryPage() {
             </button>
 
             <h1
-              className="text-orange-600 font-bold"
+              className="text-orange-600 font-bold md:text-[40px]! lg:text-[44px]! md:tracking-tight"
               style={{
                 fontFamily: "'Cormorant Garamond', serif",
                 fontSize: "26px",
@@ -284,19 +288,19 @@ export default function CategoryPage() {
               {isLoadingHeader ? "Loading..." : categoryDetails?.category_name_en || "Puja"}
             </h1>
 
-            <p className="text-orange-900/50 text-xs font-medium mt-0.5">
+            <p className="text-orange-900/50 text-xs font-medium mt-0.5 md:text-sm lg:text-base md:mt-2">
               Find the right authentic ritual for your exact intention
             </p>
 
-            <div className="flex items-center justify-center gap-3 mt-2">
-              <div className="h-[2px] w-12 bg-gradient-to-r from-transparent to-orange-400/50" />
+            <div className="flex items-center justify-center gap-3 mt-2 md:mt-4">
+              <div className="h-[2px] w-12 md:w-20 bg-gradient-to-r from-transparent to-orange-400/50" />
               <span className="text-orange-500">🕉</span>
-              <div className="h-[2px] w-12 bg-gradient-to-l from-transparent to-orange-400/50" />
+              <div className="h-[2px] w-12 md:w-20 bg-gradient-to-l from-transparent to-orange-400/50" />
             </div>
 
             <button
               onClick={() => setIsConsultancyOpen(true)}
-              className="enquiry-btn mt-3 inline-flex items-center gap-2 text-white font-bold text-sm px-5 py-2.5 rounded-full active:scale-95"
+              className="enquiry-btn mt-3 md:mt-6 inline-flex items-center gap-2 text-white font-bold text-sm md:text-base px-5 py-2.5 md:px-8 md:py-3 rounded-full active:scale-95 cursor-pointer"
             >
               Get 
               <span className="bg-white/20 text-white text-[16px] font-bold px-1.5 py-0.5 rounded-full leading-none border border-white/40">
@@ -307,8 +311,8 @@ export default function CategoryPage() {
           </div>
 
           {/* Subcategory Tabs */}
-          <div className="px-4 mb-5">
-            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-2">
+          <div className="px-4 mb-5 md:px-8 lg:px-10 md:mb-8">
+            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:justify-center md:overflow-visible md:gap-3">
               {isLoadingHeader ? (
                 Array.from({ length: 4 }).map((_, idx) => (
                   <div
@@ -321,7 +325,7 @@ export default function CategoryPage() {
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`shrink-0 text-sm font-semibold px-4 py-1.5 rounded-full border transition-all duration-200 ${activeCategory === cat
+                    className={`shrink-0 text-sm font-semibold px-4 py-1.5 md:px-5 md:py-2 md:text-[15px] rounded-full border transition-all duration-200 cursor-pointer ${activeCategory === cat
                       ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-md shadow-orange-200"
                       : "bg-white text-stone-600 border-stone-200 hover:border-orange-400 hover:text-orange-600"
                       }`}
@@ -339,16 +343,16 @@ export default function CategoryPage() {
 
           {/* Recommended */}
           {recommended.length > 0 && (
-            <div className="px-4 mb-5 fade-up" key={`rec-${activeCategory}`}>
-              <div className="flex items-center gap-3 mb-5">
+            <div className="px-4 mb-5 fade-up md:px-8 lg:px-10 md:mb-12" key={`rec-${activeCategory}`}>
+              <div className="flex items-center gap-3 mb-5 md:mb-8">
                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-orange-300" />
-                <span className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[11px] font-bold tracking-widest uppercase px-4 py-1.5 rounded-full shadow-sm">
+                <span className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[11px] md:text-xs font-bold tracking-widest uppercase px-4 py-1.5 md:px-5 md:py-2 rounded-full shadow-sm">
                   ✦ Recommended For You
                 </span>
                 <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-orange-300" />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
                 {recommended.map((p) => (
                   <PujaCard
                     key={p._id}
@@ -367,13 +371,13 @@ export default function CategoryPage() {
           {/* All Pujas */}
           {otherPujas.length > 0 && (
             <div
-              className="px-4 pb-10 fade-up"
+              className="px-4 pb-10 fade-up md:px-8 lg:px-10 md:pb-20"
               key={`all-${activeCategory}`}
               style={{ animationDelay: "60ms" }}
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
                 <h3
-                  className="text-stone-800 font-bold"
+                  className="text-stone-800 font-bold md:text-[28px]! md:tracking-tight"
                   style={{
                     fontFamily: "'Cormorant Garamond', serif",
                     fontSize: "20px",
@@ -382,17 +386,17 @@ export default function CategoryPage() {
                   All {activeCategory} Pujas
                 </h3>
 
-                <span className="text-xs font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-md">
+                <span className="text-xs md:text-sm font-semibold text-stone-500 bg-stone-100 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md">
                   {filteredPujas.length} Services
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6">
                 {isLoadingPujas ? (
                   Array.from({ length: 4 }).map((_, idx) => (
                     <div
                       key={idx}
-                      className="bg-white rounded-[24px] shadow-sm animate-pulse h-48 border border-orange-100/50"
+                      className="bg-white rounded-[24px] shadow-sm animate-pulse h-48 md:h-56 border border-orange-100/50"
                     />
                   ))
                 ) : (
@@ -412,7 +416,7 @@ export default function CategoryPage() {
 
           {/* Empty */}
           {!isLoadingPujas && filteredPujas.length === 0 && (
-            <div className="text-center py-20">
+            <div className="text-center py-20 md:py-32">
               <div className="w-16 h-16 mx-auto mb-4 opacity-50">
                 <svg
                   viewBox="0 0 24 24"
@@ -453,6 +457,8 @@ export default function CategoryPage() {
           )}
         </div>
       </div>
+
+      <SiteFooter />
     </>
   );
 }

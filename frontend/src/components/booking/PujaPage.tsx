@@ -5,6 +5,8 @@ import BookingModal from "./UI/BookingModal";
 import API_URL from "../../utils/apiConfig";
 import PujaEnquiryModal from "./PujaEnquiryModal";
 import { decryptData } from "../../utils/encryption";
+import DesktopHeader from "../layout/DesktopHeader";
+import SiteFooter from "../layout/SiteFooter";
 
 // ── Dummy Data ────────────────────────────────────────────────
 // const STATIC_INCLUDES = [
@@ -53,14 +55,14 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
     if (images.length === 0) return null;
 
     return (
-        <div className="relative rounded-2xl overflow-hidden shadow-md border border-orange-100">
+        <div className="relative rounded-2xl overflow-hidden shadow-md border border-orange-100 md:rounded-3xl md:shadow-lg">
             {/* Scrollable strip */}
             <div
                 ref={setScrollEl}
                 onScroll={handleScroll}
                 onTouchStart={() => setUserScrolling(true)}
                 onTouchEnd={() => setTimeout(() => setUserScrolling(false), 4000)}
-                className="flex overflow-x-auto snap-x snap-mandatory h-52 bg-gradient-to-b from-amber-100 to-orange-50"
+                className="flex overflow-x-auto snap-x snap-mandatory h-52 bg-gradient-to-b from-amber-100 to-orange-50 md:h-80 lg:h-[420px]"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
                 <style>{`.carousel-hide::-webkit-scrollbar{display:none}`}</style>
@@ -69,7 +71,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
                         <img
                             src={src}
                             alt={`${title} ${i + 1}`}
-                            className="h-full w-full"
+                            className="h-full w-full md:object-cover"
                             onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                         />
                     </div>
@@ -78,7 +80,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
 
             {/* Dots — only when multiple images */}
             {images.length > 1 && (
-                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 md:bottom-4">
                     {images.map((_, i) => (
                         <button
                             key={i}
@@ -88,7 +90,7 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
                                 if (scrollEl) scrollEl.scrollTo({ left: i * scrollEl.offsetWidth, behavior: "smooth" });
                                 setTimeout(() => setUserScrolling(false), 4000);
                             }}
-                            className={`rounded-full transition-all duration-300 ${
+                            className={`rounded-full transition-all duration-300 md:cursor-pointer ${
                                 i === active ? "w-4 h-1.5 bg-orange-500" : "w-1.5 h-1.5 bg-white/70"
                             }`}
                         />
@@ -101,8 +103,8 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
     return (
-        <div className="flex items-center gap-2 mb-3">
-            <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-orange-500">
+        <div className="flex items-center gap-2 mb-3 md:mb-4">
+            <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-orange-500 md:text-xs">
                 {children}
             </span>
             <div className="h-px flex-1 bg-gradient-to-r from-orange-200 to-transparent" />
@@ -144,12 +146,12 @@ function AccordionRow({
 
     return (
         <div
-            className={`bg-white border rounded-2xl overflow-hidden transition-all duration-200 ${open ? "border-orange-300 shadow-sm" : "border-orange-100"
+            className={`bg-white border rounded-2xl overflow-hidden transition-all duration-200 md:hover:shadow-md ${open ? "border-orange-300 shadow-sm" : "border-orange-100"
                 }`}
         >
             <button
                 onClick={() => setOpen((o) => !o)}
-                className="w-full px-4 py-3.5 flex items-center justify-between text-left"
+                className="w-full px-4 py-3.5 flex items-center justify-between text-left md:px-6 md:py-4 md:cursor-pointer"
             >
                 <span
                     className="text-stone-700 font-semibold"
@@ -182,7 +184,7 @@ function AccordionRow({
             </button>
 
             {open && (
-                <div className="px-4 pb-4 text-stone-500 text-sm font-light leading-relaxed border-t border-orange-50 pt-3">
+                <div className="px-4 pb-4 text-stone-500 text-sm font-light leading-relaxed border-t border-orange-50 pt-3 md:px-6 md:pb-5 md:text-[15px]">
                     {content}
                 </div>
             )}
@@ -331,23 +333,30 @@ export default function PujaDetailPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-[#FFFAF3] flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
-            </div>
+            <>
+                <DesktopHeader />
+                <div className="min-h-screen bg-[#FFFAF3] flex items-center justify-center">
+                    <div className="w-10 h-10 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+                </div>
+            </>
         );
     }
 
     if (!pujaData) {
         return (
-            <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center text-center px-4">
-                <span className="text-4xl mb-3">🕉</span>
-                <h2 className="text-xl font-bold text-stone-800 font-serif">
-                    Puja Not Found
-                </h2>
-                <p className="text-stone-500 text-sm mt-1">
-                    We couldn't find the requested puja details.
-                </p>
-            </div>
+            <>
+                <DesktopHeader />
+                <div className="min-h-screen bg-[#FFFAF3] flex flex-col items-center justify-center text-center px-4">
+                    <span className="text-4xl mb-3">🕉</span>
+                    <h2 className="text-xl font-bold text-stone-800 font-serif">
+                        Puja Not Found
+                    </h2>
+                    <p className="text-stone-500 text-sm mt-1">
+                        We couldn't find the requested puja details.
+                    </p>
+                </div>
+                <SiteFooter />
+            </>
         );
     }
 
@@ -372,6 +381,19 @@ export default function PujaDetailPage() {
             : mainImages
     ).filter(Boolean);
     const showRitualPlaces = pujaId === DEATH_RITUAL_PUJA_ID;
+
+    // Shared "Book Pandit Ji" CTA handler — used by the mobile fixed bottom
+    // bar and the desktop sticky booking card (same tracking + same modal).
+    const handleBookNow = () => {
+        if (window.fbq) {
+            window.fbq("track", "AddToCart", {
+                content_ids: [pujaId],
+                content_name: title,
+                content_type: "product",
+            });
+        }
+        setIsBookingModalOpen(true);
+    };
 
     return (
         <>
@@ -408,7 +430,7 @@ export default function PujaDetailPage() {
             {/* ── 30% Off Promo Modal ── */}
             {false && isPromoOpen && (
                 <div
-                    className="fixed inset-0 z-[200] flex items-end justify-center"
+                    className="fixed inset-0 z-[200] flex items-end justify-center md:items-center md:p-6"
                     style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
                     onClick={() => setIsPromoOpen(false)}
                 >
@@ -434,7 +456,7 @@ export default function PujaDetailPage() {
                         }
                     `}</style>
                     <div
-                        className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden"
+                        className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden md:rounded-3xl md:max-w-lg md:shadow-2xl"
                         style={{ animation: "promoSlideUp 0.35s cubic-bezier(0.32,0.72,0,1) both" }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -504,13 +526,15 @@ export default function PujaDetailPage() {
                 prefillCity={user?.city || ""}
             />
 
+            <DesktopHeader />
+
             <div className="detail-page flex justify-center">
-                <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm pb-32">
+                <div className="w-full max-w-md bg-[#FFFAF3] min-h-screen relative shadow-sm pb-32 md:max-w-none md:shadow-none lg:pb-20">
                     {/* ── Header ── */}
-                    <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm">
+                    <div className="relative px-4 pt-3 pb-3 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100 rounded-b-[60px] mb-5 shadow-sm md:pt-8 md:pb-10 md:rounded-b-[90px] md:mb-8 lg:hidden">
                         <button
                             onClick={handleBack}
-                            className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm"
+                            className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm md:left-8 md:top-8 md:w-11 md:h-11 md:cursor-pointer md:hover:bg-white md:transition-colors md:duration-200"
                         >
                             <svg
                                 className="w-4 h-4 text-stone-600"
@@ -531,7 +555,7 @@ export default function PujaDetailPage() {
                         <button
                             onClick={handleShare}
                             disabled={isSharingCode}
-                            className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm active:scale-90 transition-all disabled:opacity-60"
+                            className="absolute right-4 top-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/70 backdrop-blur-sm border border-white/60 shadow-sm active:scale-90 transition-all disabled:opacity-60 md:right-8 md:top-8 md:w-11 md:h-11 md:cursor-pointer md:hover:bg-white"
                             title="Share this puja"
                         >
                             {isSharingCode ? (
@@ -552,7 +576,7 @@ export default function PujaDetailPage() {
 
                         {/* "Link copied" toast */}
                         {shareLinkCopied && (
-                            <div className="absolute right-2 top-14 bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg z-50 animate-fade-in">
+                            <div className="absolute right-2 top-14 bg-gray-800 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg z-50 animate-fade-in md:right-8 md:top-20">
                                 Link copied!
                             </div>
                         )}
@@ -573,215 +597,304 @@ export default function PujaDetailPage() {
                         {/* Enquiry CTA */}
                         <button
                             onClick={() => navigate(`/puja/${pujaId}/enquiry`)}
-                            className="enquiry-btn mt-3 inline-flex items-center gap-2 text-white font-bold text-sm px-5 py-2.5 rounded-full active:scale-95"
+                            className="enquiry-btn mt-3 inline-flex items-center gap-2 text-white font-bold text-sm px-5 py-2.5 rounded-full active:scale-95 md:mt-4 md:text-base md:px-8 md:py-3 md:cursor-pointer"
                         >
                             Enquire Now for {title}
                         </button>
                     </div>
 
-                    {/* ── Content ── */}
-                    <div className="px-4 space-y-3 fade-up">
-                        {/* Hero Image Carousel */}
-                        <ImageCarousel images={images} title={title} />
+                    {/* ── Desktop back / share row (lg+) ── */}
+                    <div className="hidden lg:flex items-center justify-between px-10 pt-8 pb-6">
+                        <button
+                            onClick={handleBack}
+                            className="flex items-center gap-2 pl-3 pr-4 py-2 rounded-full bg-white border border-orange-100 shadow-sm text-stone-600 text-sm font-semibold hover:text-orange-700 hover:border-orange-200 hover:shadow-md transition-all duration-200 cursor-pointer"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Back
+                        </button>
+                        <div className="flex items-center gap-3">
+                            {shareLinkCopied && (
+                                <span className="text-xs font-semibold text-green-600">Link copied!</span>
+                            )}
+                            <button
+                                onClick={handleShare}
+                                disabled={isSharingCode}
+                                title="Share this puja"
+                                className="w-11 h-11 flex items-center justify-center rounded-full bg-white border border-orange-100 shadow-sm text-stone-600 hover:text-orange-700 hover:border-orange-200 hover:shadow-md transition-all duration-200 cursor-pointer disabled:opacity-60"
+                            >
+                                {isSharingCode ? (
+                                    <svg className="w-4 h-4 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                    </svg>
+                                ) : shareLinkCopied ? (
+                                    <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
 
-                        {showRitualPlaces && (
-                            <div>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {RITUAL_PLACES.map((place) => (
-                                        <div
-                                            key={place.id}
-                                            className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm"
-                                        >
-                                            <div className="w-30 h-18 bg-orange-50">
-                                                {place.imageUrl ? (
-                                                    <img
-                                                        src={place.imageUrl}
-                                                        alt={place.label}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-orange-300">
-                                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />
-                                                        </svg>
-                                                    </div>
-                                                )}
+                    {/* ── Content ── */}
+                    <div className="md:px-8 md:w-full lg:px-10 lg:grid lg:grid-cols-[1fr_400px] lg:gap-10 lg:items-start">
+                        <div className="px-4 space-y-3 fade-up md:px-0 md:space-y-6 lg:min-w-0">
+                            {/* Hero Image Carousel */}
+                            <ImageCarousel images={images} title={title} />
+
+                            {showRitualPlaces && (
+                                <div>
+                                    <div className="grid grid-cols-3 gap-3 md:gap-5">
+                                        {RITUAL_PLACES.map((place) => (
+                                            <div
+                                                key={place.id}
+                                                className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm md:hover:shadow-lg md:hover:-translate-y-0.5 md:transition-all md:duration-300"
+                                            >
+                                                <div className="w-30 h-18 bg-orange-50 md:w-full md:h-24 lg:h-28">
+                                                    {place.imageUrl ? (
+                                                        <img
+                                                            src={place.imageUrl}
+                                                            alt={place.label}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-orange-300">
+                                                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="px-3 py-1 md:py-2">
+                                                    <p className="text-xs font-bold text-stone-700 md:text-sm">
+                                                        {place.label}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="px-3 py-1">
-                                                <p className="text-xs font-bold text-stone-700">
-                                                    {place.label}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Stats row */}
+                            <div className="flex items-center gap-2 flex-wrap md:gap-3">
+                                <span className="bg-orange-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full md:text-xs">
+                                    {deity}
+                                </span>
+                                <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold md:text-sm">
+                                    ★ 4.9
+                                    <span className="text-stone-400 font-light ml-0.5">
+                                        (312 reviews)
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1 text-stone-400 text-xs ml-auto md:text-sm">
+                                    <svg
+                                        className="w-3.5 h-3.5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth={2}
+                                    >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 6v6l4 2" />
+                                    </svg>
+                                    2-3 hrs
                                 </div>
                             </div>
-                        )}
 
-                        {/* Stats row */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span className="bg-orange-500 text-white text-[11px] font-semibold px-3 py-1 rounded-full">
-                                {deity}
-                            </span>
-                            <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
-                                ★ 4.9
-                                <span className="text-stone-400 font-light ml-0.5">
-                                    (312 reviews)
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1 text-stone-400 text-xs ml-auto">
-                                <svg
-                                    className="w-3.5 h-3.5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
-                                >
-                                    <circle cx="12" cy="12" r="10" />
-                                    <path d="M12 6v6l4 2" />
-                                </svg>
-                                2-3 hrs
-                            </div>
-                        </div>
+                            {/* Includes */}
+                            {/* <div>
+                                <SectionLabel>What's Included</SectionLabel>
+                                <div className="flex flex-wrap gap-2">
+                                    {STATIC_INCLUDES.map((inc) => (
+                                        <IncludePill key={inc} text={inc} />
+                                    ))}
+                                </div>
+                            </div> */}
 
-                        {/* Includes */}
-                        {/* <div>
-                            <SectionLabel>What's Included</SectionLabel>
-                            <div className="flex flex-wrap gap-2">
-                                {STATIC_INCLUDES.map((inc) => (
-                                    <IncludePill key={inc} text={inc} />
-                                ))}
+                            {/* Dynamic Accordions */}
+                            <div>
+                                <SectionLabel>More Details</SectionLabel>
+                                <div className="space-y-2 md:space-y-3">
+                                    {pujaData.poojaDescription && pujaData.poojaDescription.length > 0 ? (
+                                        pujaData.poojaDescription.map((desc: any, index: number) => (
+                                            <AccordionRow
+                                                key={desc.headingId || desc.heading}
+                                                title={desc.heading}
+                                                defaultOpen={index < 2}
+                                                content={
+                                                    <div
+                                                        dangerouslySetInnerHTML={{ __html: desc.description }}
+                                                    />
+                                                }
+                                            />
+                                        ))
+                                    ) : (
+                                        <p className="text-sm font-medium text-stone-400">
+                                            No additional details available.
+                                        </p>
+                                    )}
+                                </div>
                             </div>
-                        </div> */}
-
-                        {/* Dynamic Accordions */}
-                        <div>
-                            <SectionLabel>More Details</SectionLabel>
-                            <div className="space-y-2">
-                                {pujaData.poojaDescription && pujaData.poojaDescription.length > 0 ? (
-                                    pujaData.poojaDescription.map((desc: any, index: number) => (
-                                        <AccordionRow
-                                            key={desc.headingId || desc.heading}
-                                            title={desc.heading}
-                                            defaultOpen={index < 2}
-                                            content={
-                                                <div
-                                                    dangerouslySetInnerHTML={{ __html: desc.description }}
-                                                />
-                                            }
-                                        />
-                                    ))
-                                ) : (
-                                    <p className="text-sm font-medium text-stone-400">
-                                        No additional details available.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                        {/* Puja Videos — show only if backend sends videos */}
-                        {(() => {
-                            const finalVideos: string[] = [];
-                            if (Array.isArray(pujaData.poojaVideos)) {
-                                finalVideos.push(...pujaData.poojaVideos.filter(Boolean));
-                            }
-                            if (typeof pujaData.poojaVideoLink === "string" && pujaData.poojaVideoLink) {
-                                if (!finalVideos.includes(pujaData.poojaVideoLink)) {
-                                    finalVideos.push(pujaData.poojaVideoLink);
+                            {/* Puja Videos — show only if backend sends videos */}
+                            {(() => {
+                                const finalVideos: string[] = [];
+                                if (Array.isArray(pujaData.poojaVideos)) {
+                                    finalVideos.push(...pujaData.poojaVideos.filter(Boolean));
                                 }
-                            }
-
-                            if (finalVideos.length === 0) return null;
-
-                            const getYouTubeEmbedUrl = (url: string) => {
-                                if (!url) return null;
-                                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                                const match = url.match(regExp);
-                                if (match && match[2].length === 11) {
-                                    return `https://www.youtube.com/embed/${match[2]}`;
+                                if (typeof pujaData.poojaVideoLink === "string" && pujaData.poojaVideoLink) {
+                                    if (!finalVideos.includes(pujaData.poojaVideoLink)) {
+                                        finalVideos.push(pujaData.poojaVideoLink);
+                                    }
                                 }
-                                return null;
-                            };
 
-                            return (
-                                <div>
-                                    <SectionLabel>Puja Videos</SectionLabel>
-                                    <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                                        {finalVideos.map((videoUrl: string, idx: number) => {
-                                            const embedUrl = getYouTubeEmbedUrl(videoUrl);
-                                            if (embedUrl) {
+                                if (finalVideos.length === 0) return null;
+
+                                const getYouTubeEmbedUrl = (url: string) => {
+                                    if (!url) return null;
+                                    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                    const match = url.match(regExp);
+                                    if (match && match[2].length === 11) {
+                                        return `https://www.youtube.com/embed/${match[2]}`;
+                                    }
+                                    return null;
+                                };
+
+                                return (
+                                    <div>
+                                        <SectionLabel>Puja Videos</SectionLabel>
+                                        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-2 md:gap-5 md:overflow-visible md:pb-0" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                            {finalVideos.map((videoUrl: string, idx: number) => {
+                                                const embedUrl = getYouTubeEmbedUrl(videoUrl);
+                                                if (embedUrl) {
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black md:w-auto md:shrink md:h-44 lg:h-48 md:hover:shadow-lg md:transition-shadow md:duration-300"
+                                                        >
+                                                            <iframe
+                                                                src={embedUrl}
+                                                                title={`Puja Video ${idx + 1}`}
+                                                                className="w-full h-full border-0"
+                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                allowFullScreen
+                                                            />
+                                                        </div>
+                                                    );
+                                                }
                                                 return (
                                                     <div
                                                         key={idx}
-                                                        className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
+                                                        className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black md:w-auto md:shrink md:h-44 lg:h-48 md:hover:shadow-lg md:transition-shadow md:duration-300"
                                                     >
-                                                        <iframe
-                                                            src={embedUrl}
-                                                            title={`Puja Video ${idx + 1}`}
-                                                            className="w-full h-full border-0"
-                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                            allowFullScreen
+                                                        <video
+                                                            src={videoUrl}
+                                                            controls
+                                                            playsInline
+                                                            preload="metadata"
+                                                            className="w-full h-full object-cover"
+                                                            style={{ background: "#1c1917" }}
                                                         />
                                                     </div>
                                                 );
-                                            }
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    className="shrink-0 w-64 h-36 rounded-2xl overflow-hidden border border-orange-100 shadow-sm bg-black"
-                                                >
-                                                    <video
-                                                        src={videoUrl}
-                                                        controls
-                                                        playsInline
-                                                        preload="metadata"
-                                                        className="w-full h-full object-cover"
-                                                        style={{ background: "#1c1917" }}
-                                                    />
-                                                </div>
-                                            );
-                                        })}
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* FAQs */}
+                            {pujaData.faqs && pujaData.faqs.length > 0 && (
+                                <div>
+                                    <SectionLabel>Frequently Asked Questions</SectionLabel>
+                                    <div className="space-y-4">
+                                        {pujaData.faqs.map((faq: any, index: number) => (
+                                            <div key={index} className="bg-white border border-orange-100 rounded-2xl px-4 py-3.5 shadow-sm md:px-6 md:py-4 md:hover:shadow-md md:transition-shadow md:duration-200">
+                                                <p className="text-stone-700 font-semibold text-sm">
+                                                    <span className="text-orange-500 font-bold">Q: </span>
+                                                    {faq.question}
+                                                </p>
+                                                <p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">
+                                                    <span className="text-orange-400 font-semibold">A: </span>
+                                                    {faq.answer}
+                                                </p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                            );
-                        })()}
+                            )}
+                        </div>
 
-                        {/* FAQs */}
-                        {pujaData.faqs && pujaData.faqs.length > 0 && (
-                            <div>
-                                <SectionLabel>Frequently Asked Questions</SectionLabel>
-                                <div className="space-y-4">
-                                    {pujaData.faqs.map((faq: any, index: number) => (
-                                        <div key={index} className="bg-white border border-orange-100 rounded-2xl px-4 py-3.5 shadow-sm">
-                                            <p className="text-stone-700 font-semibold text-sm">
-                                                <span className="text-orange-500 font-bold">Q: </span>
-                                                {faq.question}
-                                            </p>
-                                            <p className="text-stone-500 text-sm font-light mt-1.5 leading-relaxed">
-                                                <span className="text-orange-400 font-semibold">A: </span>
-                                                {faq.answer}
-                                            </p>
+                        {/* ── Desktop sticky booking card (lg+) ── */}
+                        <aside className="hidden lg:block lg:sticky lg:top-24 fade-up">
+                            <div className="bg-white border border-orange-100 rounded-3xl shadow-xl shadow-orange-100/70 overflow-hidden">
+                                <div className="px-6 pt-7 pb-6 text-center bg-gradient-to-br from-red-200 via-orange-200 to-amber-100">
+                                    <h2
+                                        className="text-orange-600 font-bold leading-tight"
+                                        style={{
+                                            fontFamily: "'Cormorant Garamond', serif",
+                                            fontSize: "30px",
+                                        }}
+                                    >
+                                        {title}
+                                    </h2>
+                                    <p className="text-orange-900/50 text-xs font-medium mt-1">
+                                        {deity}
+                                    </p>
+                                </div>
+
+                                <div className="px-6 py-6 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1 text-amber-500 text-sm font-semibold">
+                                            ★ 4.9
+                                            <span className="text-stone-400 font-light ml-0.5">
+                                                (312 reviews)
+                                            </span>
                                         </div>
-                                    ))}
+                                        <div className="flex items-center gap-1 text-stone-400 text-sm">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="M12 6v6l4 2" />
+                                            </svg>
+                                            2-3 hrs
+                                        </div>
+                                    </div>
+
+                                    <div className="h-px bg-gradient-to-r from-orange-200 via-orange-100 to-transparent" />
+
+                                    <button
+                                        onClick={handleBookNow}
+                                        className="w-full bg-orange-500 hover:bg-orange-600 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        Book Pandit Ji
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />
+                                        </svg>
+                                    </button>
+
+                                    <button
+                                        onClick={() => navigate(`/puja/${pujaId}/enquiry`)}
+                                        className="enquiry-btn w-full flex items-center justify-center gap-2 text-white font-bold text-sm py-3 rounded-2xl active:scale-95 cursor-pointer"
+                                    >
+                                        Enquire Now for {title}
+                                    </button>
                                 </div>
                             </div>
-                        )}
+                        </aside>
                     </div>
 
                     {/* ── Sticky Bottom CTA ── */}
-                    <div className="fixed bottom-0 left-0 right-0 z-50">
-                        <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3">
+                    <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+                        <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3 md:max-w-3xl md:px-8 md:rounded-t-2xl md:border-x md:shadow-2xl">
                             <button
-                                onClick={() => {
-                                    if (window.fbq) {
-                                        window.fbq("track", "AddToCart", {
-                                            content_ids: [pujaId],
-                                            content_name: title,
-                                            content_type: "product",
-                                        });
-                                    }
-                                    setIsBookingModalOpen(true);
-                                }}
-                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
+                                onClick={handleBookNow}
+                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2 md:cursor-pointer"
                             >
                                 Book Pandit Ji
                                 <svg
@@ -802,6 +915,8 @@ export default function PujaDetailPage() {
                     </div>
                 </div>
             </div>
+
+            <SiteFooter />
         </>
     );
 }

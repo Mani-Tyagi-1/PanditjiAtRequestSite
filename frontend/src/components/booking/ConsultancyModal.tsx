@@ -96,17 +96,17 @@ export default function ConsultancyModal({
 
     return (
         <div
-            className="fixed inset-0 z-[200] flex items-end justify-center"
+            className="fixed inset-0 z-[200] flex items-end justify-center md:items-center md:p-6"
             style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
             onClick={onClose}
         >
             <div
-                className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden"
+                className="w-full max-w-md bg-white rounded-t-3xl overflow-hidden md:rounded-3xl md:max-w-2xl md:shadow-2xl"
                 style={{ maxHeight: "92vh" }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 pt-5 pb-4">
+                <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 pt-5 pb-4 md:px-7 md:pt-6 md:pb-5">
                     <div className="flex items-center justify-between">
                         <div>
                             <h2
@@ -121,7 +121,7 @@ export default function ConsultancyModal({
                         </div>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white"
+                            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 text-white cursor-pointer md:transition-colors md:hover:bg-white/30"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -157,13 +157,13 @@ export default function ConsultancyModal({
                             </p>
                             <button
                                 onClick={onClose}
-                                className="mt-6 bg-orange-500 text-white font-semibold px-8 py-3 rounded-2xl text-sm"
+                                className="mt-6 bg-orange-500 text-white font-semibold px-8 py-3 rounded-2xl text-sm cursor-pointer md:transition-colors md:hover:bg-orange-600"
                             >
                                 Done
                             </button>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+                        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4 md:px-7 md:py-6 md:grid md:grid-cols-2 md:gap-x-5 md:gap-y-4 md:space-y-0">
                             <div>
                                 <label className={LABEL_CLASS}>
                                     Full Name <span className="text-red-400">*</span>
@@ -192,7 +192,7 @@ export default function ConsultancyModal({
                                 />
                             </div>
 
-                            <div>
+                            <div className="md:col-span-2">
                                 <label className={LABEL_CLASS}>What do you need help with?</label>
                                 <select
                                     name="helpWith"
@@ -207,7 +207,7 @@ export default function ConsultancyModal({
                                 </select>
                             </div>
 
-                            <div>
+                            <div className="md:col-span-2">
                                 <label className={LABEL_CLASS}>
                                     What is your concern? <span className="text-red-400">*</span>
                                 </label>
@@ -249,7 +249,7 @@ export default function ConsultancyModal({
                                 />
                             </div>
 
-                            <div>
+                            <div className="md:col-span-2">
                                 <label className={LABEL_CLASS}>Preferred Callback Time</label>
                                 <select
                                     name="callbackTime"
@@ -265,13 +265,13 @@ export default function ConsultancyModal({
                             </div>
 
                             {error && (
-                                <p className="text-red-500 text-xs font-medium">{error}</p>
+                                <p className="text-red-500 text-xs font-medium md:col-span-2">{error}</p>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 text-sm disabled:opacity-60 mb-2"
+                                className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 text-sm md:text-base disabled:opacity-60 mb-2 md:col-span-2 cursor-pointer"
                             >
                                 {submitting ? "Submitting..." : "Submit Request"}
                             </button>

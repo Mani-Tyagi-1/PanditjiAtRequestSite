@@ -316,20 +316,20 @@ export default function ShopifyCartDrawer() {
     }
 
     return (
-        <div className="fixed inset-0 z-[200] max-w-md mx-auto">
+        <div className="fixed inset-0 z-[200] max-w-md mx-auto md:max-w-none">
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" onClick={() => !isSubmitting && closeCart()} />
 
             {/* Right Drawer Panel */}
-            <div className="absolute top-0 right-0 h-full w-[92%] max-w-[420px] bg-[#FFFAF3] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="absolute top-0 right-0 h-full w-[92%] max-w-[420px] bg-[#FFFAF3] shadow-2xl flex flex-col animate-in slide-in-from-right duration-300 md:max-w-none md:w-[440px] lg:w-[480px] md:border-l md:border-orange-100">
                 {(
                     <>
                         {/* Header */}
-                        <div className="flex items-center justify-between px-4 py-3.5 border-b border-orange-100 shrink-0">
-                            <h3 className="text-base font-bold text-stone-850">
+                        <div className="flex items-center justify-between px-4 py-3.5 border-b border-orange-100 shrink-0 md:px-6 md:py-4">
+                            <h3 className="text-base font-bold text-stone-850 md:text-lg">
                                 Your Cart{count > 0 ? ` (${count})` : ""}
                             </h3>
-                            <button type="button" onClick={() => !isSubmitting && closeCart()} className="p-1 rounded-full bg-stone-100 text-stone-500 active:scale-90">
+                            <button type="button" onClick={() => !isSubmitting && closeCart()} className="p-1 rounded-full bg-stone-100 text-stone-500 active:scale-90 cursor-pointer md:p-1.5 md:hover:bg-stone-200 md:transition-colors">
                                 <X className="w-4.5 h-4.5" />
                             </button>
                         </div>
@@ -342,14 +342,14 @@ export default function ShopifyCartDrawer() {
                                 <button
                                     type="button"
                                     onClick={() => { closeCart(); navigate("/shop"); }}
-                                    className="mt-5 bg-orange-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all text-sm"
+                                    className="mt-5 bg-orange-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all text-sm cursor-pointer md:hover:shadow-lg md:hover:-translate-y-0.5"
                                 >
                                     Browse Shop
                                 </button>
                             </div>
                         ) : (
                             <>
-                                <form id={FORM_ID} onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+                                <form id={FORM_ID} onSubmit={handleCheckoutSubmit} className="flex-1 overflow-y-auto p-4 space-y-4 md:p-6 md:space-y-5">
                                     {/* ─── Cart items ─── */}
                                     <div className="space-y-3">
                                         {items.map((l) => {
@@ -366,16 +366,16 @@ export default function ShopifyCartDrawer() {
                                                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <h4 className="text-[12.5px] font-bold text-stone-850 leading-snug line-clamp-2">{l.product.title}</h4>
-                                                            <button type="button" onClick={() => removeItem(l.product._id)} className="text-stone-300 hover:text-red-500 shrink-0 active:scale-90">
+                                                            <button type="button" onClick={() => removeItem(l.product._id)} className="text-stone-300 hover:text-red-500 shrink-0 active:scale-90 cursor-pointer md:transition-colors">
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
                                                         </div>
                                                         <div className="flex items-center justify-between mt-1">
                                                             <span className="text-sm font-black text-orange-600">₹{(price * l.qty).toLocaleString("en-IN")}</span>
                                                             <div className="flex items-center gap-2 border border-orange-100 rounded-xl px-2 py-1 bg-orange-50/20">
-                                                                <button type="button" onClick={() => updateQty(l.product._id, l.qty - 1)} className="p-0.5 text-stone-500 active:scale-90"><Minus className="w-3.5 h-3.5" /></button>
+                                                                <button type="button" onClick={() => updateQty(l.product._id, l.qty - 1)} className="p-0.5 text-stone-500 active:scale-90 cursor-pointer md:hover:text-orange-600 md:transition-colors"><Minus className="w-3.5 h-3.5" /></button>
                                                                 <span className="text-xs font-bold text-stone-800 min-w-[12px] text-center">{l.qty}</span>
-                                                                <button type="button" onClick={() => updateQty(l.product._id, l.qty + 1)} className="p-0.5 text-stone-500 active:scale-90"><Plus className="w-3.5 h-3.5" /></button>
+                                                                <button type="button" onClick={() => updateQty(l.product._id, l.qty + 1)} className="p-0.5 text-stone-500 active:scale-90 cursor-pointer md:hover:text-orange-600 md:transition-colors"><Plus className="w-3.5 h-3.5" /></button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -395,7 +395,7 @@ export default function ShopifyCartDrawer() {
                                             <button
                                                 type="button"
                                                 onClick={openLoginModal}
-                                                className="mt-4 w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 rounded-2xl shadow-md active:scale-95 transition-all text-sm"
+                                                className="mt-4 w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3 rounded-2xl shadow-md active:scale-95 transition-all text-sm cursor-pointer md:hover:shadow-lg md:hover:brightness-105"
                                             >
                                                 Login to Continue
                                             </button>
@@ -571,7 +571,7 @@ export default function ShopifyCartDrawer() {
                                 </form>
 
                                 {/* Sticky Footer */}
-                                <div className="p-4 border-t border-orange-100 bg-white shrink-0 space-y-3">
+                                <div className="p-4 border-t border-orange-100 bg-white shrink-0 space-y-3 md:p-6">
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-stone-500">{user ? "Total" : "Subtotal"}</span>
                                         <span className="font-black text-stone-850">₹{(user ? total : subtotal).toLocaleString("en-IN")}</span>
@@ -580,7 +580,7 @@ export default function ShopifyCartDrawer() {
                                         <button
                                             type="button"
                                             onClick={openLoginModal}
-                                            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 text-sm"
+                                            className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer md:hover:shadow-lg md:hover:brightness-105"
                                         >
                                             <LogIn className="w-4 h-4" /> Login to Checkout
                                         </button>
@@ -590,7 +590,7 @@ export default function ShopifyCartDrawer() {
                                                 type="submit"
                                                 form={FORM_ID}
                                                 disabled={isSubmitting}
-                                                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+                                                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 active:scale-95 text-white font-bold py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60 cursor-pointer md:hover:shadow-lg md:hover:brightness-105"
                                             >
                                                 {isSubmitting ? (
                                                     <><Loader2 className="w-4 h-4 animate-spin" /><span>Processing Secure Payment...</span></>
@@ -603,7 +603,7 @@ export default function ShopifyCartDrawer() {
                                                     type="button"
                                                     onClick={handleCodClick}
                                                     disabled={isSubmitting}
-                                                    className="w-full bg-white border-2 border-orange-200 text-orange-600 font-bold py-3 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
+                                                    className="w-full bg-white border-2 border-orange-200 text-orange-600 font-bold py-3 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60 cursor-pointer md:hover:bg-orange-50 md:hover:border-orange-300"
                                                 >
                                                     <Truck className="w-4 h-4" /><span>Cash on Delivery · ₹{codTotal.toLocaleString("en-IN")}</span>
                                                 </button>

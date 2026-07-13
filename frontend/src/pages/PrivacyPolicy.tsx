@@ -532,6 +532,8 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
 import { Navigation } from '../components/landing/Navigation';
+import DesktopHeader from '../components/layout/DesktopHeader';
+import SiteFooter from '../components/layout/SiteFooter';
 
 const SectionCard = ({ number, title, children }: { number: string; title: string; children: React.ReactNode }) => (
   <motion.div
@@ -539,15 +541,15 @@ const SectionCard = ({ number, title, children }: { number: string; title: strin
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ duration: 0.4 }}
-    className="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden"
+    className="bg-white rounded-2xl shadow-sm border border-orange-100 overflow-hidden md:rounded-3xl md:hover:shadow-md md:hover:border-orange-200/80 md:transition-all md:duration-300"
   >
-    <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
+    <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100 md:px-8 md:py-5">
       <span className="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white text-xs font-bold shrink-0">
         {number}
       </span>
-      <h2 className="text-base md:text-lg font-bold text-orange-800">{title}</h2>
+      <h2 className="text-base md:text-lg font-bold text-orange-800 lg:text-xl">{title}</h2>
     </div>
-    <div className="px-6 py-5 text-sm text-stone-700 leading-relaxed space-y-3">
+    <div className="px-6 py-5 text-sm text-stone-700 leading-relaxed space-y-3 md:px-8 md:py-6 md:text-[15px] md:leading-relaxed">
       {children}
     </div>
   </motion.div>
@@ -580,12 +582,15 @@ export default function PrivacyPolicy() {
 
   return (
     <>
-      <Navigation />
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+      <div className="md:hidden">
+        <Navigation />
+      </div>
+      <DesktopHeader />
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 mt-20 md:mt-0">
 
         {/* Header */}
         <header className="bg-gradient-to-r from-orange-50 via-white to-orange-50 border-b border-orange-200/50">
-          <div className="max-w-4xl mx-auto px-6 py-6">
+          <div className="px-6 py-6 md:py-10 lg:py-14">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -601,7 +606,7 @@ export default function PrivacyPolicy() {
                 <Shield className="w-5 h-5" />
                 <span className="text-sm font-medium">Your Privacy Matters</span>
               </motion.div>
-              <h1 className="text-4xl md:text-5xl font-bold pb-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-bold pb-4 bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent md:tracking-tight">
                 Privacy Policy
               </h1>
               <p className="text-lg text-gray-700 font-medium">Pandit Ji At Request</p>
@@ -611,7 +616,7 @@ export default function PrivacyPolicy() {
         </header>
 
         {/* Content */}
-        <main className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-5">
+        <main className="max-w-4xl mx-auto px-4 md:px-6 py-10 space-y-5 md:max-w-3xl md:py-14 md:space-y-6">
 
           <SectionCard number="1" title="Company Details">
             <ul className="space-y-1.5 list-none">
@@ -960,8 +965,8 @@ export default function PrivacyPolicy() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-gradient-to-r from-orange-50 via-white to-orange-50 border-t-2 border-orange-200/50 mt-12">
-          <div className="max-w-4xl mx-auto px-6 py-8 text-center">
+        <footer className="bg-gradient-to-r from-orange-50 via-white to-orange-50 border-t-2 border-orange-200/50 mt-12 md:hidden">
+          <div className="px-6 py-8 text-center">
             <p className="text-gray-700 font-medium">
               © 2026 Vedic Vaibhav Dot Com Pvt Ltd. All rights reserved.
             </p>
@@ -971,6 +976,7 @@ export default function PrivacyPolicy() {
           </div>
         </footer>
       </div>
+      <SiteFooter />
     </>
   );
 }

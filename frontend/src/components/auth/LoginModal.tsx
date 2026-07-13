@@ -91,7 +91,7 @@ export default function LoginModal() {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 md:p-6">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -107,7 +107,7 @@ export default function LoginModal() {
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.94, opacity: 0, y: 24 }}
           transition={{ duration: 0.22 }}
-          className="relative z-10 w-full max-w-md overflow-hidden rounded-[28px] border border-orange-100 bg-white shadow-[0_20px_80px_rgba(0,0,0,0.22)]"
+          className="relative z-10 w-full max-w-md md:max-w-lg overflow-hidden rounded-[28px] border border-orange-100 bg-white shadow-[0_20px_80px_rgba(0,0,0,0.22)]"
         >
           {/* Decorative top section */}
           <div className="relative overflow-hidden bg-gradient-to-br from-[#FFEDD5] via-[#FFF7ED] to-[#FEF3C7] px-6 pb-6 pt-7">
@@ -119,7 +119,7 @@ export default function LoginModal() {
 
             <button
               onClick={resetAndClose}
-              className="absolute right-4 top-4 z-20 rounded-full bg-white/80 p-2 text-stone-600 shadow-sm transition hover:bg-white"
+              className="absolute right-4 top-4 z-20 rounded-full bg-white/80 p-2 text-stone-600 shadow-sm transition hover:bg-white cursor-pointer"
               aria-label="Close modal"
             >
               <svg
@@ -207,7 +207,7 @@ export default function LoginModal() {
                   disabled={isProcessing || phone.length !== 10}
                   className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${isProcessing || phone.length !== 10
                       ? 'cursor-not-allowed bg-orange-300'
-                      : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
+                      : 'cursor-pointer bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
                     }`}
                 >
                   {isProcessing ? 'Sending OTP...' : 'Get OTP'}
@@ -225,7 +225,7 @@ export default function LoginModal() {
                         setOtp('');
                         setError('');
                       }}
-                      className="text-xs font-semibold text-orange-600 transition hover:text-orange-700 hover:underline"
+                      className="text-xs font-semibold text-orange-600 transition hover:text-orange-700 hover:underline cursor-pointer"
                     >
                       Change Number
                     </button>
@@ -247,7 +247,7 @@ export default function LoginModal() {
                   disabled={isProcessing || otp.length < 4}
                   className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${isProcessing || otp.length < 4
                       ? 'cursor-not-allowed bg-orange-300'
-                      : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
+                      : 'cursor-pointer bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
                     }`}
                 >
                   {isProcessing ? 'Verifying...' : 'Verify & Login'}

@@ -1,5 +1,8 @@
 import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
+import DesktopHeader from "./DesktopHeader";
+import SiteFooter from "./SiteFooter";
+import TopPromoBar from "./TopPromoBar";
 
 // Click-to-chat support line (same number used across the site / schema).
 const WHATSAPP_URL =
@@ -7,9 +10,10 @@ const WHATSAPP_URL =
   encodeURIComponent("🙏 Namaste! I have a question and would like to chat with Pandit Ji.");
 
 /**
- * App shell for the tabbed mobile experience: a mobile-width column with a
- * persistent bottom nav and the floating WhatsApp "Chat with Pandit Ji" pill
- * shown across tabs (instant communication / trust signal).
+ * App shell. On mobile (<768px) it renders the original tabbed experience: a
+ * mobile-width column with a persistent bottom nav and the floating WhatsApp
+ * pill. From `md` up the column expands to the full viewport with a sticky
+ * desktop header and a rich site footer; the bottom nav hides itself.
  */
 export default function AppLayout() {
 
@@ -24,15 +28,20 @@ export default function AppLayout() {
         backgroundAttachment: "fixed",
       }}
     >
-      {/* Centered Mobile Container */}
-      <div className="min-h-screen w-full max-w-md bg-[#FFFAF3] relative shadow-[0_0_60px_rgba(224,90,16,0.15)] border-x border-[#FFEFE2] flex flex-col justify-between">
-        {/* Page content — padded so the bottom nav never overlaps it */}
-        <div className="pb-24 flex-1">
+      {/* Mobile: centered phone-width column. md+: full-width page. */}
+      <div className="min-h-screen w-full max-w-md md:max-w-none bg-[#FFFAF3] relative shadow-[0_0_60px_rgba(224,90,16,0.15)] md:shadow-none border-x md:border-x-0 border-[#FFEFE2] flex flex-col justify-between">
+        <TopPromoBar />
+        <DesktopHeader />
+
+        {/* Page content — padded so the mobile bottom nav never overlaps it */}
+        <div className="pb-24 md:pb-0 flex-1">
           <Outlet />
         </div>
 
-        {/* Floating WhatsApp "Chat with Pandit Ji" pill (constrained to the mobile column) */}
-        <div className="fixed bottom-[84px] left-0 right-0 z-40 max-w-md mx-auto px-4 flex justify-end pointer-events-none">
+        <SiteFooter />
+
+        {/* Floating WhatsApp "Chat with Pandit Ji" pill */}
+        <div className="fixed bottom-[84px] md:bottom-8 left-0 right-0 z-40 max-w-md md:max-w-none mx-auto px-4 md:px-8 flex justify-end pointer-events-none">
           <a
             href={WHATSAPP_URL}
             target="_blank"
@@ -46,7 +55,7 @@ export default function AppLayout() {
                 });
               }
             }}
-            className="pointer-events-auto w-12 h-12 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg shadow-green-500/40 active:scale-90 transition-transform cursor-pointer"
+            className="pointer-events-auto w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg shadow-green-500/40 active:scale-90 md:hover:scale-105 transition-transform cursor-pointer"
           >
             {/* WhatsApp glyph */}
             <svg viewBox="0 0 24 24" className="w-8 h-8 fill-white" aria-hidden="true">

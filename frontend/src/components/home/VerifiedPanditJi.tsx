@@ -47,18 +47,20 @@ export default function VerifiedPanditJi() {
     if (!loading && pandits.length === 0) return null;
 
     return (
-        <section className="px-4 pt-6">
-            <SectionHeader
-                title="Our Verified Pandit Ji"
-                icon={BadgeCheck}
-                subtitle="Expert & Certified"
-                onViewAll={() => navigate("/all-pandits")}
-            />
+        <section className="px-4 pt-6 md:w-full md:px-8 lg:px-10 md:pt-12 lg:pt-16">
+            <div className="md:[&_h2]:text-3xl lg:[&_h2]:text-4xl md:[&_h2]:tracking-tight">
+                <SectionHeader
+                    title="Our Verified Pandit Ji"
+                    icon={BadgeCheck}
+                    subtitle="Expert & Certified"
+                    onViewAll={() => navigate("/all-pandits")}
+                />
+            </div>
 
-            <div className="mt-3 flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x scroll-px-4 [&>*:last-child]:mr-1">
+            <div className="mt-3 flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x scroll-px-4 [&>*:last-child]:mr-1 md:mt-6 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6 md:overflow-visible md:mx-0 md:px-0 md:pb-0 md:snap-none md:[&>*:last-child]:mr-0">
                 {loading
                     ? Array.from({ length: 2 }).map((_, i) => (
-                        <div key={i} className="shrink-0 w-[85%] max-w-[330px] bg-white rounded-2xl border border-orange-100 shadow-sm p-3 animate-pulse snap-start">
+                        <div key={i} className="shrink-0 w-[85%] max-w-[330px] md:w-auto md:max-w-none md:shrink md:snap-none md:p-4 bg-white rounded-2xl border border-orange-100 shadow-sm p-3 animate-pulse snap-start">
                             <div className="flex gap-3">
                                 <div className="w-16 h-16 rounded-full bg-stone-200 shrink-0" />
                                 <div className="flex-1 space-y-2 py-1">
@@ -74,8 +76,8 @@ export default function VerifiedPanditJi() {
                         const fullName = [p.prefix, p.firstName, p.lastName].filter(Boolean).join(" ");
                         const location = [p.location?.city, p.location?.state].filter(Boolean).join(", ");
                         return (
-                            <div key={p._id} className="shrink-0 w-[85%] max-w-[330px] bg-white rounded-2xl border border-orange-100 shadow-[0_10px_26px_-14px_rgba(0,0,0,0.3)] p-3 snap-start">
-                                <button onClick={() => navigate(`/pandit/${p._id}`)} className="w-full flex gap-3 text-left">
+                            <div key={p._id} className="shrink-0 w-[85%] max-w-[330px] md:w-auto md:max-w-none md:shrink md:snap-none md:p-4 md:hover:shadow-xl md:hover:-translate-y-1 md:transition-all md:duration-300 bg-white rounded-2xl border border-orange-100 shadow-[0_10px_26px_-14px_rgba(0,0,0,0.3)] p-3 snap-start">
+                                <button onClick={() => navigate(`/pandit/${p._id}`)} className="w-full flex gap-3 text-left cursor-pointer">
                                     <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-orange-50 to-amber-100 shrink-0 flex items-center justify-center">
                                         {p.profileImage ? (
                                             <img
@@ -108,7 +110,7 @@ export default function VerifiedPanditJi() {
                                 </button>
                                 <button
                                     onClick={() => navigate(`/pandit/${p._id}`)}
-                                    className="mt-3 w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[13.5px] py-2.5 rounded-xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform"
+                                    className="mt-3 w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-[13.5px] py-2.5 rounded-xl shadow-lg shadow-orange-200/70 active:scale-95 transition-transform cursor-pointer md:transition-all md:duration-200 md:hover:from-orange-600 md:hover:to-amber-600 md:hover:shadow-orange-300/70"
                                 >
                                     Book Pandit Ji
                                 </button>

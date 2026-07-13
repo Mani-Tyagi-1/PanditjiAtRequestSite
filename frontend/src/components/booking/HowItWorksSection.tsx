@@ -1,30 +1,30 @@
 import { useState, useEffect } from "react";
-import { Flame, CalendarCheck, Wallet, Sparkles } from "lucide-react";
+import { Flame, UserCheck, Sparkles, Gift } from "lucide-react";
 
 const steps = [
     {
         number: "01",
         icon: Flame,
-        title: "Select Puja",
-        desc: "Choose from 300+ highly customized Vedic pujas curated for every sacred occasion.",
+        title: "Choose Seva",
+        desc: "Select your puja or chadhava.",
     },
     {
         number: "02",
-        icon: CalendarCheck,
-        title: "Reserve Slot",
-        desc: "Fill in your preferred date and time instantly. No upfront payment required.",
+        icon: UserCheck,
+        title: "Share Details",
+        desc: "Provide your name, gotra & sankalp.",
     },
     {
         number: "03",
-        icon: Wallet,
-        title: "Pandit Assigned",
-        desc: "Once a verified Gurukul Pandit Ji is assigned, we send the payment link directly to your WhatsApp. Complete the secure payment after assignment.",
+        icon: Sparkles,
+        title: "Puja Performed",
+        desc: "At sacred temples by verified pandits.",
     },
     {
         number: "04",
-        icon: Sparkles,
-        title: "Puja Performed",
-        desc: "Pandit Ji arrives at your home with pure, fresh samagri and performs the sacred Vedic ritual.",
+        icon: Gift,
+        title: "Receive Blessings",
+        desc: "Watch live or get video & prasad at home.",
     },
 ];
 
@@ -41,7 +41,7 @@ export default function HowItWorks() {
 
     return (
         <div
-            className="w-full mx-auto px-4 py-8 font-sans"
+            className="w-full mx-auto px-4 py-8 font-sans md:max-w-2xl lg:max-w-3xl md:py-10"
             style={{ fontFamily: "'DM Sans', sans-serif" }}
         >
             {/* Google font */}
@@ -57,15 +57,15 @@ export default function HowItWorks() {
                     <div className="h-px flex-1 max-w-[40px] bg-gradient-to-l from-transparent to-orange-200" />
                 </div>
                 <h2
-                    className="text-xl font-bold text-stone-800"
+                    className="text-xl font-bold text-stone-800 md:text-2xl lg:text-3xl"
                     style={{ fontFamily: "'Cormorant Garamond', serif" }}
                 >
-                    Book your puja in{" "}
+                    Book your seva in{" "}
                     <span className="italic bg-gradient-to-r from-orange-600 to-red-500 bg-clip-text text-transparent">
                         4 simple steps
                     </span>
                 </h2>
-                <p className="text-[12px] text-stone-500 text-center mt-1 font-light">
+                <p className="text-[12px] text-stone-500 text-center mt-1 font-light md:text-sm md:mt-2">
                     See how it works and simplify your puja booking experience.
                 </p>
             </div>
@@ -111,7 +111,7 @@ export default function HowItWorks() {
                         </div>
                         {/* Label */}
                         <span
-                            className={`text-[10px] font-medium transition-colors duration-200 whitespace-nowrap ${i === active ? "text-stone-700" : "text-stone-400"
+                            className={`text-[10px] font-medium transition-colors duration-200 whitespace-nowrap md:text-xs ${i === active ? "text-stone-700" : "text-stone-400"
                                 }`}
                         >
                             {step.title}
@@ -123,27 +123,27 @@ export default function HowItWorks() {
             {/* Detail panel */}
             <div
                 key={active}
-                className="rounded-2xl p-2 flex items-start gap-4 border border-orange-100 shadow-sm"
+                className="rounded-2xl p-2 flex items-start gap-4 border border-orange-100 shadow-sm md:p-4 md:gap-5"
                 style={{
                     background: "linear-gradient(135deg, #fff7ed, #fef3e2, #ffecd2)",
                     animation: "fadeIn 0.35s ease",
                 }}
             >
                 <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }`}</style>
-                <div className="mt-4 ml-2 select-none"><s.icon className="w-7 h-7 text-orange-500" /></div>
+                <div className="mt-4 ml-2 select-none md:mt-1"><s.icon className="w-7 h-7 text-orange-500 md:w-8 md:h-8" /></div>
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-semibold tracking-widest uppercase bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
+                        <span className="text-[10px] font-semibold tracking-widest uppercase bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent md:text-xs">
                             Step {s.number}
                         </span>
                     </div>
                     <h3
-                        className="text-base font-semibold text-stone-800 mb-1"
+                        className="text-base font-semibold text-stone-800 mb-1 md:mb-1.5"
                         style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "17px" }}
                     >
                         {s.title}
                     </h3>
-                    <p className="text-xs text-stone-500 leading-relaxed font-light">{s.desc}</p>
+                    <p className="text-xs text-stone-500 leading-relaxed font-light md:text-sm">{s.desc}</p>
                 </div>
             </div>
 

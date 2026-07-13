@@ -110,7 +110,7 @@ export default function ShopSection() {
     const total = subtotal + calcShipping(subtotal);
 
     return (
-        <section className="shop-section relative py-6 overflow-hidden bg-gradient-to-b from-[#FFFAF3] to-[#FFF6EA]">
+        <section className="shop-section relative py-6 overflow-hidden bg-gradient-to-b from-[#FFFAF3] to-[#FFF6EA] md:py-12 lg:py-16">
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .shop-section { font-family: 'DM Sans', sans-serif; }
@@ -119,9 +119,9 @@ export default function ShopSection() {
             `}</style>
 
             {/* Header */}
-            <div className="px-5 mb-3 flex items-end justify-between gap-3">
+            <div className="px-5 mb-3 flex items-end justify-between gap-3 md:px-8 lg:px-10 md:mb-6">
                 <div>
-                    <h2 className="text-stone-900 font-bold leading-tight" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "27px" }}>
+                    <h2 className="text-stone-900 font-bold leading-tight md:text-4xl! md:tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "27px" }}>
                         Spiritual{" "}
                         <span className="italic bg-gradient-to-r from-amber-600 to-orange-500 bg-clip-text text-transparent">Panditji At Request Shop</span>
                     </h2>
@@ -130,7 +130,7 @@ export default function ShopSection() {
                 {/* Cart button */}
                 <button
                     onClick={() => setIsCartOpen(true)}
-                    className="relative shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-white border border-amber-100 shadow-sm active:scale-95 transition-transform"
+                    className="relative shrink-0 w-11 h-11 flex items-center justify-center rounded-full bg-white border border-amber-100 shadow-sm active:scale-95 transition-transform cursor-pointer md:w-12 md:h-12 md:transition-all md:hover:shadow-md md:hover:border-amber-300"
                 >
                     <ShoppingBag className="w-5 h-5 text-amber-600" />
                     {itemCount > 0 && (
@@ -142,15 +142,15 @@ export default function ShopSection() {
             </div>
 
             {/* Category chips */}
-            <div className="shop-chips overflow-x-auto px-5 mb-4">
-                <div className="flex gap-2 w-max">
+            <div className="shop-chips overflow-x-auto px-5 mb-4 md:px-8 lg:px-10 md:overflow-visible md:mb-7">
+                <div className="flex gap-2 w-max md:w-full md:flex-wrap md:gap-2.5">
                     {SHOP_CATEGORIES.map((cat) => (
                         <button
                             key={cat}
                             onClick={() => setCategory(cat)}
-                            className={`text-[12px] font-bold px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors ${category === cat
+                            className={`text-[12px] font-bold px-3.5 py-1.5 rounded-full whitespace-nowrap transition-colors cursor-pointer md:text-[13px] md:px-4 md:py-2 ${category === cat
                                 ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm"
-                                : "bg-white text-stone-600 border border-stone-200"}`}
+                                : "bg-white text-stone-600 border border-stone-200 md:hover:border-amber-300 md:hover:text-amber-700 md:hover:bg-amber-50/60"}`}
                         >
                             {cat}
                         </button>
@@ -159,7 +159,7 @@ export default function ShopSection() {
             </div>
 
             {/* Product grid */}
-            <div className="px-5 grid grid-cols-2 gap-3">
+            <div className="px-5 grid grid-cols-2 gap-3 md:px-8 lg:px-10 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 md:gap-5 lg:gap-6">
                 {loading && (
                     <>
                         <ShopProductSkeleton />
@@ -170,11 +170,11 @@ export default function ShopSection() {
                 )}
 
                 {error && (
-                    <div className="col-span-2 text-center py-8 bg-red-50 border border-red-100 rounded-2xl">
+                    <div className="col-span-2 text-center py-8 bg-red-50 border border-red-100 rounded-2xl md:col-span-full md:py-12">
                         <p className="text-red-600 text-[13px] font-semibold">{error}</p>
                         <button
                             onClick={fetchProducts}
-                            className="mt-2 text-xs font-bold text-red-700 underline"
+                            className="mt-2 text-xs font-bold text-red-700 underline cursor-pointer"
                         >
                             Try Again
                         </button>
@@ -190,7 +190,7 @@ export default function ShopSection() {
             </div>
 
             {!loading && !error && filtered.length === 0 && (
-                <p className="text-center text-stone-400 text-sm py-10">No products in this category yet.</p>
+                <p className="text-center text-stone-400 text-sm py-10 md:text-base md:py-16">No products in this category yet.</p>
             )}
 
             {/* Inline cart summary bar (appears when items added) */}
@@ -198,11 +198,11 @@ export default function ShopSection() {
                 {itemCount > 0 && (
                     <motion.div
                         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
-                        className="px-5 mt-4"
+                        className="px-5 mt-4 md:px-8 lg:px-10 md:mt-8"
                     >
                         <button
                             onClick={() => setIsCartOpen(true)}
-                            className="w-full flex items-center justify-between bg-stone-900 text-white rounded-2xl px-4 py-3 shadow-lg active:scale-[0.99] transition-transform"
+                            className="w-full flex items-center justify-between bg-stone-900 text-white rounded-2xl px-4 py-3 shadow-lg active:scale-[0.99] transition-transform cursor-pointer md:max-w-2xl md:mx-auto md:px-6 md:py-4 md:transition-all md:hover:bg-stone-800 md:hover:shadow-xl"
                         >
                             <span className="flex items-center gap-2 text-[13px] font-semibold">
                                 <span className="w-7 h-7 flex items-center justify-center rounded-full bg-white/15 text-[12px] font-bold">{itemCount}</span>

@@ -51,11 +51,10 @@ import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
 import PanditModel from "./model/panditApp/panditModel";
 import UserAddressModel from "./model/userApp/userAddressModel";
 
-dotenv.config();
-
 // Normalize cross-service URLs (partner-affiliate commission engine) for the current APP_ENV.
-// MUST stay a require() placed AFTER dotenv.config(): an `import` would hoist above it and read
-// an empty process.env. See src/config/environment.ts for the local/production rules.
+// MUST stay a require(): env is loaded by ./config/loadEnv (imported first, at the top of this
+// file), and a plain `import` here could hoist above that and read an empty process.env.
+// See src/config/environment.ts for the local/production rules.
 require("./config/environment");
 
 const app = express();

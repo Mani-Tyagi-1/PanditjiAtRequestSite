@@ -7,6 +7,7 @@ import { panditJiAtRequestMongooose } from "../../config/connectDB";
 import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhavaBookingModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
+import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 // Devshayani Ekadashi combo (frontend-only offering — remove to disable)
 import { resolveDevshayaniCombo } from "../../config/devshayaniCombo";
 
@@ -611,11 +612,22 @@ export const completeChadhavaPayment: RequestHandler = async (req, res) => {
       return;
     }
 
+    const chadhavaWasUnpaid = (booking as any).paymentStatus !== "paid";
     booking.paymentStatus = "paid";
     booking.status = "confirmed";
     booking.razorpayPaymentId = razorpayPaymentId;
     booking.razorpaySignature = razorpaySignature;
     await booking.save();
+
+    // Partner-affiliate: credit the customer's referrer once, on the first successful payment.
+    if (chadhavaWasUnpaid) {
+      void sendPjarOrderToPartnerAffiliate({
+        phone: (booking as any).phone,
+        orderId: booking.razorpayOrderId,
+        orderPrice: Number((booking as any).totalAmount),
+        productName: (booking as any).chadhavaName || "CHADHAVA",
+      });
+    }
 
     // 🟢 Thank-you WhatsApp — only now that payment is verified (fire-and-forget)
     void sendChadhavaConfirmationWhatsapp(booking);

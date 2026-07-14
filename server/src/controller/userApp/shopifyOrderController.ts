@@ -4,6 +4,7 @@ import crypto from "crypto";
 import ShopifyOrder from "../../model/userApp/shopifyOrderModel";
 import ShopifyProduct from "../../model/userApp/shopifyProductModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
+import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 
 const isProduction = process.env.PAYMENT_MODE === "production";
 const razorpayKeyId = isProduction
@@ -530,11 +531,23 @@ export const completeShopifyOrderPayment: RequestHandler = async (req, res) => {
       return;
     }
 
+    const shopifyWasUnpaid = (order as any).paymentStatus !== "paid";
     order.paymentStatus = "paid";
     order.status = "confirmed";
     order.razorpayPaymentId = razorpayPaymentId;
     order.razorpaySignature = razorpaySignature;
     await order.save();
+
+    // Partner-affiliate: credit the customer's referrer once, on the first successful payment.
+    if (shopifyWasUnpaid) {
+      void sendPjarOrderToPartnerAffiliate({
+        userId: (order as any).user,
+        phone: (order as any).phone,
+        orderId: order.razorpayOrderId,
+        orderPrice: Number((order as any).totalAmount),
+        productName: "SHOPIFY_ORDER",
+      });
+    }
 
     // Fire-and-forget order confirmation on WhatsApp (exactly once)
     void sendOrderConfirmationOnce(order);

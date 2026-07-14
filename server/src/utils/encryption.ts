@@ -1,7 +1,7 @@
 // /src/middleware/encryption.ts (or your preferred location)
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import CryptoJS from "crypto-js";
-import 'dotenv/config';
+import '../config/loadEnv';
 
 // --- Centralized Encryption Setup ---
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;

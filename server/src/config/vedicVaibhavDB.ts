@@ -18,14 +18,13 @@ async function ensureIndexes() {
 }
 
 const VVMainConnectDB = async (): Promise<void> => {
-  const isTesting = process.env.NODE_ENV !== 'production';
-  const uri = isTesting
-    ? process.env.TESTING_MONGO_URI_VEDIC_VAIBHAV_MAIN || ''
-    : process.env.MONGO_URI_VEDIC_VAIBHAV_MAIN || '';
+  // The correct URI for the active environment is supplied by .env.dev /
+  // .env.production via the loadEnv loader, so we just read one variable here.
+  const uri = process.env.MONGO_URI_VEDIC_VAIBHAV_MAIN || '';
 
   try {
     const conn = await VedicVaibhavMongoose.connect(uri);
-    const envLabel = isTesting ? 'VedicVaibhavMain TESTING' : 'VedicVaibhavMain';
+    const envLabel = process.env.NODE_ENV === 'production' ? 'VedicVaibhavMain' : 'VedicVaibhavMain TESTING';
     console.log(`MongoDB (${envLabel}) Connected: ${conn.connection.host}`);
     // Run ensureIndexes after successful connection
     await ensureIndexes();

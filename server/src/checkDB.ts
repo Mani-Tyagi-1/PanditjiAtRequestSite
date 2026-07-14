@@ -1,6 +1,5 @@
+import "./config/loadEnv";
 import mongoose from "mongoose";
-import * as dotenv from "dotenv";
-dotenv.config();
 
 import LiveMandirPuja from "./model/userApp/liveMandirPujaModel";
 import HolyPandit from "./model/userApp/holyPanditModel";

@@ -1,9 +1,12 @@
+// Load environment configuration (.env + .env.dev/.env.production) before anything
+// else reads process.env.
+import "./config/loadEnv";
+
 import dns from 'node:dns';
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import * as http from "http";
-import * as dotenv from "dotenv";
 import cors from "cors";
 import compression from "compression";
 import { Server as SocketIOServer } from "socket.io";
@@ -47,8 +50,6 @@ import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
 import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
 import PanditModel from "./model/panditApp/panditModel";
 import UserAddressModel from "./model/userApp/userAddressModel";
-
-dotenv.config();
 
 const app = express();
 // Gzip all responses (safe, transparent) — big payload-size win for API responses.

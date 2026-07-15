@@ -40,6 +40,7 @@ import holyPanditRoutes from "./routes/userAppRoutes/holyPanditRoutes";
 import shopifyProductRoutes from "./routes/userAppRoutes/shopifyProductRoutes";
 import shopifyOrderRoutes from "./routes/userAppRoutes/shopifyOrderRoutes";
 import seoRoutes from "./routes/seoRoutes";
+import affiliateProductsRoutes from "./routes/userAppRoutes/affiliateProductsRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -97,6 +98,7 @@ app.use("/api", liveMandirRoutes);
 app.use("/api", chadhavaRoutes);
 app.use("/api", kashiRoutes);
 app.use("/api", shopRoutes);
+app.use("/api/affiliate", affiliateProductsRoutes);
 app.use("/api", holyPanditRoutes);
 app.use("/api", shopifyProductRoutes);
 app.use("/api", shopifyOrderRoutes);

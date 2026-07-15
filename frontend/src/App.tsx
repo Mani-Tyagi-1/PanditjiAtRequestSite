@@ -118,6 +118,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ShopifyCartProvider } from "./context/ShopifyCartContext";
 import LoginModal from "./components/auth/LoginModal";
 import ShopifyCartDrawer from "./components/booking/Shop/ShopifyCartDrawer";
+import AppDownloadModal from "./components/AppDownloadModal";
 import AppLayout from "./components/layout/AppLayout";
 
 // Lazy load all other pages
@@ -212,6 +213,7 @@ function App() {
       <ScrollToTop />
       <PixelPageTracker />
       <ReferralCapture />
+      <AppDownloadModal />
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
         <Routes>
           {/* App shell with persistent bottom nav */}

@@ -191,6 +191,15 @@ function ReferralCapture() {
         "pjar_partner_ref",
         JSON.stringify({ code: ref, storedAt: Date.now() })
       );
+      // This is the last code that can still see ?ref= before the URL is rewritten below,
+      // so record the arrival here. `pjar_partner_ref` above outlives the visit by design
+      // (checkout attribution) and must never be used to decide whether someone *just*
+      // arrived via an invite — this marker is what AppDownloadModal gates on.
+      try {
+        sessionStorage.setItem("pjar_ref_arrival", ref);
+      } catch {
+        /* private mode — modal falls back to reading ?ref= off the URL */
+      }
       // Remove ?ref from URL without a page reload
       params.delete("ref");
       const newSearch = params.toString();

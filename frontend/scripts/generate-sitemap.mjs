@@ -41,6 +41,8 @@ const STATIC_ROUTES = [
   { path: "/free-consultation", priority: "0.7", changefreq: "monthly" },
   { path: "/paid-consultation", priority: "0.6", changefreq: "monthly" },
   { path: "/blog", priority: "0.7", changefreq: "weekly" },
+  // Savan 2026 seasonal campaign page — remove after 28 Aug 2026
+  { path: "/kashi-mahadev-savan-puja", priority: "0.9", changefreq: "daily" },
   { path: "/join-as-panditji", priority: "0.5", changefreq: "monthly" },
   { path: "/privacypolicy", priority: "0.3", changefreq: "yearly" },
   { path: "/termsandconditions", priority: "0.3", changefreq: "yearly" },

@@ -53,6 +53,13 @@ export const KASHI_MAHADEV_POOJA_ID = "RF_SAVAN_01";
 /** Add-on price for the optional blessed prasad box (₹). */
 export const PRASAD_BOX_PRICE = 298;
 
+/**
+ * Per-person price for adding a family member to the Sankalp (₹).
+ * Each name added is taken during the Sankalp alongside the main devotee, and
+ * adds this much to the booking total. Matches the Live Mandir flow's rate.
+ */
+export const FAMILY_MEMBER_PRICE = 101;
+
 /** First Savan Somwar of Shravan 2026 (Sawan runs 30 Jul – 28 Aug 2026). */
 export const FIRST_SAVAN_SOMWAR = "August 3, 2026";
 

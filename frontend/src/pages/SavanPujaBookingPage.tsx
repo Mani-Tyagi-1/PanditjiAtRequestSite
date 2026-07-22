@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Gift } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Gift, Plus, X, Users, AlertCircle } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
-import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, PRASAD_BOX_PRICE } from "../data/kashiMahadevPuja";
+import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE } from "../data/kashiMahadevPuja";
 
 type Step = "details" | "success";
 
@@ -53,7 +53,18 @@ export default function SavanPujaBookingPage() {
         email: "",
         time: "06:00", // Savan Somwar abhishek is performed in the early morning
         prasadAdded: prasadPreselected,
+        // Extra people taken during the Sankalp alongside the main devotee.
+        // Persisted on the booking as `familyMembers` (the live-mandir branch of
+        // the controller already stores this field, and the schema types it as a
+        // plain Array, so name+gotra objects are stored as-is).
+        familyMembers: [] as { name: string; gotra: string }[],
     });
+
+    // The not-yet-added row in the "add family member" box. Devotees routinely
+    // type a name here and assume it counted, so this being uncommitted is
+    // surfaced loudly in the UI and blocks checkout rather than being dropped.
+    const [familyInput, setFamilyInput] = useState({ name: "", gotra: "" });
+    const pendingFamilyName = familyInput.name.trim();
 
     // Delivery address (only required when blessed prasad is added)
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -108,9 +119,29 @@ export default function SavanPujaBookingPage() {
         document.body.appendChild(script);
     }, []);
 
+    const addFamilyMember = () => {
+        const name = familyInput.name.trim();
+        if (!name) return;
+        // Same name twice would be charged twice and read oddly in the Sankalp.
+        if (form.familyMembers.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
+            setFamilyInput({ name: "", gotra: "" });
+            return;
+        }
+        setForm((f) => ({
+            ...f,
+            familyMembers: [...f.familyMembers, { name, gotra: familyInput.gotra.trim() }],
+        }));
+        setFamilyInput({ name: "", gotra: "" });
+    };
+
+    const removeFamilyMember = (index: number) => {
+        setForm((f) => ({ ...f, familyMembers: f.familyMembers.filter((_, i) => i !== index) }));
+    };
+
     const basePrice = puja.poojaPriceOnline;
     const prasadCost = form.prasadAdded ? PRASAD_BOX_PRICE : 0;
-    const totalPrice = basePrice + prasadCost;
+    const familyCost = form.familyMembers.length * FAMILY_MEMBER_PRICE;
+    const totalPrice = basePrice + prasadCost + familyCost;
 
     // Fires once the devotee has a usable name + phone in the form, on blur of
     // either field — same signal (and event name) BookingModal reports, so the
@@ -137,6 +168,15 @@ export default function SavanPujaBookingPage() {
             setError("Please enter the devotee's name.");
             return;
         }
+        // A typed-but-not-added family member is the most common mistake on this
+        // form: the devotee assumes typing the name was enough. Stop here and say
+        // so, rather than silently dropping the name from the Sankalp, or adding
+        // it and charging ₹101 more than the total they were just shown.
+        if (pendingFamilyName) {
+            setError(`Tap "Add" to include ${pendingFamilyName} in the Sankalp, or clear the name field.`);
+            return;
+        }
+
         const phoneDigits = form.phone.replace(/\D/g, "");
         if (phoneDigits.length !== 10) {
             setError("Please enter a valid 10-digit mobile number.");
@@ -222,6 +262,10 @@ export default function SavanPujaBookingPage() {
                     phone: phoneDigits,
                     emailId: form.email.trim(),
                     prasadAdded: form.prasadAdded,
+                    // Stored on the booking by the isLiveMandir branch of
+                    // create-pending, so the pandit knows every name to take
+                    // during the Sankalp.
+                    familyMembers: form.familyMembers,
                     address: addressPayload,
                 })),
             });
@@ -386,19 +430,30 @@ export default function SavanPujaBookingPage() {
                             </div>
                             {puja.poojaNameHindi && <p className="text-[11.5px] text-[#086B50] font-medium mt-0.5">{puja.poojaNameHindi}</p>}
 
-                            {form.prasadAdded ? (
+                            {form.prasadAdded || form.familyMembers.length > 0 ? (
                                 <div className="mt-2.5 pt-2.5 border-t border-[#DDEBE6] space-y-2">
                                     <div className="flex items-center justify-between">
                                         <span className="text-[12.5px] text-[#66736E] font-medium">Base Seva</span>
                                         <span className="text-[13px] font-bold text-[#17211D]">₹{basePrice.toLocaleString("en-IN")}</span>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
-                                            <Gift className="w-3.5 h-3.5 text-[#086B50]" />
-                                            Sacred Prasad Box
-                                        </span>
-                                        <span className="text-[13px] font-bold text-[#17211D]">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
-                                    </div>
+                                    {form.familyMembers.length > 0 && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
+                                                <Users className="w-3.5 h-3.5 text-[#086B50]" />
+                                                Family Sankalp × {form.familyMembers.length}
+                                            </span>
+                                            <span className="text-[13px] font-bold text-[#17211D]">+₹{familyCost.toLocaleString("en-IN")}</span>
+                                        </div>
+                                    )}
+                                    {form.prasadAdded && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
+                                                <Gift className="w-3.5 h-3.5 text-[#086B50]" />
+                                                Sacred Prasad Box
+                                            </span>
+                                            <span className="text-[13px] font-bold text-[#17211D]">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
+                                        </div>
+                                    )}
                                     <div className="flex items-baseline justify-between pt-2 border-t border-[#DDEBE6]">
                                         <span className="text-[10px] font-bold uppercase tracking-wide text-[#66736E]">Total</span>
                                         <span className="text-xl font-extrabold text-[#086B50]">₹{totalPrice.toLocaleString("en-IN")}</span>
@@ -455,10 +510,108 @@ export default function SavanPujaBookingPage() {
                             </div>
                         </div>
 
-                        {/* Step 2: Prasad Delivery (optional) */}
-                        <div className="space-y-3 pb-6">
+                        {/* Step 2: Family Sankalp (optional) — each name adds ₹101 */}
+                        <div className="space-y-3">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
                                 <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">02</span>
+                                <div>
+                                    <h3 className="font-bold text-[#17211D] text-[14px]">Family Sankalp</h3>
+                                    <p className="text-[11px] text-[#66736E]">Optional · add members at ₹{FAMILY_MEMBER_PRICE} each</p>
+                                </div>
+                            </div>
+
+                            {/* Name + gotra for the person being added. The row is
+                                only committed by the Add button (or Enter), so it is
+                                framed as a draft — amber border and an explicit
+                                "not added yet" warning — until it is. */}
+                            <div
+                                className={`rounded-2xl border p-3 space-y-2.5 transition-colors ${
+                                    pendingFamilyName ? "border-[#C89B3C] bg-[#C89B3C]/[0.07]" : "border-[#DDEBE6] bg-white"
+                                }`}
+                            >
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className={LABEL}>Member's Name</label>
+                                        <input
+                                            value={familyInput.name}
+                                            onChange={(e) => setFamilyInput((p) => ({ ...p, name: e.target.value }))}
+                                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addFamilyMember(); } }}
+                                            placeholder="Full name"
+                                            className={INPUT}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={LABEL}>Gotra</label>
+                                        <input
+                                            value={familyInput.gotra}
+                                            onChange={(e) => setFamilyInput((p) => ({ ...p, gotra: e.target.value }))}
+                                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addFamilyMember(); } }}
+                                            placeholder="Optional"
+                                            className={INPUT}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={addFamilyMember}
+                                    disabled={!pendingFamilyName}
+                                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#086B50] hover:bg-[#065A43] disabled:bg-[#DDEBE6] disabled:text-[#66736E] text-white font-bold text-[13px] py-2.5 transition-colors active:scale-95 disabled:active:scale-100 cursor-pointer disabled:cursor-not-allowed"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    {pendingFamilyName ? `Add ${pendingFamilyName} · +₹${FAMILY_MEMBER_PRICE}` : "Add member"}
+                                </button>
+
+                                {/* The whole point of this block: make "typed but not
+                                    added" impossible to mistake for "added". */}
+                                {pendingFamilyName && (
+                                    <p className="flex items-start gap-1.5 text-[11px] font-semibold text-[#8A6A1F] leading-snug">
+                                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+                                        {pendingFamilyName} is not added yet — tap the Add button above to include them in the Sankalp.
+                                    </p>
+                                )}
+                            </div>
+
+                            {form.familyMembers.length > 0 && (
+                                <div className="space-y-2 pt-0.5">
+                                    {form.familyMembers.map((m, idx) => (
+                                        <div
+                                            key={`${m.name}-${idx}`}
+                                            className="flex items-center gap-2 bg-[#DFF5EF] border border-[#DDEBE6] rounded-xl px-3 py-2"
+                                        >
+                                            <Check className="w-3.5 h-3.5 text-[#008C68] shrink-0" strokeWidth={3} />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-[12.5px] font-bold text-[#17211D] truncate">{m.name}</p>
+                                                <p className="text-[10.5px] text-[#66736E] truncate">
+                                                    Gotra: {m.gotra || "Kashyap (default)"}
+                                                </p>
+                                            </div>
+                                            <span className="text-[11px] font-bold text-[#086B50] shrink-0">+₹{FAMILY_MEMBER_PRICE}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFamilyMember(idx)}
+                                                aria-label={`Remove ${m.name}`}
+                                                className="text-[#008C68] hover:text-[#065A43] transition-colors shrink-0"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {form.familyMembers.length > 0 && (
+                                <p className="flex items-center gap-1.5 text-[11px] text-[#66736E]">
+                                    <Users className="w-3.5 h-3.5 text-[#086B50] shrink-0" />
+                                    {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added · +₹{familyCost.toLocaleString("en-IN")}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Step 3: Prasad Delivery (optional) */}
+                        <div className="space-y-3 pb-6">
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
+                                <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
                                     <h3 className="font-bold text-[#17211D] text-[14px]">Prasad Delivery</h3>
                                     <p className="text-[11px] text-[#66736E]">Optional delivery at your address</p>

@@ -16,7 +16,6 @@ import {
     User,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
-import { DURGA_MATA_PUJA_SLUG } from "../data/durgaMataPuja";
 import { useAuth } from "../context/AuthContext";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
@@ -30,9 +29,6 @@ import CTASection from "../components/home/CTASection";
 const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
 
-// Featured "Maa Chintpurni Pooja" promo banner shown below Book Puja.
-// 👉 Paste the banner image URL here:
-const FEATURED_PUJA_BANNER = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/WhatsApp%20Image%202026-07-06%20at%207.12.44%20PM.jpeg";
 
 type Pooja = {
     _id: string;
@@ -292,24 +288,6 @@ export default function HomePage() {
                     )}
                 </div>
             </section>
-
-            {/* ── Featured Puja banner (Maa Chintpurni) ── */}
-            {FEATURED_PUJA_BANNER && (
-                <section className="px-4 pt-6">
-                    <button
-                        onClick={() => navigate(`/${DURGA_MATA_PUJA_SLUG}`)}
-                        aria-label="Book Maa Chintpurni Pooja"
-                        className="block w-full active:scale-[0.99] transition-transform cursor-pointer"
-                    >
-                        <img
-                            src={FEATURED_PUJA_BANNER}
-                            alt="Maa Chintpurni Pooja — Book Now"
-                            className="w-full h-auto rounded-2xl shadow-md"
-                            loading="lazy"
-                        />
-                    </button>
-                </section>
-            )}
 
              {/* ── Our Services ── */}
             <OurServices />

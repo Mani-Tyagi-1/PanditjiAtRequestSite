@@ -128,8 +128,6 @@ const DeleteUserAccount = React.lazy(() => import("./pages/DeleteUserAccount"));
 const TermsAndConditions = React.lazy(() => import("./pages/TermsAndConditions"));
 const CategoryPage = React.lazy(() => import("./components/booking/CategoryPage"));
 const PujaDetailPage = React.lazy(() => import("./components/booking/PujaPage"));
-const DurgaMataPujaPage = React.lazy(() => import("./pages/DurgaMataPujaPage"));
-const DurgaMataPujaBookingPage = React.lazy(() => import("./pages/DurgaMataPujaBookingPage"));
 const SavanPujaPage = React.lazy(() => import("./pages/SavanPujaPage"));
 const SavanPujaBookingPage = React.lazy(() => import("./pages/SavanPujaBookingPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
@@ -235,6 +233,8 @@ function App() {
             <Route path="/chadhava" element={<ChadhavaPage />} />
             <Route path="/kashi" element={<KashiPage />} />
             <Route path="/shop" element={<ShopPage />} />
+            {/* Selected category lives in the URL, e.g. /shop/rudraksh, /shop/all */}
+            <Route path="/shop/:category" element={<ShopPage />} />
             <Route path="/account" element={<ProfilePage />} />
           </Route>
 
@@ -247,11 +247,13 @@ function App() {
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/category/:categoryId" element={<CategoryPage />} />
           <Route path="/puja" element={<PujaDetailPage />} />
-          <Route path="/maa-chintpurni-puja" element={<DurgaMataPujaPage />} />
-          <Route path="/maa-chintpurni-puja/booking" element={<DurgaMataPujaBookingPage />} />
-          {/* Legacy slug → redirect so old links/ads keep working */}
-          <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/maa-chintpurni-puja" replace />} />
-          <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/maa-chintpurni-puja/booking" replace />} />
+          {/* Retired campaign (Maa Chintpurni / Shri Durga Mata) — the dedicated
+              pages are gone, but these slugs were used in ads and WhatsApp
+              shares, so send that traffic to the puja catalog instead of 404. */}
+          <Route path="/maa-chintpurni-puja" element={<Navigate to="/puja" replace />} />
+          <Route path="/maa-chintpurni-puja/booking" element={<Navigate to="/puja" replace />} />
+          <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/puja" replace />} />
+          <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/puja" replace />} />
           {/* Savan 2026 — Mahadev Rudrabhishek at Kashi on the first Savan Somwar */}
           <Route path="/kashi-mahadev-savan-puja" element={<SavanPujaPage />} />
           <Route path="/kashi-mahadev-savan-puja/booking" element={<SavanPujaBookingPage />} />
@@ -283,7 +285,10 @@ function App() {
           <Route path="/chadhava/:slug/booking" element={<ChadhavaBookingPage />} />
           <Route path="/chadhava/:slug" element={<ChadhavaDetailPage />} />
           <Route path="/shop-product/:slug" element={<ShopProductDetailPage />} />
+          {/* Legacy product URL — kept so already-shared links keep working */}
           <Route path="/shop/product/:handle" element={<ShopifyProductDetailPage />} />
+          {/* Current shape: /shop/<category>/<product-handle> */}
+          <Route path="/shop/:category/:handle" element={<ShopifyProductDetailPage />} />
 
           {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 

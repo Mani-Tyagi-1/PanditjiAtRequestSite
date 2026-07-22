@@ -206,8 +206,13 @@ async function sendBookingConfirmationWhatsapp(booking: any) {
 
     // For Live Mandir: include mandir name in param2, selected date in param3
     const liveMandirTemple = booking?.templeName ? ` at *${booking.templeName}*` : '';
+    // NOTE: this promises the puja VIDEO on WhatsApp, not a live stream link.
+    // No live-stream URL is captured anywhere — LiveMandirPuja has no such field
+    // — and every Live Mandir detail page advertises "Puja video on WhatsApp /
+    // Full recording delivered to you". The old "live stream link" wording
+    // promised devotees something that never arrives.
     const param2 = isLiveMandir
-      ? `Thank you for booking your Live Mandir Puja — *${poojaName}*${liveMandirTemple}. 🛕 Your sacred booking is confirmed and the puja will be performed with your sankalp. 🌸 Our team will share the live stream link & details with you shortly. 🙏`
+      ? `Thank you for booking your Live Mandir Puja — *${poojaName}*${liveMandirTemple}. 🛕 Your sacred booking is confirmed and the puja will be performed with your sankalp. 🌸 The puja video will be shared with you on WhatsApp after the puja is performed. 🙏`
       : `Your booking for *${poojaName}* has been successfully placed. 🌸 Your booking is confirmed, and *${assignedPanditName}* has been assigned to you. Our team will contact you shortly. 🙏`;
     const param3 = `Date: ${bookingDateStr}`;
     const param4 = `Booking ID: ${bookingId}`;
@@ -220,12 +225,28 @@ async function sendBookingConfirmationWhatsapp(booking: any) {
     // normal puja → pooja card image). Falls back to the brand image if unavailable.
     let headerImage = ORDER_TEMPLATE_HEADER_IMAGE;
     try {
+      // 1) A genuine Live Mandir puja carries its own artwork on the
+      //    LiveMandirPuja row, keyed by slug.
       if (isLiveMandir && booking?.pujaSlug) {
         const lm = await LiveMandirPuja.findOne({ slug: booking.pujaSlug }).lean();
         if ((lm as any)?.image) headerImage = (lm as any).image;
-      } else if (booking?.poojaId) {
-        const pooja = await Pooja.findById(booking.poojaId).lean();
-        if ((pooja as any)?.poojaCardImage) headerImage = (pooja as any).poojaCardImage;
+      }
+
+      // 2) Fall through to the catalog row when step 1 found nothing. Campaign
+      //    pujas are booked with isLiveMandir:true but live in the Pooja
+      //    collection, not LiveMandirPuja (e.g. RF_SAVAN_01), so step 1 never
+      //    resolves for them. This was previously an `else if`, which made the
+      //    branch unreachable for those bookings and sent the generic brand
+      //    image instead of the puja's own banner.
+      //
+      //    Guard: on the live-mandir path `poojaId` can be an arbitrary fallback
+      //    row (see the resolution chain in create-pending), so only trust its
+      //    image when the row really is the puja that was booked.
+      if (headerImage === ORDER_TEMPLATE_HEADER_IMAGE && booking?.poojaId) {
+        const pooja: any = await Pooja.findById(booking.poojaId).lean();
+        const isRealMatch =
+          !isLiveMandir || (pooja?.poojaID && pooja.poojaID === booking.pujaSlug);
+        if (isRealMatch && pooja?.poojaCardImage) headerImage = pooja.poojaCardImage;
       }
     } catch (imgErr: any) {
       console.warn('[PujaBooking] Could not resolve header image, using fallback:', imgErr?.message);
@@ -317,7 +338,7 @@ const sendLiveMandirPaymentNudge = async (pendingBookingId: string) => {
     const message =
       `Namaste ${devoteeName} ji 🙏\n\n` +
       `We noticed you started booking *${poojaName}*${templeText}, but the payment of ₹${amount.toLocaleString('en-IN')} wasn't completed. 🛕\n\n` +
-      `Your Live Mandir Puja request is still pending for ${bookingDateStr}. Complete the payment to confirm your sankalp and receive the live stream details. 🌸\n\n` +
+      `Your Live Mandir Puja request is still pending for ${bookingDateStr}. Complete the payment to confirm your sankalp and receive the puja video on WhatsApp. 🌸\n\n` +
       `Complete your booking: https://play.google.com/store/apps/details?id=com.panditJiAtReqapp`;
 
     await sendWhatsappMessage({ to: phone, message });

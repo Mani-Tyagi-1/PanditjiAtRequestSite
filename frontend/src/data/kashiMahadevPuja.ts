@@ -8,25 +8,31 @@
 //  optionally have blessed prasad couriered home. Nobody visits the
 //  devotee's home.
 //
-//  Mirrors src/data/durgaMataPuja.ts exactly. Every field below renders on
-//  the dedicated page — no fetch-by-id call is made for the CONTENT.
+//  Shaped like a backend pooja document so it can be handed straight to the
+//  dedicated page — no fetch-by-id call is made for the CONTENT.
 //
-//  ⚠️  THE ONE BACKEND DEPENDENCY IS `_id` (see KASHI_MAHADEV_BACKEND_ID).
-//      The content is frontend-only, but the booking POST to
-//      /bookings/create-pending sends this `_id` and the server looks it up
-//      in the pooja catalog. It currently points at an EXISTING catalog
-//      document so payments work today — which means bookings will be
-//      REPORTED UNDER THAT PUJA'S NAME in admin. Create a real Kashi
-//      Mahadev pooja in the catalog and swap the id below.
+//  BACKEND LINK
+//  ────────────
+//  The page CONTENT is frontend-only, but a booking has to resolve to a real
+//  Pooja document — the server stamps that row's `poojaNameEng` onto the
+//  booking, the WhatsApp/email confirmation, the pandit notification, the
+//  admin record and the referral entry.
 //
-//  ⚠️  THE BANNER IMAGE IS STILL THE MAHAKAAL / UJJAIN ARTWORK. It has
-//      "Shree Mahakaal Puja" and "Ujjain, Madhya Pradesh" baked into it and
-//      MUST be replaced with Kashi artwork before this page goes live.
+//  This puja has its OWN catalog row, keyed on `poojaID: "RF_SAVAN_01"` and
+//  created by server/src/scripts/seedKashiMahadevPuja.ts. The booking page
+//  sends that string as `pujaSlug`; the server resolves it via
+//  `Pooja.findOne({ poojaID: pujaSlug })`. No Mongo `_id` is hardcoded, so one
+//  build works against both the dev and production clusters.
+//
+//  ⚠️  Run the seed script once per cluster before taking bookings there.
+//      Without the row, the controller's last-resort fallback grabs an
+//      arbitrary active pooja and bookings are misreported.
 //
 //  Remove the feature by deleting:
 //    • this file
 //    • frontend/src/pages/SavanPujaPage.tsx
 //    • frontend/src/pages/SavanPujaBookingPage.tsx
+//    • server/src/scripts/seedKashiMahadevPuja.ts
 //    • the SavanPujaPage routes + lazy imports in App.tsx
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -34,13 +40,15 @@
 export const KASHI_MAHADEV_PUJA_SLUG = "kashi-mahadev-savan-puja";
 
 /**
- * ⚠️ REPLACE ME once a real "Mahadev Savan Somwar Puja (Kashi)" document
- * exists in the backend pooja catalog. Until then this borrows Maa
- * Chintpurni Puja's catalog `_id` so /bookings/create-pending resolves and
- * Razorpay works — but every booking will show up as "Maa Chintpurni Puja"
- * in admin reports. This is the ONLY value that needs changing.
+ * Stable catalog key for this puja — the `poojaID` field on the backend Pooja
+ * document, seeded by server/src/scripts/seedKashiMahadevPuja.ts.
+ *
+ * The booking page sends this as `pujaSlug`, and the server resolves the row
+ * via `Pooja.findOne({ poojaID: pujaSlug })`. Keying on this string instead of
+ * a Mongo `_id` means one frontend build works against both the dev and
+ * production clusters, where the same puja has different `_id`s.
  */
-export const KASHI_MAHADEV_BACKEND_ID = "68618904380dcc9b941760f7";
+export const KASHI_MAHADEV_POOJA_ID = "RF_SAVAN_01";
 
 /** Add-on price for the optional blessed prasad box (₹). */
 export const PRASAD_BOX_PRICE = 298;
@@ -53,29 +61,33 @@ export const FIRST_SAVAN_SOMWAR = "August 3, 2026";
  * straight to the detail page UI and to the booking / enquiry flows.
  */
 export const kashiMahadevPuja = {
-    _id: KASHI_MAHADEV_BACKEND_ID,
-    poojaID: "RF_SAVAN_01",
+    // Not a Mongo _id — the booking resolves the catalog row by `pujaSlug`
+    // instead (see KASHI_MAHADEV_POOJA_ID). This value is only used as an
+    // analytics content id and as the enquiry-form reference, both of which
+    // also carry the puja name, so a stable string is fine here.
+    _id: KASHI_MAHADEV_POOJA_ID,
+    poojaID: KASHI_MAHADEV_POOJA_ID,
     poojaNameEng: "Shri Mahadev Savan Somwar Puja",
     poojaNameHindi: "श्री महादेव सावन सोमवार पूजा",
     poojaMode: "online", // performed at Kashi Vishwanath Temple on your behalf
-    poojaPriceOnline: 501,
-    poojaPriceOffline: 501,
+    poojaPriceOnline: 1100,
+    poojaPriceOffline: 1100,
     poojaGods: [] as string[],
-    // ⚠️ Mahakaal/Ujjain artwork — replace with a Kashi banner before launch.
+    // Kashi banner artwork.
     poojaCardImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
     poojaMainImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
     poojaImages: [
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
     ],
     poojaVideoLink: "",
 
     // ── Presentation-only fields (used by the Savan-themed detail page) ──
-    deity: "Baba Vishwanath (Mahadev)",
+    deity: "Baba Vishwanath",
     /** Temple where the online puja is performed on your behalf. */
-    templeName: "Shree Kashi Vishwanath Temple",
+    templeName: "Kashi",
     templeLocation: "Varanasi, Uttar Pradesh",
     rating: 4.9,
     devoteesLabel: "75K+",
@@ -98,7 +110,7 @@ export const kashiMahadevPuja = {
     isFeatured: true,
     isExclusive: true,
     // Dakshina must stay ≤ the price: the backend derives the stored pooja
-    // price as (amount − panditDakshina). ₹251 dakshina → ₹250 pooja price.
+    // price as (amount − panditDakshina). ₹1100 − ₹251 dakshina → ₹849 pooja price.
     panditDakshina: 251,
     samagriDetails: [] as any[],
     samagriPrice: 0,

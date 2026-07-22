@@ -19,7 +19,10 @@ import { type ShopifyProduct } from "../components/booking/Shop/shopifyTypes";
 import { useShopifyCart } from "../context/ShopifyCartContext";
 
 export default function ShopifyProductDetailPage() {
-    const { handle } = useParams<{ handle: string }>();
+    // URL shape is /shop/<category>/<handle>; the legacy /shop/product/<handle>
+    // route has no category, so fall back to the shop root there.
+    const { handle, category } = useParams<{ handle: string; category?: string }>();
+    const shopUrl = category && category !== "product" ? `/shop/${category}` : "/shop";
     const navigate = useNavigate();
     const { addItem, openCart, count } = useShopifyCart();
 
@@ -93,7 +96,7 @@ export default function ShopifyProductDetailPage() {
                 <span className="text-4xl">🛍️</span>
                 <h2 className="text-lg font-bold text-stone-850 mt-4">Error Loading Product</h2>
                 <p className="text-xs text-stone-500 mt-2 max-w-[280px]">{error || "This product does not exist."}</p>
-                <button onClick={() => navigate("/shop")} className="mt-6 bg-orange-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all">
+                <button onClick={() => navigate(shopUrl)} className="mt-6 bg-orange-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all">
                     Back to Shop
                 </button>
             </div>

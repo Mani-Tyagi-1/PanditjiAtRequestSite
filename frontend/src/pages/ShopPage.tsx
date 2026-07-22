@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
     ArrowLeft,
@@ -12,41 +12,30 @@ import {
 import API_URL from "../utils/apiConfig";
 import { type ShopifyProduct } from "../components/booking/Shop/shopifyTypes";
 import { useShopifyCart } from "../context/ShopifyCartContext";
+import {
+    ALL,
+    CATEGORY_RULES,
+    OTHERS,
+    categoryToSlug,
+    getCategory,
+    slugToCategory,
+} from "../utils/shopCategories";
 
-// Category rules — products are classified by matching these keywords against
-// their productType / category / title / tags. Order here = order of chips.
-const CATEGORY_RULES: { label: string; match: string[] }[] = [
-    { label: "Rudraksh", match: ["rudraksh", "rudraksha", "mukhi"] },
-    { label: "Plants", match: ["plant", "tulsi", "bonsai", "sapling", "money plant"] },
-    { label: "Bracelets", match: ["bracelet", "wristband", "kada", "band"] },
-    { label: "Malas", match: ["mala", "rosary", "japa"] },
-    { label: "Gemstones", match: ["gemstone", "stone", "ratna", "crystal", "pyrite", "quartz"] },
-    { label: "Yantra", match: ["yantra"] },
-    { label: "Idols", match: ["idol", "murti", "statue"] },
-    { label: "Puja Items", match: ["puja", "pooja", "diya", "incense", "dhoop", "agarbatti"] },
-];
-
-const OTHERS = "Others";
-
-const getCategory = (p: ShopifyProduct): string => {
-    const haystack = [p.productType, p.category, p.title, ...(p.tags || [])]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-    for (const rule of CATEGORY_RULES) {
-        if (rule.match.some((m) => haystack.includes(m))) return rule.label;
-    }
-    return OTHERS;
-};
+const DEFAULT_CATEGORY = "Rudraksh";
 
 export default function ShopPage() {
     const navigate = useNavigate();
+    const { category: categorySlug } = useParams<{ category?: string }>();
     const { addItem, openCart, count } = useShopifyCart();
 
     const [products, setProducts] = useState<ShopifyProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [activeCategory, setActiveCategory] = useState("Rudraksh");
+
+    // The selected category lives in the URL (/shop/rudraksh, /shop/puja-items,
+    // /shop/all), so it survives refresh/back and is shareable. Bare /shop keeps
+    // the original default.
+    const activeCategory = slugToCategory(categorySlug) || DEFAULT_CATEGORY;
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -69,7 +58,7 @@ export default function ShopPage() {
         const present = new Set(products.map(getCategory));
         const ordered = CATEGORY_RULES.map((r) => r.label).filter((l) => present.has(l));
         if (present.has(OTHERS)) ordered.push(OTHERS);
-        return ["All", ...ordered];
+        return [ALL, ...ordered];
     }, [products]);
 
     // Filter products locally for instantaneous user feedback
@@ -80,7 +69,7 @@ export default function ShopPage() {
                 (p.tags && p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
 
             const matchesCategory =
-                activeCategory === "All" || getCategory(p) === activeCategory;
+                activeCategory === ALL || getCategory(p) === activeCategory;
 
             return matchesSearch && matchesCategory;
         });
@@ -94,7 +83,11 @@ export default function ShopPage() {
     return (
         <div className="font-sans min-h-screen bg-[#FFFAF3] pb-24 w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100/50">
             <Helmet>
-                <title>Pandit Ji At Request Shop</title>
+                <title>
+                    {activeCategory && activeCategory !== ALL
+                        ? `${activeCategory} — Pandit Ji At Request Shop`
+                        : "Pandit Ji At Request Shop"}
+                </title>
                 <meta name="description" content="Shop spiritual gems, energized zodiac wristbands, bracelets and puja items." />
             </Helmet>
 
@@ -150,7 +143,7 @@ export default function ShopPage() {
                         return (
                             <button
                                 key={category}
-                                onClick={() => setActiveCategory(category)}
+                                onClick={() => navigate(`/shop/${categoryToSlug(category)}`)}
                                 className={`shrink-0 px-4 py-1.5 rounded-full text-[12.5px] font-bold border transition-all ${
                                     active
                                         ? "bg-orange-500 text-white border-orange-500 shadow-sm"
@@ -196,7 +189,9 @@ export default function ShopPage() {
                             return (
                                 <div
                                     key={p._id}
-                                    onClick={() => navigate(`/shop/product/${p.handle}`)}
+                                    onClick={() =>
+                                        navigate(`/shop/${categoryToSlug(getCategory(p))}/${p.handle}`)
+                                    }
                                     className="bg-white rounded-2xl border border-orange-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"
                                 >
                                     {/* Image Container */}

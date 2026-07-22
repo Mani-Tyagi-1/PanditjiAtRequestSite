@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
@@ -6,13 +6,20 @@ import { ArrowLeft, MapPin, Check, ChevronRight, Gift } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
-import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, PRASAD_BOX_PRICE } from "../data/kashiMahadevPuja";
+import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, PRASAD_BOX_PRICE } from "../data/kashiMahadevPuja";
 
 type Step = "details" | "success";
 
 const INPUT =
-    "w-full bg-emerald-50/40 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all";
-const LABEL = "text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block";
+    "w-full bg-[#F0FAF7] border border-[#DDEBE6] rounded-xl px-4 py-3 text-sm text-[#17211D] placeholder-[#66736E] focus:outline-none focus:border-[#008C68] focus:ring-2 focus:ring-[#008C68]/20 transition-all";
+const LABEL = "text-[11px] font-bold text-[#66736E] uppercase tracking-wide mb-1.5 block";
+
+// Meta's browser pixel drops _fbp / _fbc; both are forwarded to the server so
+// its CAPI Purchase can be matched and deduplicated against the browser event.
+function readCookie(name: string): string {
+    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return match ? match[2] : "";
+}
 
 // Resolve the fixed puja date + a chosen HH:mm into an ISO timestamp.
 function resolveBookingDate(dateLabel: string, time: string): string {
@@ -105,6 +112,24 @@ export default function SavanPujaBookingPage() {
     const prasadCost = form.prasadAdded ? PRASAD_BOX_PRICE : 0;
     const totalPrice = basePrice + prasadCost;
 
+    // Fires once the devotee has a usable name + phone in the form, on blur of
+    // either field — same signal (and event name) BookingModal reports, so the
+    // "started filling details" step exists for this puja too. `hasTrackedDetails`
+    // is a ref, not state, so re-firing is impossible even before a re-render.
+    const hasTrackedDetails = useRef(false);
+    const trackCustomerDetails = () => {
+        if (hasTrackedDetails.current) return;
+        if (form.name.trim().length < 3 || form.phone.replace(/\D/g, "").length < 10) return;
+        hasTrackedDetails.current = true;
+        if ((window as any).fbq) {
+            (window as any).fbq("track", "CustomerDetailsFilled", {
+                content_name: puja.poojaNameEng,
+                bhaktName: form.name.trim(),
+                contactNumber: form.phone.replace(/\D/g, ""),
+            });
+        }
+    };
+
     const handleConfirm = async () => {
         setError("");
 
@@ -165,7 +190,28 @@ export default function SavanPujaBookingPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
                     userId: user?._id || (user as any)?.id,
-                    poojaId: puja._id,
+                    // Resolve the catalog row by its stable `poojaID` string rather
+                    // than a hardcoded Mongo _id, which differs between the dev and
+                    // production clusters. The server falls back to
+                    // `Pooja.findOne({ poojaID: pujaSlug })` when poojaId is absent.
+                    // Requires the row seeded by
+                    // server/src/scripts/seedKashiMahadevPuja.ts.
+                    pujaSlug: KASHI_MAHADEV_POOJA_ID,
+                    // Treat this as a temple (Live Mandir) puja, not a home puja.
+                    // The server then:
+                    //   • stores poojaType: "live_puja_at_mandir" so it groups
+                    //     under Live Puja rather than the home-puja list,
+                    //   • sends the Live Mandir WhatsApp copy, which credits the
+                    //     temple priests instead of naming an assigned pandit,
+                    //   • persists prasadAdded on the booking (that field is only
+                    //     saved on the live-mandir branch of the controller).
+                    isLiveMandir: true,
+                    // REQUIRED whenever isLiveMandir is true: on that branch the
+                    // controller takes the booking name from `packageName` and
+                    // falls back to the raw `pujaSlug`, so omitting this would
+                    // label every booking "RF_SAVAN_01".
+                    packageName: puja.poojaNameEng,
+                    templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,
                     amount: totalPrice,
@@ -188,14 +234,10 @@ export default function SavanPujaBookingPage() {
             const RazorpayCtor = (window as any).Razorpay;
             if (!RazorpayCtor) throw new Error("Payment SDK failed to load. Please refresh and try again.");
 
+            // AddToCart already fired on the detail-page CTA that led here, so
+            // this step only reports InitiateCheckout — firing both here would
+            // put two funnel steps on a single trigger.
             if ((window as any).fbq) {
-                (window as any).fbq("track", "AddToCart", {
-                    content_name: puja.poojaNameEng,
-                    content_ids: [puja._id],
-                    content_type: "product",
-                    value: totalPrice,
-                    currency: "INR",
-                });
                 (window as any).fbq("track", "InitiateCheckout", {
                     content_name: puja.poojaNameEng,
                     content_ids: [puja._id],
@@ -218,7 +260,7 @@ export default function SavanPujaBookingPage() {
                     contact: phoneDigits,
                     email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
                 },
-                theme: { color: "#059669" },
+                theme: { color: "#008C68" },
                 handler: async (response: any) => {
                     try {
                         setSubmitting(true);
@@ -226,7 +268,17 @@ export default function SavanPujaBookingPage() {
                         //    sends the WhatsApp + email confirmation.
                         const verifyRes = await fetch(`${API_URL}/bookings/complete-booking`, {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: {
+                                "Content-Type": "application/json",
+                                // Match-quality signals for the server-side CAPI
+                                // Purchase that complete-booking fires. It reads
+                                // exactly these three headers; without them the
+                                // server event carries no fbp/fbc and Meta cannot
+                                // attribute it back to the ad click.
+                                "x-event-source-url": window.location.href,
+                                "x-fbp": readCookie("_fbp"),
+                                "x-fbc": readCookie("_fbc"),
+                            },
                             body: JSON.stringify(encryptPayload({
                                 pendingBookingId: orderData.bookingId,
                                 razorpayOrderId: response.razorpay_order_id,
@@ -251,7 +303,12 @@ export default function SavanPujaBookingPage() {
                         }
 
                         setStep("success");
-                        setTimeout(() => navigate("/account?tab=pooja"), 2500);
+                        // "live", not "pooja": this booking is created with
+                        // isLiveMandir/poojaType=live_puja_at_mandir, and
+                        // MyBookingsPage filters those OUT of the Puja tab into
+                        // the Live Puja tab. Sending the devotee to ?tab=pooja
+                        // shows them an empty list right after they paid.
+                        setTimeout(() => navigate("/account?tab=live"), 2500);
                     } catch (verifyErr: any) {
                         setError(verifyErr.message || "Payment verification failed. Please contact support.");
                     } finally {
@@ -280,7 +337,7 @@ export default function SavanPujaBookingPage() {
     };
 
     return (
-        <div className="svb-page min-h-screen bg-[#F5FCF8] w-full max-w-md mx-auto border-x border-emerald-100 relative pb-28">
+        <div className="svb-page min-h-screen bg-[#FFFDF8] w-full max-w-md mx-auto border-x border-[#DDEBE6] relative pb-28">
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .svb-page { font-family: 'DM Sans', sans-serif; }
@@ -291,25 +348,25 @@ export default function SavanPujaBookingPage() {
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#F5FCF8]/95 backdrop-blur-md border-b border-emerald-100 px-4 py-3 flex items-center gap-3">
+            <div className="sticky top-0 z-40 bg-[#FFFDF8]/95 backdrop-blur-md border-b border-[#DDEBE6] px-4 py-3 flex items-center gap-3">
                 <button
                     onClick={() => (location.key !== "default" ? navigate(-1) : navigate(`/${KASHI_MAHADEV_PUJA_SLUG}`))}
                     aria-label="Go back"
-                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-emerald-200/60 shadow-sm active:scale-90 transition-transform shrink-0"
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#DDEBE6] shadow-sm active:scale-90 transition-transform shrink-0"
                 >
-                    <ArrowLeft className="w-4 h-4 text-stone-700" />
+                    <ArrowLeft className="w-4 h-4 text-[#17211D]" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Savan Puja</h1>
-                    <p className="text-[11px] text-stone-500 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-emerald-500 shrink-0" />
+                    <h1 className="text-[15px] font-bold text-[#17211D] leading-tight truncate">Complete Your Savan Puja</h1>
+                    <p className="text-[11px] text-[#66736E] flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-[#086B50] shrink-0" />
                         <span className="truncate">{puja.templeName} · {puja.templeLocation}</span>
                     </p>
                 </div>
             </div>
 
             {/* Savan occasion ribbon */}
-            <div className="bg-gradient-to-r from-emerald-700 via-green-600 to-emerald-700 text-center py-1.5 px-4">
+            <div className="bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] text-center py-1.5 px-4">
                 <p className="text-[10.5px] font-bold tracking-[0.14em] uppercase text-white">
                     {puja.occasion} · {puja.pujaDate} · हर हर महादेव
                 </p>
@@ -320,48 +377,48 @@ export default function SavanPujaBookingPage() {
                 {step === "details" ? (
                     <div className="space-y-6">
                         {/* Order summary — itemises the prasad box when added */}
-                        <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm">
+                        <div className="bg-white border border-[#DDEBE6] rounded-2xl p-4 shadow-sm">
                             <div className="flex items-start justify-between gap-2">
-                                <p className="text-[13.5px] font-bold text-stone-800 leading-snug">{puja.poojaNameEng}</p>
-                                <span className="flex items-center gap-1 shrink-0 bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 text-[11px] font-bold">
+                                <p className="text-[13.5px] font-bold text-[#17211D] leading-snug">{puja.poojaNameEng}</p>
+                                <span className="flex items-center gap-1 shrink-0 bg-[#C89B3C]/15 text-[#17211D] rounded-full px-2 py-0.5 text-[11px] font-bold">
                                     ★ {puja.rating}
                                 </span>
                             </div>
-                            {puja.poojaNameHindi && <p className="text-[11.5px] text-emerald-600 font-medium mt-0.5">{puja.poojaNameHindi}</p>}
+                            {puja.poojaNameHindi && <p className="text-[11.5px] text-[#086B50] font-medium mt-0.5">{puja.poojaNameHindi}</p>}
 
                             {form.prasadAdded ? (
-                                <div className="mt-2.5 pt-2.5 border-t border-emerald-100/60 space-y-2">
+                                <div className="mt-2.5 pt-2.5 border-t border-[#DDEBE6] space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-stone-600 font-medium">Base Seva</span>
-                                        <span className="text-[13px] font-bold text-stone-800">₹{basePrice.toLocaleString("en-IN")}</span>
+                                        <span className="text-[12.5px] text-[#66736E] font-medium">Base Seva</span>
+                                        <span className="text-[13px] font-bold text-[#17211D]">₹{basePrice.toLocaleString("en-IN")}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-1.5">
-                                            <Gift className="w-3.5 h-3.5 text-emerald-500" />
+                                        <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
+                                            <Gift className="w-3.5 h-3.5 text-[#086B50]" />
                                             Sacred Prasad Box
                                         </span>
-                                        <span className="text-[13px] font-bold text-stone-800">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
+                                        <span className="text-[13px] font-bold text-[#17211D]">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
                                     </div>
-                                    <div className="flex items-baseline justify-between pt-2 border-t border-emerald-100/60">
-                                        <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Total</span>
-                                        <span className="text-xl font-extrabold text-emerald-700">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                    <div className="flex items-baseline justify-between pt-2 border-t border-[#DDEBE6]">
+                                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#66736E]">Total</span>
+                                        <span className="text-xl font-extrabold text-[#086B50]">₹{totalPrice.toLocaleString("en-IN")}</span>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-emerald-100/60">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
-                                    <span className="text-xl font-bold text-stone-900">₹{basePrice.toLocaleString("en-IN")}</span>
+                                <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-[#DDEBE6]">
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#66736E]">Base Seva</span>
+                                    <span className="text-xl font-bold text-[#17211D]">₹{basePrice.toLocaleString("en-IN")}</span>
                                 </div>
                             )}
                         </div>
 
                         {/* Step 1: Devotee Details */}
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-emerald-100/60">
-                                <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">01</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
+                                <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">01</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Devotee Details</h3>
-                                    <p className="text-[11px] text-stone-400">For the main Sankalp</p>
+                                    <h3 className="font-bold text-[#17211D] text-[14px]">Devotee Details</h3>
+                                    <p className="text-[11px] text-[#66736E]">For the main Sankalp</p>
                                 </div>
                             </div>
                             <div className="space-y-3">
@@ -370,6 +427,7 @@ export default function SavanPujaBookingPage() {
                                     <input
                                         value={form.phone}
                                         onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                                        onBlur={trackCustomerDetails}
                                         placeholder="10-digit number for updates"
                                         inputMode="numeric"
                                         className={INPUT}
@@ -380,6 +438,7 @@ export default function SavanPujaBookingPage() {
                                     <input
                                         value={form.name}
                                         onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                                        onBlur={trackCustomerDetails}
                                         placeholder="Name for main Sankalp"
                                         className={INPUT}
                                     />
@@ -398,24 +457,24 @@ export default function SavanPujaBookingPage() {
 
                         {/* Step 2: Prasad Delivery (optional) */}
                         <div className="space-y-3 pb-6">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-emerald-100/60">
-                                <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">02</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
+                                <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">02</span>
                                 <div>
-                                    <h3 className="font-bold text-stone-800 text-[14px]">Prasad Delivery</h3>
-                                    <p className="text-[11px] text-stone-400">Optional delivery at your address</p>
+                                    <h3 className="font-bold text-[#17211D] text-[14px]">Prasad Delivery</h3>
+                                    <p className="text-[11px] text-[#66736E]">Optional delivery at your address</p>
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-3 bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm cursor-pointer select-none">
+                            <label className="flex items-center gap-3 bg-white border border-[#DDEBE6] rounded-2xl p-4 shadow-sm cursor-pointer select-none">
                                 <input
                                     type="checkbox"
                                     checked={form.prasadAdded}
                                     onChange={(e) => setForm((f) => ({ ...f, prasadAdded: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-400 border-emerald-200"
+                                    className="w-4 h-4 rounded text-[#008C68] focus:ring-[#008C68] border-[#DDEBE6]"
                                 />
                                 <div>
-                                    <p className="text-xs font-bold text-stone-800">Add Sacred Prasad</p>
-                                    <p className="text-[11px] text-stone-400 mt-0.5">Blessed at {puja.templeName} · +₹{PRASAD_BOX_PRICE}</p>
+                                    <p className="text-xs font-bold text-[#17211D]">Add Sacred Prasad</p>
+                                    <p className="text-[11px] text-[#66736E] mt-0.5">Blessed at {puja.templeName} · +₹{PRASAD_BOX_PRICE}</p>
                                 </div>
                             </label>
 
@@ -425,24 +484,24 @@ export default function SavanPujaBookingPage() {
                                     {addresses.map((addr) => (
                                         <label
                                             key={addr._id}
-                                            className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-emerald-500 bg-emerald-50/30" : "border-stone-100"}`}
+                                            className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-[#008C68] bg-[#DFF5EF]/70" : "border-[#DDEBE6]"}`}
                                         >
                                             <input
                                                 type="radio"
                                                 name="addressSelect"
                                                 checked={selectedAddressId === addr._id}
                                                 onChange={() => setSelectedAddressId(addr._id)}
-                                                className="mt-1 text-emerald-600 focus:ring-emerald-400 border-emerald-200"
+                                                className="mt-1 text-[#008C68] focus:ring-[#008C68] border-[#DDEBE6]"
                                             />
-                                            <div className="text-[12.5px] text-stone-700 leading-relaxed">
-                                                <span className="font-bold text-[11px] text-emerald-700 uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
+                                            <div className="text-[12.5px] text-[#17211D] leading-relaxed">
+                                                <span className="font-bold text-[11px] text-[#086B50] uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
                                                 {addr.addressLine1 || addr.houseNo}, {addr.addressLine2 || addr.street}, {addr.city}, {addr.state} - {addr.pincode}
                                             </div>
                                         </label>
                                     ))}
                                     <button
                                         onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
-                                        className="text-emerald-700 hover:text-emerald-800 text-xs font-bold pt-1 block cursor-pointer"
+                                        className="text-[#086B50] hover:text-[#065A43] text-xs font-bold pt-1 block cursor-pointer"
                                     >
                                         + Add New Address
                                     </button>
@@ -450,13 +509,13 @@ export default function SavanPujaBookingPage() {
                             )}
 
                             {form.prasadAdded && (!user || showNewAddressForm) && (
-                                <div className="bg-white border border-emerald-100 rounded-2xl p-4 shadow-sm space-y-3">
-                                    <div className="flex items-center justify-between pb-1 border-b border-stone-50">
-                                        <span className="text-[12px] font-bold text-stone-800">Delivery Address Details</span>
+                                <div className="bg-white border border-[#DDEBE6] rounded-2xl p-4 shadow-sm space-y-3">
+                                    <div className="flex items-center justify-between pb-1 border-b border-[#DDEBE6]">
+                                        <span className="text-[12px] font-bold text-[#17211D]">Delivery Address Details</span>
                                         {user && addresses.length > 0 && (
                                             <button
                                                 onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
-                                                className="text-stone-400 hover:text-stone-600 text-xs font-medium cursor-pointer"
+                                                className="text-[#66736E] hover:text-[#66736E] text-xs font-medium cursor-pointer"
                                             >
                                                 Cancel
                                             </button>
@@ -525,18 +584,18 @@ export default function SavanPujaBookingPage() {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
-                            className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-xl shadow-green-200"
+                            className="w-20 h-20 rounded-full bg-gradient-to-br from-[#008C68] to-[#086B50] flex items-center justify-center shadow-xl shadow-[#008C68]/25"
                         >
                             <Check className="w-10 h-10 text-white" strokeWidth={3} />
                         </motion.div>
-                        <h3 className="svb-serif font-bold text-stone-800 mt-5 text-2xl">
+                        <h3 className="svb-serif font-bold text-[#17211D] mt-5 text-2xl">
                             Booking Confirmed! 🙏
                         </h3>
-                        <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
-                            Your <span className="font-semibold text-stone-700">{puja.poojaNameEng}</span> at <span className="font-semibold text-stone-700">{puja.templeName}</span> is booked for <span className="font-semibold text-stone-700">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
+                        <p className="text-[13px] text-[#66736E] mt-2 max-w-[280px] leading-relaxed">
+                            Your <span className="font-semibold text-[#17211D]">{puja.poojaNameEng}</span> at <span className="font-semibold text-[#17211D]">{puja.templeName}</span> is booked for <span className="font-semibold text-[#17211D]">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
                         </p>
-                        <p className="text-[13px] font-serif font-bold text-emerald-700 mt-3">ॐ नमः शिवाय</p>
-                        <button onClick={() => navigate("/account?tab=pooja")} className="mt-6 w-full bg-emerald-700 text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
+                        <p className="text-[13px] font-serif font-bold text-[#086B50] mt-3">ॐ नमः शिवाय</p>
+                        <button onClick={() => navigate("/account?tab=live")} className="mt-6 w-full bg-[#086B50] text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
                             Done
                         </button>
                     </motion.div>
@@ -545,19 +604,19 @@ export default function SavanPujaBookingPage() {
 
             {/* Sticky Footer */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-emerald-100 px-5 py-4">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#DDEBE6] px-5 py-4">
                     {error && (
                         <p className="text-red-500 text-[12px] font-semibold mb-3 text-center">{error}</p>
                     )}
                     <div className="flex items-center justify-between">
                         <div>
-                            <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-emerald-700">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <span className="text-[10px] text-[#66736E] font-semibold uppercase block">TOTAL TO PAY</span>
+                            <span className="text-[20px] font-extrabold text-[#086B50]">₹{totalPrice.toLocaleString("en-IN")}</span>
                         </div>
                         <button
                             onClick={handleConfirm}
                             disabled={submitting}
-                            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-700 via-green-600 to-emerald-700 hover:from-emerald-800 hover:to-emerald-800 text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-emerald-200/60 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                            className="flex items-center gap-1.5 bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] hover:from-[#065A43] hover:to-[#065A43] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-[#008C68]/20 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
                         >
                             {submitting ? (
                                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>

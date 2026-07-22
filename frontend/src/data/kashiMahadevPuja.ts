@@ -63,12 +63,12 @@ export const kashiMahadevPuja = {
     poojaGods: [] as string[],
     // ⚠️ Mahakaal/Ujjain artwork — replace with a Kashi banner before launch.
     poojaCardImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/mahakal%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
     poojaMainImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/mahakal%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
     poojaImages: [
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/mahakal%20banner.png",
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/mahakal%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner.png",
     ],
     poojaVideoLink: "",
 

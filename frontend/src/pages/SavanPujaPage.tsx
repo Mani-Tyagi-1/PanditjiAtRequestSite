@@ -21,6 +21,34 @@ function track(event: string, params?: Record<string, unknown>, custom = false) 
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+/**
+ * Savan rainfall over the hero banner. Generated once at module load from a
+ * fixed seed — not on every render — so the drops keep their positions and
+ * the rain doesn't reshuffle when the countdown ticks each second.
+ *
+ * Nearer drops fall faster and are longer, wider and brighter; farther ones
+ * are slower and fainter. That depth spread is what stops it reading as a
+ * marching row of identical ticks.
+ */
+const SAVAN_RAINDROPS = (() => {
+    let h = 0x9e3779b9;
+    const rand = () => {
+        h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+        return ((h >>> 0) % 10000) / 10000;
+    };
+    return Array.from({ length: 44 }, () => {
+        const depth = rand(); // 0 = far/slow/faint, 1 = near/fast/bright
+        return {
+            left: +(rand() * 100).toFixed(2),
+            delay: +(rand() * 1.6).toFixed(2),
+            dur: +(1.75 - depth * 0.85).toFixed(2),   // 0.90s – 1.75s
+            h: Math.round(11 + depth * 15),            // 11px – 26px
+            w: +(1.1 + depth * 0.9).toFixed(1),        // 1.1px – 2.0px
+            opacity: +(0.4 + depth * 0.5).toFixed(2),  // 0.40 – 0.90
+        };
+    });
+})();
+
 // Kashi Mahadev Savan online-puja devotee reviews (auto-scrolling marquee).
 type Review = { name: string; rating: number; date: string; text: string; verified: boolean };
 const PLACEHOLDER_REVIEWS: Review[] = [
@@ -228,8 +256,8 @@ export default function SavanPujaPage() {
       <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-[#F2FBF6] to-teal-50/70 pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-emerald-100">
         {/* Savan abhishek droplets — a slow trickle over the dark hero band. */}
         <style>{`
-          @keyframes savanDrop{0%{transform:translateY(-14px);opacity:0}18%{opacity:.75}100%{transform:translateY(150px);opacity:0}}
-          .savan-drop{position:absolute;top:0;width:2px;height:10px;border-radius:9999px;background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(224,231,255,.9));animation:savanDrop 3.2s linear infinite}
+          @keyframes savanDrop{0%{transform:translateY(-20px);opacity:0}12%{opacity:var(--drop-opacity,.85)}90%{opacity:var(--drop-opacity,.85)}100%{transform:translateY(230px);opacity:0}}
+          .savan-drop{position:absolute;top:0;width:var(--drop-w,1.5px);height:var(--drop-h,14px);border-radius:9999px;background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(236,242,255,.95));animation:savanDrop var(--drop-dur,1.4s) linear infinite;will-change:transform}
           @media (prefers-reduced-motion: reduce){.savan-drop{animation:none;opacity:0}.review-track{animation:none}}
         `}</style>
 
@@ -300,32 +328,28 @@ export default function SavanPujaPage() {
             decoding="async"
             className="w-full h-full object-cover"
           />
-          {/* Neutral bottom fade — just enough to seat the date line. Kept
-              black (not emerald) so it doesn't muddy the warm banner art, and
-              full-bleed so there's no seam against the edge-to-edge image. */}
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/75 via-black/30 to-transparent pointer-events-none" />
-          {[12, 28, 45, 62, 78, 90].map((leftPct, i) => (
+          {/* Savan rainfall. Each drop varies in speed, length, width, opacity
+              and delay so the fall reads as real rain instead of a marching
+              row of identical ticks. Purely decorative — hidden from AT, and
+              disabled wholesale under prefers-reduced-motion. */}
+          {SAVAN_RAINDROPS.map((d, i) => (
             <span
-              key={leftPct}
+              key={i}
               className="savan-drop"
-              style={{ left: `${leftPct}%`, animationDelay: `${i * 0.52}s` }}
+              style={{
+                left: `${d.left}%`,
+                animationDelay: `${d.delay}s`,
+                ["--drop-dur" as string]: `${d.dur}s`,
+                ["--drop-h" as string]: `${d.h}px`,
+                ["--drop-w" as string]: `${d.w}px`,
+                ["--drop-opacity" as string]: `${d.opacity}`,
+              }}
               aria-hidden="true"
             />
           ))}
-          <span className="absolute top-3 left-3 bg-emerald-600 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
-            Online Puja
-          </span>
-          <span className="absolute top-3 right-3 bg-amber-400 text-emerald-900 text-[9.5px] font-extrabold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
-            Jyotirlinga
-          </span>
           {/* Only the date is overlaid — the banner artwork already carries the
               puja name, location and value props, so repeating them here just
               covered the artwork's own icons. */}
-          <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
-            <p className="text-[12px] font-bold text-amber-200 tracking-wide uppercase drop-shadow">
-              {puja.pujaDate}
-            </p>
-          </div>
         </div>
 
         <div className="px-4 pt-3 pb-4 space-y-4">

@@ -152,7 +152,7 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
 }
 
 // ── Page ───────────────────────────────────────────────────────
-// FRONTEND-ONLY Shri Mahadev Savan Somwar Puja — an online Rudrabhishek
+// FRONTEND-ONLY Shree Kashi Rudrabhishek Mahapuja — an online Rudrabhishek
 // performed on the devotee's behalf at Shree Kashi Vishwanath Temple,
 // Varanasi on the first Savan Somwar. Renders entirely from frontend data
 // but carries a distinct Savan/Shiv theme (the emerald / light-aqua / temple-gold palette, abhishek

@@ -1,5 +1,5 @@
 /**
- * Seeds the "Shri Mahadev Savan Somwar Puja" (Kashi Vishwanath) catalog entry.
+ * Seeds the "Shree Kashi Rudrabhishek Mahapuja" (Kashi Vishwanath) catalog entry.
  *
  * WHY THIS EXISTS
  * ───────────────
@@ -50,8 +50,8 @@ const BANNER =
  */
 const KASHI_MAHADEV_PUJA = {
   poojaID: POOJA_ID,
-  poojaNameEng: "Shri Mahadev Savan Somwar Puja",
-  poojaNameHindi: "श्री महादेव सावन सोमवार पूजा",
+  poojaNameEng: "Shree Kashi Rudrabhishek Mahapuja",
+  poojaNameHindi: "श्री काशी रुद्राभिषेक महापूजा",
   poojaMode: "online" as const,
   poojaPriceOnline: 1100,
   poojaPriceOffline: 1100,

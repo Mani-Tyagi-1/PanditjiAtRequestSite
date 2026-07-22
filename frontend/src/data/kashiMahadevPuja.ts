@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  Shri Mahadev Savan Somwar Puja (Kashi) — FRONTEND-ONLY puja detail data.
+//  Shree Kashi Rudrabhishek Mahapuja — FRONTEND-ONLY puja detail data.
 //
 //  This is an ONLINE puja: the puja is performed on the devotee's behalf by
 //  verified pandits at Shree Kashi Vishwanath Temple (Varanasi, Uttar
@@ -67,8 +67,8 @@ export const kashiMahadevPuja = {
     // also carry the puja name, so a stable string is fine here.
     _id: KASHI_MAHADEV_POOJA_ID,
     poojaID: KASHI_MAHADEV_POOJA_ID,
-    poojaNameEng: "Shri Mahadev Savan Somwar Puja",
-    poojaNameHindi: "श्री महादेव सावन सोमवार पूजा",
+    poojaNameEng: "Shree Kashi Rudrabhishek Mahapuja",
+    poojaNameHindi: "श्री काशी रुद्राभिषेक महापूजा",
     poojaMode: "online", // performed at Kashi Vishwanath Temple on your behalf
     poojaPriceOnline: 1100,
     poojaPriceOffline: 1100,

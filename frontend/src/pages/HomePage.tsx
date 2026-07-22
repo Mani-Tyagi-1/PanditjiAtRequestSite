@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
+import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG } from "../data/kashiMahadevPuja";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
 import VerifiedPanditJi from "../components/home/VerifiedPanditJi";
@@ -28,6 +29,21 @@ import CTASection from "../components/home/CTASection";
 
 const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
+
+// ── Featured puja banner (Home, between "Book Puja" and "Our Services") ──
+// 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kashi banner so the slot is
+//    never broken; swap the string for your own artwork when it's ready.
+const FEATURED_PUJA_BANNER =
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner1.png";
+
+// Where the banner sends the devotee. Kept next to the image so the creative and
+// its destination can never drift apart.
+const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
+
+// Intrinsic size of the creative, used only to reserve the right amount of
+// vertical space while it loads so the sections below don't jump (CLS).
+const FEATURED_PUJA_BANNER_W = 1080;
+const FEATURED_PUJA_BANNER_H = 566;
 
 
 type Pooja = {
@@ -287,6 +303,39 @@ export default function HomePage() {
                         <p className="text-[13px] text-stone-400 py-6">No poojas available right now.</p>
                     )}
                 </div>
+            </section>
+
+            {/* ── Featured puja banner ──
+                A single tappable creative promoting the Savan Rudrabhishek page.
+                Swap FEATURED_PUJA_BANNER at the top of this file to change the
+                artwork; the destination lives next to it. */}
+            <section className="px-4">
+                <button
+                    onClick={() => {
+                        if (window.fbq) {
+                            window.fbq("track", "ViewContent", {
+                                content_name: kashiMahadevPuja.poojaNameEng,
+                                content_ids: [kashiMahadevPuja._id],
+                                content_type: "product",
+                                value: kashiMahadevPuja.poojaPriceOnline,
+                                currency: "INR",
+                            });
+                        }
+                        navigate(FEATURED_PUJA_HREF);
+                    }}
+                    aria-label={`Book ${kashiMahadevPuja.poojaNameEng} at ${kashiMahadevPuja.templeName}`}
+                    className="block w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm active:scale-[0.98] transition-transform"
+                >
+                    <img
+                        src={FEATURED_PUJA_BANNER}
+                        width={FEATURED_PUJA_BANNER_W}
+                        height={FEATURED_PUJA_BANNER_H}
+                        alt={`${kashiMahadevPuja.poojaNameEng} — ${kashiMahadevPuja.occasion} at ${kashiMahadevPuja.templeName}`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-auto object-cover"
+                    />
+                </button>
             </section>
 
              {/* ── Our Services ── */}

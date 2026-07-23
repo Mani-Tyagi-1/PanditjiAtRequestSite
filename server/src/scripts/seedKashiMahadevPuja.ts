@@ -59,7 +59,7 @@ const KASHI_MAHADEV_PUJA = {
   poojaMainImage: [BANNER],
   poojaGods: ["Lord Shiva", "Mahadev", "Baba Vishwanath"],
   benefits: [
-    "Rudrabhishek at Kashi Vishwanath — Mahadev's own eternal city",
+    "Rudrabhishek at Kashi — Mahadev's own eternal city",
     "Gangajal drawn from the Ganga at Varanasi offered in your name",
     "Removes fear, ill health, and untimely misfortune (Mahamrityunjaya blessings)",
     "Kashi is the foremost kshetra for pacifying Pitra, Kaal Sarp and Shani doshas",
@@ -93,7 +93,7 @@ const KASHI_MAHADEV_PUJA = {
       headingId: "3",
       heading: "What is performed",
       description:
-        "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shree Kashi Vishwanath Temple</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p>",
+        "<p>Verified pandits perform the complete Vedic vidhi at <strong>MAHADEV Temple in Kashi</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p>",
     },
     {
       headingId: "4",

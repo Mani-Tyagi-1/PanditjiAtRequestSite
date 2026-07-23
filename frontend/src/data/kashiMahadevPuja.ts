@@ -82,17 +82,17 @@ export const kashiMahadevPuja = {
     poojaGods: [] as string[],
     // Kashi banner artwork.
     poojaCardImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
     poojaMainImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
     poojaImages: [
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
     ],
     poojaVideoLink: "",
 
     // ── Presentation-only fields (used by the Savan-themed detail page) ──
-    deity: "Baba Vishwanath",
+    deity: "Mahadev",
     /** Temple where the online puja is performed on your behalf. */
     templeName: "Kashi",
     templeLocation: "Varanasi, Uttar Pradesh",
@@ -105,7 +105,7 @@ export const kashiMahadevPuja = {
     occasionHindi: "प्रथम सावन सोमवार",
     /** Short outcome bullets shown in the "Why perform this puja" card. */
     benefits: [
-        "Rudrabhishek at Kashi Vishwanath — Mahadev's own eternal city",
+        "Rudrabhishek at Kashi — Mahadev's own eternal city",
         "Gangajal drawn from the Ganga at Varanasi offered in your name",
         "Removes fear, ill health, and untimely misfortune (Mahamrityunjaya blessings)",
         "Kashi is the foremost kshetra for pacifying Pitra, Kaal Sarp and Shani doshas",
@@ -128,7 +128,7 @@ export const kashiMahadevPuja = {
             headingId: "1",
             heading: "Purpose of Puja",
             description:
-                "<p>To seek the blessings of <strong>Baba Vishwanath</strong> — <strong>Mahadev</strong> as the Lord of the Universe, worshipped at <strong>Kashi Vishwanath</strong>, among the most revered of the twelve Jyotirlingas.</p><p><strong>Kashi (Varanasi)</strong> is held to be Shiva's own city, said to rest upon his trishul and to stand untouched even at the dissolution of the world. The month of <strong>Shravan (Savan)</strong> is his most beloved month, and <strong>Savan Somwar</strong> is its most powerful day. This online puja is performed on your behalf at <strong>Shree Kashi Vishwanath Temple</strong> on the <strong>first Savan Somwar</strong> to remove fear, illness and suffering, and to invite peace, courage and prosperity.</p>",
+                "<p>To seek the blessings of <strong>Baba Vishwanath</strong> — <strong>Mahadev</strong> as the Lord of the Universe, worshipped at <strong>Kashi Vishwanath</strong>, among the most revered of the twelve Jyotirlingas.</p><p><strong>Kashi (Varanasi)</strong> is held to be Shiva's own city, said to rest upon his trishul and to stand untouched even at the dissolution of the world. The month of <strong>Shravan (Savan)</strong> is his most beloved month, and <strong>Savan Somwar</strong> is its most powerful day. This online puja is performed on your behalf in <strong>Kashi (Mahadev's city) </strong> on the <strong>first Savan Somwar</strong> to remove fear, illness and suffering, and to invite peace, courage and prosperity.</p>",
         },
         {
             headingId: "2",
@@ -140,13 +140,13 @@ export const kashiMahadevPuja = {
             headingId: "3",
             heading: "Benefits of Puja",
             description:
-                "<p>• Rudrabhishek at <strong>Kashi Vishwanath</strong>, Mahadev's own eternal city.</p><p> • <strong>Gangajal</strong> drawn from the Ganga at Varanasi offered in your name.</p><p> • Removes fear, ill health, and untimely misfortune through <strong>Mahamrityunjaya</strong> blessings.</p><p> • Kashi is the foremost kshetra for pacifying <strong>Pitra Dosh</strong>, <strong>Kaal Sarp Dosh</strong> and <strong>Shani</strong> afflictions.</p><p> • Brings marital harmony, and blessings for an early and suitable match.</p><p> • Grants inner peace, courage, and progress toward <strong>moksha</strong>.</p>",
+                "<p>• Rudrabhishek at <strong>Kashi</strong>, Mahadev's own eternal city.</p><p> • <strong>Gangajal</strong> drawn from the Ganga at Varanasi offered in your name.</p><p> • Removes fear, ill health, and untimely misfortune through <strong>Mahamrityunjaya</strong> blessings.</p><p> • Kashi is the foremost kshetra for pacifying <strong>Pitra Dosh</strong>, <strong>Kaal Sarp Dosh</strong> and <strong>Shani</strong> afflictions.</p><p> • Brings marital harmony, and blessings for an early and suitable match.</p><p> • Grants inner peace, courage, and progress toward <strong>moksha</strong>.</p>",
         },
         {
             headingId: "4",
             heading: "What is performed",
             description:
-                "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shree Kashi Vishwanath Temple</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p><p>The entire puja is dedicated specifically to you and your family, and is recorded for you.</p>",
+                "<p>Verified pandits perform the complete Vedic vidhi at <strong>MAHADEVTemple in Kashi</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p><p>The entire puja is dedicated specifically to you and your family, and is recorded for you.</p>",
         },
         {
             headingId: "5",

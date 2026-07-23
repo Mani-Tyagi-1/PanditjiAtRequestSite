@@ -21,6 +21,9 @@ function track(event: string, params?: Record<string, unknown>, custom = false) 
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+/** Decorative image flanking the mantra strip — mirrored on the left side. */
+const MANTRA_SIDE_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/trishul%20(1).png";
+
 /**
  * Savan rainfall across the whole page. Generated once at module load from a
  * fixed seed — not on every render — so the drops keep their positions and
@@ -480,13 +483,34 @@ export default function SavanPujaPage() {
           </div>
 
           {/* ── Mantra strip ── */}
-          <div className="rounded-2xl bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] px-4 py-3 text-center shadow-md">
+          {/*
+            The flanking images are absolutely positioned and vertically
+            centred, so they can be scaled past the strip's own height and
+            spill over its top/bottom edges without pushing it taller.
+          */}
+          <div className="relative rounded-2xl bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] px-16 py-3 text-center shadow-md">
+            {MANTRA_SIDE_IMAGE && (
+              <img
+                src={MANTRA_SIDE_IMAGE}
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1 top-1/2 -translate-y-1/2 w-22 h-22 object-contain -scale-x-100 drop-shadow-lg"
+              />
+            )}
             <p className="text-[15px] font-serif font-bold text-white tracking-wide">
               ॐ नमः शिवाय
             </p>
             <p className="text-[10.5px] text-[#DFF5EF] mt-0.5">
-              Chanted through your Rudrabhishek at Kashi Vishwanath
+              Chanted through your Rudrabhishek at Kashi
             </p>
+            {MANTRA_SIDE_IMAGE && (
+              <img
+                src={MANTRA_SIDE_IMAGE}
+                alt=""
+                aria-hidden="true"
+                className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 w-22 h-22 object-contain drop-shadow-lg"
+              />
+            )}
           </div>
 
           {/* ── Auto-scrolling devotee reviews ── */}

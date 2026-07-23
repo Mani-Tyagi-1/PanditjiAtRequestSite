@@ -172,6 +172,37 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
   }
 };
 
+/**
+ * Razorpay reconciliation for a paid consultation. Called by the shared webhook
+ * dispatcher when the browser never reached /complete-payment.
+ *
+ * Returns true when the order belonged to a paid consultation.
+ */
+export async function reconcilePaidConsultationPayment(opts: {
+  orderId: string;
+  paymentId?: string;
+  event: string;
+}): Promise<boolean> {
+  const { orderId, paymentId, event } = opts;
+
+  const consultation = await PaidConsultation.findOne({ razorpayOrderId: orderId });
+  if (!consultation) return false;
+
+  if (consultation.isPaymentDone) return true; // already reconciled
+
+  if (event === "payment.captured" || event === "order.paid") {
+    consultation.isPaymentDone = true;
+    if (paymentId) consultation.razorpayPaymentId = paymentId;
+    await consultation.save();
+
+    void sendPaidConsultationConfirmationWhatsapp(consultation);
+    console.log(`[RazorpayWebhook][Consultation] order=${orderId} → confirmed`);
+  }
+  // payment.failed: nothing to flip — isPaymentDone simply stays false.
+
+  return true;
+}
+
 export const completePaidConsultationPayment: RequestHandler = async (req, res) => {
   try {
     const {

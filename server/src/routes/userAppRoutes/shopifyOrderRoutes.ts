@@ -4,10 +4,10 @@ import {
   createCodShopifyOrder,
   getShopifyCodConfig,
   completeShopifyOrderPayment,
-  shopifyOrderWebhook,
   getUserShopifyOrders,
   checkFirstOrderEligibility,
 } from "../../controller/userApp/shopifyOrderController";
+import { razorpayWebhook } from "../../controller/payments/razorpayWebhookController";
 
 const router = express.Router();
 
@@ -33,8 +33,10 @@ router.get("/shopify-orders/cod-config", wrap(getShopifyCodConfig));
 // Verify Razorpay payment signature and capture order
 router.post("/shopify-orders/complete-payment", wrap(completeShopifyOrderPayment));
 
-// Razorpay webhook — server-side reconciliation for prepaid orders
-router.post("/shopify-orders/webhook", wrap(shopifyOrderWebhook));
+// Legacy webhook URL — kept alive in case it's still the one configured in the
+// Razorpay dashboard. Runs the SHARED dispatcher (all services), not just shop
+// orders. New setups should use /api/payments/razorpay/webhook.
+router.post("/shopify-orders/webhook", wrap(razorpayWebhook));
 
 // Check whether the user qualifies for the first-order discount
 router.get("/shopify-orders/first-order-eligibility/:phone", wrap(checkFirstOrderEligibility));

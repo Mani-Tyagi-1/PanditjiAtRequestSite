@@ -95,14 +95,15 @@ function getActivePanditExternalIdsFromApp(req: any): string[] {
   return [];
 }
 
-async function notifyPanditsNewRequest(req: any, opts: {
+// Push to the given pandits. Split out from notifyPanditsNewRequest so the
+// finalize pipeline (which also runs from the Razorpay webhook) can notify
+// without holding an Express request.
+async function notifyPanditsForBooking(opts: {
   heading: string;
   content: string;
   data: Record<string, any>;
-}) {
+}, externalIds: string[] = []) {
   try {
-    const externalIds = getActivePanditExternalIdsFromApp(req);
-
     await sendPushNotification({
       externalIds: externalIds.length ? externalIds : undefined,
       heading: opts.heading,
@@ -112,8 +113,17 @@ async function notifyPanditsNewRequest(req: any, opts: {
       tagFilter: { /* city: '...', lang: '...' */ },
     });
   } catch (e) {
-    console.error('notifyPanditsNewRequest failed:', e);
+    console.error('notifyPanditsForBooking failed:', e);
   }
+}
+
+// Request-scoped wrapper: resolves the active pandit list off app state.
+async function notifyPanditsNewRequest(req: any, opts: {
+  heading: string;
+  content: string;
+  data: Record<string, any>;
+}) {
+  await notifyPanditsForBooking(opts, getActivePanditExternalIdsFromApp(req));
 }
 
 // ---- WhatsApp booking confirmation ----
@@ -513,6 +523,406 @@ type CompleteBookingBody = {
 type ProgressAction = 'journey_start' | 'arrived' | 'start_puja' | 'complete_puja';
 
 // -------------------------------------------------------------
+// FINALIZE PENDING → FINAL BOOKING (shared by client verify + Razorpay webhook)
+// -------------------------------------------------------------
+// Every side effect of a confirmed puja booking lives here so the two paths that
+// can confirm a payment behave identically:
+//
+//   1. POST /api/bookings/complete-booking — the browser/app calls this right
+//      after the Razorpay checkout handler fires.
+//   2. POST /api/payments/razorpay/webhook — Razorpay's server-to-server
+//      `payment.captured`. This is the safety net for the exact case this
+//      module was written for: the money left the devotee's account but the
+//      browser never made the verify call (popup closed, app killed, network
+//      drop), so the booking was stranded in PendingPoojaBooking forever.
+//
+// Whichever path arrives FIRST creates the PoojaBooking, deletes the pending
+// doc and fires the notifications; the second one is a no-op (`created: false`).
+// The idempotency key is razorpayOrderId, which is unique per booking attempt.
+type FinalizeContext = {
+  io?: SocketIOServer;
+  /** Request-derived attribution — only available on the client path. */
+  http?: {
+    clientIp?: string | null;
+    userAgent?: string;
+    fbp?: string;
+    fbc?: string;
+    eventSourceUrl?: string | null;
+  };
+  amountPaid?: number;
+  /** Pandits currently online (app state); empty falls back to tag targeting. */
+  activePanditExternalIds?: string[];
+};
+
+export async function finalizePendingPoojaBooking(
+  pendingDoc: any,
+  payment: {
+    razorpayPaymentId: string;
+    razorpayOrderId: string;
+    razorpaySignature?: string;
+  },
+  ctx: FinalizeContext = {},
+): Promise<{ booking: Document & IPoojaBooking; created: boolean }> {
+  const { razorpayPaymentId, razorpayOrderId, razorpaySignature } = payment;
+
+  // Fast path — the other path already promoted this order.
+  const existing = (await poojaBookingModel.findOne({ razorpayOrderId })) as
+    | (Document & IPoojaBooking)
+    | null;
+  if (existing) {
+    // The pending row may still be around if the first path crashed midway.
+    if (pendingDoc?._id) {
+      await pendingPoojaBookingModel.findByIdAndDelete(pendingDoc._id);
+    }
+    return { booking: existing, created: false };
+  }
+
+  // ── Atomic claim ──────────────────────────────────────────────────────────
+  // The check above is not enough on its own: the browser's verify call and the
+  // Razorpay webhook can land at the same instant, both see "no final booking
+  // yet", and both create one — a duplicate booking AND a duplicate WhatsApp.
+  // Deleting the pending row is the claim: MongoDB guarantees exactly one
+  // caller gets the document back, and only that caller creates the booking.
+  const claimed = await pendingPoojaBookingModel.findOneAndDelete({ _id: pendingDoc._id });
+  if (!claimed) {
+    // Someone else claimed it. If they've finished, hand back their booking.
+    const winner = (await poojaBookingModel.findOne({ razorpayOrderId })) as
+      | (Document & IPoojaBooking)
+      | null;
+    if (winner) return { booking: winner, created: false };
+    // They claimed it but haven't created the booking yet. Throwing is correct:
+    // the client gets a 500 it can retry, and Razorpay redelivers the webhook —
+    // by then the winner's booking exists and the retry resolves to it.
+    throw new Error(
+      `Booking for order ${razorpayOrderId} is being finalized by a concurrent request; retry.`,
+    );
+  }
+
+  const pendingObject = claimed.toObject ? claimed.toObject() : claimed;
+
+  // Create the FINAL booking. If this throws, the pending row is already gone,
+  // so restore it — otherwise a paid booking would vanish entirely.
+  let finalBooking: Document & IPoojaBooking;
+  try {
+    finalBooking = (await poojaBookingModel.create({
+      ...pendingObject,
+      _id: undefined, // new id
+      isPaymentDone: true,
+      isConfirmed: false, // still needs Pandit confirmation
+      razorpayPaymentId,
+      razorpayOrderId,
+      ...(razorpaySignature && { razorpaySignature }),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })) as unknown as (Document & IPoojaBooking);
+  } catch (createErr) {
+    try {
+      await pendingPoojaBookingModel.create(pendingObject);
+      console.error(
+        `[PujaBooking] Final booking creation failed for order=${razorpayOrderId}; pending row restored for retry.`,
+      );
+    } catch (restoreErr: any) {
+      console.error(
+        `[PujaBooking] 🚨 CRITICAL: order=${razorpayOrderId} paid but pending row could not be restored:`,
+        restoreErr?.message || restoreErr,
+        JSON.stringify(pendingObject),
+      );
+    }
+    throw createErr;
+  }
+
+  const amountPaid = ctx.amountPaid;
+
+  // 3) Partner Affiliate notification (fire-and-forget)
+  void sendOrderToPartnerAffiliate(finalBooking);
+
+  // 4) META CAPI Purchase (fire-and-forget) — skipped in test/dev mode
+  void (async () => {
+    if (!isProduction) {
+      console.log(`[MetaCAPI][Puja] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+      return;
+    }
+    try {
+      // `value` is the full amount charged (base seva + prasad box + extra
+      // Sankalp names), so a booking with add-ons must not report the base
+      // catalog price. The breakdown below is what makes that visible in
+      // Events Manager — without it every order looks like one anonymous unit
+      // and an inflated value reads as a tracking bug.
+      const capiContentId = String((finalBooking as any).poojaNameEng || 'PUJA').trim();
+      const extraSankalpNames = Array.isArray((finalBooking as any).familyMembers)
+        ? (finalBooking as any).familyMembers.length
+        : 0;
+      const capiContents = [
+        { id: capiContentId, quantity: 1 },
+        ...((finalBooking as any).prasadAdded ? [{ id: `${capiContentId} — Prasad Box`, quantity: 1 }] : []),
+        ...(extraSankalpNames > 0
+          ? [{ id: `${capiContentId} — Sankalp Name`, quantity: extraSankalpNames }]
+          : []),
+      ];
+
+      await sendMetaPurchaseEvent({
+        orderID: String(finalBooking.razorpayOrderId || razorpayOrderId),
+        // Dedup key — the webhook and the browser path must not double-count
+        // the same purchase in Events Manager.
+        eventId: `puja_purchase_${razorpayOrderId}`,
+        value: Number((finalBooking as any).amount || amountPaid || 0),
+        currency: 'INR',
+        contentId: capiContentId,
+        contents: capiContents,
+        deliveryCategory: (finalBooking as any).address ? 'home_delivery' : 'in_store',
+        actionSource: 'website',
+        phone: String((finalBooking as any).userPhone || ''),
+        email: (finalBooking as any).userEmail || null,
+        externalId: String((finalBooking as any).userId || ''),
+        clientIp: ctx.http?.clientIp ?? null,
+        userAgent: ctx.http?.userAgent || '',
+        fbp: ctx.http?.fbp || '',
+        fbc: ctx.http?.fbc || '',
+        eventSourceUrl:
+          ctx.http?.eventSourceUrl ||
+          process.env.META_DEFAULT_EVENT_SOURCE_URL ||
+          null,
+      });
+
+      console.log(`[MetaCAPI][Puja] Purchase sent for orderID=${razorpayOrderId}`);
+    } catch (e: any) {
+      console.error(
+        `[MetaCAPI][Puja] Purchase failed for orderID=${razorpayOrderId}:`,
+        e?.response?.data || e?.message || e,
+      );
+    }
+  })();
+
+  // 5) Notify dashboard (socket)
+  const io = ctx.io;
+  io?.emit('booking:new:all', {
+    bookingId: finalBooking.id,
+    userName: finalBooking.userName,
+    userPhone: finalBooking.userPhone,
+    poojaName: finalBooking.poojaNameEng,
+    bookingDate: finalBooking.bookingDate,
+    mode: finalBooking.poojaMode,
+    bhaktName: finalBooking.bhaktName,
+    panditDakshina: (finalBooking as any).panditDakshina ?? 0,
+  });
+
+  // 5a) 🔔 Fire the 60s timed modal for all "active" pandits
+  if (io) {
+    const payload = buildTimedRequestPayload(finalBooking);
+    io.to('active_pandits').emit('booking:new:timed_request', payload);
+
+    // set a 60s timer to auto-cancel modal if nobody accepted
+    const timer = setTimeout(() => {
+      io.emit('booking:request:cancelled', { bookingId: finalBooking.id });
+      timedRequestTimers.delete(finalBooking.id);
+    }, 60_000);
+    timedRequestTimers.set(finalBooking.id, timer);
+  }
+
+  // ------------------- PUSH NOTIFICATIONS -------------------
+  try {
+    // (User) Normalize to the exact 10-digit alias you use with OneSignal.login()
+    const phone10 = toAlias10((finalBooking as any).userPhone);
+    if (phone10 && phone10.length === 10) {
+      // (A) ONE immediate push at time of booking
+      await sendPushNotification({
+        externalIds: [phone10],
+        heading: 'Booked Successfully 🙏',
+        content: `You have booked a puja: ${finalBooking.poojaNameEng}.`,
+        data: {
+          screen: 'ActivePujaList',
+          bookingId: String((finalBooking as any)._id),
+        },
+      });
+
+      // (B) ONE scheduled reminder at 00:00 IST on puja day
+      await schedulePujaDayReminder({
+        externalIds: [phone10],
+        heading: 'Your Puja is Today 🙏',
+        content: `Reminder: ${finalBooking.poojaNameEng} is today.`,
+        data: {
+          screen: 'ActivePujaList',
+          bookingId: String((finalBooking as any)._id),
+        },
+        bookingDate: finalBooking.bookingDate,
+      });
+    } else {
+      console.warn('[push] Skipped user push: invalid phone alias:', (finalBooking as any).userPhone);
+    }
+
+    // (Pandits) 🛎️ Notify pandits on FINAL creation (default enabled; env flag)
+    if (NOTIFY_PANDITS_ON_FINAL) {
+      const when = new Date(finalBooking.bookingDate);
+      await notifyPanditsForBooking(
+        {
+          heading: 'New Puja Request',
+          content: `${finalBooking.poojaNameEng} on ${when.toDateString()}`,
+          data: {
+            screen: 'PujaRequestDetail', // product-side route
+            bookingId: String((finalBooking as any)._id),
+          },
+        },
+        ctx.activePanditExternalIds ?? [],
+      );
+    }
+  } catch (pushErr) {
+    console.error('Push send/schedule failed:', pushErr);
+  }
+
+  // 🟢 WhatsApp booking confirmation (fire-and-forget) — for ALL bookings.
+  // Sent here (not at create-pending) so it goes out only once the payment
+  // is verified. Covers home pujas AND live mandir pujas alike.
+  void sendBookingConfirmationWhatsapp(finalBooking);
+
+  // 🟢 Email booking confirmation (fire-and-forget)
+  void (async () => {
+    try {
+      const email = (finalBooking as any).userEmail;
+      if (!email) return;
+      await sendBookingConfirmationEmail({
+        to: email,
+        bhaktName: (finalBooking as any).bhaktName || (finalBooking as any).userName || "Devotee",
+        poojaName: finalBooking.poojaNameEng || "Puja",
+        bookingDate: String(finalBooking.bookingDate),
+        poojaMode: finalBooking.poojaMode || "online",
+        amount: Number((finalBooking as any).amount || amountPaid || 0),
+        contactNumber: String((finalBooking as any).userPhone || ""),
+        bookingId: String((finalBooking as any)._id),
+      });
+      console.log(`✅ [PujaBooking] Email confirmation sent to ${email}`);
+    } catch (e: any) {
+      console.error("❌ [PujaBooking] Email failed:", e?.message || e);
+    }
+  })();
+
+  // ── Internal Referral Credit (fire-and-forget) ──────────────
+  void (async () => {
+    try {
+      const bookedUserId = String((finalBooking as any).userId || '');
+      if (!bookedUserId) return;
+
+      const bookedUser = await User.findById(bookedUserId).select(
+        'userReferral name given_name family_name'
+      );
+      if (!bookedUser?.userReferral?.referrerId) return;
+
+      const { referrerId, expiresAt } = bookedUser.userReferral;
+
+      // Only honour if the referral window hasn't expired
+      if (!expiresAt || new Date() > new Date(expiresAt)) return;
+
+      const totalAmount = Number((finalBooking as any).amount || amountPaid || 0);
+      const rewardPct = parseFloat(process.env.INTERNAL_REFERRAL_PCT ?? '5');
+      const amountEarned = Math.round((totalAmount * rewardPct) / 100);
+
+      const poojaName = finalBooking.poojaNameEng || 'Puja';
+      const referredUserName =
+        `${bookedUser.given_name || ''} ${bookedUser.family_name || ''}`.trim() ||
+        bookedUser.name ||
+        'User';
+
+      // 1) Record the referral booking
+      await UserReferralBooking.create({
+        referrerId,
+        referredUserId: bookedUser._id,
+        referredUserName,
+        bookingId: (finalBooking as any)._id,
+        poojaName,
+        amountEarned,
+        totalBookingAmount: totalAmount,
+        rewardPercentage: rewardPct,
+      });
+
+      // 2) Credit referrer + increment counter
+      await User.findByIdAndUpdate(referrerId, {
+        $inc: { referralEarnings: amountEarned, totalReferredPujas: 1 },
+      });
+
+      // 3) Clear referral from the referred user so it isn't applied again
+      await User.findByIdAndUpdate(bookedUser._id, {
+        $unset: { userReferral: '' },
+      });
+
+      console.log(
+        `[Referral] ✅ ₹${amountEarned} credited to referrer ${referrerId} for booking ${(finalBooking as any)._id}`
+      );
+    } catch (refErr: any) {
+      console.error('[Referral] ❌ credit failed:', refErr?.message || refErr);
+    }
+  })();
+  // ────────────────────────────────────────────────────────────
+
+  return { booking: finalBooking, created: true };
+}
+
+// -------------------------------------------------------------
+// RAZORPAY WEBHOOK RECONCILER (called by the shared webhook controller)
+// -------------------------------------------------------------
+/**
+ * Promotes a PendingPoojaBooking to a PoojaBooking when Razorpay reports the
+ * payment as captured. This covers BOTH normal pujas and Live Mandir pujas —
+ * both use the same pending → final pipeline (see liveMandirRoutes.ts).
+ *
+ * Returns true when this webhook event belonged to a puja booking, so the
+ * dispatcher can log which service handled it.
+ */
+export async function reconcilePoojaBookingPayment(opts: {
+  orderId: string;
+  paymentId?: string;
+  event: string;
+  amountPaise?: number;
+  io?: SocketIOServer;
+  activePanditExternalIds?: string[];
+}): Promise<boolean> {
+  const { orderId, paymentId, event, amountPaise, io, activePanditExternalIds } = opts;
+
+  // Already promoted by the client path (or an earlier webhook delivery).
+  const alreadyFinal = await poojaBookingModel.exists({ razorpayOrderId: orderId });
+  if (alreadyFinal) return true;
+
+  const pendingDoc = await pendingPoojaBookingModel.findOne({ razorpayOrderId: orderId });
+  if (!pendingDoc) return false; // not a puja booking order
+
+  if (event === 'payment.failed') {
+    // Keep the pending row — the devotee can still retry the payment, and the
+    // abandoned-payment nudge relies on it existing.
+    console.log(`[RazorpayWebhook][Puja] payment.failed for order=${orderId}; pending booking kept for retry.`);
+    return true;
+  }
+
+  if (!paymentId) {
+    console.warn(`[RazorpayWebhook][Puja] No payment id on ${event} for order=${orderId}; skipping.`);
+    return true;
+  }
+
+  // Amount sanity check — never confirm a booking for less than it costs.
+  if (typeof amountPaise === 'number' && Number.isFinite(amountPaise)) {
+    const expectedPaise = Math.round(Number(pendingDoc.amount) * 100);
+    if (amountPaise < expectedPaise) {
+      console.error(
+        `[RazorpayWebhook][Puja] Amount mismatch for order=${orderId}: paid=${amountPaise} expected=${expectedPaise}. Not confirming.`,
+      );
+      return true;
+    }
+  }
+
+  const { created } = await finalizePendingPoojaBooking(
+    pendingDoc,
+    { razorpayPaymentId: paymentId, razorpayOrderId: orderId },
+    {
+      io,
+      amountPaid: typeof amountPaise === 'number' ? amountPaise / 100 : undefined,
+      activePanditExternalIds,
+    },
+  );
+
+  console.log(
+    `[RazorpayWebhook][Puja] order=${orderId} → ${created ? 'booking confirmed & pending removed' : 'already confirmed (no-op)'}`,
+  );
+  return true;
+}
+
+// -------------------------------------------------------------
 // CREATE PENDING (Pre-payment)
 // -------------------------------------------------------------
 /** POST /api/bookings/create-pending (Pre-payment) */
@@ -750,6 +1160,29 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     // 1) Fetch Pending Booking
     const pendingDoc = await pendingPoojaBookingModel.findById(pendingBookingId);
     if (!pendingDoc) {
+      // The Razorpay webhook may have won the race: it already promoted this
+      // order and deleted the pending row. That's a success, not a 404 — return
+      // the confirmed booking so the app lands on the right screen.
+      const alreadyFinal = razorpayOrderId
+        ? await poojaBookingModel.findOne({ razorpayOrderId })
+        : null;
+      if (alreadyFinal) {
+        const tokenForFinal = jwt.sign(
+          { id: alreadyFinal.userId },
+          process.env.JWT_SECRET || 'supersecretkey',
+          { expiresIn: '7d' },
+        );
+        const userForFinal = await User.findById(alreadyFinal.userId).select(
+          'name email phone gotra given_name family_name addedOn'
+        );
+        res.status(200).json({
+          message: 'Pooja booking already confirmed.',
+          booking: alreadyFinal,
+          token: tokenForFinal,
+          user: userForFinal,
+        });
+        return;
+      }
       res.status(404).json({ message: 'Pending booking not found.' });
       return;
     }
@@ -777,238 +1210,28 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    // 5) Create FINAL booking
-    const finalBooking = (await poojaBookingModel.create({
-      ...pendingDoc.toObject(),
-      _id: undefined, // new id
-      isPaymentDone: true,
-      isConfirmed: false, // still needs Pandit confirmation
-      razorpayPaymentId,
-      razorpayOrderId,
-      razorpaySignature,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })) as unknown as (Document & IPoojaBooking);
+    // 5) Finalize — creates the PoojaBooking, deletes the pending row and fires
+    //    every confirmation side effect. Shared with the Razorpay webhook path,
+    //    and idempotent on razorpayOrderId so whichever arrives second no-ops.
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]) || req.ip || null;
 
-    // 6) Remove pending doc
-    await pendingPoojaBookingModel.findByIdAndDelete(pendingBookingId);
-
-    // 6a) Partner Affiliate notification (fire-and-forget)
-    void sendOrderToPartnerAffiliate(finalBooking);
-
-    // 6d) META CAPI Purchase (fire-and-forget) — skipped in test/dev mode
-    void (async () => {
-      if (!isProduction) {
-        console.log(`[MetaCAPI][Puja] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
-        return;
-      }
-      try {
-        const forwardedFor = req.headers['x-forwarded-for'];
-        const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]) || req.ip || null;
-
-        // `value` is the full amount charged (base seva + prasad box + extra
-        // Sankalp names), so a booking with add-ons must not report the base
-        // catalog price. The breakdown below is what makes that visible in
-        // Events Manager — without it every order looks like one anonymous unit
-        // and an inflated value reads as a tracking bug.
-        const capiContentId = String((finalBooking as any).poojaNameEng || 'PUJA').trim();
-        const extraSankalpNames = Array.isArray((finalBooking as any).familyMembers)
-          ? (finalBooking as any).familyMembers.length
-          : 0;
-        const capiContents = [
-          { id: capiContentId, quantity: 1 },
-          ...((finalBooking as any).prasadAdded ? [{ id: `${capiContentId} — Prasad Box`, quantity: 1 }] : []),
-          ...(extraSankalpNames > 0
-            ? [{ id: `${capiContentId} — Sankalp Name`, quantity: extraSankalpNames }]
-            : []),
-        ];
-
-        await sendMetaPurchaseEvent({
-          orderID: String(finalBooking.razorpayOrderId || razorpayOrderId),
-          value: Number((finalBooking as any).amount || amountPaid || 0),
-          currency: 'INR',
-          contentId: capiContentId,
-          contents: capiContents,
-          deliveryCategory: (finalBooking as any).address ? 'home_delivery' : 'in_store',
-          actionSource: 'website',
-          phone: String((finalBooking as any).userPhone || ''),
-          email: (finalBooking as any).userEmail || null,
-          externalId: String((finalBooking as any).userId || ''),
+    const { booking: finalBooking, created } = await finalizePendingPoojaBooking(
+      pendingDoc,
+      { razorpayPaymentId, razorpayOrderId, razorpaySignature },
+      {
+        io: req.app.get('io') as SocketIOServer | undefined,
+        amountPaid,
+        activePanditExternalIds: getActivePanditExternalIdsFromApp(req),
+        http: {
           clientIp,
           userAgent: String(req.headers['user-agent'] || ''),
           fbp: String(req.headers['x-fbp'] || (req as any).cookies?._fbp || ''),
           fbc: String(req.headers['x-fbc'] || (req as any).cookies?._fbc || ''),
-          eventSourceUrl:
-            String(req.headers['x-event-source-url'] || '') ||
-            process.env.META_DEFAULT_EVENT_SOURCE_URL ||
-            null,
-        });
-
-        console.log(`[MetaCAPI][Puja] Purchase sent for orderID=${razorpayOrderId}`);
-      } catch (e: any) {
-        console.error(
-          `[MetaCAPI][Puja] Purchase failed for orderID=${razorpayOrderId}:`,
-          e?.response?.data || e?.message || e,
-        );
-      }
-    })();
-
-    // 7) Notify dashboard (socket)
-    const io = req.app.get('io') as SocketIOServer | undefined;
-    io?.emit('booking:new:all', {
-      bookingId: finalBooking.id,
-      userName: finalBooking.userName,
-      userPhone: finalBooking.userPhone,
-      poojaName: finalBooking.poojaNameEng,
-      bookingDate: finalBooking.bookingDate,
-      mode: finalBooking.poojaMode,
-      bhaktName: finalBooking.bhaktName,
-      panditDakshina: (finalBooking as any).panditDakshina ?? 0,
-    });
-
-    // 7a) 🔔 NEW: Fire the 60s timed modal for all "active" pandits (can be narrowed by area later)
-    if (io) {
-      const payload = buildTimedRequestPayload(finalBooking);
-      io.to('active_pandits').emit('booking:new:timed_request', payload);
-
-      // set a 60s timer to auto-cancel modal if nobody accepted
-      const timer = setTimeout(() => {
-        io.emit('booking:request:cancelled', { bookingId: finalBooking.id });
-        timedRequestTimers.delete(finalBooking.id);
-      }, 60_000);
-      timedRequestTimers.set(finalBooking.id, timer);
-    }
-
-    // ------------------- PUSH NOTIFICATIONS -------------------
-    try {
-      // (User) Normalize to the exact 10-digit alias you use with OneSignal.login()
-      const phone10 = toAlias10((finalBooking as any).userPhone);
-      if (phone10 && phone10.length === 10) {
-        // (A) ONE immediate push at time of booking
-        await sendPushNotification({
-          externalIds: [phone10],
-          heading: 'Booked Successfully 🙏',
-          content: `You have booked a puja: ${finalBooking.poojaNameEng}.`,
-          data: {
-            screen: 'ActivePujaList',
-            bookingId: String((finalBooking as any)._id),
-          },
-        });
-
-        // (B) ONE scheduled reminder at 00:00 IST on puja day
-        await schedulePujaDayReminder({
-          externalIds: [phone10],
-          heading: 'Your Puja is Today 🙏',
-          content: `Reminder: ${finalBooking.poojaNameEng} is today.`,
-          data: {
-            screen: 'ActivePujaList',
-            bookingId: String((finalBooking as any)._id),
-          },
-          bookingDate: finalBooking.bookingDate,
-        });
-      } else {
-        console.warn('[push] Skipped user push: invalid phone alias:', (finalBooking as any).userPhone);
-      }
-
-      // (Pandits) 🛎️ NEW: Notify pandits on FINAL creation (default enabled; env flag)
-      if (NOTIFY_PANDITS_ON_FINAL) {
-        const when = new Date(finalBooking.bookingDate);
-        await notifyPanditsNewRequest(req, {
-          heading: 'New Puja Request',
-          content: `${finalBooking.poojaNameEng} on ${when.toDateString()}`,
-          data: {
-            screen: 'PujaRequestDetail', // product-side route
-            bookingId: String((finalBooking as any)._id),
-          },
-        });
-      }
-    } catch (pushErr) {
-      console.error('Push send/schedule failed:', pushErr);
-    }
-    // 🟢 WhatsApp booking confirmation (fire-and-forget) — for ALL bookings.
-    // Sent here (not at create-pending) so it goes out only once the payment
-    // signature is verified. Covers home pujas AND live mandir pujas alike.
-    void sendBookingConfirmationWhatsapp(finalBooking);
-    // ----------------------------------------------------------
-
-    // 🟢 Email booking confirmation (fire-and-forget)
-    void (async () => {
-      try {
-        const email = (finalBooking as any).userEmail;
-        if (!email) return;
-        await sendBookingConfirmationEmail({
-          to: email,
-          bhaktName: (finalBooking as any).bhaktName || (finalBooking as any).userName || "Devotee",
-          poojaName: finalBooking.poojaNameEng || "Puja",
-          bookingDate: String(finalBooking.bookingDate),
-          poojaMode: finalBooking.poojaMode || "online",
-          amount: Number((finalBooking as any).amount || amountPaid || 0),
-          contactNumber: String((finalBooking as any).userPhone || ""),
-          bookingId: String((finalBooking as any)._id),
-        });
-        console.log(`✅ [PujaBooking] Email confirmation sent to ${email}`);
-      } catch (e: any) {
-        console.error("❌ [PujaBooking] Email failed:", e?.message || e);
-      }
-    })();
-    // ----------------------------------------------------------
-
-    // ── Internal Referral Credit (fire-and-forget) ──────────────
-    void (async () => {
-      try {
-        const bookedUserId = String((finalBooking as any).userId || '');
-        if (!bookedUserId) return;
-
-        const bookedUser = await User.findById(bookedUserId).select(
-          'userReferral name given_name family_name'
-        );
-        if (!bookedUser?.userReferral?.referrerId) return;
-
-        const { referrerId, expiresAt, code } = bookedUser.userReferral;
-
-        // Only honour if the referral window hasn't expired
-        if (!expiresAt || new Date() > new Date(expiresAt)) return;
-
-        const totalAmount = Number((finalBooking as any).amount || amountPaid || 0);
-        const rewardPct = parseFloat(process.env.INTERNAL_REFERRAL_PCT ?? '5');
-        const amountEarned = Math.round((totalAmount * rewardPct) / 100);
-
-        const poojaName = finalBooking.poojaNameEng || 'Puja';
-        const referredUserName =
-          `${bookedUser.given_name || ''} ${bookedUser.family_name || ''}`.trim() ||
-          bookedUser.name ||
-          'User';
-
-        // 1) Record the referral booking
-        await UserReferralBooking.create({
-          referrerId,
-          referredUserId: bookedUser._id,
-          referredUserName,
-          bookingId: (finalBooking as any)._id,
-          poojaName,
-          amountEarned,
-          totalBookingAmount: totalAmount,
-          rewardPercentage: rewardPct,
-        });
-
-        // 2) Credit referrer + increment counter
-        await User.findByIdAndUpdate(referrerId, {
-          $inc: { referralEarnings: amountEarned, totalReferredPujas: 1 },
-        });
-
-        // 3) Clear referral from the referred user so it isn't applied again
-        await User.findByIdAndUpdate(bookedUser._id, {
-          $unset: { userReferral: '' },
-        });
-
-        console.log(
-          `[Referral] ✅ ₹${amountEarned} credited to referrer ${referrerId} for booking ${(finalBooking as any)._id}`
-        );
-      } catch (refErr: any) {
-        console.error('[Referral] ❌ credit failed:', refErr?.message || refErr);
-      }
-    })();
-    // ────────────────────────────────────────────────────────────
+          eventSourceUrl: String(req.headers['x-event-source-url'] || '') || null,
+        },
+      },
+    );
 
     const token = jwt.sign({ id: finalBooking.userId }, process.env.JWT_SECRET || "supersecretkey", {
       expiresIn: "7d",
@@ -1018,7 +1241,9 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
     );
 
     res.status(201).json({
-      message: 'Pooja booking confirmed and payment verified.',
+      message: created
+        ? 'Pooja booking confirmed and payment verified.'
+        : 'Pooja booking already confirmed.',
       booking: finalBooking,
       token,
       user,

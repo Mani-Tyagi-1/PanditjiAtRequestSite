@@ -677,63 +677,53 @@ export const completeChadhavaPayment: RequestHandler = async (req, res) => {
   }
 };
 
-// POST /chadhava-bookings/webhook — Razorpay reconciliation (raw body)
-export const chadhavaWebhook: RequestHandler = async (req, res) => {
-  try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      // Not configured — acknowledge so Razorpay stops retrying.
-      res.status(200).json({ success: true, message: "Webhook not configured" });
-      return;
-    }
+/**
+ * Razorpay reconciliation for a Chadhava booking. Called by the shared webhook
+ * dispatcher (and by the legacy per-service webhook below). Idempotent: only
+ * the path that first flips the booking to "paid" sends the WhatsApp.
+ *
+ * Returns true when the order belonged to a Chadhava booking.
+ */
+export async function reconcileChadhavaPayment(opts: {
+  orderId: string;
+  paymentId?: string;
+  event: string;
+}): Promise<boolean> {
+  const { orderId, paymentId, event } = opts;
 
-    const signature = req.headers["x-razorpay-signature"] as string | undefined;
-    const rawBody = (req as any).rawBody as Buffer | undefined;
-    if (!signature || !rawBody) {
-      res.status(400).json({ success: false, message: "Missing webhook signature/body" });
-      return;
-    }
+  const booking = await ChadhavaBooking.findOne({ razorpayOrderId: orderId });
+  if (!booking) return false;
 
-    const expected = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(rawBody)
-      .digest("hex");
+  if (booking.paymentStatus === "paid") return true; // already reconciled
 
-    if (expected !== signature) {
-      res.status(400).json({ success: false, message: "Invalid webhook signature" });
-      return;
-    }
+  if (event === "payment.captured" || event === "order.paid") {
+    booking.paymentStatus = "paid";
+    booking.status = "confirmed";
+    if (paymentId) booking.razorpayPaymentId = paymentId;
+    await booking.save();
 
-    const event = JSON.parse(rawBody.toString());
-    const paymentEntity = event?.payload?.payment?.entity;
-    const orderId = paymentEntity?.order_id;
+    // Partner-affiliate credit — the client-verify path does this too, but only
+    // one of the two ever flips the booking to "paid", so it fires exactly once.
+    void sendPjarOrderToPartnerAffiliate({
+      phone: (booking as any).phone,
+      orderId: booking.razorpayOrderId,
+      orderPrice: Number((booking as any).totalAmount),
+      productName: (booking as any).chadhavaName || "CHADHAVA",
+    });
 
-    if (orderId) {
-      const booking = await ChadhavaBooking.findOne({ razorpayOrderId: orderId });
-      // Only reconcile if the client never verified (idempotent).
-      if (booking && booking.paymentStatus !== "paid") {
-        if (event.event === "payment.captured") {
-          booking.paymentStatus = "paid";
-          booking.status = "confirmed";
-          booking.razorpayPaymentId = paymentEntity.id;
-          await booking.save();
-          // 🟢 Thank-you WhatsApp via reconciliation path (fire-and-forget).
-          // Mutually exclusive with completeChadhavaPayment's send — only the
-          // path that first flips the booking to "paid" runs this.
-          void sendChadhavaConfirmationWhatsapp(booking);
-        } else if (event.event === "payment.failed") {
-          booking.paymentStatus = "failed";
-          await booking.save();
-        }
-      }
-    }
-
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error("Chadhava webhook error:", error);
-    res.status(500).json({ success: false, message: "Webhook processing failed" });
+    void sendChadhavaConfirmationWhatsapp(booking);
+    console.log(`[RazorpayWebhook][Chadhava] order=${orderId} → confirmed`);
+  } else if (event === "payment.failed") {
+    booking.paymentStatus = "failed";
+    await booking.save();
   }
-};
+
+  return true;
+}
+
+// NOTE: the Razorpay webhook endpoint now lives in
+// controller/payments/razorpayWebhookController.ts — one signed endpoint that
+// reconciles every service. reconcileChadhavaPayment above is what it calls.
 
 // GET /chadhava-bookings — admin list
 export const getChadhavaBookings: RequestHandler = async (_req, res) => {

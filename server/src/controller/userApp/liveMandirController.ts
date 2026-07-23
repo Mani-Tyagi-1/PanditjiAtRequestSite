@@ -315,6 +315,61 @@ export const completeLiveBookingPayment: RequestHandler = async (req, res) => {
   }
 };
 
+/**
+ * Razorpay reconciliation for a legacy LiveMandirBooking row.
+ *
+ * New Live Mandir bookings go through the pooja pending → final pipeline (see
+ * reconcilePoojaBookingPayment), which is what actually confirms the puja. This
+ * only flips the companion LiveMandirBooking record, which still exists for
+ * bookings created before that migration and for the admin list view. Both
+ * reconcilers run for the same order id — they touch different collections.
+ *
+ * Returns true when the order matched a LiveMandirBooking.
+ */
+export async function reconcileLiveMandirPayment(opts: {
+  orderId: string;
+  paymentId?: string;
+  event: string;
+}): Promise<boolean> {
+  const { orderId, paymentId, event } = opts;
+
+  const booking = await LiveMandirBooking.findOne({ razorpayOrderId: orderId });
+  if (!booking) return false;
+
+  if (booking.paymentStatus === "paid") return true; // already reconciled
+
+  if (event === "payment.captured" || event === "order.paid") {
+    booking.paymentStatus = "paid";
+    booking.status = "confirmed";
+    if (paymentId) booking.razorpayPaymentId = paymentId;
+
+    // Keep normalBookingId pointing at the FINAL pooja booking once the pooja
+    // reconciler has promoted it, so the admin view doesn't hold a dead id.
+    const finalPooja = await poojaBookingModel
+      .findOne({ razorpayOrderId: orderId })
+      .select("_id")
+      .lean();
+    if (finalPooja) booking.normalBookingId = String((finalPooja as any)._id);
+
+    await booking.save();
+
+    void sendPjarOrderToPartnerAffiliate({
+      userId: (booking as any).userId,
+      phone: (booking as any).phone,
+      orderId: booking.razorpayOrderId,
+      orderPrice: Number((booking as any).amount),
+      productName: (booking as any).pujaName || "LIVE_MANDIR",
+    });
+
+    console.log(`[RazorpayWebhook][LiveMandir] order=${orderId} → confirmed`);
+  } else if (event === "payment.failed") {
+    booking.paymentStatus = "failed";
+    await booking.save();
+  }
+
+  return true;
+}
+
 // GET /live-mandir-bookings — admin list
 export const getLiveBookings: RequestHandler = async (_req, res) => {
   try {

@@ -563,64 +563,43 @@ export const completeShopifyOrderPayment: RequestHandler = async (req, res) => {
   }
 };
 
-// POST /shopify-orders/webhook — Razorpay reconciliation (raw body).
-// Safety net for prepaid orders: if the browser never completes the verify call
-// (popup closed / network drop after payment), this server-side path still marks
-// the order paid and sends the confirmation WhatsApp.
-export const shopifyOrderWebhook: RequestHandler = async (req, res) => {
-  try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      // Not configured — acknowledge so Razorpay stops retrying.
-      res.status(200).json({ success: true, message: "Webhook not configured" });
-      return;
-    }
+/**
+ * Razorpay reconciliation for a shop order. Called by the shared webhook
+ * dispatcher (and by the legacy per-service webhook below).
+ *
+ * Returns true when the order belonged to a shop order.
+ */
+export async function reconcileShopifyOrderPayment(opts: {
+  orderId: string;
+  paymentId?: string;
+  event: string;
+}): Promise<boolean> {
+  const { orderId, paymentId, event } = opts;
 
-    const signature = req.headers["x-razorpay-signature"] as string | undefined;
-    const rawBody = (req as any).rawBody as Buffer | undefined;
-    if (!signature || !rawBody) {
-      res.status(400).json({ success: false, message: "Missing webhook signature/body" });
-      return;
-    }
+  const order = await ShopifyOrder.findOne({ razorpayOrderId: orderId });
+  if (!order) return false;
 
-    const expected = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(rawBody)
-      .digest("hex");
+  if (order.paymentStatus === "paid") return true; // already reconciled
 
-    if (expected !== signature) {
-      res.status(400).json({ success: false, message: "Invalid webhook signature" });
-      return;
-    }
-
-    const event = JSON.parse(rawBody.toString());
-    const paymentEntity = event?.payload?.payment?.entity;
-    const orderId = paymentEntity?.order_id;
-
-    if (orderId) {
-      const order = await ShopifyOrder.findOne({ razorpayOrderId: orderId });
-      // Only reconcile if the client never verified (idempotent).
-      if (order && order.paymentStatus !== "paid") {
-        if (event.event === "payment.captured") {
-          order.paymentStatus = "paid";
-          order.status = "confirmed";
-          order.razorpayPaymentId = paymentEntity.id;
-          await order.save();
-          // Confirmation WhatsApp via reconciliation path (exactly once).
-          void sendOrderConfirmationOnce(order);
-        } else if (event.event === "payment.failed") {
-          order.paymentStatus = "failed";
-          await order.save();
-        }
-      }
-    }
-
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error("Shopify order webhook error:", error);
-    res.status(500).json({ success: false, message: "Webhook processing failed" });
+  if (event === "payment.captured" || event === "order.paid") {
+    order.paymentStatus = "paid";
+    order.status = "confirmed";
+    if (paymentId) order.razorpayPaymentId = paymentId;
+    await order.save();
+    // Confirmation WhatsApp via reconciliation path (exactly once).
+    void sendOrderConfirmationOnce(order);
+    console.log(`[RazorpayWebhook][Shop] order=${orderId} → confirmed`);
+  } else if (event === "payment.failed") {
+    order.paymentStatus = "failed";
+    await order.save();
   }
-};
+
+  return true;
+}
+
+// NOTE: the Razorpay webhook endpoint now lives in
+// controller/payments/razorpayWebhookController.ts — one signed endpoint that
+// reconciles every service. reconcileShopifyOrderPayment above is what it calls.
 
 // GET /shopify-orders/user/:phone — Fetches shopify orders for a specific user phone number
 export const getUserShopifyOrders: RequestHandler = async (req, res) => {

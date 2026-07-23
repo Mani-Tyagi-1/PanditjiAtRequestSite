@@ -44,6 +44,7 @@ import shopifyProductRoutes from "./routes/userAppRoutes/shopifyProductRoutes";
 import shopifyOrderRoutes from "./routes/userAppRoutes/shopifyOrderRoutes";
 import seoRoutes from "./routes/seoRoutes";
 import affiliateProductsRoutes from "./routes/userAppRoutes/affiliateProductsRoutes";
+import razorpayWebhookRoutes from "./routes/payments/razorpayWebhookRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -104,6 +105,8 @@ app.use("/api/affiliate", affiliateProductsRoutes);
 app.use("/api", holyPanditRoutes);
 app.use("/api", shopifyProductRoutes);
 app.use("/api", shopifyOrderRoutes);
+// Razorpay server-to-server payment confirmation for every service
+app.use("/api/payments", razorpayWebhookRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 

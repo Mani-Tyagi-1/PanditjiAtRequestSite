@@ -227,6 +227,13 @@ export default function SavanPujaPage() {
     // AddToCart marks intent at the CTA tap (same convention as PujaPage.tsx);
     // InitiateCheckout / Purchase then fire on the booking page itself, so the
     // three funnel steps stay distinct instead of collapsing onto one trigger.
+    //
+    // ViewContent / AddToCart here necessarily report the ₹1100 base seva: the
+    // prasad box and extra Sankalp names are chosen on the booking page, so no
+    // add-on exists yet at this point in the funnel. The booking's real value
+    // (base + add-ons) is reported by InitiateCheckout / Purchase from
+    // SavanPujaBookingPage and by the server CAPI Purchase — read those, not
+    // these, when reconciling revenue in Events Manager.
     const openBooking = () => {
         track("AddToCart", {
             content_name: puja.poojaNameEng,

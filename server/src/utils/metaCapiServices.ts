@@ -27,6 +27,7 @@ type MetaUserData = {
 type MetaContent = {
   id: string;
   quantity: number;
+  item_price?: number;
 };
 
 type MetaCustomData = {
@@ -34,6 +35,7 @@ type MetaCustomData = {
   value: number;
   delivery_category?: "home_delivery" | "in_store";
   contents?: MetaContent[];
+  num_items?: number;
 };
 
 // ✅ keep app_data type but we will strip it for website events
@@ -218,6 +220,12 @@ export async function sendMetaPurchaseEvent(args: {
   contentId: string;
   deliveryCategory?: "home_delivery" | "in_store";
 
+  // Optional line-item breakdown. When the order is more than one unit of one
+  // thing (base seva + add-ons), pass it so Events Manager shows what made up
+  // `value` instead of a single anonymous unit. Omitted → the legacy single
+  // { contentId, quantity: 1 } content is sent.
+  contents?: Array<{ id: string; quantity: number; itemPrice?: number }>;
+
   // Optional explicit dedup event_id. Must match the browser pixel's
   // { eventID } so Meta dedupes the pixel + CAPI Purchase. When omitted,
   // falls back to the legacy `puja_purchase_<orderID>` scheme.
@@ -259,6 +267,15 @@ export async function sendMetaPurchaseEvent(args: {
     fbc: args.fbc || null,
   });
 
+  const breakdown = (args.contents || []).filter((c) => c && Number(c.quantity) > 0);
+  const contents: MetaContent[] = breakdown.length
+    ? breakdown.map((c) => ({
+        id: String(c.id || args.contentId || "PUJA"),
+        quantity: Number(c.quantity),
+        ...(c.itemPrice != null && { item_price: Number(c.itemPrice) }),
+      }))
+    : [{ id: String(args.contentId || "PUJA"), quantity: 1 }];
+
   const event: MetaEvent = {
     event_name: "Purchase",
     event_time,
@@ -269,12 +286,8 @@ export async function sendMetaPurchaseEvent(args: {
       currency: String(args.currency || "INR"),
       value: Number(args.value || 0),
       ...(args.deliveryCategory && { delivery_category: args.deliveryCategory }),
-      contents: [
-        {
-          id: String(args.contentId || "PUJA"),
-          quantity: 1,
-        },
-      ],
+      contents,
+      num_items: contents.reduce((sum, c) => sum + c.quantity, 0),
     },
   };
 

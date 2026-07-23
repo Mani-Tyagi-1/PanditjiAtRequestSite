@@ -143,6 +143,26 @@ export default function SavanPujaBookingPage() {
     const familyCost = form.familyMembers.length * FAMILY_MEMBER_PRICE;
     const totalPrice = basePrice + prasadCost + familyCost;
 
+    // Line-item breakdown reported to Meta alongside `value`. The base seva is
+    // ₹1100, but a booking with the prasad box and extra Sankalp names costs
+    // more — without this, every order looks like one anonymous unit in Events
+    // Manager and the higher value can't be reconciled against the puja price.
+    // Ids mirror the ones the server CAPI Purchase sends (built off
+    // poojaNameEng) so the deduplicated pair reports identically either way.
+    const metaContents = () => [
+        { id: puja.poojaNameEng, quantity: 1, item_price: basePrice },
+        ...(form.prasadAdded
+            ? [{ id: `${puja.poojaNameEng} — Prasad Box`, quantity: 1, item_price: PRASAD_BOX_PRICE }]
+            : []),
+        ...(form.familyMembers.length > 0
+            ? [{
+                id: `${puja.poojaNameEng} — Sankalp Name`,
+                quantity: form.familyMembers.length,
+                item_price: FAMILY_MEMBER_PRICE,
+            }]
+            : []),
+    ];
+
     // Fires once the devotee has a usable name + phone in the form, on blur of
     // either field — same signal (and event name) BookingModal reports, so the
     // "started filling details" step exists for this puja too. `hasTrackedDetails`
@@ -282,10 +302,13 @@ export default function SavanPujaBookingPage() {
             // this step only reports InitiateCheckout — firing both here would
             // put two funnel steps on a single trigger.
             if ((window as any).fbq) {
+                const contents = metaContents();
                 (window as any).fbq("track", "InitiateCheckout", {
                     content_name: puja.poojaNameEng,
                     content_ids: [puja._id],
                     content_type: "product",
+                    contents,
+                    num_items: contents.reduce((n, c) => n + c.quantity, 0),
                     value: totalPrice,
                     currency: "INR",
                 });
@@ -337,10 +360,13 @@ export default function SavanPujaBookingPage() {
                         if (verifyData.token && verifyData.user) login(verifyData.token, verifyData.user);
 
                         if ((window as any).fbq) {
+                            const contents = metaContents();
                             (window as any).fbq("track", "Purchase", {
                                 content_name: puja.poojaNameEng,
                                 content_ids: [puja._id],
                                 content_type: "product",
+                                contents,
+                                num_items: contents.reduce((n, c) => n + c.quantity, 0),
                                 value: totalPrice,
                                 currency: "INR",
                             }, { eventID: `puja_purchase_${response.razorpay_order_id}` });

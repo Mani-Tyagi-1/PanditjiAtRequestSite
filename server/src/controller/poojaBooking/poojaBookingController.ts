@@ -806,11 +806,29 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
         const forwardedFor = req.headers['x-forwarded-for'];
         const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]) || req.ip || null;
 
+        // `value` is the full amount charged (base seva + prasad box + extra
+        // Sankalp names), so a booking with add-ons must not report the base
+        // catalog price. The breakdown below is what makes that visible in
+        // Events Manager — without it every order looks like one anonymous unit
+        // and an inflated value reads as a tracking bug.
+        const capiContentId = String((finalBooking as any).poojaNameEng || 'PUJA').trim();
+        const extraSankalpNames = Array.isArray((finalBooking as any).familyMembers)
+          ? (finalBooking as any).familyMembers.length
+          : 0;
+        const capiContents = [
+          { id: capiContentId, quantity: 1 },
+          ...((finalBooking as any).prasadAdded ? [{ id: `${capiContentId} — Prasad Box`, quantity: 1 }] : []),
+          ...(extraSankalpNames > 0
+            ? [{ id: `${capiContentId} — Sankalp Name`, quantity: extraSankalpNames }]
+            : []),
+        ];
+
         await sendMetaPurchaseEvent({
           orderID: String(finalBooking.razorpayOrderId || razorpayOrderId),
           value: Number((finalBooking as any).amount || amountPaid || 0),
           currency: 'INR',
-          contentId: String((finalBooking as any).poojaNameEng || 'PUJA').trim(),
+          contentId: capiContentId,
+          contents: capiContents,
           deliveryCategory: (finalBooking as any).address ? 'home_delivery' : 'in_store',
           actionSource: 'website',
           phone: String((finalBooking as any).userPhone || ''),

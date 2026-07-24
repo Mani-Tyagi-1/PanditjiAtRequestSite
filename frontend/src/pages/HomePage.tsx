@@ -19,6 +19,7 @@ import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
 import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG } from "../data/kashiMahadevPuja";
 import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG } from "../data/kaalBhairavPuja";
+import { hanumanPuja, HANUMAN_PUJA_SLUG } from "../data/hanumanPuja";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
 import VerifiedPanditJi from "../components/home/VerifiedPanditJi";
@@ -52,6 +53,13 @@ const FEATURED_PUJA_BANNER_H = 566;
 const FEATURED_PUJA_2_BANNER =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kaal%20Bhairava%20Banner.webp";
 const FEATURED_PUJA_2_HREF = `/${KAAL_BHAIRAV_PUJA_SLUG}`;
+
+// ── Third featured puja banner: Hanuman Garhi Savan Mangalwar campaign ──
+// 👉 PASTE THE CREATIVE URL HERE. Defaults to the Hanuman Garhi banner so the
+//    slot is never broken; swap the string for your own artwork when ready.
+const FEATURED_PUJA_3_BANNER =
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Hanuman%20gari%20ji%20banner.webp";
+const FEATURED_PUJA_3_HREF = `/${HANUMAN_PUJA_SLUG}`;
 
 
 type Pooja = {
@@ -372,6 +380,39 @@ export default function HomePage() {
                         width={FEATURED_PUJA_BANNER_W}
                         height={FEATURED_PUJA_BANNER_H}
                         alt={`${kaalBhairavPuja.poojaNameEng} at ${kaalBhairavPuja.templeName}, Kashi`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-auto object-cover"
+                    />
+                </button>
+            </section>
+
+            {/* ── Featured puja banner 3: Hanuman Garhi ──
+                A single tappable creative promoting the Hanuman Garhi Savan
+                Mangalwar page. Swap FEATURED_PUJA_3_BANNER at the top of this file
+                to change the artwork; the destination lives next to it. */}
+            <section className="px-4 pt-4">
+                <button
+                    onClick={() => {
+                        if (window.fbq) {
+                            window.fbq("track", "ViewContent", {
+                                content_name: hanumanPuja.poojaNameEng,
+                                content_ids: [hanumanPuja._id],
+                                content_type: "product",
+                                value: hanumanPuja.poojaPriceOnline,
+                                currency: "INR",
+                            });
+                        }
+                        navigate(FEATURED_PUJA_3_HREF);
+                    }}
+                    aria-label={`Book ${hanumanPuja.poojaNameEng} at ${hanumanPuja.templeName}, Ayodhya`}
+                    className="block w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm active:scale-[0.98] transition-transform"
+                >
+                    <img
+                        src={FEATURED_PUJA_3_BANNER}
+                        width={FEATURED_PUJA_BANNER_W}
+                        height={FEATURED_PUJA_BANNER_H}
+                        alt={`${hanumanPuja.poojaNameEng} at ${hanumanPuja.templeName}, Ayodhya`}
                         loading="lazy"
                         decoding="async"
                         className="w-full h-auto object-cover"

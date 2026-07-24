@@ -42,11 +42,12 @@ import Pooja from "../model/userApp/poojaModel";
 const POOJA_ID = "RF_HANUMAN_01";
 
 // Kept in sync with frontend/src/data/hanumanPuja.ts so booking confirmations
-// (WhatsApp/email) and admin records show the correct artwork.
-// TODO: swap for the Hanuman Garhi banner when it is ready (currently a
-// placeholder reusing existing Kashi artwork).
+// (WhatsApp/email) and admin records show the correct Hanuman Garhi artwork.
+// The WhatsApp header image is read from this row's poojaCardImage, so it MUST
+// be the Hanuman banner (not a generic/placeholder), else confirmations show
+// the wrong puja's image.
 const BANNER =
-  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png";
+  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Hanuman%20gari%20ji%20banner.webp";
 
 /**
  * Mirrors frontend/src/data/hanumanPuja.ts. The page renders from the frontend

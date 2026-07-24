@@ -343,6 +343,18 @@ export default function Hanumanjipage() {
             name="description"
             content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Hanuman puja performed on your behalf at ${mandirName} on Savan Mangalwar, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
           />
+          {/* Social share preview (WhatsApp / Facebook / X) for ad & organic shares.
+              TODO: add <link rel="canonical"> and <meta property="og:url"> once the
+              production domain is finalised. */}
+          <meta property="og:type" content="product" />
+          <meta property="og:site_name" content="Pandit Ji At Request" />
+          <meta property="og:title" content={`${puja.poojaNameEng} — Savan Mangalwar Puja at ${puja.templeName}, Ayodhya`} />
+          <meta property="og:description" content={`Hanuman Savan Mangalwar puja performed on your behalf at ${mandirName}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹${getPackage("basic").price.toLocaleString("en-IN")}.`} />
+          <meta property="og:image" content={image} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`${puja.poojaNameEng} — Savan Mangalwar Puja at Ayodhya`} />
+          <meta name="twitter:description" content={`Hanuman Savan Mangalwar puja at ${mandirName}. Packages from ₹${getPackage("basic").price.toLocaleString("en-IN")}, puja video on WhatsApp.`} />
+          <meta name="twitter:image" content={image} />
           {/* Preload the LCP hero (direct CDN webp) at highest priority. */}
           <link rel="preload" as="image" href={image} fetchPriority="high" />
         </Helmet>

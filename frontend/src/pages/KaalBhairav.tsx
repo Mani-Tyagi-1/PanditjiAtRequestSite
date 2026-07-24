@@ -10,7 +10,8 @@ import { useAuth } from "../context/AuthContext";
 import PujaEnquiryModal from "../components/booking/PujaEnquiryModal";
 import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
-import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG } from "../data/kaalBhairavPuja";
+import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG, DEFAULT_PACKAGE_ID, getPackage, type PujaPackageId } from "../data/kaalBhairavPuja";
+import PujaPackages from "../components/kaalBhairav/PujaPackages";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -132,6 +133,43 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
     );
 }
 
+/**
+ * Live countdown pill for the hero's bottom-right corner.
+ *
+ * Deliberately its OWN component with its OWN interval + state, so the 1-second
+ * tick re-renders only this tiny pill — not the whole (large) page. Ticking the
+ * parent every second was re-reconciling the entire tree (packages, reviews,
+ * accordions, FAQ…) and stalling the auto-scroll animation each second.
+ */
+function HeroCountdown({ target }: { target: number }) {
+    const [remaining, setRemaining] = useState(() =>
+        Number.isNaN(target) ? 0 : Math.max(0, target - Date.now())
+    );
+    useEffect(() => {
+        if (Number.isNaN(target)) return;
+        const tick = () => setRemaining(Math.max(0, target - Date.now()));
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, [target]);
+
+    if (remaining <= 0) return null;
+    const days = Math.floor(remaining / 86400000);
+    const hrs = Math.floor((remaining % 86400000) / 3600000);
+    const min = Math.floor((remaining % 3600000) / 60000);
+    const sec = Math.floor((remaining % 60000) / 1000);
+    return (
+        <div className="absolute bottom-2 right-2 z-10 rounded-lg bg-[#F8F4EC]/90 backdrop-blur-sm border border-[#B8860B]/50 px-2.5 py-1.5 shadow-lg text-right">
+            <p className="text-[7.5px] font-bold uppercase tracking-wider text-[#6E6257] leading-none mb-0.5">
+                Puja slot closes in
+            </p>
+            <p className="text-[12px] font-bold text-[#8B0000] tabular-nums leading-none">
+                {days}d {pad2(hrs)}h {pad2(min)}m {pad2(sec)}s
+            </p>
+        </div>
+    );
+}
+
 // ── Page ───────────────────────────────────────────────────────
 // FRONTEND-ONLY Shree Kashi Kaal Bhairav Mahapuja — an online puja performed
 // on the devotee's behalf at Shri Kaal Bhairav Mandir, Kashi (Varanasi) on
@@ -151,40 +189,84 @@ export default function KaalBhairavPage() {
     const [isSharing, setIsSharing] = useState(false);
     const [shareCopied, setShareCopied] = useState(false);
 
+    // Chosen booking package — drives the sticky-CTA price and is handed to the
+    // booking page as navigation state so it opens pre-selected.
+    const [packageId, setPackageId] = useState<PujaPackageId>(DEFAULT_PACKAGE_ID);
+    const selectedPkg = getPackage(packageId);
+    const price = selectedPkg.price;
+
     // ViewContent on load
     useEffect(() => {
         track("ViewContent", {
             content_name: puja.poojaNameEng,
             content_ids: [pujaId],
             content_type: "product",
-            value: puja.poojaPriceOnline,
+            value: getPackage(DEFAULT_PACKAGE_ID).price,
             currency: "INR",
         });
     }, []);
 
     const image = puja.poojaImages?.[0] || puja.poojaMainImage || puja.poojaCardImage;
-    const price = puja.poojaPriceOnline;
     const reviews = seededReviews(pujaId, 9);
     const mandirName = `${puja.templeName}, ${puja.templeLocation}`;
 
-    // ── Countdown to the puja date ──
+    // ── Countdown to the puja date ── (rendered by the isolated HeroCountdown
+    // component so its 1s tick never re-renders this whole page).
     const targetTs = new Date(puja.pujaDate).getTime();
-    const [remaining, setRemaining] = useState(() =>
-        Number.isNaN(targetTs) ? 0 : Math.max(0, targetTs - Date.now())
-    );
+
+    // Gentle one-time nudge: ~4.5s after landing, if the devotee hasn't scrolled
+    // yet, glide the page down so the package comparison is on screen. We run our
+    // own eased rAF tween (easeInOutCubic over ~1.4s) rather than native smooth
+    // scroll for a buttery, consistent glide — and bail the instant they
+    // interact, so it never fights a user who's already reading.
     useEffect(() => {
-        if (Number.isNaN(targetTs)) return;
-        const tick = () => setRemaining(Math.max(0, targetTs - Date.now()));
-        tick();
-        const id = setInterval(tick, 1000);
-        return () => clearInterval(id);
-    }, [targetTs]);
-    const cd = remaining > 0 ? {
-        days: Math.floor(remaining / 86400000),
-        hrs: Math.floor((remaining % 86400000) / 3600000),
-        min: Math.floor((remaining % 3600000) / 60000),
-        sec: Math.floor((remaining % 60000) / 1000),
-    } : null;
+        let interacted = false;
+        let rafId = 0;
+        const mark = () => { interacted = true; cancelAnimationFrame(rafId); };
+        window.addEventListener("wheel", mark, { passive: true });
+        window.addEventListener("touchmove", mark, { passive: true });
+        window.addEventListener("keydown", mark);
+
+        const timeoutId = setTimeout(() => {
+            if (interacted || window.scrollY > 40) return;
+            const el = document.getElementById("packages");
+            if (!el) return;
+
+            const startY = window.scrollY;
+            // Offset for the sticky header so the "Choose your package" title
+            // isn't tucked underneath it.
+            const targetY = Math.max(0, el.getBoundingClientRect().top + startY - 68);
+            const distance = targetY - startY;
+            if (Math.abs(distance) < 4) return;
+
+            // Respect reduced-motion: jump straight there, no animation.
+            if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+                window.scrollTo(0, targetY);
+                return;
+            }
+
+            const duration = 1400;
+            const startT = performance.now();
+            const easeInOutCubic = (t: number) =>
+                t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            const step = (now: number) => {
+                if (interacted) return;
+                const t = Math.min(1, (now - startT) / duration);
+                window.scrollTo(0, startY + distance * easeInOutCubic(t));
+                if (t < 1) rafId = requestAnimationFrame(step);
+            };
+            rafId = requestAnimationFrame(step);
+            track("puja_packages_autoscroll", {}, true);
+        }, 2000);
+
+        return () => {
+            clearTimeout(timeoutId);
+            cancelAnimationFrame(rafId);
+            window.removeEventListener("wheel", mark);
+            window.removeEventListener("touchmove", mark);
+            window.removeEventListener("keydown", mark);
+        };
+    }, []);
 
     const whatYouGet = [
         { icon: BadgeCheck, title: "Personalized offering", sub: "Performed in your name & gotra" },
@@ -214,13 +296,14 @@ export default function KaalBhairavPage() {
     // these, when reconciling revenue in Events Manager.
     const openBooking = () => {
         track("AddToCart", {
-            content_name: puja.poojaNameEng,
+            content_name: `${puja.poojaNameEng} — ${selectedPkg.name}`,
             content_ids: [pujaId],
             content_type: "product",
             value: price,
             currency: "INR",
         });
-        navigate(`/${KAAL_BHAIRAV_PUJA_SLUG}/booking`);
+        // Hand the chosen package to the booking page so it opens pre-selected.
+        navigate(`/${KAAL_BHAIRAV_PUJA_SLUG}/booking`, { state: { packageId } });
     };
 
     const handleShare = async () => {
@@ -320,6 +403,8 @@ export default function KaalBhairavPage() {
           {/* Premium charcoal vignette — grounds the artwork and ties the hero
               to the black/gold theme without covering the banner's own icons. */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1A1A1A]/60 via-transparent to-[#1A1A1A]/15" />
+          {/* Compact live countdown, tucked into the hero's bottom-right. */}
+          <HeroCountdown target={targetTs} />
         </div>
 
         <div className="px-4 pt-3 pb-4 space-y-4">
@@ -366,6 +451,8 @@ export default function KaalBhairavPage() {
                 src={HERO_VALUE_IMAGE}
                 alt=""
                 aria-hidden="true"
+                loading="lazy"
+                decoding="async"
                 className="pointer-events-none absolute -top-5 -right-6 w-40 h-40 object-contain drop-shadow-xl z-10"
               />
             )}
@@ -374,7 +461,7 @@ export default function KaalBhairavPage() {
                 "Kaal Bhairav puja on Kalashtami at Kashi",
                 "Personalized Sankalp in your name & gotra",
                 "Puja video shared on WhatsApp",
-                "Optional prasad delivered at home",
+                "Prasad & Rudraksh in premium packages",
               ].map((t) => (
                 <div key={t} className="flex items-start gap-2 text-[12.5px] text-[#1A1A1A]">
                   <Check className="w-3.5 h-3.5 text-[#B8860B] shrink-0 mt-0.5" strokeWidth={3} />
@@ -384,65 +471,15 @@ export default function KaalBhairavPage() {
             </div>
           </div>
 
-          {/* ── Countdown to the puja date ── */}
-          <div className="flex flex-col items-center gap-2 bg-white border border-[#E7DAC0] rounded-xl px-3 py-2.5 shadow-sm">
-            <span className="text-[11px] font-bold text-[#8B0000] leading-tight text-center">
-              Limited slots for {puja.pujaDate}
-            </span>
-            {cd ? (
-              <div className="flex items-center justify-center gap-1.5">
-                {[
-                  { v: cd.days, l: "Days" },
-                  { v: cd.hrs, l: "Hrs" },
-                  { v: cd.min, l: "Min" },
-                  { v: cd.sec, l: "Sec" },
-                ].map((u, i, arr) => (
-                  <div key={u.l} className="flex items-center gap-1.5">
-                    <div className="min-w-[40px] bg-[#F3E9D2] border border-[#E7DAC0] rounded-lg px-1.5 py-1 text-center">
-                      <div className="text-[16px] leading-none font-bold text-[#1A1A1A] tabular-nums">
-                        {pad2(u.v)}
-                      </div>
-                      <div className="text-[8px] uppercase tracking-wide text-[#6E6257] mt-0.5">
-                        {u.l}
-                      </div>
-                    </div>
-                    {i < arr.length - 1 && (
-                      <span className="text-[#E7DAC0] font-semibold text-xs">:</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <span className="text-[12px] text-[#6E6257]">Booking open</span>
-            )}
-          </div>
-
-          {/* ── Online-puja reassurance line ── */}
-          <div className="flex items-center justify-center gap-1.5 bg-[#F3E9D2] border border-[#E7DAC0] text-[#8B0000] rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
-            <MessageCircle className="w-3.5 h-3.5 text-[#B8860B] shrink-0" />
-            Puja performed at {puja.templeName} · receive the video with your
-            name &amp; gotra on WhatsApp
-          </div>
-
-          {/* ── Bhairav offerings ── */}
-          <div>
-            <SectionTitle icon={<Shield className="w-3.5 h-3.5 text-[#B8860B]" />}>
-              What is offered in your name
+          {/* ── Choose your package (comparison) ── */}
+          <div id="packages">
+            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#B8860B]" />}>
+              Choose your package
             </SectionTitle>
-            <div className="grid grid-cols-4 gap-2">
-              {offerings.map(({ icon: Icon, label, sub }) => (
-                <div
-                  key={label}
-                  className="bg-white border border-[#E7DAC0] rounded-xl p-2 text-center shadow-sm"
-                >
-                  <div className="w-7 h-7 mx-auto rounded-full bg-gradient-to-br from-[#F3E9D2] to-[#8B0000]/20 flex items-center justify-center mb-1">
-                    <Icon className="w-3.5 h-3.5 text-[#8B0000]" />
-                  </div>
-                  <p className="text-[10.5px] font-bold text-[#1A1A1A] leading-tight">{label}</p>
-                  <p className="text-[8.5px] text-[#6E6257] leading-tight mt-0.5">{sub}</p>
-                </div>
-              ))}
-            </div>
+            <PujaPackages selectedId={packageId} onSelect={setPackageId} />
+            <p className="mt-2 text-[10.5px] text-[#6E6257] leading-snug text-center">
+              Extra family members can be added at ₹151 each on the next step.
+            </p>
           </div>
 
           {/* ── Mantra strip ── */}
@@ -483,6 +520,36 @@ export default function KaalBhairavPage() {
             </SectionTitle>
             <ReviewMarquee reviews={reviews} />
           </div>
+
+          {/* ── Online-puja reassurance line ── */}
+          <div className="flex items-center justify-center gap-1.5 bg-[#F3E9D2] border border-[#E7DAC0] text-[#8B0000] rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
+            <MessageCircle className="w-3.5 h-3.5 text-[#B8860B] shrink-0" />
+            Puja performed at {puja.templeName} · receive the video with your
+            name &amp; gotra on WhatsApp
+          </div>
+
+          {/* ── Bhairav offerings ── */}
+          <div>
+            <SectionTitle icon={<Shield className="w-3.5 h-3.5 text-[#B8860B]" />}>
+              What is offered in your name
+            </SectionTitle>
+            <div className="grid grid-cols-4 gap-2">
+              {offerings.map(({ icon: Icon, label, sub }) => (
+                <div
+                  key={label}
+                  className="bg-white border border-[#E7DAC0] rounded-xl p-2 text-center shadow-sm"
+                >
+                  <div className="w-7 h-7 mx-auto rounded-full bg-gradient-to-br from-[#F3E9D2] to-[#8B0000]/20 flex items-center justify-center mb-1">
+                    <Icon className="w-3.5 h-3.5 text-[#8B0000]" />
+                  </div>
+                  <p className="text-[10.5px] font-bold text-[#1A1A1A] leading-tight">{label}</p>
+                  <p className="text-[8.5px] text-[#6E6257] leading-tight mt-0.5">{sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          
 
           {/* ── How it works ── */}
           <div className="rounded-2xl border border-[#E7DAC0] bg-gradient-to-br from-[#F8F4EC] via-[#F3ECDC] to-[#F3E9D2]/70 p-3.5 shadow-sm">
@@ -645,7 +712,7 @@ export default function KaalBhairavPage() {
             <div className="flex items-center gap-3">
               <div className="shrink-0">
                 <span className="text-[9.5px] text-[#6E6257] font-semibold uppercase block leading-none">
-                  Total
+                  {selectedPkg.name}
                 </span>
                 <span className="text-[19px] font-extrabold text-[#8B0000]">
                   ₹{price.toLocaleString("en-IN")}
@@ -655,7 +722,7 @@ export default function KaalBhairavPage() {
                 onClick={openBooking}
                 className="flex-1 bg-gradient-to-r from-[#1A1A1A] to-[#2A2A2A] text-[#D4AF37] font-bold text-[15px] py-3 rounded-xl shadow-md border border-[#B8860B]/40 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#B8860B] outline-none"
               >
-                Book Kaal Bhairav Puja for ₹{price.toLocaleString("en-IN")}
+                Book for ₹{price.toLocaleString("en-IN")}
               </button>
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-[#6E6257]">

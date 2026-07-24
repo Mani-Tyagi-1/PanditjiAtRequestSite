@@ -2,11 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Gift, Plus, X, Users, AlertCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Gift, Plus, X, Users, AlertCircle, Sparkles, Gem } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
-import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG, KAAL_BHAIRAV_POOJA_ID, PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE } from "../data/kaalBhairavPuja";
+import {
+    kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG, KAAL_BHAIRAV_POOJA_ID,
+    EXTRA_FAMILY_MEMBER_PRICE, DEFAULT_PACKAGE_ID, getPackage, KAAL_BHAIRAV_PACKAGES,
+    extraFamilyCount, packageTotal, packageNeedsDelivery, type PujaPackageId,
+} from "../data/kaalBhairavPuja";
 
 type Step = "details" | "success";
 
@@ -35,8 +39,14 @@ export default function KaalBhairavBookingPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Whether the devotee chose to add the prasad box on the upsell sheet.
-    const prasadPreselected = Boolean((location.state as { prasadAdded?: boolean } | null)?.prasadAdded);
+    // Package chosen on the detail page (handed over as navigation state); the
+    // devotee can still switch it here. Defaults to the recommended package when
+    // the booking page is opened directly.
+    const initialPackageId =
+        (location.state as { packageId?: PujaPackageId } | null)?.packageId ?? DEFAULT_PACKAGE_ID;
+    const [packageId, setPackageId] = useState<PujaPackageId>(initialPackageId);
+    const selectedPkg = getPackage(packageId);
+    const needsDelivery = packageNeedsDelivery(selectedPkg);
 
     // Static frontend puja data.
     const puja = kaalBhairavPuja;
@@ -52,11 +62,12 @@ export default function KaalBhairavBookingPage() {
         phone: "",
         email: "",
         time: "18:00", // Bhairav puja is traditionally performed in the evening
-        prasadAdded: prasadPreselected,
         // Extra people taken during the Sankalp alongside the main devotee.
         // Persisted on the booking as `familyMembers` (the live-mandir branch of
         // the controller already stores this field, and the schema types it as a
-        // plain Array, so name+gotra objects are stored as-is).
+        // plain Array, so name+gotra objects are stored as-is). The first
+        // `selectedPkg.freeFamilyMembers` are free; each beyond that adds
+        // EXTRA_FAMILY_MEMBER_PRICE to the total.
         familyMembers: [] as { name: string; gotra: string }[],
     });
 
@@ -90,9 +101,9 @@ export default function KaalBhairavBookingPage() {
         }));
     }, [user]);
 
-    // Load saved addresses if logged in and prasad delivery is added.
+    // Load saved addresses if logged in and the package ships a physical item.
     useEffect(() => {
-        if (!user || !form.prasadAdded) return;
+        if (!user || !needsDelivery) return;
         fetch(`${API_URL}/addresses?userId=${user._id}`)
             .then((res) => res.json())
             .then((data) => {
@@ -107,7 +118,7 @@ export default function KaalBhairavBookingPage() {
                 }
             })
             .catch((err) => console.error("Error fetching addresses:", err));
-    }, [user, form.prasadAdded]);
+    }, [user, needsDelivery]);
 
     // Load Razorpay checkout script.
     useEffect(() => {
@@ -138,27 +149,37 @@ export default function KaalBhairavBookingPage() {
         setForm((f) => ({ ...f, familyMembers: f.familyMembers.filter((_, i) => i !== index) }));
     };
 
-    const basePrice = puja.poojaPriceOnline;
-    const prasadCost = form.prasadAdded ? PRASAD_BOX_PRICE : 0;
-    const familyCost = form.familyMembers.length * FAMILY_MEMBER_PRICE;
-    const totalPrice = basePrice + prasadCost + familyCost;
+    // Family members beyond the package's free allowance are the only charged
+    // extras; the package price already covers prasad / rudraksh inclusions.
+    const basePrice = selectedPkg.price;
+    const chargedMembers = extraFamilyCount(selectedPkg, form.familyMembers.length);
+    const familyCost = chargedMembers * EXTRA_FAMILY_MEMBER_PRICE;
+    const totalPrice = packageTotal(selectedPkg, form.familyMembers.length);
 
-    // Line-item breakdown reported to Meta alongside `value`. The base seva is
-    // ₹1100, but a booking with the prasad box and extra Sankalp names costs
-    // more — without this, every order looks like one anonymous unit in Events
-    // Manager and the higher value can't be reconciled against the puja price.
-    // Ids mirror the ones the server CAPI Purchase sends (built off
-    // poojaNameEng) so the deduplicated pair reports identically either way.
+    // Human-readable perks bundled in the chosen package — appended to the
+    // booking name so the WhatsApp/admin/pandit notifications spell out exactly
+    // which physical blessings (prasad, rudraksh) must be couriered.
+    const perkList = [
+        selectedPkg.prasadBox && "Prasad Box",
+        selectedPkg.rudrakshPendant && "Rudraksh Pendant",
+        selectedPkg.rudrakshBracelet && "Rudraksh Bracelet",
+    ].filter(Boolean) as string[];
+    // e.g. "Shree Kashi Kaal Bhairav Mahapuja — Raksha Kavach [Prasad Box, Rudraksh Pendant]"
+    const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${perkList.length ? ` [${perkList.join(", ")}]` : ""}`;
+
+    // Line-item breakdown reported to Meta alongside `value`. The package price
+    // is the base line; extra Sankalp names (beyond the free allowance) are a
+    // separate line — without this, every order looks like one anonymous unit in
+    // Events Manager and the higher value can't be reconciled against the price.
+    // Ids mirror the ones the server CAPI Purchase sends (built off the booking
+    // name) so the deduplicated pair reports identically either way.
     const metaContents = () => [
-        { id: puja.poojaNameEng, quantity: 1, item_price: basePrice },
-        ...(form.prasadAdded
-            ? [{ id: `${puja.poojaNameEng} — Prasad Box`, quantity: 1, item_price: PRASAD_BOX_PRICE }]
-            : []),
-        ...(form.familyMembers.length > 0
+        { id: packageLabel, quantity: 1, item_price: basePrice },
+        ...(chargedMembers > 0
             ? [{
-                id: `${puja.poojaNameEng} — Sankalp Name`,
-                quantity: form.familyMembers.length,
-                item_price: FAMILY_MEMBER_PRICE,
+                id: `${puja.poojaNameEng} — Extra Sankalp Name`,
+                quantity: chargedMembers,
+                item_price: EXTRA_FAMILY_MEMBER_PRICE,
             }]
             : []),
     ];
@@ -203,12 +224,13 @@ export default function KaalBhairavBookingPage() {
             return;
         }
 
-        // Delivery address is only required when blessed prasad is added.
+        // Delivery address is only required when the package ships a physical
+        // item (prasad box / rudraksh).
         let addressPayload: any = null;
-        if (form.prasadAdded) {
+        if (needsDelivery) {
             if (user && !showNewAddressForm) {
                 if (!selectedAddressId) {
-                    setError("Please select a delivery address for the prasad.");
+                    setError("Please select a delivery address for your prasad & rudraksh.");
                     return;
                 }
                 const selected = addresses.find((a) => (a._id || a.id) === selectedAddressId);
@@ -224,7 +246,7 @@ export default function KaalBhairavBookingPage() {
                 }
             } else {
                 if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
-                    setError("Please fill out the full delivery address for the prasad.");
+                    setError("Please fill out the full delivery address for your prasad & rudraksh.");
                     return;
                 }
                 addressPayload = {
@@ -269,8 +291,9 @@ export default function KaalBhairavBookingPage() {
                     // REQUIRED whenever isLiveMandir is true: on that branch the
                     // controller takes the booking name from `packageName` and
                     // falls back to the raw `pujaSlug`, so omitting this would
-                    // label every booking "RF_BHAIRAV_01".
-                    packageName: puja.poojaNameEng,
+                    // label every booking "RF_BHAIRAV_01". Carries the chosen
+                    // package + perks so the team knows what to courier.
+                    packageName: packageLabel,
                     templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,
@@ -281,7 +304,8 @@ export default function KaalBhairavBookingPage() {
                     contactNumber: phoneDigits,
                     phone: phoneDigits,
                     emailId: form.email.trim(),
-                    prasadAdded: form.prasadAdded,
+                    // True whenever the package bundles the blessed prasad box.
+                    prasadAdded: selectedPkg.prasadBox,
                     // Stored on the booking by the isLiveMandir branch of
                     // create-pending, so the pandit knows every name to take
                     // during the Sankalp.
@@ -438,7 +462,7 @@ export default function KaalBhairavBookingPage() {
             {/* Bhairav occasion ribbon — premium charcoal & gold */}
             <div className="bg-[#1A1A1A] text-center py-2 px-4 border-y border-[#B8860B]/30">
                 <p className="text-[10.5px] font-bold tracking-[0.16em] uppercase text-[#D4AF37]">
-                    {puja.occasion} · {puja.pujaDate} · ॐ कालभैरवाय नमः
+                    Kalashtami · {puja.pujaDate} · ॐ कालभैरवाय नमः
                 </p>
             </div>
 
@@ -446,52 +470,109 @@ export default function KaalBhairavBookingPage() {
             <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
                     <div className="space-y-6">
-                        {/* Order summary — itemises the prasad box when added */}
+                        {/* Order summary — reflects the chosen package + extras */}
                         <div className="bg-white border border-[#E7DAC0] rounded-2xl p-4 shadow-sm">
                             <div className="flex items-start justify-between gap-2">
-                                <p className="text-[13.5px] font-bold text-[#1A1A1A] leading-snug">{puja.poojaNameEng}</p>
+                                <div className="min-w-0">
+                                    <p className="text-[13.5px] font-bold text-[#1A1A1A] leading-snug">{puja.poojaNameEng}</p>
+                                    <p className="text-[11px] text-[#8B0000] font-semibold mt-0.5">{selectedPkg.name} package</p>
+                                </div>
                                 <span className="flex items-center gap-1 shrink-0 bg-[#B8860B]/15 text-[#1A1A1A] rounded-full px-2 py-0.5 text-[11px] font-bold">
                                     ★ {puja.rating}
                                 </span>
                             </div>
-                            {puja.poojaNameHindi && <p className="text-[11.5px] text-[#8B0000] font-medium mt-0.5">{puja.poojaNameHindi}</p>}
 
-                            {form.prasadAdded || form.familyMembers.length > 0 ? (
-                                <div className="mt-2.5 pt-2.5 border-t border-[#E7DAC0] space-y-2">
+                            <div className="mt-2.5 pt-2.5 border-t border-[#E7DAC0] space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[12.5px] text-[#6E6257] font-medium">{selectedPkg.name}</span>
+                                    <span className="text-[13px] font-bold text-[#1A1A1A]">₹{basePrice.toLocaleString("en-IN")}</span>
+                                </div>
+
+                                {/* Included physical blessings — shown as ₹0 so the value is visible */}
+                                {perkList.map((perk) => (
+                                    <div key={perk} className="flex items-center justify-between">
+                                        <span className="text-[12px] text-[#6E6257] font-medium flex items-center gap-1.5">
+                                            {perk.includes("Prasad") ? <Gift className="w-3.5 h-3.5 text-[#B8860B]" /> : <Gem className="w-3.5 h-3.5 text-[#B8860B]" />}
+                                            {perk}
+                                        </span>
+                                        <span className="text-[11px] font-bold text-[#B8860B]">Included</span>
+                                    </div>
+                                ))}
+                                {selectedPkg.freeFamilyMembers > 0 && (
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-[#6E6257] font-medium">Base Seva</span>
-                                        <span className="text-[13px] font-bold text-[#1A1A1A]">₹{basePrice.toLocaleString("en-IN")}</span>
+                                        <span className="text-[12px] text-[#6E6257] font-medium flex items-center gap-1.5">
+                                            <Users className="w-3.5 h-3.5 text-[#B8860B]" />
+                                            {selectedPkg.freeFamilyMembers} family Sankalp
+                                        </span>
+                                        <span className="text-[11px] font-bold text-[#B8860B]">Free</span>
                                     </div>
-                                    {form.familyMembers.length > 0 && (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[12.5px] text-[#6E6257] font-medium flex items-center gap-1.5">
-                                                <Users className="w-3.5 h-3.5 text-[#8B0000]" />
-                                                Family Sankalp × {form.familyMembers.length}
-                                            </span>
-                                            <span className="text-[13px] font-bold text-[#1A1A1A]">+₹{familyCost.toLocaleString("en-IN")}</span>
-                                        </div>
-                                    )}
-                                    {form.prasadAdded && (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[12.5px] text-[#6E6257] font-medium flex items-center gap-1.5">
-                                                <Gift className="w-3.5 h-3.5 text-[#8B0000]" />
-                                                Sacred Prasad Box
-                                            </span>
-                                            <span className="text-[13px] font-bold text-[#1A1A1A]">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex items-baseline justify-between pt-2 border-t border-[#E7DAC0]">
-                                        <span className="text-[10px] font-bold uppercase tracking-wide text-[#6E6257]">Total</span>
-                                        <span className="text-xl font-extrabold text-[#8B0000]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                )}
+
+                                {chargedMembers > 0 && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[12.5px] text-[#6E6257] font-medium flex items-center gap-1.5">
+                                            <Users className="w-3.5 h-3.5 text-[#8B0000]" />
+                                            Extra Sankalp × {chargedMembers}
+                                        </span>
+                                        <span className="text-[13px] font-bold text-[#1A1A1A]">+₹{familyCost.toLocaleString("en-IN")}</span>
                                     </div>
+                                )}
+
+                                <div className="flex items-baseline justify-between pt-2 border-t border-[#E7DAC0]">
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#6E6257]">Total</span>
+                                    <span className="text-xl font-extrabold text-[#8B0000]">₹{totalPrice.toLocaleString("en-IN")}</span>
                                 </div>
-                            ) : (
-                                <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-[#E7DAC0]">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#6E6257]">Base Seva</span>
-                                    <span className="text-xl font-bold text-[#1A1A1A]">₹{basePrice.toLocaleString("en-IN")}</span>
-                                </div>
-                            )}
+                            </div>
                         </div>
+
+                        {/* Package chosen on the detail page. For the Charan Seva
+                            (₹501) package we offer an upgrade here; the premium/royal
+                            inclusions are shown on the detail page, not here. */}
+                        {selectedPkg.id === "basic" && (
+                            <div className="space-y-2.5">
+                                <p className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-[#8B0000]">
+                                    <Sparkles className="w-3.5 h-3.5 text-[#B8860B]" /> Upgrade & get more
+                                </p>
+                                {KAAL_BHAIRAV_PACKAGES.filter((p) => p.id !== "basic").map((pkg) => {
+                                    const diff = pkg.price - getPackage("basic").price;
+                                    return (
+                                        <button
+                                            key={pkg.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setPackageId(pkg.id);
+                                                if ((window as any).fbq) {
+                                                    (window as any).fbq("trackCustom", "PujaPackageUpgrade", { to: pkg.id, value: pkg.price, currency: "INR" });
+                                                }
+                                            }}
+                                            className="w-full text-left rounded-2xl border border-[#E7DAC0] bg-white shadow-sm p-3.5 transition-all active:scale-[0.99] hover:border-[#B8860B]/60"
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <p className="text-[14px] font-bold text-[#1A1A1A] leading-tight">{pkg.name}</p>
+                                                    <p className="text-[11px] text-[#6E6257] mt-0.5">{pkg.tagline}</p>
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-[17px] font-extrabold text-[#8B0000] leading-none">₹{pkg.price.toLocaleString("en-IN")}</p>
+                                                    <p className="text-[9.5px] font-bold text-[#B8860B] mt-0.5">+₹{diff.toLocaleString("en-IN")}</p>
+                                                </div>
+                                            </div>
+                                            <div className="mt-2.5 pt-2.5 border-t border-[#E7DAC0] space-y-1.5">
+                                                {pkg.highlights.map((h) => (
+                                                    <div key={h} className="flex items-start gap-2">
+                                                        <Check className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#B8860B]" strokeWidth={3} />
+                                                        <span className="text-[12px] leading-snug text-[#1A1A1A]">{h}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <span className="mt-2.5 flex items-center justify-center gap-1 text-[11.5px] font-bold text-[#8B0000] bg-[#F3E9D2] rounded-lg py-2">
+                                                Upgrade to {pkg.name} <ChevronRight className="w-3.5 h-3.5" />
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         {/* Step 1: Devotee Details */}
                         <div className="space-y-3">
@@ -536,15 +617,30 @@ export default function KaalBhairavBookingPage() {
                             </div>
                         </div>
 
-                        {/* Step 2: Family Sankalp (optional) — each name adds ₹101 */}
+                        {/* Step 2: Family Sankalp — free up to the package allowance, then ₹151 each */}
                         <div className="space-y-3">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-[#E7DAC0]">
                                 <span className="w-7 h-7 rounded-full bg-[#F3E9D2] text-[#8B0000] flex items-center justify-center font-bold text-sm">02</span>
                                 <div>
                                     <h3 className="font-bold text-[#1A1A1A] text-[14px]">Family Sankalp</h3>
-                                    <p className="text-[11px] text-[#6E6257]">Optional · add members at ₹{FAMILY_MEMBER_PRICE} each</p>
+                                    <p className="text-[11px] text-[#6E6257]">
+                                        {selectedPkg.freeFamilyMembers > 0
+                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ₹${EXTRA_FAMILY_MEMBER_PRICE} each after`
+                                            : `Optional · add members at ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                    </p>
                                 </div>
                             </div>
+
+                            {/* Free-allowance meter — reassures the devotee how many
+                                of the package's free Sankalps are still available. */}
+                            {selectedPkg.freeFamilyMembers > 0 && (
+                                <div className="flex items-center gap-1.5 bg-[#F3E9D2] border border-[#E7DAC0] rounded-xl px-3 py-2 text-[11.5px] font-semibold text-[#8B0000]">
+                                    <Sparkles className="w-3.5 h-3.5 text-[#B8860B] shrink-0" />
+                                    {Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 0
+                                        ? `${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length)} free family Sankalp${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 1 ? "s" : ""} left in your package`
+                                        : `Free members used — extra names add ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                </div>
+                            )}
 
                             {/* Name + gotra for the person being added. The row is
                                 only committed by the Add button (or Enter), so it is
@@ -585,7 +681,9 @@ export default function KaalBhairavBookingPage() {
                                     className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#8B0000] hover:bg-[#6B0000] disabled:bg-[#E7DAC0] disabled:text-[#6E6257] text-white font-bold text-[13px] py-2.5 transition-colors active:scale-95 disabled:active:scale-100 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     <Plus className="w-4 h-4" />
-                                    {pendingFamilyName ? `Add ${pendingFamilyName} · +₹${FAMILY_MEMBER_PRICE}` : "Add member"}
+                                    {pendingFamilyName
+                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+₹${EXTRA_FAMILY_MEMBER_PRICE}`}`
+                                        : "Add member"}
                                 </button>
 
                                 {/* The whole point of this block: make "typed but not
@@ -612,7 +710,11 @@ export default function KaalBhairavBookingPage() {
                                                     Gotra: {m.gotra || "Kashyap (default)"}
                                                 </p>
                                             </div>
-                                            <span className="text-[11px] font-bold text-[#8B0000] shrink-0">+₹{FAMILY_MEMBER_PRICE}</span>
+                                            {idx < selectedPkg.freeFamilyMembers ? (
+                                                <span className="text-[11px] font-bold text-[#B8860B] shrink-0">FREE</span>
+                                            ) : (
+                                                <span className="text-[11px] font-bold text-[#8B0000] shrink-0">+₹{EXTRA_FAMILY_MEMBER_PRICE}</span>
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={() => removeFamilyMember(idx)}
@@ -629,35 +731,40 @@ export default function KaalBhairavBookingPage() {
                             {form.familyMembers.length > 0 && (
                                 <p className="flex items-center gap-1.5 text-[11px] text-[#6E6257]">
                                     <Users className="w-3.5 h-3.5 text-[#8B0000] shrink-0" />
-                                    {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added · +₹{familyCost.toLocaleString("en-IN")}
+                                    {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added
+                                    {chargedMembers > 0 ? ` · +₹${familyCost.toLocaleString("en-IN")}` : " · all free"}
                                 </p>
                             )}
                         </div>
 
-                        {/* Step 3: Prasad Delivery (optional) */}
+                        {/* Step 4: Delivery Address — only for packages that ship a
+                            physical blessing (prasad / rudraksh). The Charan Seva
+                            package has nothing to courier, so this step is hidden. */}
+                        {needsDelivery && (
                         <div className="space-y-3 pb-6">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-[#E7DAC0]">
                                 <span className="w-7 h-7 rounded-full bg-[#F3E9D2] text-[#8B0000] flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
-                                    <h3 className="font-bold text-[#1A1A1A] text-[14px]">Prasad Delivery</h3>
-                                    <p className="text-[11px] text-[#6E6257]">Optional delivery at your address</p>
+                                    <h3 className="font-bold text-[#1A1A1A] text-[14px]">Delivery Address</h3>
+                                    <p className="text-[11px] text-[#6E6257]">Where we courier your {selectedPkg.name} blessings</p>
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-3 bg-white border border-[#E7DAC0] rounded-2xl p-4 shadow-sm cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={form.prasadAdded}
-                                    onChange={(e) => setForm((f) => ({ ...f, prasadAdded: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-[#B8860B] focus:ring-[#B8860B] border-[#E7DAC0]"
-                                />
-                                <div>
-                                    <p className="text-xs font-bold text-[#1A1A1A]">Add Sacred Prasad</p>
-                                    <p className="text-[11px] text-[#6E6257] mt-0.5">Blessed at {puja.templeName} · +₹{PRASAD_BOX_PRICE}</p>
+                            {/* What ships with this package — reassures the devotee
+                                the prasad/rudraksh is included, not an upsell. */}
+                            <div className="bg-[#1A1A1A] border border-[#B8860B]/30 rounded-2xl p-3.5">
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-[#D4AF37] mb-2">Couriered to your home · included</p>
+                                <div className="space-y-1.5">
+                                    {perkList.map((perk) => (
+                                        <div key={perk} className="flex items-center gap-2 text-[12.5px] text-[#F3ECDC]">
+                                            {perk.includes("Prasad") ? <Gift className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" /> : <Gem className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" />}
+                                            {perk}
+                                        </div>
+                                    ))}
                                 </div>
-                            </label>
+                            </div>
 
-                            {form.prasadAdded && user && addresses.length > 0 && !showNewAddressForm && (
+                            {user && addresses.length > 0 && !showNewAddressForm && (
                                 <div className="space-y-2">
                                     <p className={LABEL}>Select Delivery Address</p>
                                     {addresses.map((addr) => (
@@ -687,7 +794,7 @@ export default function KaalBhairavBookingPage() {
                                 </div>
                             )}
 
-                            {form.prasadAdded && (!user || showNewAddressForm) && (
+                            {(!user || showNewAddressForm) && (
                                 <div className="bg-white border border-[#E7DAC0] rounded-2xl p-4 shadow-sm space-y-3">
                                     <div className="flex items-center justify-between pb-1 border-b border-[#E7DAC0]">
                                         <span className="text-[12px] font-bold text-[#1A1A1A]">Delivery Address Details</span>
@@ -751,6 +858,7 @@ export default function KaalBhairavBookingPage() {
                                 </div>
                             )}
                         </div>
+                        )}
                     </div>
                 ) : (
                     <motion.div

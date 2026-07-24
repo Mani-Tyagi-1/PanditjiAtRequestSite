@@ -63,6 +63,135 @@ export const FAMILY_MEMBER_PRICE = 101;
 export const KAAL_BHAIRAV_PUJA_DATE = "August 11, 2026";
 
 /**
+ * Price (₹) of every family-member Sankalp added BEYOND the free allowance
+ * bundled in the chosen package. The first N members are free (N depends on
+ * the package); each additional name adds this much to the booking total.
+ */
+export const EXTRA_FAMILY_MEMBER_PRICE = 151;
+
+export type PujaPackageId = "basic" | "premium" | "royal";
+
+export interface PujaPackage {
+    id: PujaPackageId;
+    /** Evocative package name shown on the card. */
+    name: string;
+    /** One-line positioning under the name. */
+    tagline: string;
+    /** Package price in ₹ (the booking's base amount). */
+    price: number;
+    /** How many family-member Sankalps are included free in this package. */
+    freeFamilyMembers: number;
+    /** Blessed prasad box couriered home. */
+    prasadBox: boolean;
+    /** Free 5 Mukhi Rudraksh pendant couriered home. */
+    rudrakshPendant: boolean;
+    /** Free 5 Mukhi Rudraksh bracelet couriered home. */
+    rudrakshBracelet: boolean;
+    /** Optional corner badge, e.g. "Most Popular". */
+    badge?: string;
+    /** Marks the recommended / default package. */
+    highlight?: boolean;
+    /** 2–3 short "what you get" lines shown on the card (positives only). */
+    highlights: string[];
+    /**
+     * Physical items shipped with the package, shown as a row of images in the
+     * booking page's "What's included" accordion (premium/royal only). Paste the
+     * product image URL into each `image`; an empty string renders a placeholder.
+     */
+    includedItems?: { label: string; image: string }[];
+}
+
+/**
+ * The three booking packages. Every package includes the core Kaal Bhairav
+ * puja, personalised Sankalp and the puja video; they differ in the number of
+ * free family Sankalps and the physical blessings couriered home. Extra family
+ * members beyond a package's free allowance cost EXTRA_FAMILY_MEMBER_PRICE each.
+ */
+export const KAAL_BHAIRAV_PACKAGES: PujaPackage[] = [
+    {
+        id: "basic",
+        name: "Charan Seva",
+        tagline: "The essential Kaal Bhairav puja",
+        price: 501,
+        freeFamilyMembers: 0,
+        prasadBox: false,
+        rudrakshPendant: false,
+        rudrakshBracelet: false,
+        highlights: [
+            "Puja in your name & gotra",
+            "Personalised Sankalp + puja video",
+        ],
+    },
+    {
+        id: "premium",
+        name: "Raksha Kavach",
+        tagline: "Most-loved · puja with blessings",
+        price: 1100,
+        freeFamilyMembers: 2,
+        prasadBox: true,
+        rudrakshPendant: true,
+        rudrakshBracelet: false,
+        badge: "Most Popular",
+        highlight: true,
+        highlights: [
+            "2 family members added free",
+            "Sacred Prasad Box couriered home",
+            "Free 5 Mukhi Rudraksh Pendant",
+        ],
+        // TODO: paste the product image URLs here.
+        includedItems: [
+            { label: "Sacred Prasad Box", image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Prasad%20box.webp" },
+            { label: "5 Mukhi Rudraksh Pendant", image: "https://vedicshop.store/cdn/shop/files/ChatGPT_Image_Jun_28_2026_06_32_52_PM.png?v=1782651941&width=1200" },
+        ],
+    },
+    {
+        id: "royal",
+        name: "Kotwal Kripa",
+        tagline: "Complete raksha for the family",
+        price: 2100,
+        freeFamilyMembers: 4,
+        prasadBox: true,
+        rudrakshPendant: true,
+        rudrakshBracelet: true,
+        badge: "Best Value",
+        highlights: [
+            "4 family members added free",
+            "Premium Prasad Box + Rudraksh Pendant",
+            "Free 5 Mukhi Rudraksh Bracelet",
+        ],
+        // TODO: paste the product image URLs here.
+        includedItems: [
+            { label: "Sacred Prasad Box", image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Prasad%20box.webp" },
+            { label: "5 Mukhi Rudraksh Pendant", image: "https://vedicshop.store/cdn/shop/files/ChatGPT_Image_Jun_28_2026_06_32_52_PM.png?v=1782651941&width=1200" },
+            { label: "5 Mukhi Rudraksh Bracelet", image: "https://vedicshop.store/cdn/shop/files/5_mukhi_rudraksha_bracelet.jpg?v=1774855990&width=1200" },
+        ],
+    },
+];
+
+/** The recommended package, pre-selected on first load. */
+export const DEFAULT_PACKAGE_ID: PujaPackageId = "premium";
+
+/** Resolve a package by id, falling back to the first (cheapest) package. */
+export function getPackage(id: PujaPackageId | undefined): PujaPackage {
+    return KAAL_BHAIRAV_PACKAGES.find((p) => p.id === id) || KAAL_BHAIRAV_PACKAGES[0];
+}
+
+/** Family members that fall OUTSIDE the package's free allowance (charged). */
+export function extraFamilyCount(pkg: PujaPackage, familyCount: number): number {
+    return Math.max(0, familyCount - pkg.freeFamilyMembers);
+}
+
+/** Booking total = package price + chargeable extra family members. */
+export function packageTotal(pkg: PujaPackage, familyCount: number): number {
+    return pkg.price + extraFamilyCount(pkg, familyCount) * EXTRA_FAMILY_MEMBER_PRICE;
+}
+
+/** Whether a package ships a physical item and therefore needs a delivery address. */
+export function packageNeedsDelivery(pkg: PujaPackage): boolean {
+    return pkg.prasadBox || pkg.rudrakshPendant || pkg.rudrakshBracelet;
+}
+
+/**
  * The puja shaped exactly like a backend pooja document so it can be handed
  * straight to the detail page UI and to the booking / enquiry flows.
  */

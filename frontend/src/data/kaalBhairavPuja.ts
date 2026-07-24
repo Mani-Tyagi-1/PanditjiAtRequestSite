@@ -60,7 +60,7 @@ export const PRASAD_BOX_PRICE = 298;
 export const FAMILY_MEMBER_PRICE = 101;
 
 /** Kalashtami of Shravan 2026 — the Ashtami dedicated to Kaal Bhairav. */
-export const KAAL_BHAIRAV_PUJA_DATE = "August 11, 2026";
+export const KAAL_BHAIRAV_PUJA_DATE = "August 5, 2026";
 
 /**
  * Price (₹) of every family-member Sankalp added BEYOND the free allowance

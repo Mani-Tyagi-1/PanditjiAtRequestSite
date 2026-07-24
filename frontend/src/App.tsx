@@ -132,6 +132,8 @@ const SavanPujaPage = React.lazy(() => import("./pages/SavanPujaPage"));
 const SavanPujaBookingPage = React.lazy(() => import("./pages/SavanPujaBookingPage"));
 const KaalBhairavPage = React.lazy(() => import("./pages/KaalBhairav"));
 const KaalBhairavBookingPage = React.lazy(() => import("./pages/KaalBhairavBookingPage"));
+const Hanumanjipage = React.lazy(() => import("./pages/Hanumanjipage"));
+const HanumanBookingPage = React.lazy(() => import("./pages/HanumanBookingPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
 const MyBookingsPage = React.lazy(() => import("./pages/MyBookingsPage"));
 const VideoCallPage = React.lazy(() => import("./video/VideoCallPage"));
@@ -271,6 +273,12 @@ function App() {
           {/* Short alias — easier to type/share in ads & WhatsApp */}
           <Route path="/kaal-bhairav-puja" element={<Navigate to="/kashi-kaal-bhairav-puja" replace />} />
           <Route path="/kaal-bhairav-puja/booking" element={<Navigate to="/kashi-kaal-bhairav-puja/booking" replace />} />
+          {/* Hanuman — Bada Mangal puja at Shri Hanuman Garhi Mandir, Ayodhya */}
+          <Route path="/ayodhya-hanuman-garhi-puja" element={<Hanumanjipage />} />
+          <Route path="/ayodhya-hanuman-garhi-puja/booking" element={<HanumanBookingPage />} />
+          {/* Short alias — easier to type/share in ads & WhatsApp */}
+          <Route path="/hanuman-puja" element={<Navigate to="/ayodhya-hanuman-garhi-puja" replace />} />
+          <Route path="/hanuman-puja/booking" element={<Navigate to="/ayodhya-hanuman-garhi-puja/booking" replace />} />
           <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/my-bookings" element={<MyBookingsPage />} />

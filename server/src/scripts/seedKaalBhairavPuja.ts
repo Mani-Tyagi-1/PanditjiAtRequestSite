@@ -41,10 +41,10 @@ import Pooja from "../model/userApp/poojaModel";
 /** Stable catalog key. The frontend sends this as `pujaSlug`. */
 const POOJA_ID = "RF_BHAIRAV_01";
 
-// NOTE: placeholder banner — reusing the Kashi artwork for now. Swap for the
-// Kaal Bhairav banner when it is ready.
+// Kept in sync with frontend/src/data/kaalBhairavPuja.ts so booking
+// confirmations (WhatsApp/email) and admin records show the correct artwork.
 const BANNER =
-  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png";
+  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kaal%20Bhairava%20Banner.webp";
 
 /**
  * Mirrors frontend/src/data/kaalBhairavPuja.ts. The page renders from the

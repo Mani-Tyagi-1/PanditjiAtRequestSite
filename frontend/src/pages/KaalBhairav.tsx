@@ -344,6 +344,18 @@ export default function KaalBhairavPage() {
             name="description"
             content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Kaal Bhairav puja performed on your behalf at ${mandirName} on Kalashtami, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
           />
+          <link rel="canonical" href={`https://panditjiatrequest.com/${KAAL_BHAIRAV_PUJA_SLUG}`} />
+          {/* Social share preview (WhatsApp / Facebook / X) for ad & organic shares. */}
+          <meta property="og:type" content="product" />
+          <meta property="og:site_name" content="Pandit Ji At Request" />
+          <meta property="og:title" content={`${puja.poojaNameEng} — Kalashtami Puja at ${puja.templeName}, Kashi`} />
+          <meta property="og:description" content={`Kaal Bhairav Kalashtami puja performed on your behalf at ${mandirName}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹501.`} />
+          <meta property="og:image" content={image} />
+          <meta property="og:url" content={`https://panditjiatrequest.com/${KAAL_BHAIRAV_PUJA_SLUG}`} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`${puja.poojaNameEng} — Kalashtami Puja at Kashi`} />
+          <meta name="twitter:description" content={`Kaal Bhairav Kalashtami puja at ${mandirName}. Packages from ₹501, puja video on WhatsApp.`} />
+          <meta name="twitter:image" content={image} />
           {/* Preload the LCP hero (direct CDN webp) at highest priority. */}
           <link rel="preload" as="image" href={image} fetchPriority="high" />
         </Helmet>

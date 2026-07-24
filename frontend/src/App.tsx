@@ -130,6 +130,8 @@ const CategoryPage = React.lazy(() => import("./components/booking/CategoryPage"
 const PujaDetailPage = React.lazy(() => import("./components/booking/PujaPage"));
 const SavanPujaPage = React.lazy(() => import("./pages/SavanPujaPage"));
 const SavanPujaBookingPage = React.lazy(() => import("./pages/SavanPujaBookingPage"));
+const KaalBhairavPage = React.lazy(() => import("./pages/KaalBhairav"));
+const KaalBhairavBookingPage = React.lazy(() => import("./pages/KaalBhairavBookingPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
 const MyBookingsPage = React.lazy(() => import("./pages/MyBookingsPage"));
 const VideoCallPage = React.lazy(() => import("./video/VideoCallPage"));
@@ -263,6 +265,12 @@ function App() {
           {/* Earlier Ujjain slug — redirect so any shared links keep working */}
           <Route path="/mahakaal-savan-somwar-puja" element={<Navigate to="/kashi-mahadev-savan-puja" replace />} />
           <Route path="/mahakaal-savan-somwar-puja/booking" element={<Navigate to="/kashi-mahadev-savan-puja/booking" replace />} />
+          {/* Kaal Bhairav — Kalashtami puja at Shri Kaal Bhairav Mandir, Kashi */}
+          <Route path="/kashi-kaal-bhairav-puja" element={<KaalBhairavPage />} />
+          <Route path="/kashi-kaal-bhairav-puja/booking" element={<KaalBhairavBookingPage />} />
+          {/* Short alias — easier to type/share in ads & WhatsApp */}
+          <Route path="/kaal-bhairav-puja" element={<Navigate to="/kashi-kaal-bhairav-puja" replace />} />
+          <Route path="/kaal-bhairav-puja/booking" element={<Navigate to="/kashi-kaal-bhairav-puja/booking" replace />} />
           <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/my-bookings" element={<MyBookingsPage />} />

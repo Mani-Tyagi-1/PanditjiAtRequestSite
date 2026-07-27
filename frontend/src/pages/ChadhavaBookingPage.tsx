@@ -6,6 +6,7 @@ import { type Chadhava, type ChadhavaSelection } from "../components/booking/Cha
 import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
+import { useAbandonedCart } from "../utils/useAbandonedCart";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 
@@ -164,14 +165,47 @@ export default function ChadhavaBookingPage() {
         }
     };
 
-    if (!chadhava) return null;
-
     const itemsTotal = selections.reduce((s, x) => s + x.unitPrice * x.quantity, 0);
 
     // Count family members: explicitly added members + 1 if input field has text
     const activeFamilyCount = familyMembers.length + (familyInput.trim() ? 1 : 0);
     const familyCost = activeFamilyCount * 50;
     const total = itemsTotal + prasadPrice + familyCost;
+
+    // Whatever delivery address the devotee has settled on so far — a selected
+    // saved address, or the new-address form once they start typing into it.
+    // Kept out of the abandoned-cart draft while it is still blank.
+    const draftAddress = !addPrasad
+        ? null
+        : selectedAddressId
+            ? addresses.find((a) => (a._id || a.id) === selectedAddressId) || null
+            : [newAddress.houseNo, newAddress.street, newAddress.city, newAddress.state, newAddress.pincode].some((v) => v.trim())
+                ? newAddress
+                : null;
+
+    // Abandoned-cart capture: the row is created as soon as the 10-digit mobile
+    // number is typed, then patched with every further detail, so a devotee who
+    // drops off before paying is still reachable with full context. Declared
+    // above the `!chadhava` guard — it is a hook, so it cannot sit behind an
+    // early return.
+    const { markCartConverted } = useAbandonedCart("chadhava-booking", {
+        phone: form.phone,
+        name: form.name,
+        gotra: dontKnowGotra ? "Kashyap" : form.gotra,
+        wish: form.wish,
+        pujaId: chadhava?.id,
+        pujaSlug: slug,
+        pujaName: chadhava ? `Chadhava — ${chadhava.deity}` : undefined,
+        templeName: chadhava?.templeName,
+        amount: total,
+        familyMembers,
+        items: selections,
+        address: draftAddress,
+        userId: user?._id || (user as any)?.id,
+        extra: { addPrasad, prasadPrice },
+    }, String(chadhava?.id || slug || ""));
+
+    if (!chadhava) return null;
 
     const addFamilyMember = () => {
         if (familyInput.trim()) {
@@ -347,6 +381,9 @@ export default function ChadhavaBookingPage() {
                                 currency: "INR",
                             }, { eventID: `chadhava_purchase_${response.razorpay_order_id}` });
                         }
+                        // Paid — drop this row out of the abandoned-lead list.
+                        markCartConverted(orderData.bookingId);
+
                         setDone(true);
                     } catch (verifyErr: any) {
                         setError(verifyErr.message || "Payment verification failed. Please contact support.");

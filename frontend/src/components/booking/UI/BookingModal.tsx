@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { encryptPayload, decryptData } from "../../../utils/encryption";
 import API_URL from "../../../utils/apiConfig";
+import { useAbandonedCart } from "../../../utils/useAbandonedCart";
+
+// The contact number must stay a number: strip anything non-numeric and keep
+// the last 10 digits, so a pasted "+91 98765 43210" lands as "9876543210"
+// instead of failing validation at checkout.
+const onlyDigits10 = (value: string) => value.replace(/\D/g, "").slice(-10);
 // import {
 //   GoogleMap,
 //   useJsApiLoader,
@@ -770,12 +776,12 @@ export default function BookingModal({
           const gotraVal = localUser?.gotra || (user as any).gotra || "";
 
           if (name) setBhaktName(name);
-          if (phone) setContactNumber(phone);
+          if (phone) setContactNumber(onlyDigits10(phone));
           if (email) setEmailId(email);
           if (gotraVal) setGotra(gotraVal);
         } catch {
           if (user.name) setBhaktName(user.name);
-          if (user.phone) setContactNumber(user.phone);
+          if (user.phone) setContactNumber(onlyDigits10(user.phone));
           if (user.email) setEmailId(user.email);
         }
       }
@@ -837,6 +843,34 @@ export default function BookingModal({
   }
 
   const discountedPrice = Math.max(0, currentPoojaPrice - couponDiscount);
+
+  // Abandoned-cart capture: the row is created as soon as the 10-digit contact
+  // number is typed, then patched with every further detail (name, gotra, email,
+  // date/time, amount, death-ritual details), so a devotee who closes the modal
+  // before confirming is still reachable with full context.
+  const { markCartConverted } = useAbandonedCart("puja-booking-modal", {
+    phone: contactNumber,
+    name: bhaktName,
+    gotra,
+    email: emailId,
+    pujaId: pooja?._id || pooja?.id,
+    pujaSlug: pooja?.poojaID,
+    pujaName: pooja?.poojaNameEng || "Pooja Booking",
+    amount: discountedPrice,
+    userId: user?._id || user?.id || phoneUserData?._id || phoneUserData?.id,
+    extra: {
+      poojaMode: mode,
+      bookingDate: selectedDate,
+      bookingTime: selectedTime,
+      couponCode: appliedCoupon?.code,
+      ...(isDeathRitual && {
+        deceasedPersons,
+        ritualPerformerName,
+        ritualPerformerGotra,
+        ritualPlace: selectedRitualPlace,
+      }),
+    },
+  }, String(pooja?._id || pooja?.id || pooja?.poojaID || ""));
   // const originalPrice = currentPoojaPrice + totalDiscount;
   // const discountPercent =
   //   originalPrice > 0 ? Math.round(((totalDiscount + couponDiscount) / (originalPrice)) * 100) : 0;
@@ -1282,6 +1316,9 @@ export default function BookingModal({
         });
       }
 
+      // Booking created — drop this row out of the abandoned-lead list.
+      markCartConverted();
+
       // Directly trigger the success popup modal
       setShowSuccessModal(true);
       setIsProcessing(false);
@@ -1427,8 +1464,9 @@ export default function BookingModal({
                       <input type="text" placeholder="Gotra (optional)" value={gotra}
                         onChange={(e) => setGotra(e.target.value)} className="bm-input" />
 
-                      <input type="tel" placeholder="Contact number*" value={contactNumber}
-                        onChange={(e) => setContactNumber(e.target.value)}
+                      <input type="tel" inputMode="numeric" maxLength={10}
+                        placeholder="Contact number*" value={contactNumber}
+                        onChange={(e) => setContactNumber(onlyDigits10(e.target.value))}
                         onBlur={trackCustomerDetails}
                         className="bm-input" />
 
@@ -1584,9 +1622,11 @@ export default function BookingModal({
                         />
                         <input
                           type="tel"
+                          inputMode="numeric"
+                          maxLength={10}
                           placeholder="Contact number*"
                           value={contactNumber}
-                          onChange={(e) => setContactNumber(e.target.value)}
+                          onChange={(e) => setContactNumber(onlyDigits10(e.target.value))}
                           className="bm-input"
                         />
                         <input

@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Check, ChevronRight, Gift, Plus, X, Users, AlertCirc
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
+import { useAbandonedCart } from "../utils/useAbandonedCart";
 import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE } from "../data/kashiMahadevPuja";
 
 type Step = "details" | "success";
@@ -162,6 +163,36 @@ export default function SavanPujaBookingPage() {
             }]
             : []),
     ];
+
+    // Whatever delivery address the devotee has settled on so far — a selected
+    // saved address, or the new-address form once they start typing into it.
+    // Kept out of the abandoned-cart draft while it is still blank.
+    const draftAddress = !form.prasadAdded
+        ? null
+        : selectedAddressId
+            ? addresses.find((a) => (a._id || a.id) === selectedAddressId) || null
+            : [newAddress.houseNo, newAddress.street, newAddress.city, newAddress.state, newAddress.pincode].some((v) => v.trim())
+                ? newAddress
+                : null;
+
+    // Abandoned-cart capture: the row is created as soon as the 10-digit mobile
+    // number is typed, then patched with every further detail, so a devotee who
+    // drops off before paying is still reachable with full context.
+    const { markCartConverted } = useAbandonedCart("savan-puja-booking", {
+        phone: form.phone,
+        name: form.name,
+        gotra: form.gotra,
+        email: form.email,
+        pujaId: puja._id,
+        pujaSlug: KASHI_MAHADEV_POOJA_ID,
+        pujaName: puja.poojaNameEng,
+        templeName: puja.templeName,
+        amount: totalPrice,
+        familyMembers: form.familyMembers,
+        address: draftAddress,
+        userId: user?._id || (user as any)?.id,
+        extra: { time: form.time, prasadAdded: form.prasadAdded },
+    });
 
     // Fires once the devotee has a usable name + phone in the form, on blur of
     // either field — same signal (and event name) BookingModal reports, so the
@@ -371,6 +402,9 @@ export default function SavanPujaBookingPage() {
                                 currency: "INR",
                             }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
                         }
+
+                        // Paid — drop this row out of the abandoned-lead list.
+                        markCartConverted(orderData.bookingId);
 
                         setStep("success");
                         // "live", not "pooja": this booking is created with

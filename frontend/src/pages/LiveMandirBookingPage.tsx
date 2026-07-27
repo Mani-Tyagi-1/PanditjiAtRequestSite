@@ -7,6 +7,7 @@ import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveM
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
+import { useAbandonedCart } from "../utils/useAbandonedCart";
 
 // Puja handed over from LiveMandirPujaDetailPage via navigate(..., { state }).
 // Carried in router state (not the URL) so a direct hit / refresh — which has no
@@ -115,6 +116,44 @@ export default function LiveMandirBookingPage() {
         document.body.appendChild(script);
     }, []);
 
+    // Dynamic pricing — computed above the `!puja` guard so the abandoned-cart
+    // draft below (a hook, so it must run before any early return) can carry the
+    // running total.
+    const basePrice = puja?.price ?? 0;
+    const familyCost = form.familyMembers.length * 101;
+    const prasadCost = form.prasadAdded ? 501 : 0;
+    const totalPrice = basePrice + familyCost + prasadCost;
+
+    // Whatever delivery address the devotee has settled on so far — a selected
+    // saved address, or the new-address form once they start typing into it.
+    // Kept out of the abandoned-cart draft while it is still blank.
+    const draftAddress = !form.prasadAdded
+        ? null
+        : selectedAddressId
+            ? addresses.find((a) => (a._id || a.id) === selectedAddressId) || null
+            : [newAddress.houseNo, newAddress.street, newAddress.city, newAddress.state, newAddress.pincode].some((v) => v.trim())
+                ? newAddress
+                : null;
+
+    // Abandoned-cart capture: the row is created as soon as the 10-digit mobile
+    // number is typed, then patched with every further detail, so a devotee who
+    // drops off before paying is still reachable with full context.
+    const { markCartConverted } = useAbandonedCart("live-mandir-booking", {
+        phone: form.phone,
+        name: form.name,
+        gotra: form.gotra,
+        wish: form.wish,
+        pujaId: puja?.id,
+        pujaSlug: slug,
+        pujaName: puja?.pujaName,
+        templeName: puja?.templeName,
+        amount: totalPrice,
+        familyMembers: form.familyMembers,
+        address: draftAddress,
+        userId: user?._id || (user as any)?.id,
+        extra: { members: form.members, prasadAdded: form.prasadAdded },
+    }, String(puja?.id || slug || ""));
+
     if (!puja) return null;
 
     const addFamilyMember = () => {
@@ -133,12 +172,6 @@ export default function LiveMandirBookingPage() {
             familyMembers: f.familyMembers.filter((_, i) => i !== index)
         }));
     };
-
-    // Calculate dynamic pricing
-    const basePrice = puja.price;
-    const familyCost = form.familyMembers.length * 101;
-    const prasadCost = form.prasadAdded ? 501 : 0;
-    const totalPrice = basePrice + familyCost + prasadCost;
 
     const handleConfirm = async () => {
         setError("");
@@ -272,6 +305,9 @@ export default function LiveMandirBookingPage() {
                                 currency: "INR",
                             }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
                         }
+                        // Paid — drop this row out of the abandoned-lead list.
+                        markCartConverted(orderData.bookingId);
+
                         setStep("success");
                         // Auto-redirect to Live Pooja Bookings after 2.5s
                         setTimeout(() => {

@@ -1,10 +1,321 @@
 @import "tailwindcss";
 
+/* ==========================================================================
+   VEDIC VIVAH SANSKAR — design tokens
+   --------------------------------------------------------------------------
+   Sampled directly out of the approved comps, registered with Tailwind v4's
+   @theme so they become real utilities (bg-viv-ivory, text-viv-gold,
+   font-display …). Everything is namespaced `viv-` so it cannot collide with
+   the palette the rest of the site already uses.
+   ========================================================================== */
+@theme {
+  /* Ivory / paper */
+  --color-viv-ivory: #fdfaf4;
+  --color-viv-sheet: #fcf6ef;
+  --color-viv-tint: #fef5ec;
+  --color-viv-tint-2: #f8ecdd;
+
+  /* Maroon */
+  --color-viv-deep: #210908;
+  /* mobile checkout page background */
+  --color-viv-maroon-900: #321110;
+  /* footer */
+  --color-viv-maroon-800: #441312;
+  /* finale band */
+  --color-viv-maroon: #611a1b;
+  /* brand / premium tier */
+  --color-viv-maroon-600: #7a1f1e;
+
+  /* Accents */
+  --color-viv-orange: #c04a01;
+  --color-viv-orange-lt: #e8730f;
+  --color-viv-gold: #bf8b34;
+  --color-viv-gold-lt: #d2a45d;
+  --color-viv-gold-pale: #f5e6c8;
+  --color-viv-cream: #fff6e6;
+
+  /* Type */
+  --color-viv-ink: #3a2a20;
+  --color-viv-muted: #7c6a5c;
+  --color-viv-muted-2: #a08d7d;
+  --color-viv-hair: rgba(191, 139, 52, 0.26);
+
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* ==========================================================================
+   Tailwind v4 dropped the v3 preflight rule that gave every <button> a
+   `cursor: pointer` — v4 defers to the browser default, which is `default`.
+   Every button across this site therefore lost its pointer unless someone
+   remembered to add `cursor-pointer` by hand. Restoring it once, here, fixes
+   the whole app rather than one page at a time.
+   ========================================================================== */
+@layer base {
+
+  button:not(:disabled),
+  a[href],
+  summary,
+  label[for],
+  select,
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="option"],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
+/* ==========================================================================
+   Vivah page scope — applied by <VivahLayout>. Scoped rather than global so
+   setting the body face here cannot restyle the rest of the site.
+   ========================================================================== */
+.viv {
+  font-family: var(--font-body);
+  color: var(--color-viv-ink);
+  /* A long unbroken string or an over-wide sticky bar must never make the
+     whole page pan sideways on a phone. */
+  overflow-x: hidden;
+}
+
+.viv h1,
+.viv h2,
+.viv h3,
+.viv .display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.005em;
+}
+
+/* Centred hairline with a gold ornament — the divider used under headings. */
+.viv-orn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.viv-orn::before,
+.viv-orn::after {
+  content: "";
+  height: 1px;
+  width: 34px;
+  background: linear-gradient(90deg, transparent, var(--color-viv-gold));
+}
+
+.viv-orn::after {
+  background: linear-gradient(90deg, var(--color-viv-gold), transparent);
+}
+
+/* --------------------------------------------------------------------------
+   The light page canvas the whole Vivah section sits on: warm ivory with two
+   very soft marigold/gold blooms and a fine kumkum grain. Fixed, so it reads as
+   paper the content is printed on rather than something that scrolls past.
+   -------------------------------------------------------------------------- */
+.viv-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--color-viv-ivory);
+  /* The uploaded ivory scene — sheer curtain, bells, jasmine, marble mandap —
+     is THE background of the whole Vivah segment. Fixed and full-bleed, so
+     every page in the section sits on the same painting. Two crops of the same
+     art: the 9:16 portrait for phones, the 16:9 frame from tablet up. */
+  background-image: image-set(url("/images/vivah/canvas-mobile.webp") type("image/webp") 1x,
+      url("/images/vivah/canvas-mobile@2x.webp") type("image/webp") 2x,
+      url("/images/vivah/canvas-mobile.jpg") type("image/jpeg") 1x,
+      url("/images/vivah/canvas-mobile@2x.jpg") type("image/jpeg") 2x);
+  background-size: cover;
+  background-position: center;
+}
+
+@media (min-width: 640px) {
+  .viv-canvas {
+    background-image: image-set(url("/images/vivah/canvas.webp") type("image/webp") 1x,
+        url("/images/vivah/canvas@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/canvas.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/canvas@2x.jpg") type("image/jpeg") 2x);
+  }
+}
+
+/* Scroll-linked shimmer on the gold ornament rules. */
+@keyframes viv-glow {
+
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* A slow, barely-there float for the medallion ornaments. */
+@keyframes viv-float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.viv-float {
+  animation: viv-float 5.5s ease-in-out infinite;
+}
+
+/* Faint mandala watermark used behind ivory sections in the comps. */
+.viv-mandala {
+  background-image: radial-gradient(circle at 50% 50%,
+      rgba(191, 139, 52, 0.055) 0%,
+      rgba(191, 139, 52, 0) 62%);
+  background-repeat: no-repeat;
+  background-size: 620px 620px;
+}
+
+.viv summary {
+  list-style: none;
+}
+
+.viv summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Pulses twice around a section the family still needs to complete. */
+@keyframes viv-flash {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(192, 74, 1, 0);
+  }
+
+  35% {
+    box-shadow: 0 0 0 5px rgba(192, 74, 1, 0.4);
+  }
+}
+
+.viv-flash {
+  animation: viv-flash 1.1s ease-out 2;
+  border-radius: 12px;
+}
+
+/* In-page anchors should glide, not jump. */
+.viv {
+  scroll-behavior: smooth;
+}
+
+/* Respect the OS setting: kill every decorative animation outright. */
+@media (prefers-reduced-motion: reduce) {
+
+  .viv,
+  .viv * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   VIVAH ARTWORK
+   --------------------------------------------------------------------------
+   Each background is shipped at two densities and two formats. `image-set()`
+   lets the browser take the WebP where it can and the JPEG where it can't, and
+   the 2x file ONLY on a retina display — so a 1x laptop never downloads the
+   3840px hero. Sizes were derived from each container's real geometry: with
+   `background-size: cover` the scale factor is max(boxW/imgW, boxH/imgH), and
+   on the wide heroes it is HEIGHT that binds. Under-shooting that is what made
+   them look soft before.
+   ========================================================================== */
+@media (min-width: 0px) {
+  .viv-art-hero-desktop {
+    background-image: image-set(url("/images/vivah/hero-desktop.webp") type("image/webp") 1x,
+        url("/images/vivah/hero-desktop@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/hero-desktop.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/hero-desktop@2x.jpg") type("image/jpeg") 2x);
+  }
+
+  .viv-art-hero-mobile {
+    background-image: image-set(url("/images/vivah/hero-mobile.webp") type("image/webp") 1x,
+        url("/images/vivah/hero-mobile@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/hero-mobile.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/hero-mobile@2x.jpg") type("image/jpeg") 2x);
+  }
+
+  .viv-art-kashi {
+    background-image: image-set(url("/images/vivah/kashi-band.webp") type("image/webp") 1x,
+        url("/images/vivah/kashi-band@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/kashi-band.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/kashi-band@2x.jpg") type("image/jpeg") 2x);
+  }
+
+  .viv-art-elite {
+    background-image: image-set(url("/images/vivah/elite-band.webp") type("image/webp") 1x,
+        url("/images/vivah/elite-band@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/elite-band.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/elite-band@2x.jpg") type("image/jpeg") 2x);
+  }
+
+  /* The package hero swaps art at the same 640px breakpoint the layout does:
+     the tall crop frames the thali on a phone, the wide one on a desktop.
+     A Tailwind `sm:` prefix cannot do this — it only compiles for utilities
+     Tailwind itself generates, never for a custom class. */
+  .viv-art-package {
+    background-image: image-set(url("/images/vivah/package-hero-mobile.webp") type("image/webp") 1x,
+        url("/images/vivah/package-hero-mobile@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/package-hero-mobile.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/package-hero-mobile@2x.jpg") type("image/jpeg") 2x);
+  }
+
+  .viv-art-sankalp-desktop {
+    background-image: image-set(url("/images/vivah/sankalp-header-desktop.webp") type("image/webp") 1x,
+        url("/images/vivah/sankalp-header-desktop@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/sankalp-header-desktop.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/sankalp-header-desktop@2x.jpg") type("image/jpeg") 2x);
+  }
+
+  .viv-art-sankalp-mobile {
+    background-image: image-set(url("/images/vivah/sankalp-header-mobile.webp") type("image/webp") 1x,
+        url("/images/vivah/sankalp-header-mobile@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/sankalp-header-mobile.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/sankalp-header-mobile@2x.jpg") type("image/jpeg") 2x);
+  }
+}
+
+@media (min-width: 640px) {
+  .viv-art-package {
+    background-image: image-set(url("/images/vivah/package-hero-desktop.webp") type("image/webp") 1x,
+        url("/images/vivah/package-hero-desktop@2x.webp") type("image/webp") 2x,
+        url("/images/vivah/package-hero-desktop.jpg") type("image/jpeg") 1x,
+        url("/images/vivah/package-hero-desktop@2x.jpg") type("image/jpeg") 2x);
+  }
+}
+
+/* Photographic backgrounds should never be sharpened twice by the compositor. */
+.viv [class*="viv-art-"] {
+  background-repeat: no-repeat;
+}

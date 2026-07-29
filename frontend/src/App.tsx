@@ -111,7 +111,7 @@
 
 
 import React, { Suspense, useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 
 // Global Auth Context & Modal
 import { AuthProvider } from "./context/AuthContext";
@@ -160,6 +160,14 @@ const ChadhavaPage = React.lazy(() => import("./pages/ChadhavaPage"));
 const KashiPage = React.lazy(() => import("./pages/KashiPage"));
 const ShopPage = React.lazy(() => import("./pages/ShopPage"));
 const BlogListPage = React.lazy(() => import("./pages/BlogListPage"));
+// Vedic Vivah Sanskar — the guided marriage journey (parity with the app)
+const VivahPage = React.lazy(() => import("./pages/VivahPage"));
+const VivahPackageDetailPage = React.lazy(() => import("./pages/VivahPackageDetailPage"));
+const VivahCheckoutPage = React.lazy(() => import("./pages/VivahCheckoutPage"));
+const VivahBlogDetailPage = React.lazy(() => import("./pages/VivahBlogPage"));
+const VivahGuidesListPage = React.lazy(() =>
+  import("./pages/VivahBlogPage").then((m) => ({ default: m.VivahBlogListPage }))
+);
 
 // Resets scroll to the top on every route change so a new page never opens
 // mid-way down (React Router otherwise keeps the previous scroll offset).
@@ -215,6 +223,17 @@ function ReferralCapture() {
     }
   }, [location.search]);
   return null;
+}
+
+// /vivah/package/:packageId → /vedic-vivah/package/:packageId. A plain <Navigate>
+// can't carry the :packageId through, so this tiny component reads it and
+// rebuilds the canonical URL (preserving any router state handed over).
+function VivahPackageRedirect() {
+  const { packageId } = useParams();
+  const location = useLocation();
+  return (
+    <Navigate to={`/vedic-vivah/package/${packageId}`} replace state={location.state} />
+  );
 }
 
 function App() {
@@ -279,6 +298,21 @@ function App() {
           {/* Short alias — easier to type/share in ads & WhatsApp */}
           <Route path="/hanuman-puja" element={<Navigate to="/ayodhya-hanuman-garhi-puja" replace />} />
           <Route path="/hanuman-puja/booking" element={<Navigate to="/ayodhya-hanuman-garhi-puja/booking" replace />} />
+          {/* ── Vedic Vivah Sanskar ──────────────────────────────────────
+              Canonical path is /vedic-vivah, matching the SEO canonicalUrl the
+              admin catalog serves (and what the app's /seo endpoint returns).
+              The shorter /vivah slugs are kept as redirects because they're
+              easier to type in ads and WhatsApp. */}
+          <Route path="/vedic-vivah" element={<VivahPage />} />
+          <Route path="/vedic-vivah/checkout" element={<VivahCheckoutPage />} />
+          <Route path="/vedic-vivah/package/:packageId" element={<VivahPackageDetailPage />} />
+          {/* SEO guide hub — JSON-driven posts targeting vivah head keywords */}
+          <Route path="/vedic-vivah/guides" element={<VivahGuidesListPage />} />
+          <Route path="/vedic-vivah/guides/:slug" element={<VivahBlogDetailPage />} />
+          <Route path="/vivah" element={<Navigate to="/vedic-vivah" replace />} />
+          <Route path="/vivah/checkout" element={<Navigate to="/vedic-vivah/checkout" replace />} />
+          <Route path="/vivah/package/:packageId" element={<VivahPackageRedirect />} />
+
           <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/my-bookings" element={<MyBookingsPage />} />

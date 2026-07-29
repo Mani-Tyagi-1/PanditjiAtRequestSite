@@ -34,6 +34,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { decryptData, encryptPayload } from "../utils/encryption";
 import API_URL from "../utils/apiConfig";
+import { loadRazorpay } from "../data/vivahApi";
 
 interface UserData {
     _id: string;
@@ -128,8 +129,9 @@ const ProfilePage: React.FC = () => {
     const [chadhavaBookings, setChadhavaBookings] = useState<any[]>([]);
     const [directBookings, setDirectBookings] = useState<any[]>([]);
     const [shopifyOrders, setShopifyOrders] = useState<any[]>([]);
+    const [vivahBookings, setVivahBookings] = useState<any[]>([]);
     const [bookingsLoading, setBookingsLoading] = useState(false);
-    const [activeBookingTab, setActiveBookingTab] = useState<"pooja" | "direct" | "live" | "chadhava" | "shopify">("pooja");
+    const [activeBookingTab, setActiveBookingTab] = useState<"pooja" | "direct" | "live" | "chadhava" | "shopify" | "vivah">("pooja");
 
     // Payout state
     const [payoutModal, setPayoutModal] = useState<"confirm" | "not-allowed" | null>(null);
@@ -265,6 +267,26 @@ const ProfilePage: React.FC = () => {
                 })
             ]);
 
+            // Vedic Vivah bookings are scoped to the AUTHENTICATED user (they
+            // carry birth details and kundali images, so the server ignores any
+            // id in the URL and reads it off the token). Fetched separately —
+            // and tolerantly — so a signed-out or expired session degrades to an
+            // empty Vivah tab instead of blanking every other tab.
+            let vivahList: any[] = [];
+            try {
+                const vivahToken = localStorage.getItem("user_token");
+                const vivahUserId = user?._id;
+                if (vivahToken && vivahUserId) {
+                    const vivahRes = await axios.get(
+                        `${apiUrl}/bookings/vedic-vivah/user/${vivahUserId}`,
+                        { headers: { Authorization: `Bearer ${vivahToken}` } }
+                    );
+                    vivahList = vivahRes.data?.bookings || [];
+                }
+            } catch (err) {
+                console.error("Error fetching Vivah bookings:", err);
+            }
+
             const allPoojaBookings: any[] = poojaRes.data || [];
             // Split: regular puja bookings vs live mandir bookings (isLiveMandir: true)
             const regularBookings = allPoojaBookings.filter((b: any) => !b.isLiveMandir);
@@ -291,6 +313,7 @@ const ProfilePage: React.FC = () => {
             setChadhavaBookings(chadhavaRes.data?.data || []);
             setDirectBookings(mergedDirect);
             setShopifyOrders(shopifyRes.data?.data || []);
+            setVivahBookings(vivahList);
         } catch (err) {
             console.error("Error fetching user bookings:", err);
         } finally {
@@ -405,6 +428,17 @@ const ProfilePage: React.FC = () => {
         fetchUserProfile();
     }, []);
 
+    // Razorpay checkout script — needed by the Vivah "pay balance" action on a
+    // booking card. Injected once; harmless when the family never uses it.
+    useEffect(() => {
+        const SRC = "https://checkout.razorpay.com/v1/checkout.js";
+        if (document.querySelector(`script[src="${SRC}"]`)) return;
+        const script = document.createElement("script");
+        script.src = SRC;
+        script.async = true;
+        document.body.appendChild(script);
+    }, []);
+
     // Open the "My Bookings" view on the right tab when the URL has ?tab=...
     // e.g. /account?tab=live → Live Puja tab, /account?tab=chadhava → Chadhava tab.
     // Any tab value (including "bookings") opens the bookings view; unknown values
@@ -412,7 +446,7 @@ const ProfilePage: React.FC = () => {
     useEffect(() => {
         const tab = (searchParams.get("tab") || "").toLowerCase();
         if (!tab) return;
-        const map: Record<string, "pooja" | "direct" | "live" | "chadhava" | "shopify"> = {
+        const map: Record<string, "pooja" | "direct" | "live" | "chadhava" | "shopify" | "vivah"> = {
             pooja: "pooja",
             puja: "pooja",
             direct: "direct",
@@ -420,6 +454,8 @@ const ProfilePage: React.FC = () => {
             chadhava: "chadhava",
             shopify: "shopify",
             shop: "shopify",
+            vivah: "vivah",
+            marriage: "vivah",
         };
         setMode("bookings");
         if (map[tab]) setActiveBookingTab(map[tab]);
@@ -1065,6 +1101,16 @@ const ProfilePage: React.FC = () => {
                                     >
                                         Shop Orders ({shopifyOrders.length})
                                     </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("vivah")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "vivah"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Vivah ({vivahBookings.length})
+                                    </button>
                                 </div>
                             </div>
 
@@ -1105,6 +1151,14 @@ const ProfilePage: React.FC = () => {
                                     ) : (
                                         shopifyOrders.map((order, idx) => (
                                             <ShopifyOrderCard key={order._id || idx} order={order} index={idx} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "vivah" ? (
+                                    vivahBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Vivah" />
+                                    ) : (
+                                        vivahBookings.map((booking, idx) => (
+                                            <VivahBookingCard key={booking._id || idx} booking={booking} index={idx} />
                                         ))
                                     )
                                 ) : (
@@ -1948,6 +2002,266 @@ const ShopifyOrderCard = ({ order, index }: { order: any; index: number }) => {
                     <span className="text-sm font-black">₹{order.totalAmount?.toLocaleString("en-IN")}</span>
                 </div>
             </div>
+        </motion.div>
+    );
+};
+
+/* ============================================================================
+   Vedic Vivah booking card
+   ----------------------------------------------------------------------------
+   Shows a family's marriage booking and gives them the two actions the app
+   also offers from My Bookings: pay the remaining balance on an advance-paid
+   booking, and cancel (the server computes the refund from the published
+   policy — 100% at 7+ days, 50% at 3–6 days, none inside 3 days).
+
+   `platform` is surfaced as a small chip so a family (and support, reading a
+   screenshot) can see whether a booking came from the app or the website.
+   ========================================================================== */
+const VIVAH_STATUS_STYLE: Record<string, string> = {
+    lead: "bg-orange-50 text-orange-600 border border-orange-100",
+    confirmed: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+    in_progress: "bg-blue-50 text-blue-600 border border-blue-100",
+    completed: "bg-violet-50 text-violet-600 border border-violet-100",
+    cancelled: "bg-red-50 text-red-600 border border-red-100",
+};
+
+const VIVAH_STATUS_LABEL: Record<string, string> = {
+    lead: "Requested",
+    confirmed: "Confirmed",
+    in_progress: "In Progress",
+    completed: "Completed",
+    cancelled: "Cancelled",
+};
+
+const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: number }) => {
+    const [booking, setBooking] = useState<any>(initial);
+    const [busy, setBusy] = useState<null | "balance" | "cancel">(null);
+    const [note, setNote] = useState("");
+
+    const total = Number(booking.totalAmount || 0);
+    const paid = Number(booking.amountPaid || 0);
+    const balance = Math.max(0, total - paid);
+    const isCancelled = booking.status === "cancelled";
+    const isCompleted = booking.status === "completed";
+
+    const eventDate = booking.needMuhuratHelp && !booking.eventDate
+        ? "Pandit Ji will suggest"
+        : `${booking.eventDate || "—"}${booking.eventTime ? `, ${booking.eventTime}` : ""}`;
+
+    const createdOn = booking.createdAt
+        ? new Date(booking.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    const selection = booking.packageName
+        ? `${booking.packageName} Package`
+        : booking.isSampooranPackage
+            ? "Sampooran Vivah (Complete Package)"
+            : (booking.selectedSteps || []).map((s: any) => s.title).join(", ") || "Vedic Vivah";
+
+    const steps: any[] = booking.selectedSteps || [];
+    const doneCount = steps.filter((s) => s.completed).length;
+
+    const payBalance = async () => {
+        setNote("");
+        setBusy("balance");
+        try {
+            const token = localStorage.getItem("user_token");
+
+            // Wait for the gateway BEFORE creating the order. Creating it first
+            // rotates `balanceRazorpayOrderId` on the booking; if the SDK then
+            // isn't ready we've orphaned that order, and a late payment against
+            // it would be rejected as "Order ID mismatch" with the money gone.
+            const Ctor = await loadRazorpay();
+
+            const { data: order } = await axios.post(
+                `${API_URL}/bookings/vedic-vivah/balance-order`,
+                { bookingId: booking._id },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!order?.success) throw new Error(order?.message || "Could not start the payment.");
+
+            const rzp = new Ctor({
+                key: order.razorpayKeyId,
+                amount: Number(order.amount) * 100,
+                currency: order.currency || "INR",
+                name: "Pandit Ji At Request",
+                description: "Vedic Vivah Sanskar — balance payment",
+                order_id: order.razorpayOrderId,
+                prefill: { name: booking.devoteeName, contact: booking.whatsapp },
+                theme: { color: "#FF7000" },
+                handler: async (resp: any) => {
+                    try {
+                        const { data } = await axios.post(
+                            `${API_URL}/bookings/vedic-vivah/complete-balance-payment`,
+                            {
+                                bookingId: booking._id,
+                                razorpayOrderId: resp.razorpay_order_id,
+                                razorpayPaymentId: resp.razorpay_payment_id,
+                                razorpaySignature: resp.razorpay_signature,
+                            },
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        if (!data?.success) throw new Error(data?.message || "Verification failed.");
+                        setBooking(data.booking || { ...booking, amountPaid: total, paymentOption: "full" });
+                        setNote("Payment complete 🙏 Your Vivah booking is fully settled.");
+                    } catch (e: any) {
+                        setNote(e?.response?.data?.message || e?.message || "Payment verification failed.");
+                    } finally {
+                        setBusy(null);
+                    }
+                },
+                modal: { ondismiss: () => setBusy(null) },
+            });
+            rzp.on("payment.failed", (r: any) => {
+                setNote(r?.error?.description || "Payment failed. Please try again.");
+                setBusy(null);
+            });
+            rzp.open();
+        } catch (e: any) {
+            setNote(e?.response?.data?.message || e?.message || "Something went wrong.");
+            setBusy(null);
+        }
+    };
+
+    const cancelBooking = async () => {
+        if (!window.confirm("Cancel this Vivah booking? The refund is calculated from our published policy.")) return;
+        setNote("");
+        setBusy("cancel");
+        try {
+            const token = localStorage.getItem("user_token");
+            const { data } = await axios.post(
+                `${API_URL}/bookings/vedic-vivah/${booking._id}/cancel`,
+                { reason: "Cancelled by the family from My Bookings" },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!data?.success) throw new Error(data?.message || "Could not cancel.");
+            setBooking(data.booking || { ...booking, status: "cancelled" });
+            setNote(
+                Number(data?.refund?.amount) > 0
+                    ? `Cancelled. A refund of ₹${data.refund.amount} (${data.refund.pct}%) will be processed in 5–7 days.`
+                    : "Cancelled. As per the policy no refund is available at this stage."
+            );
+        } catch (e: any) {
+            setNote(e?.response?.data?.message || e?.message || "Could not cancel this booking.");
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-lg">💍</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">Vedic Vivah Sanskar</h3>
+                        {booking.platform === "web" && (
+                            <span className="text-[8.5px] font-bold uppercase tracking-wider text-stone-400 border border-stone-200 rounded-full px-1.5 py-0.5">
+                                Web
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-xs text-gray-500 leading-snug">{selection}</p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${VIVAH_STATUS_STYLE[booking.status] || VIVAH_STATUS_STYLE.lead}`}>
+                    {VIVAH_STATUS_LABEL[booking.status] || booking.status}
+                </span>
+            </div>
+
+            {/* Assigned Pandit Ji */}
+            {booking.panditAssigned?.name && (
+                <div className="mt-3 bg-orange-50/40 p-2.5 rounded-xl border border-orange-100/40 flex items-center gap-2.5">
+                    {booking.panditAssigned.photo ? (
+                        <img src={booking.panditAssigned.photo} alt="" className="w-9 h-9 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-[13px]">🙏</div>
+                    )}
+                    <div className="min-w-0">
+                        <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider">Your Pandit Ji</p>
+                        <p className="text-xs font-bold text-gray-700 truncate">{booking.panditAssigned.name}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Ritual progress */}
+            {steps.length > 0 && (
+                <div className="mt-3">
+                    <div className="flex items-center justify-between mb-1">
+                        <p className="text-[9px] text-gray-400 uppercase font-semibold">Ritual progress</p>
+                        <p className="text-[10px] font-bold text-gray-600">{doneCount} / {steps.length}</p>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-orange-50 overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-[#E25800] to-[#FF8A2B] rounded-full transition-all"
+                            style={{ width: `${steps.length ? (doneCount / steps.length) * 100 : 0}%` }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50">
+                <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Ceremony</p>
+                    <p className="text-xs font-bold text-gray-700">{eventDate}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Requested On</p>
+                    <p className="text-xs font-bold text-gray-700">{createdOn}</p>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-orange-50/50">
+                <span className="text-[10px] text-gray-400 font-medium">
+                    Paid: <span className="text-gray-600 font-bold">₹{paid.toLocaleString("en-IN")}</span>
+                    {balance > 0 && !isCancelled && (
+                        <> · Balance: <span className="text-[#FF7000] font-bold">₹{balance.toLocaleString("en-IN")}</span></>
+                    )}
+                </span>
+                <div className="flex items-center gap-1 text-[#FF7000]">
+                    <span className="text-[10px] font-bold text-gray-400">Total:</span>
+                    <span className="text-sm font-black">₹{total.toLocaleString("en-IN")}</span>
+                </div>
+            </div>
+
+            {/* Actions */}
+            {!isCancelled && !isCompleted && (
+                <div className="flex gap-2 mt-3">
+                    {balance > 0 && booking.isPaymentDone && (
+                        <button
+                            onClick={payBalance}
+                            disabled={busy !== null}
+                            className="flex-1 bg-gradient-to-r from-[#E25800] to-[#FF8A2B] text-white text-[11.5px] font-bold py-2.5 rounded-xl disabled:opacity-60 active:scale-95 transition-transform"
+                        >
+                            {busy === "balance" ? "Opening…" : `Pay balance ₹${balance.toLocaleString("en-IN")}`}
+                        </button>
+                    )}
+                    <button
+                        onClick={cancelBooking}
+                        disabled={busy !== null}
+                        className="flex-1 border border-red-200 text-red-600 text-[11.5px] font-bold py-2.5 rounded-xl disabled:opacity-60 active:scale-95 transition-transform"
+                    >
+                        {busy === "cancel" ? "Cancelling…" : "Cancel booking"}
+                    </button>
+                </div>
+            )}
+
+            {isCancelled && Number(booking.cancellation?.refundAmount) > 0 && (
+                <p className="mt-3 text-[11px] text-stone-500">
+                    Refund of ₹{Number(booking.cancellation.refundAmount).toLocaleString("en-IN")} is{" "}
+                    {booking.cancellation.refundStatus === "processed" ? "processed" : "being processed"}.
+                </p>
+            )}
+
+            {note && (
+                <p className="mt-3 text-[11.5px] text-stone-600 bg-stone-50 border border-stone-100 rounded-xl px-3 py-2">
+                    {note}
+                </p>
+            )}
         </motion.div>
     );
 };

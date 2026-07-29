@@ -38,6 +38,7 @@ import panditDirectBookingEnquiryRoutes from "./routes/userAppRoutes/panditDirec
 import whatsappRoutes from "./routes/whatsapp/whatsapp.routes";
 import liveMandirRoutes from "./routes/userAppRoutes/liveMandirRoutes";
 import chadhavaRoutes from "./routes/userAppRoutes/chadhavaRoutes";
+import vivahRoutes from "./routes/userAppRoutes/vivahRoutes";
 import kashiRoutes from "./routes/userAppRoutes/kashiRoutes";
 import shopRoutes from "./routes/userAppRoutes/shopRoutes";
 import holyPanditRoutes from "./routes/userAppRoutes/holyPanditRoutes";
@@ -101,6 +102,7 @@ app.use("/api", panditDirectBookingEnquiryRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api", liveMandirRoutes);
 app.use("/api", chadhavaRoutes);
+app.use("/api", vivahRoutes);
 app.use("/api", kashiRoutes);
 app.use("/api", shopRoutes);
 app.use("/api/affiliate", affiliateProductsRoutes);

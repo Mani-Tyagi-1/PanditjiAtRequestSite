@@ -36,6 +36,29 @@ const STATIC_ROUTES = [
   { path: "/category", priority: "0.8", changefreq: "weekly" },
   { path: "/chadhava", priority: "0.8", changefreq: "weekly" },
   { path: "/kashi", priority: "0.7", changefreq: "weekly" },
+  // Vedic Vivah Sanskar — high-intent evergreen service page + its three tiers.
+  // The tier slugs match the catalog's default packageIds; if an admin renames
+  // or retires one the page still resolves (it falls back to the catalog), so
+  // these never become soft-404s.
+  { path: "/vedic-vivah", priority: "0.9", changefreq: "weekly" },
+  { path: "/vedic-vivah/package/shubh-vivah", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/package/raj-vivah", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/package/maharaja-vivah", priority: "0.7", changefreq: "monthly" },
+  // Vivah SEO guide hub — slugs mirror src/data/vivahBlogs.json.
+  { path: "/vedic-vivah/guides", priority: "0.8", changefreq: "weekly" },
+  { path: "/vedic-vivah/guides/shubh-vivah-muhurat-2026-2027", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/saptapadi-seven-vows-hindu-marriage", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/kundali-milan-gun-milan-36-gunas", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/pandit-for-marriage-cost-booking-guide", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/complete-hindu-wedding-rituals-guide", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/haldi-ceremony-significance-vidhi", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/mangal-dosha-manglik-marriage-remedies", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/kashi-pandit-for-wedding-why-vedacharya", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/vivah-samagri-complete-checklist", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/griha-pravesh-after-wedding-guide", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/court-marriage-vs-vedic-vivah", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/nri-wedding-pandit-online-booking", priority: "0.7", changefreq: "monthly" },
+  { path: "/vedic-vivah/guides/choosing-right-vivah-package", priority: "0.7", changefreq: "monthly" },
   { path: "/all-pandits", priority: "0.7", changefreq: "weekly" },
   { path: "/shop", priority: "0.6", changefreq: "weekly" },
   { path: "/free-consultation", priority: "0.7", changefreq: "monthly" },

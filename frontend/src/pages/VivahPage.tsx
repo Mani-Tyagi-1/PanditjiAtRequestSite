@@ -223,6 +223,36 @@ export default function VivahPage() {
       return next;
     });
 
+  /** A display ritual, flattened to the shape the checkout books with. */
+  const asSelected = (r: (typeof catalog.rituals)[number]) => ({
+    slug: r.slug,
+    name: r.titleEng,
+    price: r.price || 0,
+    samagriPrice: r.samagriPrice || 0,
+    ...(r.componentSlugs?.length ? { componentSlugs: r.componentSlugs } : {}),
+  });
+
+  /**
+   * Which rituals a package actually covers.
+   *
+   * The checkout needs this to ask the family for a DATE PER RITUAL — a vivah
+   * is not one appointment, and a package buyer has just as many ceremonies to
+   * schedule as someone who picked them one by one. `includesAllRituals` and an
+   * empty `ritualSlugs` both mean "everything".
+   */
+  const coverageFor = (pkg: VivahPackage) => {
+    const wanted =
+      !pkg.includesAllRituals && pkg.ritualSlugs?.length ? new Set(pkg.ritualSlugs) : null;
+    return catalog.rituals
+      .filter(
+        (r) =>
+          !wanted ||
+          wanted.has(r.slug) ||
+          (r.componentSlugs || []).some((c) => wanted.has(c))
+      )
+      .map(asSelected);
+  };
+
   /** Shared catalog context every checkout entry point must carry. */
   const catalogContext = {
     crossSell: catalog.crossSell,
@@ -276,6 +306,7 @@ export default function VivahPage() {
           freeTempleDarshan: pkg.freeTempleDarshan,
           templeDarshanCount: pkg.templeDarshanCount,
         },
+        packageRituals: coverageFor(pkg),
         ...catalogContext,
       },
     });

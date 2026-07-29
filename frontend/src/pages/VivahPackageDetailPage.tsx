@@ -141,6 +141,31 @@ export default function VivahPackageDetailPage() {
   const temples = catalog.temples || state.temples || [];
   const kashi = catalog.kashi || state.kashi || null;
 
+  /**
+   * The rituals this package covers, in the shape the checkout books with.
+   * The checkout asks for a date PER RITUAL, so a package buyer must arrive
+   * with the same list an a-la-carte buyer would. Empty `ritualSlugs` or
+   * `includesAllRituals` both mean the whole journey.
+   */
+  const packageRituals = (() => {
+    const wanted =
+      !pkg.includesAllRituals && pkg.ritualSlugs?.length ? new Set(pkg.ritualSlugs) : null;
+    return (catalog.rituals || [])
+      .filter(
+        (r) =>
+          !wanted ||
+          wanted.has(r.slug) ||
+          (r.componentSlugs || []).some((c) => wanted.has(c))
+      )
+      .map((r) => ({
+        slug: r.slug,
+        name: r.titleEng,
+        price: r.price || 0,
+        samagriPrice: r.samagriPrice || 0,
+        ...(r.componentSlugs?.length ? { componentSlugs: r.componentSlugs } : {}),
+      }));
+  })();
+
   const book = () =>
     navigate("/vedic-vivah/checkout", {
       state: {
@@ -158,6 +183,7 @@ export default function VivahPackageDetailPage() {
           freeTempleDarshan: pkg.freeTempleDarshan,
           templeDarshanCount: pkg.templeDarshanCount,
         },
+        packageRituals,
         crossSell: catalog.crossSell,
         advancePercent: catalog.advancePercent,
         supportedLanguages: catalog.supportedLanguages,

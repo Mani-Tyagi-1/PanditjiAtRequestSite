@@ -61,6 +61,11 @@ import {
 import { sessionToken } from "../data/vivahApi";
 import { PJAR, PjarLogo, VivahMark, VivahScope } from "../components/vivah/VivahLayout";
 import MuhuratPicker, { prettyTime } from "../components/vivah/MuhuratPicker";
+import RitualSchedule, {
+  suggestPlan,
+  expandPlan,
+  type SchedulePlan,
+} from "../components/vivah/RitualSchedule";
 import {
   AnimatePresence,
   AnimatedTotal,
@@ -101,6 +106,13 @@ type PackageTier = Pick<
 
 type CheckoutState = {
   rituals?: SelectedRitual[];
+  /**
+   * The rituals a PACKAGE covers. Package bookings send `rituals: []` (the
+   * server prices from the tier, not from a list), but the family still has
+   * every one of these ceremonies to schedule — so the coverage travels
+   * separately and drives the per-ritual date picker.
+   */
+  packageRituals?: SelectedRitual[];
   isSampooranPackage?: boolean;
   samagriNeeded?: boolean;
   packageTier?: PackageTier;
@@ -283,6 +295,15 @@ export default function VivahCheckoutPage() {
   // Memoised because `state.rituals || []` would hand a fresh array to the
   // expandedSlugs useMemo on every render, defeating it.
   const rituals = useMemo(() => state.rituals || [], [state.rituals]);
+  /**
+   * Every ritual this booking will actually perform — a la carte selections,
+   * or the ceremonies a package covers. This is what we ask for dates against.
+   */
+  const scheduleRituals = useMemo(() => {
+    if (rituals.length) return rituals;
+    return state.packageRituals || [];
+  }, [rituals, state.packageRituals]);
+
   const isSampooranPackage = !!state.isSampooranPackage;
   const packageTier = state.packageTier || null;
   const packagePricing = state.packagePricing || null;
@@ -317,6 +338,57 @@ export default function VivahCheckoutPage() {
   const [needMuhuratHelp, setNeedMuhuratHelp] = useState(true);
   const [eventDate, setEventDate] = useState(""); // DD/MM/YYYY
   const [eventTime, setEventTime] = useState(""); // HH:mm
+
+  /**
+   * Date + time per ritual, keyed by the DISPLAY slug.
+   *
+   * `ritualPlanTouched` records which rows the family edited by hand, so that
+   * re-suggesting around a new vivah date can refresh the untouched rows
+   * without silently overwriting a date someone deliberately chose.
+   */
+  const [ritualPlan, setRitualPlan] = useState<SchedulePlan>({});
+  const [planTouched, setPlanTouched] = useState<Record<string, true>>({});
+
+  /**
+   * Keep the suggested dates in step with the vivah date.
+   *
+   * Rows the family edited are left exactly as they are — moving the wedding
+   * should re-flow the ceremonies you never thought about, not undo a date you
+   * chose on purpose. Clearing the vivah date leaves the plan alone too; the
+   * dates already picked are still valid on their own.
+   */
+  useEffect(() => {
+    if (!eventDate || scheduleRituals.length < 2) return;
+    const suggested = suggestPlan(scheduleRituals, eventDate);
+    setRitualPlan((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const r of scheduleRituals) {
+        if (planTouched[r.slug]) continue;
+        const s = suggested[r.slug];
+        if (!s) continue;
+        const cur = prev[r.slug];
+        if (cur?.date === s.date && cur?.time === s.time) continue;
+        next[r.slug] = s;
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventDate, scheduleRituals]);
+
+  /** A hand edit: remember it, so re-suggestion never clobbers it. */
+  const setRitualDate = (slug: string, entry: { date: string; time: string }) => {
+    setRitualPlan((prev) => ({ ...prev, [slug]: entry }));
+    setPlanTouched((prev) => (prev[slug] ? prev : { ...prev, [slug]: true }));
+  };
+
+  /** Put every row back on the customary offsets around the vivah date. */
+  const resetRitualPlan = () => {
+    if (!eventDate) return;
+    setRitualPlan(suggestPlan(scheduleRituals, eventDate));
+    setPlanTouched({});
+  };
   const [language, setLanguage] = useState("");
   const [langOther, setLangOther] = useState(false);
   const [customLang, setCustomLang] = useState("");
@@ -605,8 +677,21 @@ export default function VivahCheckoutPage() {
         }
       : {}),
     // Expand any folded "Core Ceremony" card into its underlying ritual slugs so
-    // the server prices and books each one individually.
-    selectedSteps: expandedSlugs.map((s) => ({ stepId: s })),
+    // the server prices and books each one individually — and carry each
+    // ritual's own date with it. `expandPlan` pushes a folded card's single
+    // date down onto every slug it covers, so the ceremonies that share the
+    // wedding day all arrive dated rather than only the card that fronts them.
+    selectedSteps: (() => {
+      const flat = expandPlan(scheduleRituals, ritualPlan);
+      const ids = expandedSlugs.length
+        ? expandedSlugs
+        : Object.keys(flat);
+      return ids.map((s) => ({
+        stepId: s,
+        scheduledDate: flat[s]?.date || "",
+        scheduledTime: flat[s]?.time || "",
+      }));
+    })(),
     isSampooranPackage,
     ...(packageTier ? { packageId: packageTier.packageId } : {}),
     addOnProducts: crossSellProducts
@@ -1311,6 +1396,14 @@ export default function VivahCheckoutPage() {
                   clearErr("eventDate");
                 }
               }}
+            />
+
+            <RitualSchedule
+              rituals={scheduleRituals}
+              plan={ritualPlan}
+              onChange={setRitualDate}
+              vivahDate={eventDate}
+              onReset={resetRitualPlan}
             />
 
             <div className="mt-4">

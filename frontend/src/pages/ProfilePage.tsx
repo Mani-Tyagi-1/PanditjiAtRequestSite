@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,12 +29,18 @@ import {
     Video,
     Star,
     Loader2,
+    RefreshCw,
+    MessageCircle,
+    Sparkles,
+    Landmark,
+    Package,
+    ShieldCheck,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { decryptData, encryptPayload } from "../utils/encryption";
 import API_URL from "../utils/apiConfig";
-import { loadRazorpay } from "../data/vivahApi";
+import { loadRazorpay, humanError, humanPaymentError } from "../data/vivahApi";
 
 interface UserData {
     _id: string;
@@ -104,6 +110,22 @@ const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text"
     </div>
 );
 
+/**
+ * The signed-in user's id, straight off storage.
+ *
+ * `fetchUserBookings` runs from `fetchUserProfile` BEFORE `setUser` resolves,
+ * so anything inside it that read `user?._id` from React state saw `null` and
+ * silently skipped — which is exactly why the Vivah tab came up empty on every
+ * cold load. Reading storage removes the ordering dependency entirely.
+ */
+const storedUserId = (): string => {
+    try {
+        return JSON.parse(localStorage.getItem("user_data") || "{}")?._id || "";
+    } catch {
+        return "";
+    }
+};
+
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -130,6 +152,12 @@ const ProfilePage: React.FC = () => {
     const [directBookings, setDirectBookings] = useState<any[]>([]);
     const [shopifyOrders, setShopifyOrders] = useState<any[]>([]);
     const [vivahBookings, setVivahBookings] = useState<any[]>([]);
+    // Vivah bookings move under the family's feet — ops assign a Pandit Ji,
+    // tick rituals off and shift dates hours after booking. These back a quiet
+    // re-read so the card is never a stale snapshot.
+    const [vivahSyncedAt, setVivahSyncedAt] = useState<number>(0);
+    const [vivahRefreshing, setVivahRefreshing] = useState(false);
+    const vivahInFlight = useRef(false);
     const [bookingsLoading, setBookingsLoading] = useState(false);
     const [activeBookingTab, setActiveBookingTab] = useState<"pooja" | "direct" | "live" | "chadhava" | "shopify" | "vivah">("pooja");
 
@@ -250,7 +278,65 @@ const ProfilePage: React.FC = () => {
         }
     };
 
-    const fetchUserBookings = async (phone: string) => {
+    /**
+     * Re-read ONLY the vivah bookings.
+     *
+     * Deliberately narrow: refetching all six booking types every 45 seconds
+     * to watch one tab would hammer five endpoints nobody is looking at. It is
+     * also silent — no spinner over the list, no error banner — because this
+     * runs unprompted and a failed background poll is not the family's problem.
+     * The card keeps showing the last good data and the "Updated N min ago"
+     * label tells the truth about how fresh it is.
+     */
+    const refreshVivahBookings = async () => {
+        if (vivahInFlight.current) return;
+        const token = localStorage.getItem("user_token");
+        const uid = user?._id || storedUserId();
+        if (!token || !uid) return;
+        vivahInFlight.current = true;
+        setVivahRefreshing(true);
+        try {
+            const { data } = await axios.get(
+                `${API_URL}/bookings/vedic-vivah/user/${uid}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (data?.bookings) {
+                setVivahBookings(data.bookings);
+                setVivahSyncedAt(Date.now());
+            }
+        } catch (err) {
+            // Silent by design — see the note above.
+            console.error("[Vivah] background refresh failed", err);
+        } finally {
+            vivahInFlight.current = false;
+            setVivahRefreshing(false);
+        }
+    };
+
+    /**
+     * Poll while the Vivah tab is actually on screen, and catch up the moment
+     * the family comes back to the tab. Paused when the document is hidden so
+     * a backgrounded phone isn't spending someone's data all afternoon.
+     */
+    useEffect(() => {
+        if (activeBookingTab !== "vivah" || !(user?._id || storedUserId())) return;
+        if (!vivahSyncedAt) void refreshVivahBookings();
+
+        const tick = () => {
+            if (document.visibilityState === "visible") void refreshVivahBookings();
+        };
+        const id = window.setInterval(tick, 45_000);
+        window.addEventListener("focus", tick);
+        document.addEventListener("visibilitychange", tick);
+        return () => {
+            window.clearInterval(id);
+            window.removeEventListener("focus", tick);
+            document.removeEventListener("visibilitychange", tick);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeBookingTab, user?._id]);
+
+    const fetchUserBookings = async (phone: string, userIdArg?: string) => {
         setBookingsLoading(true);
         try {
             const apiUrl = API_URL;
@@ -275,7 +361,9 @@ const ProfilePage: React.FC = () => {
             let vivahList: any[] = [];
             try {
                 const vivahToken = localStorage.getItem("user_token");
-                const vivahUserId = user?._id;
+                // NOT `user?._id` — see storedUserId(). This runs before the
+                // profile response lands, so React state is still null here.
+                const vivahUserId = userIdArg || user?._id || storedUserId();
                 if (vivahToken && vivahUserId) {
                     const vivahRes = await axios.get(
                         `${apiUrl}/bookings/vedic-vivah/user/${vivahUserId}`,
@@ -314,6 +402,7 @@ const ProfilePage: React.FC = () => {
             setDirectBookings(mergedDirect);
             setShopifyOrders(shopifyRes.data?.data || []);
             setVivahBookings(vivahList);
+            setVivahSyncedAt(Date.now());
         } catch (err) {
             console.error("Error fetching user bookings:", err);
         } finally {
@@ -397,7 +486,7 @@ const ProfilePage: React.FC = () => {
             // Fetch referral data in parallel (non-blocking)
             fetchReferralData(userId);
             if (phone) {
-                fetchUserBookings(phone);
+                fetchUserBookings(phone, userId);
             }
 
             const apiUrl = API_URL;
@@ -1158,7 +1247,14 @@ const ProfilePage: React.FC = () => {
                                         <EmptyBookingsState type="Vivah" />
                                     ) : (
                                         vivahBookings.map((booking, idx) => (
-                                            <VivahBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                            <VivahBookingCard
+                                                key={booking._id || idx}
+                                                booking={booking}
+                                                index={idx}
+                                                onRefresh={refreshVivahBookings}
+                                                refreshing={vivahRefreshing}
+                                                lastSyncedAt={vivahSyncedAt}
+                                            />
                                         ))
                                     )
                                 ) : (
@@ -2033,20 +2129,113 @@ const VIVAH_STATUS_LABEL: Record<string, string> = {
     cancelled: "Cancelled",
 };
 
-const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: number }) => {
+/* ==========================================================================
+   VEDIC VIVAH — the family's booking, in full
+   --------------------------------------------------------------------------
+   A vivah is not one appointment, so this card is not one line. It shows the
+   whole journey: every ceremony with its own date, who is performing it, what
+   is already done, what is still to come, and exactly what has been paid.
+
+   It also keeps itself current. Ops assign a Pandit Ji, tick rituals off and
+   move dates hours after a family books — if the card only rendered whatever
+   the page happened to fetch on load, the family would be reading a snapshot
+   and calling us to ask what changed. So it re-reads while the tab is open.
+   ========================================================================== */
+
+/** "12/03/2027" → "12 Mar 2027". Anything unparseable comes back untouched. */
+const prettyVivahDate = (ddmmyyyy?: string): string => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(ddmmyyyy || "").trim());
+    if (!m) return String(ddmmyyyy || "");
+    const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    if (Number.isNaN(d.getTime())) return ddmmyyyy as string;
+    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+/** "19:30" → "7:30 PM". Empty in, empty out. */
+const prettyVivahTime = (hhmm?: string): string => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || "").trim());
+    if (!m) return "";
+    const h = Number(m[1]);
+    const suffix = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${m[2]} ${suffix}`;
+};
+
+const vivahDateValue = (ddmmyyyy?: string): number => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(ddmmyyyy || "").trim());
+    if (!m) return Number.POSITIVE_INFINITY; // undated rituals sort last
+    return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])).getTime();
+};
+
+/**
+ * One plain sentence telling the family what is happening right now. This is
+ * the "constant update" a booking screen owes someone who has paid us to run
+ * their wedding — not just a coloured status pill.
+ */
+const vivahNarrative = (b: any): string => {
+    if (b?.status === "cancelled") return "This booking is cancelled. Any refund due is being processed.";
+    if (b?.status === "completed") return "Every ritual is complete. Thank you for letting us be part of it 🙏";
+    const total = Number(b?.totalAmount || 0);
+    const paid = Number(b?.amountPaid || 0);
+    const steps: any[] = b?.selectedSteps || [];
+    const done = steps.filter((s) => s?.completed).length;
+    if (b?.status === "lead" || !b?.isPaymentDone)
+        return "Our Vivah desk will call you on WhatsApp to confirm the details and the muhurat.";
+    if (!b?.panditAssigned?.name && !(b?.assignedPandits || []).length)
+        return "Payment received. We're matching a verified Pandit Ji for your dates — you'll see them here.";
+    if (done > 0 && done < steps.length)
+        return `${done} of ${steps.length} ceremonies are done. Your Pandit Ji marks each one as it completes.`;
+    if (paid < total)
+        return "Your Pandit Ji is assigned. The balance is due before the ceremony — you can pay it here any time.";
+    return "Everything is confirmed and fully paid. Your Pandit Ji will reach out before each ritual.";
+};
+
+const VivahBookingCard = ({
+    booking: initial,
+    index,
+    onRefresh,
+    refreshing,
+    lastSyncedAt,
+}: {
+    booking: any;
+    index: number;
+    onRefresh?: () => void;
+    refreshing?: boolean;
+    lastSyncedAt?: number;
+}) => {
     const [booking, setBooking] = useState<any>(initial);
     const [busy, setBusy] = useState<null | "balance" | "cancel">(null);
     const [note, setNote] = useState("");
+    const [noteTone, setNoteTone] = useState<"good" | "bad">("good");
+    const [showAll, setShowAll] = useState(false);
+
+    /**
+     * Adopt whatever the poller brought in — unless this card is mid-payment,
+     * where replacing state under an open Razorpay sheet would strand the
+     * handler on a stale booking id.
+     */
+    useEffect(() => {
+        if (busy) return;
+        setBooking((prev: any) =>
+            prev?.updatedAt === initial?.updatedAt && prev?.status === initial?.status
+                ? prev
+                : initial
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initial]);
 
     const total = Number(booking.totalAmount || 0);
     const paid = Number(booking.amountPaid || 0);
     const balance = Math.max(0, total - paid);
     const isCancelled = booking.status === "cancelled";
     const isCompleted = booking.status === "completed";
+    const paidPct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
 
-    const eventDate = booking.needMuhuratHelp && !booking.eventDate
+    const ceremony = booking.needMuhuratHelp && !booking.eventDate
         ? "Pandit Ji will suggest"
-        : `${booking.eventDate || "—"}${booking.eventTime ? `, ${booking.eventTime}` : ""}`;
+        : `${prettyVivahDate(booking.eventDate) || "—"}${
+              booking.eventTime ? `, ${prettyVivahTime(booking.eventTime)}` : ""
+          }`;
 
     const createdOn = booking.createdAt
         ? new Date(booking.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
@@ -2058,8 +2247,38 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
             ? "Sampooran Vivah (Complete Package)"
             : (booking.selectedSteps || []).map((s: any) => s.title).join(", ") || "Vedic Vivah";
 
-    const steps: any[] = booking.selectedSteps || [];
+    /** Rituals in the order they will actually happen — dated ones first. */
+    const steps: any[] = useMemo(() => {
+        const list = [...(booking.selectedSteps || [])];
+        return list.sort((a, b) => vivahDateValue(a?.scheduledDate) - vivahDateValue(b?.scheduledDate));
+    }, [booking.selectedSteps]);
+
     const doneCount = steps.filter((s) => s.completed).length;
+    /** The next ceremony coming up — the one thing a family looks for first. */
+    const nextIdx = steps.findIndex((s) => !s.completed);
+    const visibleSteps = showAll ? steps : steps.slice(0, 4);
+
+    const pandits: any[] = (booking.assignedPandits || []).filter((p: any) => p?.name);
+    const gifts: any[] = (booking.packageGifts || []).filter((g: any) => g?.title);
+    const venue = [booking.address?.street, booking.address?.city, booking.address?.state, booking.address?.pincode]
+        .filter(Boolean)
+        .join(", ");
+    const ref = String(booking._id || "").slice(-6).toUpperCase();
+
+    const say = (text: string, tone: "good" | "bad" = "good") => {
+        setNoteTone(tone);
+        setNote(text);
+    };
+
+    const whatsappUs = () => {
+        const msg =
+            `Namaste 🙏 I'd like an update on my Vedic Vivah booking.\n\n` +
+            `Booking: ${ref}\n` +
+            `Name: ${booking.devoteeName || ""}\n` +
+            `Selection: ${selection}\n` +
+            `Ceremony: ${ceremony}`;
+        window.open(`https://wa.me/919056955311?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+    };
 
     const payBalance = async () => {
         setNote("");
@@ -2101,11 +2320,21 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
                             },
                             { headers: { Authorization: `Bearer ${token}` } }
                         );
-                        if (!data?.success) throw new Error(data?.message || "Verification failed.");
+                        if (!data?.success) throw new Error(data?.message || "");
                         setBooking(data.booking || { ...booking, amountPaid: total, paymentOption: "full" });
-                        setNote("Payment complete 🙏 Your Vivah booking is fully settled.");
+                        say("Payment complete 🙏 Your Vivah booking is fully settled.");
+                        onRefresh?.();
                     } catch (e: any) {
-                        setNote(e?.response?.data?.message || e?.message || "Payment verification failed.");
+                        // The money is already captured on this path, so lead
+                        // with that before explaining anything else.
+                        say(
+                            `Your payment went through — we just couldn't record it yet. Your money is safe and ` +
+                            `our team will confirm it shortly. (${humanError(
+                                e?.response?.data?.message || e,
+                                "balance-complete"
+                            )})`,
+                            "bad"
+                        );
                     } finally {
                         setBusy(null);
                     }
@@ -2113,12 +2342,13 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
                 modal: { ondismiss: () => setBusy(null) },
             });
             rzp.on("payment.failed", (r: any) => {
-                setNote(r?.error?.description || "Payment failed. Please try again.");
+                say(humanPaymentError(r), "bad");
                 setBusy(null);
             });
             rzp.open();
         } catch (e: any) {
-            setNote(e?.response?.data?.message || e?.message || "Something went wrong.");
+            // Nothing charged here — the gateway never opened.
+            say(humanError(e?.response?.data?.message || e, "balance-order"), "bad");
             setBusy(null);
         }
     };
@@ -2134,19 +2364,29 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
                 { reason: "Cancelled by the family from My Bookings" },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            if (!data?.success) throw new Error(data?.message || "Could not cancel.");
+            if (!data?.success) throw new Error(data?.message || "");
             setBooking(data.booking || { ...booking, status: "cancelled" });
-            setNote(
+            say(
                 Number(data?.refund?.amount) > 0
-                    ? `Cancelled. A refund of ₹${data.refund.amount} (${data.refund.pct}%) will be processed in 5–7 days.`
+                    ? `Cancelled. A refund of ₹${Number(data.refund.amount).toLocaleString("en-IN")} (${data.refund.pct}%) will reach you in 5–7 days.`
                     : "Cancelled. As per the policy no refund is available at this stage."
             );
+            onRefresh?.();
         } catch (e: any) {
-            setNote(e?.response?.data?.message || e?.message || "Could not cancel this booking.");
+            say(humanError(e?.response?.data?.message || e, "cancel"), "bad");
         } finally {
             setBusy(null);
         }
     };
+
+    const syncedLabel = (() => {
+        if (refreshing) return "Updating…";
+        if (!lastSyncedAt) return "";
+        const secs = Math.max(0, Math.round((Date.now() - lastSyncedAt) / 1000));
+        if (secs < 60) return "Updated just now";
+        const mins = Math.round(secs / 60);
+        return `Updated ${mins} min${mins > 1 ? "s" : ""} ago`;
+    })();
 
     return (
         <motion.div
@@ -2155,11 +2395,17 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
             transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
             className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
         >
+            {/* ── Header ── */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="text-lg">💍</span>
                         <h3 className="font-bold text-gray-800 text-sm truncate">Vedic Vivah Sanskar</h3>
+                        {ref && (
+                            <span className="text-[8.5px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 border border-gray-100 rounded-full px-1.5 py-0.5">
+                                #{ref}
+                            </span>
+                        )}
                         {booking.platform === "web" && (
                             <span className="text-[8.5px] font-bold uppercase tracking-wider text-stone-400 border border-stone-200 rounded-full px-1.5 py-0.5">
                                 Web
@@ -2173,41 +2419,200 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
                 </span>
             </div>
 
-            {/* Assigned Pandit Ji */}
-            {booking.panditAssigned?.name && (
-                <div className="mt-3 bg-orange-50/40 p-2.5 rounded-xl border border-orange-100/40 flex items-center gap-2.5">
-                    {booking.panditAssigned.photo ? (
-                        <img src={booking.panditAssigned.photo} alt="" className="w-9 h-9 rounded-full object-cover" />
-                    ) : (
-                        <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-[13px]">🙏</div>
-                    )}
-                    <div className="min-w-0">
-                        <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider">Your Pandit Ji</p>
-                        <p className="text-xs font-bold text-gray-700 truncate">{booking.panditAssigned.name}</p>
-                    </div>
+            {/* ── What's happening right now ── */}
+            <div className="mt-3 flex items-start gap-2 bg-orange-50/50 border border-orange-100/50 rounded-xl px-3 py-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF7000] shrink-0 mt-0.5" />
+                <p className="text-[11.5px] text-gray-600 leading-relaxed flex-1">{vivahNarrative(booking)}</p>
+            </div>
+
+            {/* ── Muhurat ── */}
+            {booking.selectedMuhurat?.date && (
+                <div className="mt-3 flex items-center gap-2 flex-wrap text-[10.5px]">
+                    <span className="font-bold text-[#FF7000] bg-orange-50 border border-orange-100 rounded-full px-2 py-0.5">
+                        Shubh Muhurat
+                    </span>
+                    <span className="text-gray-500">
+                        {prettyVivahDate(booking.selectedMuhurat.date)}
+                        {booking.selectedMuhurat.day ? ` · ${booking.selectedMuhurat.day}` : ""}
+                        {booking.selectedMuhurat.tithi ? ` · ${booking.selectedMuhurat.tithi}` : ""}
+                        {booking.selectedMuhurat.nakshatra ? ` · ${booking.selectedMuhurat.nakshatra}` : ""}
+                    </span>
                 </div>
             )}
 
-            {/* Ritual progress */}
+            {/* ── Pandit Ji (single legacy field + the real area-wise team) ── */}
+            {(booking.panditAssigned?.name || pandits.length > 0) && (
+                <div className="mt-3 bg-orange-50/40 p-2.5 rounded-xl border border-orange-100/40 space-y-2">
+                    <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider">
+                        {pandits.length > 1 ? "Your Pandit Ji team" : "Your Pandit Ji"}
+                    </p>
+                    {booking.panditAssigned?.name && (
+                        <div className="flex items-center gap-2.5">
+                            {booking.panditAssigned.photo ? (
+                                <img src={booking.panditAssigned.photo} alt="" className="w-9 h-9 rounded-full object-cover" />
+                            ) : (
+                                <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-[13px]">🙏</div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-700 truncate">{booking.panditAssigned.name}</p>
+                                {(booking.panditAssigned.title || booking.panditAssigned.experienceYears) && (
+                                    <p className="text-[10px] text-gray-400 truncate">
+                                        {[
+                                            booking.panditAssigned.title,
+                                            booking.panditAssigned.experienceYears
+                                                ? `${booking.panditAssigned.experienceYears} yrs`
+                                                : "",
+                                        ].filter(Boolean).join(" · ")}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {pandits.map((p: any, i: number) => (
+                        <div key={p.panditId || i} className="flex items-center gap-2.5">
+                            {p.photo ? (
+                                <img src={p.photo} alt="" className="w-9 h-9 rounded-full object-cover" />
+                            ) : (
+                                <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-[13px]">🙏</div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-700 truncate">{p.name}</p>
+                                <p className="text-[10px] text-gray-400 capitalize">{p.role || "lead"}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ── The journey: every ceremony on its own date ── */}
             {steps.length > 0 && (
-                <div className="mt-3">
-                    <div className="flex items-center justify-between mb-1">
-                        <p className="text-[9px] text-gray-400 uppercase font-semibold">Ritual progress</p>
-                        <p className="text-[10px] font-bold text-gray-600">{doneCount} / {steps.length}</p>
+                <div className="mt-3.5">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-[9px] text-gray-400 uppercase font-semibold">Ritual schedule</p>
+                        <p className="text-[10px] font-bold text-gray-600">{doneCount} / {steps.length} done</p>
                     </div>
-                    <div className="h-1.5 rounded-full bg-orange-50 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-orange-50 overflow-hidden mb-2.5">
                         <div
                             className="h-full bg-gradient-to-r from-[#E25800] to-[#FF8A2B] rounded-full transition-all"
                             style={{ width: `${steps.length ? (doneCount / steps.length) * 100 : 0}%` }}
                         />
                     </div>
+
+                    <div className="space-y-1.5">
+                        {visibleSteps.map((s: any, i: number) => {
+                            const isNext = !isCancelled && steps.indexOf(s) === nextIdx;
+                            return (
+                                <div
+                                    key={s.stepId || i}
+                                    className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 border ${
+                                        s.completed
+                                            ? "bg-emerald-50/50 border-emerald-100/60"
+                                            : isNext
+                                                ? "bg-orange-50/60 border-orange-200/70"
+                                                : "bg-gray-50/60 border-gray-100"
+                                    }`}
+                                >
+                                    <span
+                                        className={`w-4 h-4 rounded-full shrink-0 flex items-center justify-center ${
+                                            s.completed ? "bg-emerald-500" : isNext ? "bg-[#FF7000]" : "bg-gray-200"
+                                        }`}
+                                    >
+                                        {s.completed && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3.5} />}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[11.5px] font-semibold text-gray-700 truncate">{s.title}</p>
+                                        <p className="text-[10px] text-gray-400">
+                                            {s.scheduledDate
+                                                ? `${prettyVivahDate(s.scheduledDate)}${
+                                                      s.scheduledTime ? `, ${prettyVivahTime(s.scheduledTime)}` : ""
+                                                  }`
+                                                : "Date to be planned with you"}
+                                        </p>
+                                    </div>
+                                    {s.completed ? (
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 shrink-0">
+                                            Done
+                                        </span>
+                                    ) : isNext ? (
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#FF7000] shrink-0">
+                                            Next
+                                        </span>
+                                    ) : null}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {steps.length > 4 && (
+                        <button
+                            onClick={() => setShowAll((v) => !v)}
+                            className="mt-2 text-[10.5px] font-bold text-[#FF7000]"
+                        >
+                            {showAll ? "Show less" : `Show all ${steps.length} rituals`}
+                        </button>
+                    )}
                 </div>
             )}
 
+            {/* ── Inclusions ── */}
+            {(booking.kashiPandit?.invited || booking.liveDarshanTemple?.name || booking.language || booking.samagriNeeded) && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                    {booking.kashiPandit?.invited && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5">
+                            <ShieldCheck className="w-3 h-3" /> Kashi Acharya
+                        </span>
+                    )}
+                    {booking.liveDarshanTemple?.name && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">
+                            <Landmark className="w-3 h-3" /> {booking.liveDarshanTemple.name}
+                        </span>
+                    )}
+                    {booking.samagriNeeded && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">
+                            <Package className="w-3 h-3" /> Samagri included
+                        </span>
+                    )}
+                    {booking.language && (
+                        <span className="text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 rounded-full px-2 py-0.5">
+                            {booking.language}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* ── Free gifts ── */}
+            {gifts.length > 0 && (
+                <div className="mt-3">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold mb-1.5">
+                        Gifts included ({gifts.length})
+                    </p>
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                        {gifts.map((g: any, i: number) => (
+                            <div key={i} className="shrink-0 w-[64px]">
+                                {g.image ? (
+                                    <img
+                                        src={g.image}
+                                        alt={g.title}
+                                        loading="lazy"
+                                        className="w-[64px] h-[64px] rounded-xl object-cover border border-orange-100"
+                                    />
+                                ) : (
+                                    <div className="w-[64px] h-[64px] rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
+                                        <Gift className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                )}
+                                <p className="text-[8.5px] text-gray-500 mt-1 leading-tight line-clamp-2">{g.title}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Where and when ── */}
             <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50">
                 <div>
                     <p className="text-[9px] text-gray-400 uppercase font-semibold">Ceremony</p>
-                    <p className="text-xs font-bold text-gray-700">{eventDate}</p>
+                    <p className="text-xs font-bold text-gray-700">{ceremony}</p>
                 </div>
                 <div className="text-right">
                     <p className="text-[9px] text-gray-400 uppercase font-semibold">Requested On</p>
@@ -2215,31 +2620,56 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
                 </div>
             </div>
 
-            <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-orange-50/50">
-                <span className="text-[10px] text-gray-400 font-medium">
-                    Paid: <span className="text-gray-600 font-bold">₹{paid.toLocaleString("en-IN")}</span>
-                    {balance > 0 && !isCancelled && (
-                        <> · Balance: <span className="text-[#FF7000] font-bold">₹{balance.toLocaleString("en-IN")}</span></>
-                    )}
-                </span>
-                <div className="flex items-center gap-1 text-[#FF7000]">
-                    <span className="text-[10px] font-bold text-gray-400">Total:</span>
-                    <span className="text-sm font-black">₹{total.toLocaleString("en-IN")}</span>
+            {venue && (
+                <div className="mt-2 flex items-start gap-1.5">
+                    <MapPin className="w-3 h-3 text-gray-300 shrink-0 mt-0.5" />
+                    <p className="text-[10.5px] text-gray-500 leading-snug">{venue}</p>
                 </div>
+            )}
+
+            {/* ── Money ── */}
+            <div className="mt-3.5 pt-3 border-t border-orange-50/50">
+                <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-gray-400 font-medium">
+                        Paid: <span className="text-gray-600 font-bold">₹{paid.toLocaleString("en-IN")}</span>
+                        {balance > 0 && !isCancelled && (
+                            <> · Balance: <span className="text-[#FF7000] font-bold">₹{balance.toLocaleString("en-IN")}</span></>
+                        )}
+                    </span>
+                    <div className="flex items-center gap-1 text-[#FF7000]">
+                        <span className="text-[10px] font-bold text-gray-400">Total:</span>
+                        <span className="text-sm font-black">₹{total.toLocaleString("en-IN")}</span>
+                    </div>
+                </div>
+                {total > 0 && !isCancelled && (
+                    <div className="h-1 rounded-full bg-gray-100 overflow-hidden mt-2">
+                        <div
+                            className="h-full bg-emerald-400 rounded-full transition-all"
+                            style={{ width: `${paidPct}%` }}
+                        />
+                    </div>
+                )}
             </div>
 
-            {/* Actions */}
-            {!isCancelled && !isCompleted && (
-                <div className="flex gap-2 mt-3">
-                    {balance > 0 && booking.isPaymentDone && (
-                        <button
-                            onClick={payBalance}
-                            disabled={busy !== null}
-                            className="flex-1 bg-gradient-to-r from-[#E25800] to-[#FF8A2B] text-white text-[11.5px] font-bold py-2.5 rounded-xl disabled:opacity-60 active:scale-95 transition-transform"
-                        >
-                            {busy === "balance" ? "Opening…" : `Pay balance ₹${balance.toLocaleString("en-IN")}`}
-                        </button>
-                    )}
+            {/* ── Actions ── */}
+            <div className="flex gap-2 mt-3">
+                {!isCancelled && !isCompleted && balance > 0 && booking.isPaymentDone && (
+                    <button
+                        onClick={payBalance}
+                        disabled={busy !== null}
+                        className="flex-1 bg-gradient-to-r from-[#E25800] to-[#FF8A2B] text-white text-[11.5px] font-bold py-2.5 rounded-xl disabled:opacity-60 active:scale-95 transition-transform"
+                    >
+                        {busy === "balance" ? "Opening…" : `Pay balance ₹${balance.toLocaleString("en-IN")}`}
+                    </button>
+                )}
+                <button
+                    onClick={whatsappUs}
+                    className="flex-1 flex items-center justify-center gap-1.5 border border-emerald-200 text-emerald-700 text-[11.5px] font-bold py-2.5 rounded-xl active:scale-95 transition-transform"
+                >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    Ask for an update
+                </button>
+                {!isCancelled && !isCompleted && (
                     <button
                         onClick={cancelBooking}
                         disabled={busy !== null}
@@ -2247,8 +2677,8 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
                     >
                         {busy === "cancel" ? "Cancelling…" : "Cancel booking"}
                     </button>
-                </div>
-            )}
+                )}
+            </div>
 
             {isCancelled && Number(booking.cancellation?.refundAmount) > 0 && (
                 <p className="mt-3 text-[11px] text-stone-500">
@@ -2258,9 +2688,33 @@ const VivahBookingCard = ({ booking: initial, index }: { booking: any; index: nu
             )}
 
             {note && (
-                <p className="mt-3 text-[11.5px] text-stone-600 bg-stone-50 border border-stone-100 rounded-xl px-3 py-2">
+                <p
+                    role="alert"
+                    className={`mt-3 text-[11.5px] rounded-xl px-3 py-2 border ${
+                        noteTone === "bad"
+                            ? "text-red-700 bg-red-50 border-red-100"
+                            : "text-emerald-700 bg-emerald-50 border-emerald-100"
+                    }`}
+                >
                     {note}
                 </p>
+            )}
+
+            {/* ── Freshness ── */}
+            {(syncedLabel || onRefresh) && (
+                <div className="mt-3 pt-2.5 border-t border-orange-50/50 flex items-center justify-between">
+                    <span className="text-[9.5px] text-gray-300">{syncedLabel}</span>
+                    {onRefresh && (
+                        <button
+                            onClick={onRefresh}
+                            disabled={!!refreshing}
+                            className="inline-flex items-center gap-1 text-[9.5px] font-bold text-gray-400 disabled:opacity-50"
+                        >
+                            <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+                            Refresh
+                        </button>
+                    )}
+                </div>
             )}
         </motion.div>
     );

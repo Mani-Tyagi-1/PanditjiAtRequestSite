@@ -157,11 +157,26 @@ const relayNudge = async (body: Record<string, any>): Promise<boolean> => {
    (collection `vivah_catalog`, edited in VedicSuperAdmin). The client never
    decides the price; we always recompute from the catalog by `slug`.
    ============================================================================ */
-type IncomingStep = { stepId?: string; id?: string };
+type IncomingStep = {
+  stepId?: string;
+  id?: string;
+  /** Date the family chose for THIS ritual (DD/MM/YYYY). "" = we schedule it. */
+  scheduledDate?: string;
+  /** Time the family chose for THIS ritual (HH:mm). */
+  scheduledTime?: string;
+};
 type IncomingAddOn = { shopifyProductId?: string; id?: string; qty?: number };
 
 type BuiltSteps = {
-  steps: { stepId: string; title: string; price: number; samagriPrice: number; completed: boolean }[];
+  steps: {
+    stepId: string;
+    title: string;
+    price: number;
+    samagriPrice: number;
+    completed: boolean;
+    scheduledDate: string;
+    scheduledTime: string;
+  }[];
   baseAmount: number;
   samagriAmount: number;
   total: number; // rituals/package total (add-ons are layered on separately)
@@ -182,12 +197,69 @@ type BuiltAddOns = {
  * - Individual rituals → sum the selected catalog rows.
  * Samagri cost is added ONLY when the family asks us to arrange samagri.
  */
+/**
+ * Per-ritual scheduling
+ * ---------------------------------------------------------------------------
+ * A Vedic vivah is not one appointment — Kundali Milan happens months before
+ * the wedding, Tilak/Shagun a few days before, the Vivah Sanskar on the day
+ * itself and Mandir Darshan after. So the family gives us a date PER RITUAL,
+ * not one date for the whole booking.
+ *
+ * These are accepted for every pricing branch (package, sampooran and
+ * a-la-carte) because a package's rituals are derived from the catalog rather
+ * than from the request body — without a lookup keyed by slug, a family who
+ * bought a package could never date their own ceremonies.
+ *
+ * Blank is legitimate and means "our team will fix this with you", so nothing
+ * is rejected here; the values are only sanitised.
+ */
+const cleanSchedDate = (v: unknown): string => {
+  const raw = String(v ?? "").trim();
+  // DD/MM/YYYY only — anything else is dropped rather than half-stored.
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+  if (!m) return "";
+  const [, dd, mm, yyyy] = m;
+  const d = Number(dd), mo = Number(mm), y = Number(yyyy);
+  if (d < 1 || d > 31 || mo < 1 || mo > 12 || y < 2000 || y > 2100) return "";
+  return raw;
+};
+
+const cleanSchedTime = (v: unknown): string => {
+  const raw = String(v ?? "").trim();
+  const m = /^(\d{1,2}):(\d{2})$/.exec(raw);
+  if (!m) return "";
+  const h = Number(m[1]), mi = Number(m[2]);
+  if (h < 0 || h > 23 || mi < 0 || mi > 59) return "";
+  return `${String(h).padStart(2, "0")}:${m[2]}`;
+};
+
+/** stepId → {scheduledDate, scheduledTime} taken from whatever the client sent. */
+const scheduleFromBody = (
+  selectedSteps: IncomingStep[]
+): Record<string, { scheduledDate: string; scheduledTime: string }> => {
+  const out: Record<string, { scheduledDate: string; scheduledTime: string }> = {};
+  for (const s of selectedSteps || []) {
+    const id = String(s?.stepId || s?.id || "").trim();
+    if (!id) continue;
+    out[id] = {
+      scheduledDate: cleanSchedDate(s?.scheduledDate),
+      scheduledTime: cleanSchedTime(s?.scheduledTime),
+    };
+  }
+  return out;
+};
+
 const buildSteps = (
   selectedSteps: IncomingStep[],
   catalog: NormalisedCatalog,
   opts: { samagriNeeded: boolean; isSampooranPackage: boolean; packageId?: string }
 ): BuiltSteps => {
   const samagriNeeded = opts.samagriNeeded;
+  // Built once and applied to EVERY branch below, so a package booking can
+  // carry the family's per-ritual dates just as an a-la-carte one does.
+  const plan = scheduleFromBody(selectedSteps);
+  const planFor = (slug: string) =>
+    plan[slug] || { scheduledDate: "", scheduledTime: "" };
 
   const packageId = String(opts.packageId || "").trim();
   if (packageId) {
@@ -203,6 +275,7 @@ const buildSteps = (
           price: r.price || 0,
           samagriPrice: r.samagriPrice || 0,
           completed: false,
+          ...planFor(r.slug),
         }));
       const baseAmount = pkg.price || 0; // all-inclusive (samagri + pandits + gifts)
       return {
@@ -226,6 +299,7 @@ const buildSteps = (
         price: r.price || 0,
         samagriPrice: r.samagriPrice || 0,
         completed: false,
+        ...planFor(r.slug),
       }));
     const baseAmount = catalog.sampooranVivah?.packagePrice || 0;
     const samagriAmount = samagriNeeded ? catalog.sampooranVivah?.samagriPrice || 0 : 0;
@@ -252,6 +326,7 @@ const buildSteps = (
       price: ritual.price || 0,
       samagriPrice: ritual.samagriPrice || 0,
       completed: false,
+      ...planFor(stepId),
     });
   }
   const baseAmount = steps.reduce((sum, s) => sum + s.price, 0);

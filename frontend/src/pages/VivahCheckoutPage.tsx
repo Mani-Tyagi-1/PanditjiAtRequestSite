@@ -55,7 +55,6 @@ import {
   VivahAuthError,
   pixelVivahInitiateCheckout,
   pixelVivahLead,
-  pixelVivahPurchase,
   reportPaymentAbandoned,
 } from "../data/vivahApi";
 import { sessionToken } from "../data/vivahApi";
@@ -816,7 +815,7 @@ export default function VivahCheckoutPage() {
       if (!verifyRes.ok || verifyData?.success !== true) {
         throw new Error(verifyData?.message || "Payment verification failed.");
       }
-      pixelVivahPurchase(receipt.razorpayOrderId, receipt.amount, selectionLabel);
+      // Purchase conversion intentionally NOT tracked for Vedic Vivah Sanskar.
       setPendingVerification(null);
       setChargedAmount(receipt.amount);
       setError("");

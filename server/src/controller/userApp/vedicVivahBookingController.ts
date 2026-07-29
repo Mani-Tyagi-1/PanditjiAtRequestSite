@@ -45,7 +45,6 @@ import {
   sendOrderConfirmationTemplate,
   ORDER_TEMPLATE_HEADER_IMAGE,
 } from "../../utils/whatsapp";
-import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 
 /** Stamped on every document written by this (website) server. */
@@ -1060,23 +1059,8 @@ export const completeVedicVivahPayment: RequestHandler = async (req, res) => {
         productName: "VEDIC_VIVAH",
       });
 
-      // Meta CAPI Purchase — actionSource "website" (the app sends "app").
-      // eventId matches the browser pixel's eventID so Meta dedupes the pair.
-      sendMetaPurchaseEvent({
-        orderID: String(booking.razorpayOrderId),
-        value: Number(booking.amountPaid),
-        currency: "INR",
-        contentId: "VEDIC_VIVAH",
-        actionSource: "website",
-        eventId: `vivah_purchase_${String(booking.razorpayOrderId)}`,
-        phone: booking.whatsapp ? String(booking.whatsapp) : null,
-        email: (booking as any).email ? String((booking as any).email) : null,
-        externalId: booking.userId ? String(booking.userId) : null,
-        clientIp: req.ip || null,
-        userAgent: (req.headers["user-agent"] as string) || null,
-      }).catch((err) =>
-        console.error("[MetaCAPI] Vivah Purchase event failed:", err?.message || err)
-      );
+      // NOTE: Meta CAPI Purchase conversion intentionally NOT sent for Vedic
+      // Vivah Sanskar — no purchase conversion is tracked for this flow.
     }
 
     // Converted → drop the abandonment nudge on the app server.
@@ -1471,21 +1455,8 @@ export const completeVedicVivahBalancePayment: RequestHandler = async (req, res)
     await booking.save();
 
     if (!alreadySettled) {
-      sendMetaPurchaseEvent({
-        orderID: String(booking.balanceRazorpayOrderId || razorpayOrderId),
-        value: balancePaidNow,
-        currency: "INR",
-        contentId: "VEDIC_VIVAH_BALANCE",
-        actionSource: "website",
-        eventId: `vivah_balance_${String(booking.balanceRazorpayOrderId || razorpayOrderId)}`,
-        phone: booking.whatsapp ? String(booking.whatsapp) : null,
-        email: (booking as any).email ? String((booking as any).email) : null,
-        externalId: booking.userId ? String(booking.userId) : null,
-        clientIp: req.ip || null,
-        userAgent: (req.headers["user-agent"] as string) || null,
-      }).catch((err) =>
-        console.error("[MetaCAPI] Vivah Balance Purchase event failed:", err?.message || err)
-      );
+      // NOTE: Meta CAPI Purchase conversion intentionally NOT sent for Vedic
+      // Vivah Sanskar balance payments — no purchase conversion is tracked here.
 
       // 🟢 WhatsApp "balance received" (fire-and-forget)
       void vivahWhatsapp(

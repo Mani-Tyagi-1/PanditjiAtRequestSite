@@ -107,6 +107,116 @@ export const vivahFetch = async (url: string, init: RequestInit = {}): Promise<R
   return res;
 };
 
+/* ========================================================================== */
+/*                            HUMAN-READABLE ERRORS                           */
+/* ========================================================================== */
+
+/**
+ * Turn ANY failure into a sentence a family can act on.
+ *
+ * A wedding booking is not the place to read "TypeError: Failed to fetch" or
+ * "Order ID mismatch". Every raw string — a thrown JS error, a server message,
+ * a Razorpay code — is mapped here to plain language that says what happened
+ * and what to do next. Anything we don't recognise falls back to a warm,
+ * non-technical default rather than leaking internals.
+ *
+ * The real reason is still logged to the console for us.
+ */
+const SUPPORT = "call us on +91 90569 55311";
+
+/** Server/network strings → what the family should actually be told. */
+const HUMAN: { match: RegExp; say: string }[] = [
+  // ── Connectivity ──
+  {
+    match: /failed to fetch|networkerror|network request failed|load failed|fetch event|err_internet|err_connection|err_network|typeerror: cancelled/i,
+    say: `We couldn't reach our servers just now. Please check your internet and try again — or ${SUPPORT} and we'll book it for you.`,
+  },
+  { match: /timeout|timed out|aborted/i,
+    say: `That took longer than expected and we stopped it to be safe. Nothing has been charged — please try once more.` },
+
+  // ── Session ──
+  { match: /invalid or expired token|jwt|unauthorized|authorization header missing|token missing|user not found/i,
+    say: "Your session has expired. Please sign in again — everything you've filled in has been kept." },
+  { match: /not authorized/i,
+    say: "This booking belongs to a different account. Please sign in with the number you booked from." },
+
+  // ── Payments ──
+  { match: /payments are temporarily unavailable/i,
+    say: `Online payment is temporarily unavailable. Please request a callback below and our team will confirm your booking — or ${SUPPORT}.` },
+  { match: /payment sdk failed to load|razorpay/i,
+    say: "The secure payment window couldn't open. Please refresh the page and try again — nothing has been charged." },
+  { match: /payment verification failed|signature/i,
+    say: `We couldn't verify that payment with our bank. If money has left your account it is safe and will be confirmed or refunded — please ${SUPPORT} with your payment ID.` },
+  { match: /order id mismatch|missing payment completion details/i,
+    say: `Something didn't line up while confirming your payment. Your money is safe — please ${SUPPORT} and we'll settle it immediately.` },
+  { match: /invalid booking amount/i,
+    say: "We couldn't price this booking correctly. Please reload the page and choose your rituals again — you have not been charged." },
+  { match: /no balance is pending/i, say: "This booking is already fully paid — there's nothing left to pay." },
+  { match: /hasn't been confirmed yet/i,
+    say: "Please complete the advance payment first — the balance can be paid after that." },
+
+  // ── Booking state ──
+  { match: /booking not found/i,
+    say: `We couldn't find that booking. Please refresh My Bookings — or ${SUPPORT} and we'll look it up.` },
+  { match: /this booking is cancelled/i, say: "This booking has already been cancelled." },
+  { match: /missing required details/i,
+    say: "Some required details are missing. Please check the highlighted fields above and try again." },
+  { match: /name and a valid whatsapp number are required/i,
+    say: "Please enter your name and a valid 10-digit WhatsApp number." },
+
+  // ── Uploads ──
+  { match: /no file uploaded|failed to upload kundali|could not upload/i,
+    say: "That kundali image couldn't be uploaded. Please try a clear JPG or PNG under 25 MB." },
+
+  // ── Generic server faults ──
+  { match: /failed to create order|failed to submit request|failed to complete payment|failed to fetch catalog|failed to submit consultation|internal server error|500/i,
+    say: `Something went wrong at our end — not with your details. Please try again in a moment, or ${SUPPORT} and we'll complete the booking for you.` },
+];
+
+const GENERIC_FAILURE = `Something didn't go through just now. Please try again — or ${SUPPORT} and our team will complete your booking personally.`;
+
+/**
+ * @param err     the caught error (or a server `message` string)
+ * @param context short label for the console log, e.g. "create-order"
+ */
+export const humanError = (err: unknown, context = "vivah"): string => {
+  const raw =
+    typeof err === "string" ? err : (err as any)?.message ? String((err as any).message) : "";
+
+  // Keep the real cause for us, never for them.
+  if (raw) console.error(`[Vivah:${context}]`, err);
+
+  if (!raw) return GENERIC_FAILURE;
+
+  // A message we deliberately wrote for the family already reads well —
+  // these are full sentences ending in punctuation and free of jargon.
+  const alreadyHuman =
+    /[.!?]$/.test(raw.trim()) && raw.length > 40 && !/[{}<>]|error:|exception|undefined|null/i.test(raw);
+
+  const hit = HUMAN.find((h) => h.match.test(raw));
+  if (hit) return hit.say;
+  return alreadyHuman ? raw : GENERIC_FAILURE;
+};
+
+/** Razorpay's own failure payload → plain language. */
+export const humanPaymentError = (resp: any): string => {
+  const reason = String(resp?.error?.reason || "");
+  const desc = String(resp?.error?.description || "");
+  console.error("[Vivah:razorpay]", resp?.error || resp);
+
+  if (/insufficient/i.test(reason + desc))
+    return "The payment was declined for insufficient funds. Please try another method — nothing has been charged.";
+  if (/cancel/i.test(reason + desc))
+    return "The payment was cancelled. You can try again, or request a callback and pay later.";
+  if (/expired|invalid.*(card|vpa|upi)/i.test(reason + desc))
+    return "Those payment details were declined. Please check them or try another method.";
+  if (/international|not.*permitted|blocked/i.test(reason + desc))
+    return "Your bank declined this payment. Please try another card or UPI — or ask your bank to allow it.";
+  if (/timeout|timed out/i.test(reason + desc))
+    return "The payment timed out before your bank responded. Nothing has been charged — please try again.";
+  return `Your bank couldn't complete this payment. Nothing has been charged — please try another method, or ${SUPPORT}.`;
+};
+
 /** Bearer header for the logged-in family, or {} when signed out. */
 export const authHeaders = (): Record<string, string> => {
   const token = sessionToken();

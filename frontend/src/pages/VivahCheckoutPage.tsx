@@ -48,6 +48,8 @@ import {
   currentUser,
   hasValidSession,
   jsonHeaders,
+  humanError,
+  humanPaymentError,
   loadRazorpay,
   vivahFetch,
   VivahAuthError,
@@ -646,7 +648,7 @@ export default function VivahCheckoutPage() {
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok || !data?.url) {
-        throw new Error(data?.message || "Could not upload the kundali. Please try again.");
+        throw new Error(data?.message || "Could not upload the kundali.");
       }
       if (side === "boy") {
         setKundaliBoyUrl(data.url);
@@ -660,7 +662,7 @@ export default function VivahCheckoutPage() {
         handleAuthLoss(null, e.message);
         return;
       }
-      setError(e?.message || "Could not upload the kundali.");
+      setError(humanError(e, "upload-kundali"));
     } finally {
       setUploadingSide(null);
     }
@@ -680,9 +682,9 @@ export default function VivahCheckoutPage() {
         headers: jsonHeaders(),
         body: JSON.stringify(buildPayload()),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.success !== true) {
-        throw new Error(data?.message || "Please try again.");
+        throw new Error(data?.message || "");
       }
       pixelVivahLead(selectionLabel);
       setSuccessType("lead");
@@ -691,7 +693,7 @@ export default function VivahCheckoutPage() {
         handleAuthLoss("lead", e.message);
         return;
       }
-      setError(e?.message || "Something went wrong. Please try again.");
+      setError(humanError(e, "create-lead"));
     } finally {
       setSubmitting(false);
     }
@@ -725,7 +727,7 @@ export default function VivahCheckoutPage() {
           razorpaySignature: receipt.razorpaySignature,
         }),
       });
-      const verifyData = await verifyRes.json();
+      const verifyData = await verifyRes.json().catch(() => ({}));
       if (!verifyRes.ok || verifyData?.success !== true) {
         throw new Error(verifyData?.message || "Payment verification failed.");
       }
@@ -751,9 +753,11 @@ export default function VivahCheckoutPage() {
         openLoginModal();
         return;
       }
+      // Money is captured. Whatever the cause, the family must hear that first.
       setError(
-        e?.message ||
-          "We couldn't confirm your payment just now. Your money is safe — tap “Confirm my payment” to try again."
+        `Your payment went through — we just couldn't record it yet. Your money is safe. ` +
+          `Tap “Confirm my payment” to finish; you will not be charged twice. ` +
+          `(${humanError(e, "complete-payment")})`
       );
     } finally {
       setSubmitting(false);
@@ -778,9 +782,9 @@ export default function VivahCheckoutPage() {
         headers: jsonHeaders(),
         body: JSON.stringify(buildPayload(payMode)),
       });
-      const orderData = await orderRes.json();
+      const orderData = await orderRes.json().catch(() => ({}));
       if (!orderRes.ok || orderData?.success !== true) {
-        throw new Error(orderData?.message || "Failed to start payment.");
+        throw new Error(orderData?.message || "Failed to create order");
       }
       createdBookingId = String(orderData.bookingId);
 
@@ -841,7 +845,7 @@ export default function VivahCheckoutPage() {
       });
 
       rzp.on("payment.failed", (resp: any) => {
-        setError(resp?.error?.description || "Payment failed. Please try again.");
+        setError(humanPaymentError(resp));
         setSubmitting(false);
       });
 
@@ -853,7 +857,7 @@ export default function VivahCheckoutPage() {
         handleAuthLoss("pay", e.message);
         return;
       }
-      setError(e?.message || "Something went wrong. Please try again.");
+      setError(humanError(e, "create-order"));
       setSubmitting(false);
     }
   };

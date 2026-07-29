@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, PhoneCall, Loader2 } from "lucide-react";
 import API_URL from "../../utils/apiConfig";
 import { VIVAH_CONSULT } from "../../data/vivahContent";
-import { currentUser, pixelVivahLead } from "../../data/vivahApi";
+import { currentUser, humanError, pixelVivahLead } from "../../data/vivahApi";
 
 /**
  * "Talk to a Pandit Ji — free" callback form.
@@ -87,16 +87,16 @@ export default function VivahConsultModal({
           },
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.success !== true) {
-        throw new Error(data?.message || "Please try again.");
+        throw new Error(data?.message || "");
       }
       pixelVivahLead("Free consultation");
       onSubmitted?.();
       onClose();
       setSuccess(true);
     } catch (e: any) {
-      setError(e?.message || "Could not send your request. Please try again.");
+      setError(humanError(e, "consultation"));
     } finally {
       setSubmitting(false);
     }

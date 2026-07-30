@@ -31,6 +31,30 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://panditjiatrequest.com/vedic-vivah</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://panditjiatrequest.com/vedic-vivah/package/shubh-vivah</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://panditjiatrequest.com/vedic-vivah/package/raj-vivah</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://panditjiatrequest.com/vedic-vivah/package/maharaja-vivah</loc>
+    <lastmod>2026-07-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://panditjiatrequest.com/all-pandits</loc>
     <lastmod>2026-07-30</lastmod>
     <changefreq>weekly</changefreq>

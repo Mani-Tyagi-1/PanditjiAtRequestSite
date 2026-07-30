@@ -20,6 +20,21 @@
   <link rel="icon" type="image/svg+xml"
     href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png" />
 
+  <!-- ═══════════════════════════════════════════════
+         TYPEFACES
+         Cormorant Garamond is referenced by name across the site (Vivah,
+         Chadhava, Savan, Kaal Bhairav, BookingModal…) but was never actually
+         loaded — those headings had all been falling back to Times New Roman.
+         Loading it here fixes every one of them. Inter is the body face for
+         the Vedic Vivah pages.
+    ═══════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+  />
+
   <!-- Preconnect to image CDNs for faster LCP -->
   <link rel="preconnect" href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com" crossorigin />
   <link rel="dns-prefetch" href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com" />
@@ -48,7 +63,9 @@
   <meta name="keywords"
     content="book pandit online, pandit for puja, pandit at home, Hindu puja booking, online pandit booking, Griha Pravesh pandit, Satyanarayan Katha, havan booking, katha booking, religious ceremony pandit, PanditJiAtRequest" />
   <meta name="author" content="PanditJiAtRequest" />
-  <link rel="canonical" href="https://panditjiatrequest.com/" />
+  <!-- No static canonical: each route sets its own via react-helmet-async.
+       A hardcoded one here would mark every page as a duplicate of the
+       homepage — two conflicting canonicals and crawlers may ignore both. -->
 
   <!-- ═══════════════════════════════════════════════
          OPEN GRAPH (Facebook / WhatsApp / LinkedIn)

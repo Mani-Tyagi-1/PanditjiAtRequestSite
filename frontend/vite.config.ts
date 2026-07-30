@@ -41,6 +41,10 @@ export default defineConfig(({ mode }) => {
     build: {
       // Target modern browsers — avoids legacy down-leveling / extra polyfills.
       target: "es2020",
+      // Emits dist/.vite/manifest.json so scripts/generate-route-shells.mjs can
+      // resolve a route's hashed chunk filename and modulepreload it, instead of
+      // guessing at chunk names that Rollup is free to change.
+      manifest: true,
       // Split stable vendor libs into their own chunks so they cache across
       // deploys and shrink the main entry chunk (build-only — no runtime change).
       rollupOptions: {

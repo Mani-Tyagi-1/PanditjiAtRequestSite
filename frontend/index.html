@@ -26,6 +26,15 @@
   <!-- Shopify CDN serves all shop product images (LCP on product pages) -->
   <link rel="preconnect" href="https://cdn.shopify.com" crossorigin />
   <link rel="dns-prefetch" href="https://cdn.shopify.com" />
+  <!-- Resizer origin for images served through src/utils/img.ts (optimizedImg) —
+       it fronts the LCP hero on the puja/chadhava detail pages, so pay the
+       DNS + TLS handshake up front rather than on first image request. -->
+  <link rel="preconnect" href="https://images.weserv.nl" crossorigin />
+  <link rel="dns-prefetch" href="https://images.weserv.nl" />
+  <!-- Home/blog hero. NOTE: index.html is the shell for EVERY route, so a
+       preload here is paid by every page. Routes with their own LCP hero get a
+       generated shell that strips this and preloads theirs instead — see
+       scripts/generate-route-shells.mjs. -->
   <link rel="preload" as="image"
     href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/poojaMainImage_1779258749947.webp"
     fetchpriority="high" />

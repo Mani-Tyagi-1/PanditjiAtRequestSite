@@ -1,0 +1,31 @@
+{
+  "_comment": [
+    "Responsive image sets for the Kashi Rudrabhishek Savan page, self-hosted from",
+    "public/hero/ and pre-encoded as WebP so nothing is resized at runtime.",
+    "",
+    "SINGLE SOURCE OF TRUTH. Read by two consumers that must agree exactly:",
+    "  1. src/pages/SavanPujaPage.tsx  -> the <img srcset/sizes>",
+    "  2. scripts/generate-route-shells.mjs -> the <link rel=preload imagesrcset/imagesizes>",
+    "A preload that resolves to a different candidate than the <img> makes the",
+    "browser download both, so these values are deliberately not duplicated in code.",
+    "",
+    "The hero renders in the max-w-md (448px) column, ~410x231 CSS px on a 412px",
+    "phone. The 448w candidate serves DPR-1 displays (~19 KB) and the 896w candidate",
+    "serves retina (~53 KB), instead of every device paying for 896w.",
+    "Regenerate with: node scripts/regenerate-hero-images.mjs"
+  ],
+  "hero": {
+    "src": "/hero/kashi-rudrabhishek-448.webp",
+    "srcSet": "/hero/kashi-rudrabhishek-448.webp 448w, /hero/kashi-rudrabhishek-896.webp 896w",
+    "sizes": "(max-width: 448px) 100vw, 448px",
+    "width": 448,
+    "height": 252
+  },
+  "mantraSide": {
+    "src": "/hero/trishul-88.webp",
+    "srcSet": "/hero/trishul-88.webp 88w, /hero/trishul-176.webp 176w",
+    "sizes": "88px",
+    "width": 88,
+    "height": 88
+  }
+}

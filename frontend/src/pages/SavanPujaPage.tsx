@@ -1,4 +1,4 @@
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Gift, Calendar, Sparkles,
@@ -11,6 +11,7 @@ import PujaEnquiryModal from "../components/booking/PujaEnquiryModal";
 import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG } from "../data/kashiMahadevPuja";
+import heroImages from "../data/savanHeroImages.json";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -21,7 +22,25 @@ function track(event: string, params?: Record<string, unknown>, custom = false) 
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-/** Decorative image flanking the mantra strip — mirrored on the left side. */
+/**
+ * Responsive image sets for this page, self-hosted from public/hero/ as
+ * pre-encoded WebP so nothing is resized at runtime.
+ *
+ * Deliberately SAME-ORIGIN rather than CDN or resizer URLs: the document has
+ * already paid DNS + TCP + TLS for this origin by the time the preload is
+ * parsed, so the hero reuses that live connection. A third-party origin would
+ * add ~3 round trips of pure latency in front of the LCP image and put a free
+ * proxy with no SLA on the critical path (see the note in src/utils/img.ts).
+ * nginx serves public/ out of dist/ with a 30-day cache via its `\.(webp)$`
+ * location block.
+ *
+ * The widths/sizes live in the JSON because the route-shell generator has to
+ * emit a preload that resolves to the identical candidate — see that file.
+ */
+const HERO = heroImages.hero;
+const MANTRA_SIDE = heroImages.mantraSide;
+
+/** CDN original — onError fallback if a self-hosted variant ever 404s. */
 const MANTRA_SIDE_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/trishul%20(1).png";
 
 /**
@@ -134,10 +153,36 @@ function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: Re
 
 function ReviewMarquee({ reviews }: { reviews: Review[] }) {
     const items = [...reviews, ...reviews]; // duplicated for a seamless loop
+
+    /**
+     * The marquee starts paused and only animates while it is actually on screen.
+     * It sits below the fold, so an infinite animation over 18 duplicated cards
+     * would otherwise run style & layout work during the load — competing with
+     * the hero for the main thread while nobody can even see it.
+     *
+     * The element stays mounted either way, so pausing costs no layout change
+     * (CLS stays 0); only `animation-play-state` toggles.
+     */
+    const trackRef = useRef<HTMLDivElement | null>(null);
+    const [inView, setInView] = useState(false);
+    useEffect(() => {
+        const el = trackRef.current;
+        if (!el || typeof IntersectionObserver === "undefined") {
+            setInView(true); // no observer support — just animate
+            return;
+        }
+        const io = new IntersectionObserver(
+            (entries) => setInView(entries.some((e) => e.isIntersecting)),
+            { rootMargin: "100px" }
+        );
+        io.observe(el);
+        return () => io.disconnect();
+    }, []);
+
     return (
         <div className="overflow-hidden -mx-4 px-4">
-            <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
-            <div className="review-track flex gap-2.5">
+            <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track.is-paused{animation-play-state:paused}.review-track:hover{animation-play-state:paused}`}</style>
+            <div ref={trackRef} className={`review-track flex gap-2.5${inView ? "" : " is-paused"}`}>
                 {items.map((r, i) => (
                     <div key={i} className="shrink-0 w-56 bg-white border border-[#DDEBE6] rounded-xl p-3 shadow-sm">
                         <div className="flex items-center gap-1.5">
@@ -173,6 +218,28 @@ export default function SavanPujaPage() {
     const [isSharing, setIsSharing] = useState(false);
     const [shareCopied, setShareCopied] = useState(false);
 
+    /**
+     * The rainfall is purely decorative, so it is mounted only after the page has
+     * painted. Measured with Lighthouse (mobile, simulated throttling): the 60
+     * always-animating drops cost ~2.1s of style & layout on the main thread
+     * (styleLayout 2712ms -> 611ms with them removed), because each drop is a
+     * compositing layer running an infinite transform animation. Paying that
+     * while the browser is still trying to render the hero delays first paint;
+     * paying it a beat later is invisible to the devotee.
+     */
+    const [showRain, setShowRain] = useState(false);
+    useEffect(() => {
+        const idle = (window as any).requestIdleCallback as
+            | ((cb: () => void, o?: { timeout: number }) => number)
+            | undefined;
+        if (idle) {
+            const id = idle(() => setShowRain(true), { timeout: 2000 });
+            return () => (window as any).cancelIdleCallback?.(id);
+        }
+        const t = setTimeout(() => setShowRain(true), 600);
+        return () => clearTimeout(t);
+    }, []);
+
     // ViewContent on load
     useEffect(() => {
         track("ViewContent", {
@@ -184,6 +251,8 @@ export default function SavanPujaPage() {
         });
     }, []);
 
+    // Origin CDN artwork — still used for og:image and as the hero's onError
+    // fallback; HERO holds the self-hosted, display-sized variants actually shown.
     const image = puja.poojaImages?.[0] || puja.poojaMainImage || puja.poojaCardImage;
     const price = puja.poojaPriceOnline;
     const reviews = seededReviews(pujaId, 9);
@@ -288,7 +357,9 @@ export default function SavanPujaPage() {
         {/* Page-wide rainfall. `fixed` so it keeps falling while the devotee
             scrolls, clipped to the max-w-md column, and pointer-events-none so
             it never intercepts a tap. z-30 sits above the cards but below the
-            sticky header and bottom CTA (both z-50), which stay fully crisp. */}
+            sticky header and bottom CTA (both z-50), which stay fully crisp.
+            Mounted after first paint — see the showRain note above. */}
+        {showRain && (
         <div className="savan-rain" aria-hidden="true">
           {SAVAN_RAINDROPS.map((d, i) => (
             <span
@@ -305,6 +376,7 @@ export default function SavanPujaPage() {
             />
           ))}
         </div>
+        )}
 
         <Helmet>
           <title>{`${puja.poojaNameEng} at ${puja.templeName}, Varanasi | Pandit Ji At Request`}</title>
@@ -312,8 +384,13 @@ export default function SavanPujaPage() {
             name="description"
             content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Rudrabhishek performed on your behalf at ${mandirName} on the first Savan Somwar, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
           />
-          {/* Preload the LCP hero (direct CDN webp) at highest priority. */}
-          <link rel="preload" as="image" href={image} fetchPriority="high" />
+          {/* No hero preload here on purpose. A React-rendered preload lands far
+              too late to help LCP anyway (it waits on the entry bundle + this
+              route's lazy chunk), and react-helmet-async does not reliably pass
+              through imagesrcset/imagesizes — so it could preload a different
+              srcset candidate than the <img> picks and download the hero twice.
+              The parser-discoverable preload in the generated route shell owns
+              this instead: scripts/generate-route-shells.mjs. */}
         </Helmet>
 
         <PujaEnquiryModal
@@ -363,10 +440,17 @@ export default function SavanPujaPage() {
 
         {/* ── Hero banner (the page-wide rain layer falls over this too) ── */}
         <div className="relative h-52 overflow-hidden bg-[#086B50]">
+          {/* srcSet/sizes let a DPR-1 phone take the 448w file (~19 KB) while
+              retina takes 896w (~53 KB), instead of every device paying for the
+              large one. The route shell's preload carries the same srcset so the
+              browser preloads whichever candidate this <img> will use. */}
           <img
-            src={image}
-            width={432}
-            height={192}
+            src={HERO.src}
+            srcSet={HERO.srcSet}
+            sizes={HERO.sizes}
+            onError={(e) => { e.currentTarget.srcset = ""; e.currentTarget.src = image; }}
+            width={HERO.width}
+            height={HERO.height}
             alt={puja.poojaNameEng}
             loading="eager"
             fetchPriority="high"
@@ -498,9 +582,16 @@ export default function SavanPujaPage() {
           <div className="relative rounded-2xl bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] px-16 py-3 text-center shadow-md">
             {MANTRA_SIDE_IMAGE && (
               <img
-                src={MANTRA_SIDE_IMAGE}
+                src={MANTRA_SIDE.src}
+                srcSet={MANTRA_SIDE.srcSet}
+                sizes={MANTRA_SIDE.sizes}
+                onError={(e) => { e.currentTarget.srcset = ""; e.currentTarget.src = MANTRA_SIDE_IMAGE; }}
+                width={MANTRA_SIDE.width}
+                height={MANTRA_SIDE.height}
                 alt=""
                 aria-hidden="true"
+                loading="lazy"
+                decoding="async"
                 className="pointer-events-none absolute left-1 top-1/2 -translate-y-1/2 w-22 h-22 object-contain -scale-x-100 drop-shadow-lg"
               />
             )}
@@ -512,9 +603,16 @@ export default function SavanPujaPage() {
             </p>
             {MANTRA_SIDE_IMAGE && (
               <img
-                src={MANTRA_SIDE_IMAGE}
+                src={MANTRA_SIDE.src}
+                srcSet={MANTRA_SIDE.srcSet}
+                sizes={MANTRA_SIDE.sizes}
+                onError={(e) => { e.currentTarget.srcset = ""; e.currentTarget.src = MANTRA_SIDE_IMAGE; }}
+                width={MANTRA_SIDE.width}
+                height={MANTRA_SIDE.height}
                 alt=""
                 aria-hidden="true"
+                loading="lazy"
+                decoding="async"
                 className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 w-22 h-22 object-contain drop-shadow-lg"
               />
             )}

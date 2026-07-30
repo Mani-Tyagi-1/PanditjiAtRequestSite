@@ -36,6 +36,45 @@ const COD_ENV_MINIMUM = Math.max(0, Number(import.meta.env.VITE_MINIMUM_COD_AMOU
 
 const FORM_ID = "shopify-cart-checkout-form";
 
+const RAZORPAY_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+
+/**
+ * Injects Razorpay's checkout SDK on demand, resolving once window.Razorpay is
+ * usable. Repeat calls share one in-flight promise, so opening the drawer
+ * several times never injects twice.
+ *
+ * Deliberately NOT called on mount. App.tsx renders this drawer outside
+ * <Routes>, so it mounts on every route — a mount-time injection therefore put
+ * ~59 KB of third-party JS (plus its main-thread cost) on the critical path of
+ * every page in the app, including landing pages that have no checkout at all.
+ * Loading on drawer-open still leaves the whole cart-review step before payment.
+ */
+let razorpayLoad: Promise<void> | null = null;
+function loadRazorpay(): Promise<void> {
+    if (typeof window === "undefined") return Promise.resolve();
+    if ((window as any).Razorpay) return Promise.resolve();
+    if (razorpayLoad) return razorpayLoad;
+
+    razorpayLoad = new Promise<void>((resolve, reject) => {
+        const fail = () => {
+            razorpayLoad = null; // let a later attempt retry
+            reject(new Error("Razorpay SDK failed to load"));
+        };
+        // Another page may have injected the same tag already; if so, wait on it
+        // rather than adding a duplicate.
+        const existing = document.querySelector<HTMLScriptElement>(`script[src="${RAZORPAY_SRC}"]`);
+        const script = existing ?? document.createElement("script");
+        script.addEventListener("load", () => resolve(), { once: true });
+        script.addEventListener("error", fail, { once: true });
+        if (!existing) {
+            script.src = RAZORPAY_SRC;
+            script.async = true;
+            document.body.appendChild(script);
+        }
+    });
+    return razorpayLoad;
+}
+
 export default function ShopifyCartDrawer() {
     const navigate = useNavigate();
     const { user, openLoginModal } = useAuth();
@@ -70,15 +109,13 @@ export default function ShopifyCartDrawer() {
     const checkoutSectionRef = useRef<HTMLDivElement | null>(null);
     const prevUserRef = useRef(user);
 
-    // Load Razorpay script
+    // Warm the Razorpay SDK as soon as the drawer opens, so it is ready by the
+    // time the devotee reaches the pay button. handleCheckoutSubmit awaits the
+    // same promise, so a fast submit still can't outrun the download.
     useEffect(() => {
-        const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-        if (existing) return;
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.async = true;
-        document.body.appendChild(script);
-    }, []);
+        if (!isOpen) return;
+        loadRazorpay().catch(() => { /* surfaced at submit time instead */ });
+    }, [isOpen]);
 
     // Reset transient state each time the drawer opens
     useEffect(() => {
@@ -246,6 +283,9 @@ export default function ShopifyCartDrawer() {
                 throw new Error(orderData.message || "Failed to initialize order.");
             }
 
+            // Normally already resolved by the drawer-open warm-up; awaiting here
+            // covers a submit that beats the download on a slow connection.
+            await loadRazorpay();
             const RazorpayCtor = (window as any).Razorpay;
             if (!RazorpayCtor) {
                 throw new Error("Razorpay payment SDK failed to load. Please refresh and try again.");

@@ -404,9 +404,18 @@ export const foldCoreCeremony = (list: Ritual[]): Ritual[] => {
   return [...head, merged];
 };
 
+/**
+ * The Vivah journey used to fold rituals 7+ into a single "Core Ceremony"
+ * card, which meant the admin could save 8 (or 12) rituals and the site would
+ * forever show 7 — reported as "only 7 are being fetched". Every active
+ * ritual now renders as its own medallion; the fold helper is kept exported
+ * only so nothing that imported it breaks.
+ */
+const unfolded = (list: Ritual[]): Ritual[] => list;
+
 /** Build the ordered, merged ritual list from a catalog shape (live or default). */
 export const buildRitualsFromCatalog = (catalog: { rituals?: any[] }): Ritual[] =>
-  foldCoreCeremony(
+  unfolded(
     (catalog.rituals || [])
       .filter((r: any) => r?.isActive !== false)
       .slice()

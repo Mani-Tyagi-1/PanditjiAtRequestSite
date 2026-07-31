@@ -91,9 +91,16 @@
 .viv {
   font-family: var(--font-body);
   color: var(--color-viv-ink);
-  /* A long unbroken string or an over-wide sticky bar must never make the
-     whole page pan sideways on a phone. */
-  overflow-x: hidden;
+  /* A long unbroken string must never make the page pan sideways on a phone.
+     `clip` (not `hidden`) — hidden turns this wrapper into a scroll container,
+     which silently kills the sticky header; clip only forbids overflow. */
+  overflow-x: clip;
+}
+
+/* Anchor jumps (header nav, footer quick links, /vedic-vivah#packages) must
+   land BELOW the sticky bar, not underneath it. */
+.viv :is(section, div)[id] {
+  scroll-margin-top: 84px;
 }
 
 .viv h1,
@@ -318,4 +325,125 @@
 /* Photographic backgrounds should never be sharpened twice by the compositor. */
 .viv [class*="viv-art-"] {
   background-repeat: no-repeat;
+}
+
+/* ==========================================================================
+   VIVAH NAVBAR & SHLOKAS — the luxury chrome
+   ========================================================================== */
+/* Deep maroon whisper strip above the nav. */
+.viv-topstrip {
+  background: linear-gradient(90deg, #2a0c0b 0%, #4a1413 50%, #2a0c0b 100%);
+}
+
+/* Nav links: quiet serif-adjacent caps with a gold underline that draws in. */
+.viv-navlink {
+  position: relative;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: rgba(58, 42, 32, 0.86);
+  padding: 4px 0;
+  white-space: nowrap;
+  transition: color 0.25s ease;
+}
+.viv-navlink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--color-viv-gold), var(--color-viv-gold-lt));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.viv-navlink:hover {
+  color: var(--color-viv-maroon);
+}
+.viv-navlink:hover::after {
+  transform: scaleX(1);
+}
+
+/* The primary CTA: maroon body, gold sheen that sweeps on hover. */
+.viv-cta-gold {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px;
+  padding: 10px 22px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-viv-cream);
+  background: linear-gradient(135deg, #7a1f1e 0%, #611a1b 55%, #4a1413 100%);
+  border: 1px solid rgba(191, 139, 52, 0.55);
+  box-shadow: 0 14px 30px -16px rgba(97, 26, 27, 0.9);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+.viv-cta-gold::before {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(245, 230, 200, 0.4), transparent);
+  transform: skewX(-18deg);
+  transition: left 0.55s ease;
+  left: -60%;
+}
+.viv-cta-gold:hover {
+  box-shadow: 0 18px 38px -16px rgba(97, 26, 27, 1);
+  transform: translateY(-1px);
+}
+.viv-cta-gold:hover::before {
+  left: 130%;
+}
+
+/* Hairline under the bar that shimmers very slowly. */
+.viv-nav-hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(191, 139, 52, 0.65) 30%,
+    rgba(210, 164, 93, 0.95) 50%,
+    rgba(191, 139, 52, 0.65) 70%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: viv-hairline-sweep 7s linear infinite;
+}
+@keyframes viv-hairline-sweep {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Mobile sheet items cascade in. */
+@keyframes viv-sheet-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.viv-sheet-item {
+  animation: viv-sheet-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Shloka text ── */
+.viv-shloka-ink {
+  color: var(--color-viv-maroon);
+}
+.viv-shloka-cream {
+  background: linear-gradient(
+    100deg,
+    #f5e6c8 0%,
+    #ffe9b8 25%,
+    #d2a45d 50%,
+    #ffe9b8 75%,
+    #f5e6c8 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: viv-gold-sweep 9s ease-in-out infinite;
+}
+@keyframes viv-gold-sweep {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
 }

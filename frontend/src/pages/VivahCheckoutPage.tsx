@@ -55,6 +55,7 @@ import {
   VivahAuthError,
   pixelVivahInitiateCheckout,
   pixelVivahLead,
+  pixelVivahPurchase,
   reportPaymentAbandoned,
 } from "../data/vivahApi";
 import { sessionToken } from "../data/vivahApi";
@@ -378,6 +379,7 @@ export default function VivahCheckoutPage() {
 
   /** A hand edit: remember it, so re-suggestion never clobbers it. */
   const setRitualDate = (slug: string, entry: { date: string; time: string }) => {
+    clearErr("ritualPlan");
     setRitualPlan((prev) => ({ ...prev, [slug]: entry }));
     setPlanTouched((prev) => (prev[slug] ? prev : { ...prev, [slug]: true }));
   };
@@ -614,27 +616,92 @@ export default function VivahCheckoutPage() {
       if (!firstId) firstId = sectionId;
     };
 
-    if (!devoteeName.trim()) flag("devoteeName", "Please enter your name.", "sec-you");
-    if (whatsapp.replace(/\D/g, "").length < 10)
+    /* DD/MM/YYYY → Date at local midnight; null when malformed or impossible
+       (31/02, 45/13 …). Everything date-related funnels through this one
+       parser so "valid" means the same thing everywhere. */
+    const parseDMY = (v: string): Date | null => {
+      const m = /^([0-3]?\d)\/([01]?\d)\/(\d{4})$/.exec(v.trim());
+      if (!m) return null;
+      const [dd, mm, yyyy] = [Number(m[1]), Number(m[2]), Number(m[3])];
+      const d = new Date(yyyy, mm - 1, dd);
+      return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd ? d : null;
+    };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const horizon = new Date(today);
+    horizon.setFullYear(horizon.getFullYear() + 3);
+
+    // ── Your details ──
+    const nameClean = devoteeName.trim();
+    if (!nameClean) flag("devoteeName", "Please enter your name.", "sec-you");
+    else if (nameClean.length < 3 || !/[A-Za-z\u0900-\u097F]/.test(nameClean))
+      flag("devoteeName", "Please enter your full name (at least 3 letters).", "sec-you");
+
+    const phone = whatsapp.replace(/\D/g, "");
+    if (phone.length !== 10)
       flag("whatsapp", "A valid 10-digit WhatsApp number is needed.", "sec-you");
-    if (!needMuhuratHelp && !eventDate)
-      flag(
-        "eventDate",
-        "Pick a date on the calendar — or switch on “Let our Pandit Ji choose”.",
-        "sec-vivah"
-      );
+    else if (!/^[6-9]/.test(phone))
+      flag("whatsapp", "Indian mobile numbers start with 6, 7, 8 or 9 — please re-check.", "sec-you");
+
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()))
+      flag("email", "That email doesn't look right — e.g. name@example.com.", "sec-you");
+
+    // ── Vivah date(s) ──
+    if (!needMuhuratHelp) {
+      if (!eventDate) {
+        flag(
+          "eventDate",
+          "Pick a date on the calendar — or switch on “Let our Pandit Ji choose”.",
+          "sec-vivah"
+        );
+      } else {
+        const d = parseDMY(eventDate);
+        if (!d) flag("eventDate", "That date doesn't exist — please pick it from the calendar.", "sec-vivah");
+        else if (d < today)
+          flag("eventDate", "The vivah date has already passed — please choose an upcoming date.", "sec-vivah");
+        else if (d > horizon)
+          flag("eventDate", "That date is more than 3 years away — please re-check the year.", "sec-vivah");
+      }
+      // Any per-ritual date the family HAS filled must be a real, upcoming day.
+      const badRituals: string[] = [];
+      for (const r of scheduleRituals) {
+        const entry = ritualPlan[r.slug];
+        if (!entry?.date) continue;
+        const d = parseDMY(entry.date);
+        if (!d || d < today || d > horizon) badRituals.push(r.name);
+      }
+      if (badRituals.length)
+        flag(
+          "ritualPlan",
+          `Please re-check the date for: ${badRituals.join(", ")} — it must be a real, upcoming day.`,
+          "sec-vivah"
+        );
+    }
+
+    // ── Address — the Pandit Ji has to reach you ──
+    if (city.trim().length < 2)
+      flag("city", "Please tell us your city, so we can confirm Pandit Ji availability.", "sec-address");
+    if (pincode && pincode.length !== 6)
+      flag("pincode", "An Indian pincode has exactly 6 digits.", "sec-address");
+
+    // ── Kundali ──
     if (kundaliRequired) {
       if (kundaliMode === "upload") {
         if (!kundaliBoyUrl || !kundaliGirlUrl)
           flag("kundali", "Both the Var and Vadhu kundali images are needed.", "sec-kundali");
       } else {
         const ok = (p: Person) => p.name.trim() && p.dob && p.tob && p.pob.trim();
-        if (!ok(boy) || !ok(girl))
+        if (!ok(boy) || !ok(girl)) {
           flag(
             "kundali",
             "Name, date, time and place of birth are needed for both the Var and Vadhu.",
             "sec-kundali"
           );
+        } else {
+          const future = (p: Person) => p.dob && new Date(p.dob) > today;
+          if (future(boy) || future(girl))
+            flag("kundali", "A date of birth cannot be in the future — please re-check.", "sec-kundali");
+        }
       }
     }
 
@@ -815,7 +882,7 @@ export default function VivahCheckoutPage() {
       if (!verifyRes.ok || verifyData?.success !== true) {
         throw new Error(verifyData?.message || "Payment verification failed.");
       }
-      // Purchase conversion intentionally NOT tracked for Vedic Vivah Sanskar.
+      pixelVivahPurchase(receipt.razorpayOrderId, receipt.amount, selectionLabel);
       setPendingVerification(null);
       setChargedAmount(receipt.amount);
       setError("");
@@ -1316,7 +1383,7 @@ export default function VivahCheckoutPage() {
           <Block
             id="sec-you"
             flash={flashId === "sec-you"}
-            incomplete={!!(fieldErrors.devoteeName || fieldErrors.whatsapp)}
+            incomplete={!!(fieldErrors.devoteeName || fieldErrors.whatsapp || fieldErrors.email)}
             title="Your Details"
             icon={User}
           >
@@ -1346,11 +1413,14 @@ export default function VivahCheckoutPage() {
                   autoComplete="tel-national"
                 />
               </Field>
-              <Field label="Email (optional)" className="sm:col-span-2">
+              <Field label="Email (optional)" className="sm:col-span-2" error={fieldErrors.email}>
                 <input
                   className={INPUT}
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearErr("email");
+                  }}
                   placeholder="you@email.com"
                   type="email"
                   autoComplete="email"
@@ -1363,7 +1433,7 @@ export default function VivahCheckoutPage() {
           <Block
             id="sec-vivah"
             flash={flashId === "sec-vivah"}
-            incomplete={!!fieldErrors.eventDate}
+            incomplete={!!(fieldErrors.eventDate || fieldErrors.ritualPlan)}
             title="Vivah Details"
             icon={Calendar}
           >
@@ -1397,6 +1467,11 @@ export default function VivahCheckoutPage() {
               }}
             />
 
+            {fieldErrors.ritualPlan && (
+              <p role="alert" className="text-[11.5px] text-red-600 mt-2 leading-relaxed">
+                {fieldErrors.ritualPlan}
+              </p>
+            )}
             <RitualSchedule
               rituals={scheduleRituals}
               plan={ritualPlan}
@@ -1679,7 +1754,13 @@ export default function VivahCheckoutPage() {
           )}
 
           {/* ── Address ── */}
-          <Block id="sec-address" flash={flashId === "sec-address"} title="Address" icon={MapPin}>
+          <Block
+            id="sec-address"
+            flash={flashId === "sec-address"}
+            incomplete={!!(fieldErrors.city || fieldErrors.pincode)}
+            title="Address"
+            icon={MapPin}
+          >
             <div className="space-y-3">
               <Field>
                 <input
@@ -1691,20 +1772,26 @@ export default function VivahCheckoutPage() {
                 />
               </Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field>
+                <Field error={fieldErrors.city}>
                   <input
                     className={INPUT}
                     value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      clearErr("city");
+                    }}
                     placeholder="City"
                     autoComplete="address-level2"
                   />
                 </Field>
-                <Field>
+                <Field error={fieldErrors.pincode}>
                   <input
                     className={INPUT}
                     value={pincode}
-                    onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onChange={(e) => {
+                      setPincode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      clearErr("pincode");
+                    }}
                     placeholder="Pincode"
                     inputMode="numeric"
                     autoComplete="postal-code"

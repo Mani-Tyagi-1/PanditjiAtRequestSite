@@ -7,10 +7,14 @@ import {
   BookOpen,
   ChevronDown,
   Clock,
+  Flame,
+  Languages,
+  Search,
   Sparkles,
 } from "lucide-react";
 
 import BLOG_DATA from "../data/vivahBlogs.json";
+import { useVivahLang, hreflangLinks } from "../i18n/vivah";
 import { Btn, Orn, Wrap } from "../components/vivah/ui";
 import {
   AnimatePresence,
@@ -65,6 +69,8 @@ type Post = {
   intro: string;
   blocks: Block[];
   faqs: { q: string; a: string }[];
+  /** Optional full Hindi body — rendered when the reader's language is hi. */
+  hi?: { intro: string; blocks: Block[] };
 };
 
 const POSTS = (BLOG_DATA as { posts: Post[] }).posts;
@@ -93,13 +99,41 @@ const bodyText = (p: Post): string =>
 
 export function VivahBlogListPage() {
   const [cat, setCat] = useState("All");
+  const [query, setQuery] = useState("");
   const lift = useLift();
   const tap = useTap();
+  const { t, lang } = useVivahLang();
 
-  const shown = useMemo(
-    () => (cat === "All" ? POSTS : POSTS.filter((p) => p.category === cat)),
-    [cat]
-  );
+  /**
+   * Category chip + free-text search together. Search sweeps title, Hindi
+   * title, keywords, category and intro — because a family typing "हल्दी" or
+   * "nadi dosha" should land on the right guide either way.
+   */
+  const shown = useMemo(() => {
+    let list = cat === "All" ? POSTS : POSTS.filter((p) => p.category === cat);
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) =>
+        `${p.title} ${p.hindiTitle || ""} ${p.category} ${p.keywords.join(" ")} ${p.intro}`
+          .toLowerCase()
+          .includes(q)
+      );
+    }
+    return list;
+  }, [cat, query]);
+
+  /** The hub's front rail — the guides families open most. */
+  const recommended = useMemo(() => {
+    const picks = [
+      "shubh-vivah-muhurat-2026-2027",
+      "kundali-milan-gun-milan-36-gunas",
+      "saptapadi-seven-vows-hindu-marriage",
+      "pandit-for-marriage-cost-booking-guide",
+    ];
+    return picks
+      .map((slug) => POSTS.find((p) => p.slug === slug))
+      .filter(Boolean) as Post[];
+  }, []);
 
   const title = "Vivah Guides — Muhurat 2026, Rituals, Kundali Milan & More | Pandit Ji At Request";
   const description =
@@ -111,6 +145,9 @@ export function VivahBlogListPage() {
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={`${SITE}/vedic-vivah/guides`} />
+        {hreflangLinks("/vedic-vivah/guides").map((l) => (
+          <link key={l.hrefLang} rel="alternate" hrefLang={l.hrefLang} href={l.href} />
+        ))}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
@@ -136,21 +173,59 @@ export function VivahBlogListPage() {
         <Reveal>
           <div className="text-center">
             <span className="inline-flex items-center gap-1.5 text-[9.5px] font-bold tracking-[0.16em] uppercase text-viv-orange bg-viv-tint border border-viv-hair rounded-full px-3 py-1.5">
-              <BookOpen className="w-3 h-3" /> Vivah Gyan
+              <BookOpen className="w-3 h-3" /> {t("blog.badge")}
             </span>
             <h1 className="text-[30px] sm:text-[38px] text-viv-ink mt-3">
-              Guides for Your Sacred Journey
+              {t("blog.title")}
             </h1>
             <p className="text-[13px] text-viv-muted mt-2 max-w-[560px] mx-auto leading-relaxed">
-              Muhurat, rituals, kundali, samagri — हर सवाल का जवाब, straight from verified Vedic
-              Pandits. Written the way families actually ask.
+              {t("blog.sub")}
             </p>
             <Orn className="mt-4" />
           </div>
         </Reveal>
 
+        {/* ── Recommended rail ── */}
+        <Reveal>
+          <div className="mt-7">
+            <p className="flex items-center justify-center gap-1.5 text-[10px] font-bold tracking-[0.14em] uppercase text-viv-maroon">
+              <Flame className="w-3 h-3 text-viv-orange" /> {t("blog.recommended")}
+            </p>
+            <div className="flex gap-2.5 mt-3 overflow-x-auto scrollbar-hide pb-1 sm:justify-center">
+              {recommended.map((p) => (
+                <Link
+                  key={p.slug}
+                  to={`/vedic-vivah/guides/${p.slug}`}
+                  className="shrink-0 w-[230px] bg-white border border-viv-gold/40 rounded-xl px-3.5 py-3 hover:border-viv-gold transition-colors shadow-[0_8px_20px_-16px_rgba(90,40,10,0.5)]"
+                >
+                  <span className="block text-[9px] font-bold tracking-[0.12em] uppercase text-viv-orange">
+                    {p.category}
+                  </span>
+                  <span className="display block text-[13.5px] text-viv-ink leading-snug mt-1 line-clamp-2">
+                    {lang === "hi" && p.hindiTitle ? p.hindiTitle : p.title}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+
+        {/* ── Search ── */}
+        <div className="max-w-[440px] mx-auto mt-6">
+          <label className="flex items-center gap-2.5 bg-white border border-viv-hair rounded-full px-4 py-2.5 focus-within:border-viv-gold transition-colors">
+            <Search className="w-4 h-4 text-viv-gold shrink-0" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("blog.search")}
+              aria-label={t("blog.search")}
+              className="w-full bg-transparent text-[13px] text-viv-ink placeholder-viv-muted-2 focus:outline-none"
+            />
+          </label>
+        </div>
+
         {/* Category filter */}
-        <div className="flex flex-wrap justify-center gap-2 mt-6">
+        <div className="flex flex-wrap justify-center gap-2 mt-4">
           {CATEGORIES.map((c) => (
             <motion.button
               key={c}
@@ -162,12 +237,18 @@ export function VivahBlogListPage() {
                   : "bg-white text-viv-ink/85 border-viv-hair hover:border-viv-gold"
               }`}
             >
-              {c}
+              {c === "All" ? t("blog.all") : c}
             </motion.button>
           ))}
         </div>
 
-        <Stagger className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8" gap={0.05}>
+        {shown.length === 0 && (
+          <p className="text-center text-[13px] text-viv-muted italic mt-10">
+            {t("blog.noResults")}
+          </p>
+        )}
+
+        <Stagger className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8" gap={0.02} dep={`${cat}|${query}|${lang}`}>
           {shown.map((p) => (
             <RevealItem key={p.slug} className="h-full">
               <motion.article {...lift} className="h-full">
@@ -191,19 +272,26 @@ export function VivahBlogListPage() {
                     </span>
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
-                    <h2 className="display text-[17px] text-viv-ink leading-snug">{p.title}</h2>
-                    {p.hindiTitle && (
+                    <h2 className="display text-[17px] text-viv-ink leading-snug">
+                      {lang === "hi" && p.hindiTitle ? p.hindiTitle : p.title}
+                    </h2>
+                    {p.hindiTitle && lang !== "hi" && (
                       <p className="text-[12px] text-viv-maroon/80 mt-1">{p.hindiTitle}</p>
                     )}
+                    {lang === "hi" && p.hi && (
+                      <p className="text-[10px] font-bold text-viv-orange mt-1 inline-flex items-center gap-1">
+                        <Languages className="w-3 h-3" /> {t("blog.inHindi")}
+                      </p>
+                    )}
                     <p className="text-[12px] text-viv-muted leading-relaxed mt-2 line-clamp-3 flex-1">
-                      {p.intro}
+                      {lang === "hi" && p.hi ? p.hi.intro : p.intro}
                     </p>
                     <span className="flex items-center justify-between mt-3 pt-3 border-t border-viv-hair/70">
                       <span className="inline-flex items-center gap-1.5 text-[11px] text-viv-muted-2">
-                        <Clock className="w-3 h-3" /> {p.minutes} min read
+                        <Clock className="w-3 h-3" /> {p.minutes} {t("blog.min")}
                       </span>
                       <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-viv-orange">
-                        Read <ArrowRight className="w-3.5 h-3.5" />
+                        {t("blog.read")} <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </span>
                   </div>
@@ -228,6 +316,7 @@ export default function VivahBlogDetailPage() {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const tap = useTap();
+  const { t, lang } = useVivahLang();
 
   // Hopping guide → guide is a client-side nav — reset the scroll and the
   // open FAQ, or the next article opens mid-page with the old accordion state.
@@ -265,6 +354,17 @@ export default function VivahBlogDetailPage() {
 
   const url = `${SITE}/vedic-vivah/guides/${post.slug}`;
 
+  /**
+   * The body the reader actually sees. A guide with an authored Hindi text
+   * switches wholesale when the reader is in Hindi; otherwise the Hinglish
+   * original stands, with an honest note (the chrome around it still follows
+   * the chosen language).
+   */
+  const inHindi = lang === "hi" && !!post.hi;
+  const bodyIntro = inHindi ? post.hi!.intro : post.intro;
+  const bodyBlocks = inHindi ? post.hi!.blocks : post.blocks;
+  const showLangNote = lang !== "en" && !inHindi;
+
   return (
     <VivahScope>
       <Helmet>
@@ -272,6 +372,9 @@ export default function VivahBlogDetailPage() {
         <meta name="description" content={post.metaDescription} />
         <meta name="keywords" content={post.keywords.join(", ")} />
         <link rel="canonical" href={url} />
+        {hreflangLinks(`/vedic-vivah/guides/${post.slug}`).map((l) => (
+          <link key={l.hrefLang} rel="alternate" hrefLang={l.hrefLang} href={l.href} />
+        ))}
         <meta property="og:title" content={post.metaTitle} />
         <meta property="og:description" content={post.metaDescription} />
         <meta property="og:type" content="article" />
@@ -342,33 +445,44 @@ export default function VivahBlogDetailPage() {
             onClick={() => navigate("/vedic-vivah/guides")}
             className="inline-flex items-center gap-1.5 text-[12px] text-viv-cream/85 hover:text-viv-cream mb-2"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> All guides
+            <ArrowLeft className="w-3.5 h-3.5" /> {t("blog.backToAll")}
           </button>
           <h1 className="text-[24px] sm:text-[34px] text-viv-cream leading-tight max-w-[760px]">
-            {post.title}
+            {inHindi && post.hindiTitle ? post.hindiTitle : post.title}
           </h1>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-[11.5px] text-viv-cream/70">
             {post.hindiTitle && <span className="text-viv-gold-lt">{post.hindiTitle}</span>}
             <span className="inline-flex items-center gap-1.5">
-              <Clock className="w-3 h-3" /> {post.minutes} min read
+              <Clock className="w-3 h-3" /> {post.minutes} {t("blog.min")}
             </span>
             <span>{post.category}</span>
           </div>
         </Wrap>
       </div>
 
-      {/* ── Body ── */}
-      <Wrap className="py-8">
+      {/* ── Body ──
+          Keyed by slug+language: navigating prev/next (or switching to the
+          Hindi body) swaps the block list, and a Reveal reused across that
+          swap can be left stuck at its hidden state. A fresh mount per
+          article behaves exactly like a fresh page load. */}
+      <Wrap className="py-8" key={`${post.slug}-${inHindi ? "hi" : "src"}`}>
         <div className="max-w-[720px] mx-auto">
+          {showLangNote && (
+            <div className="flex gap-2.5 items-start bg-viv-tint border border-viv-hair rounded-xl px-4 py-3 mb-5">
+              <Languages className="w-4 h-4 text-viv-gold shrink-0 mt-0.5" />
+              <p className="text-[12px] text-viv-muted leading-relaxed">{t("blog.langNote")}</p>
+            </div>
+          )}
+
           <Reveal>
             <p className="text-[15px] text-viv-ink/90 leading-[1.75] display italic">
-              {post.intro}
+              {bodyIntro}
             </p>
             <Orn className="my-5" />
           </Reveal>
 
           <div className="space-y-5">
-            {post.blocks.map((b, i) => {
+            {bodyBlocks.map((b, i) => {
               if (b.t === "h2")
                 return (
                   <Reveal key={i}>
@@ -503,10 +617,10 @@ export default function VivahBlogDetailPage() {
                 >
                   <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.12em] uppercase text-viv-muted-2">
                     <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" />
-                    Pichhla guide
+                    {t("blog.prev")}
                   </span>
                   <span className="display block text-[15px] text-viv-ink leading-snug mt-1.5 line-clamp-2">
-                    {prev.title}
+                    {lang === "hi" && prev.hindiTitle ? prev.hindiTitle : prev.title}
                   </span>
                 </Link>
                 <Link
@@ -515,11 +629,11 @@ export default function VivahBlogDetailPage() {
                   className="group rounded-xl border border-viv-hair bg-white p-4 text-right hover:border-viv-gold transition-colors"
                 >
                   <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.12em] uppercase text-viv-muted-2">
-                    Agla guide
+                    {t("blog.next")}
                     <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                   </span>
                   <span className="display block text-[15px] text-viv-ink leading-snug mt-1.5 line-clamp-2">
-                    {next.title}
+                    {lang === "hi" && next.hindiTitle ? next.hindiTitle : next.title}
                   </span>
                 </Link>
               </nav>
@@ -528,7 +642,7 @@ export default function VivahBlogDetailPage() {
 
           {/* ── Related ── */}
           <Reveal>
-            <h2 className="display text-[20px] text-viv-maroon mt-9 mb-3">Aage padhiye</h2>
+            <h2 className="display text-[20px] text-viv-maroon mt-9 mb-3">{t("blog.related")}</h2>
             <div className="grid sm:grid-cols-3 gap-3">
               {related.map((p) => (
                 <Link
@@ -540,7 +654,7 @@ export default function VivahBlogDetailPage() {
                     {p.category}
                   </span>
                   <span className="display block text-[14px] text-viv-ink leading-snug mt-1 line-clamp-2">
-                    {p.title}
+                    {lang === "hi" && p.hindiTitle ? p.hindiTitle : p.title}
                   </span>
                 </Link>
               ))}

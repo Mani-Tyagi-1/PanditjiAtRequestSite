@@ -8,6 +8,7 @@ import {
 } from "../../data/vivahCatalog";
 import { Head, Orn, Wrap } from "./ui";
 import { AnimatePresence, EASE, motion, useTap } from "./motion";
+import { useVivahLang, tfmt } from "../../i18n/vivah";
 
 /**
  * The three marriage tiers, drawn exactly as the approved comps: a coloured
@@ -80,16 +81,14 @@ export default function VivahPackageCards({
   footerNote?: string | null;
 }) {
   const tap = useTap();
+  const { t: tr, tc } = useVivahLang();
   const [openRituals, setOpenRituals] = useState<string | null>(null);
 
   return (
     <Wrap>
       {showHeader && (
         <>
-          <Head
-            title="Complete Marriage Packages"
-            sub="All rituals. All blessings. Beautifully curated for your sacred journey."
-          />
+          <Head title={tr("packages.title")} sub={tr("packages.sub")} />
           <Orn className="mb-6" />
         </>
       )}
@@ -118,19 +117,21 @@ export default function VivahPackageCards({
                 {p.badge && (
                   <span className="relative inline-flex self-start items-center gap-1.5 text-[9.5px] font-bold tracking-[0.14em] uppercase bg-white/22 border border-white/25 backdrop-blur rounded-full px-2.5 py-1">
                     <span aria-hidden="true">★</span>
-                    {p.badge}
+                    {tc(p.badge)}
                   </span>
                 )}
                 <h3 className="relative display text-[26px] lg:text-[28px] leading-tight mt-2">
-                  {p.name}
+                  {tc(p.name)}
                 </h3>
                 {p.tagline && (
-                  <p className="relative text-[12px] text-white/85 mt-1 leading-snug">{p.tagline}</p>
+                  <p className="relative text-[12px] text-white/85 mt-1 leading-snug">
+                    {tc(p.tagline)}
+                  </p>
                 )}
 
                 <span className="relative mt-3 mb-auto inline-flex self-start items-center gap-1.5 text-[11px] font-semibold bg-black/18 border border-white/20 rounded-full px-2.5 py-1">
                   <Users className="w-3 h-3" />
-                  {p.panditCount} Pandit Ji{(p.panditCount || 1) > 1 ? "s" : ""}
+                  {tfmt(tr((p.panditCount || 1) > 1 ? "packages.panditN" : "packages.pandit1"), { n: p.panditCount || 1 })}
                 </span>
 
                 <div className="relative flex flex-wrap items-end gap-x-2.5 gap-y-1.5 mt-3">
@@ -140,10 +141,10 @@ export default function VivahPackageCards({
                     </span>
                   )}
                   <span className="text-[27px] font-bold leading-none">{fmtINR(p.price)}</span>
-                  <span className="text-[11.5px] text-white/75 pb-0.5">all-inclusive</span>
+                  <span className="text-[11.5px] text-white/75 pb-0.5">{tr("packages.allInclusive")}</span>
                   {save > 0 && (
-                    <span className="text-[9.5px] font-bold tracking-wide bg-white text-viv-orange rounded-full px-2.5 py-1 whitespace-nowrap">
-                      YOU SAVE {fmtINR(save)}
+                    <span className="text-[9.5px] font-bold tracking-wide uppercase bg-white text-viv-orange rounded-full px-2.5 py-1 whitespace-nowrap">
+                      {tfmt(tr("packages.youSave"), { amt: fmtINR(save) })}
                     </span>
                   )}
                 </div>
@@ -156,7 +157,7 @@ export default function VivahPackageCards({
                     <li key={`${perk.title}-${i}`} className="flex gap-2.5">
                       <Check className="w-3.5 h-3.5 text-viv-gold shrink-0 mt-[3px]" />
                       <span className="text-[12.5px] text-viv-ink/90 leading-snug">
-                        {perk.title}
+                        {tc(perk.title)}
                       </span>
                     </li>
                   ))}
@@ -174,7 +175,7 @@ export default function VivahPackageCards({
                     >
                       <Check className="w-3.5 h-3.5 text-viv-orange shrink-0" />
                       <span className="flex-1 min-w-0 text-[12px] font-semibold text-viv-ink">
-                        Covers all {ritualNames.length} rituals
+                        {tfmt(tr("packages.covers"), { n: ritualNames.length })}
                       </span>
                       <ChevronDown
                         className={`w-3.5 h-3.5 text-viv-gold shrink-0 transition-transform ${
@@ -199,7 +200,7 @@ export default function VivahPackageCards({
                                 className="flex gap-2 text-[11.5px] text-viv-muted leading-snug"
                               >
                                 <span className="text-viv-gold shrink-0">{i + 1}.</span>
-                                {n}
+                                {tc(n)}
                               </li>
                             ))}
                           </ul>
@@ -214,18 +215,18 @@ export default function VivahPackageCards({
                   onClick={() => (onDetails ? onDetails(p) : onSelect(p))}
                   className={`mt-3.5 w-full font-semibold text-[13.5px] py-3 rounded-lg border transition-all hover:brightness-[1.06] ${t.btn}`}
                 >
-                  View {p.name} Details
+                  {tfmt(tr("packages.viewDetails"), { name: tc(p.name) })}
                 </motion.button>
 
                 <p className="text-[11px] text-center text-viv-muted mt-2.5">
-                  Reserve now with {fmtINR(adv)} advance
+                  {tfmt(tr("packages.reserve"), { amt: fmtINR(adv) })}
                 </p>
 
                 <button
                   onClick={() => onSelect(p)}
                   className="mt-1 w-full text-[12px] font-semibold text-viv-orange py-1.5 inline-flex items-center justify-center gap-1 hover:underline"
                 >
-                  Book now <ChevronRight className="w-3.5 h-3.5" />
+                  {tr("common.bookNow")} <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </article>

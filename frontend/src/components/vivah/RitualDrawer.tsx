@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, Plus } from "lucide-react";
+import { useVivahLang, tfmt } from "../../i18n/vivah";
 import { fmtINR, VIVAH_IMG, type Ritual } from "../../data/vivahCatalog";
 import { getVivahReceive } from "../../data/vivahContent";
 
@@ -23,6 +24,7 @@ export default function RitualDrawer({
   onToggle: (slug: string) => void;
   onClose: () => void;
 }) {
+  const { t, tc } = useVivahLang();
   useEffect(() => {
     if (!ritual) return;
     const prev = document.body.style.overflow;
@@ -81,13 +83,13 @@ export default function RitualDrawer({
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="inline-block text-[10px] font-bold tracking-wider uppercase text-[#B8341C] bg-[#FFF0E2] rounded-full px-2 py-0.5">
-                    Step {ritual.step} of {totalSteps}
+                    {tfmt(t("drawer.step"), { a: ritual.step, b: totalSteps })}
                   </span>
                   <h2
                     className="text-[21px] font-bold text-stone-800 leading-tight mt-1"
                     style={{ fontFamily: "'Cormorant Garamond', serif" }}
                   >
-                    {ritual.titleEng}
+                    {tc(ritual.titleEng)}
                   </h2>
                   {ritual.titleHindi && (
                     <p className="text-[13px] text-[#8E2C3B] font-semibold">{ritual.titleHindi}</p>
@@ -119,7 +121,7 @@ export default function RitualDrawer({
               {ritual.mantra && (
                 <section className="bg-[#FFF6EC] border border-[#FFE3CC] rounded-2xl p-4">
                   <h3 className="text-[12px] font-bold text-[#B8341C] mb-2">
-                    वैदिक मन्त्र (Vedic Mantra)
+                    {t("drawer.mantra")}
                   </h3>
                   <p className="text-[15px] leading-relaxed text-stone-800 whitespace-pre-line">
                     {ritual.mantra.devanagari}
@@ -128,7 +130,7 @@ export default function RitualDrawer({
                     {ritual.mantra.transliteration}
                   </p>
                   <p className="text-[12.5px] text-stone-600 mt-2">
-                    <span className="font-semibold text-stone-700">Artha (Meaning): </span>
+                    <span className="font-semibold text-stone-700">{t("drawer.meaning")} </span>
                     {ritual.mantra.meaning}
                   </p>
                 </section>
@@ -205,7 +207,7 @@ export default function RitualDrawer({
               {/* What you receive */}
               <section>
                 <h3 className="text-[12px] font-bold tracking-wider uppercase text-stone-400 mb-2">
-                  What you receive
+                  {t("drawer.receive")}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {getVivahReceive(ritual.slug).map((c) => (
@@ -224,14 +226,14 @@ export default function RitualDrawer({
                 <section className="bg-white border border-[#FFEFE2] rounded-2xl p-4 flex items-center justify-between">
                   <div>
                     <p className="text-[11px] text-stone-400 font-semibold uppercase tracking-wide">
-                      Dakshina from
+                      {t("drawer.dakshinaFrom")}
                     </p>
                     <p className="text-[20px] font-bold text-stone-800">{fmtINR(ritual.price)}</p>
                   </div>
                   {ritual.samagriPrice > 0 && (
                     <div className="text-right">
                       <p className="text-[11px] text-stone-400 font-semibold uppercase tracking-wide">
-                        Samagri (optional)
+                        {t("drawer.samagriOpt")}
                       </p>
                       <p className="text-[15px] font-bold text-stone-600">
                         + {fmtINR(ritual.samagriPrice)}
@@ -257,11 +259,11 @@ export default function RitualDrawer({
               >
                 {selected ? (
                   <>
-                    <Check className="w-4 h-4" /> Added — Remove from Vivah
+                    <Check className="w-4 h-4" /> {t("drawer.addedRemove")}
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4" /> Add this Ritual to my Vivah
+                    <Plus className="w-4 h-4" /> {t("drawer.addTo")}
                   </>
                 )}
               </button>

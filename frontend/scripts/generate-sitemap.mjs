@@ -4,7 +4,8 @@
  *
  * Emits public/sitemap.xml from:
  *   1. Curated static routes (always real pages).
- *   2. Live puja detail pages fetched from the API at build time (/puja/:id).
+ *   2. Vivah guide articles read from src/data/vivahBlogs.json (always in sync).
+ *   3. Live puja detail pages fetched from the API at build time (/puja/:id).
  *
  * Design rules (per seo-programmatic): only emit URLs that resolve to a real
  * page. We do NOT emit the language×city×puja matrix here yet — those URLs go in
@@ -17,7 +18,7 @@
  * Run: node scripts/generate-sitemap.mjs   (also runs automatically on prebuild)
  */
 
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { wave1Pages } from "./generate-landing-pages.mjs";
@@ -44,21 +45,10 @@ const STATIC_ROUTES = [
   { path: "/vedic-vivah/package/shubh-vivah", priority: "0.7", changefreq: "monthly" },
   { path: "/vedic-vivah/package/raj-vivah", priority: "0.7", changefreq: "monthly" },
   { path: "/vedic-vivah/package/maharaja-vivah", priority: "0.7", changefreq: "monthly" },
-  // Vivah SEO guide hub — slugs mirror src/data/vivahBlogs.json.
-  { path: "/vedic-vivah/guides", priority: "0.8", changefreq: "weekly" },
-  { path: "/vedic-vivah/guides/shubh-vivah-muhurat-2026-2027", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/saptapadi-seven-vows-hindu-marriage", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/kundali-milan-gun-milan-36-gunas", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/pandit-for-marriage-cost-booking-guide", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/complete-hindu-wedding-rituals-guide", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/haldi-ceremony-significance-vidhi", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/mangal-dosha-manglik-marriage-remedies", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/kashi-pandit-for-wedding-why-vedacharya", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/vivah-samagri-complete-checklist", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/griha-pravesh-after-wedding-guide", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/court-marriage-vs-vedic-vivah", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/nri-wedding-pandit-online-booking", priority: "0.7", changefreq: "monthly" },
-  { path: "/vedic-vivah/guides/choosing-right-vivah-package", priority: "0.7", changefreq: "monthly" },
+  // Vivah SEO guide hub — the article URLs themselves come straight from
+  // src/data/vivahBlogs.json (see vivahGuideRoutes below), so publishing a new
+  // guide automatically publishes its sitemap entry too.
+  { path: "/vedic-vivah/guides", priority: "0.8", changefreq: "daily" },
   { path: "/all-pandits", priority: "0.7", changefreq: "weekly" },
   { path: "/shop", priority: "0.6", changefreq: "weekly" },
   { path: "/free-consultation", priority: "0.7", changefreq: "monthly" },
@@ -72,6 +62,35 @@ const STATIC_ROUTES = [
   { path: "/privacypolicy", priority: "0.3", changefreq: "yearly" },
   { path: "/termsandconditions", priority: "0.3", changefreq: "yearly" },
 ];
+
+/**
+ * Vivah guide articles — read from the same data file the pages render from,
+ * so the sitemap can never list a guide that doesn't exist (or miss one that
+ * does). Weekly, 0.8: the educational hub is a first-class SEO surface.
+ */
+function vivahGuideRoutes() {
+  try {
+    const raw = readFileSync(
+      resolve(__dirname, "../src/data/vivahBlogs.json"),
+      "utf8"
+    );
+    const posts = JSON.parse(raw)?.posts || [];
+    const routes = posts
+      .filter((p) => p && typeof p.slug === "string" && p.slug)
+      .map((p) => ({
+        path: `/vedic-vivah/guides/${p.slug}`,
+        priority: "0.8",
+        changefreq: "weekly",
+      }));
+    console.log(`[sitemap] ${routes.length} vivah guides from vivahBlogs.json`);
+    return routes;
+  } catch (err) {
+    console.warn(
+      `[sitemap] vivah guides read failed (${err?.message || err}) — skipped`
+    );
+    return [];
+  }
+}
 
 async function fetchPujaUrls() {
   if (typeof fetch !== "function") {
@@ -136,7 +155,7 @@ async function main() {
     priority: "0.9",
     changefreq: "weekly",
   }));
-  const routes = [...STATIC_ROUTES, ...wave1, ...pujaUrls];
+  const routes = [...STATIC_ROUTES, ...vivahGuideRoutes(), ...wave1, ...pujaUrls];
   mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, xmlFor(routes), "utf8");
   console.log(`[sitemap] wrote ${routes.length} URLs -> ${OUT}`);

@@ -4,6 +4,7 @@ import { X, PhoneCall, Loader2 } from "lucide-react";
 import API_URL from "../../utils/apiConfig";
 import { VIVAH_CONSULT } from "../../data/vivahContent";
 import { currentUser, humanError, pixelVivahLead } from "../../data/vivahApi";
+import { useVivahLang } from "../../i18n/vivah";
 
 /**
  * "Talk to a Pandit Ji — free" callback form.
@@ -33,6 +34,7 @@ export default function VivahConsultModal({
   /** Called after a successful submit so the page can cancel its dwell nudge. */
   onSubmitted?: () => void;
 }) {
+  const { t } = useVivahLang();
   const user = currentUser();
 
   const [name, setName] = useState("");
@@ -133,9 +135,9 @@ export default function VivahConsultModal({
                       className="text-[20px] font-bold text-stone-800"
                       style={{ fontFamily: "'Cormorant Garamond', serif" }}
                     >
-                      {VIVAH_CONSULT.title}
+                      {t("consult.title")}
                     </h2>
-                    <p className="text-[12.5px] text-stone-500 mt-0.5">{VIVAH_CONSULT.subtitle}</p>
+                    <p className="text-[12.5px] text-stone-500 mt-0.5">{t("consult.subtitle")}</p>
                   </div>
                   <button
                     onClick={onClose}
@@ -149,61 +151,61 @@ export default function VivahConsultModal({
 
               <div className="px-5 py-4 space-y-3.5">
                 <p className="text-[12.5px] leading-relaxed text-stone-600 bg-[#FFF6EC] border border-[#FFE3CC] rounded-2xl p-3.5">
-                  {VIVAH_CONSULT.blurb}
+                  {t("consult.blurb")}
                 </p>
 
                 <div>
-                  <label className={LABEL}>Full Name</label>
+                  <label className={LABEL}>{t("consult.name")}</label>
                   <input
                     className={FIELD}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
+                    placeholder={t("consult.namePh")}
                     autoComplete="name"
                   />
                 </div>
 
                 <div>
-                  <label className={LABEL}>WhatsApp Number</label>
+                  <label className={LABEL}>{t("consult.phone")}</label>
                   <input
                     className={FIELD}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                    placeholder="10-digit mobile"
+                    placeholder={t("consult.phonePh")}
                     inputMode="numeric"
                     autoComplete="tel-national"
                   />
                 </div>
 
                 <div>
-                  <label className={LABEL}>Address (where the ceremony will be held)</label>
+                  <label className={LABEL}>{t("consult.address")}</label>
                   <input
                     className={FIELD}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="House / street / area (optional)"
+                    placeholder={t("consult.addressPh")}
                     autoComplete="street-address"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className={LABEL}>City</label>
+                    <label className={LABEL}>{t("consult.city")}</label>
                     <input
                       className={FIELD}
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="City"
+                      placeholder={t("consult.city")}
                       autoComplete="address-level2"
                     />
                   </div>
                   <div>
-                    <label className={LABEL}>Pincode</label>
+                    <label className={LABEL}>{t("consult.pin")}</label>
                     <input
                       className={FIELD}
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="Pincode"
+                      placeholder={t("consult.pin")}
                       inputMode="numeric"
                       autoComplete="postal-code"
                     />
@@ -211,12 +213,12 @@ export default function VivahConsultModal({
                 </div>
 
                 <div>
-                  <label className={LABEL}>What would you like help with? (optional)</label>
+                  <label className={LABEL}>{t("consult.help")}</label>
                   <textarea
                     className={`${FIELD} min-h-[84px] resize-y`}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="e.g. muhurat dates, which rituals we need, our tradition…"
+                    placeholder={t("consult.helpPh")}
                   />
                 </div>
 
@@ -239,13 +241,13 @@ export default function VivahConsultModal({
                   ) : (
                     <>
                       <PhoneCall className="w-4 h-4" />
-                      Request a free callback
+                      {t("consult.submit")}
                     </>
                   )}
                 </button>
 
                 <p className="text-[11px] text-center text-stone-400 pb-2">
-                  No login needed · No charge · Our Vivah expert will call you back.
+                  {t("consult.note")}
                 </p>
               </div>
             </motion.div>
@@ -275,17 +277,16 @@ export default function VivahConsultModal({
                 className="text-[22px] font-bold text-stone-800 mt-4"
                 style={{ fontFamily: "'Cormorant Garamond', serif" }}
               >
-                Request Received 🙏
+                {t("consult.received")}
               </h3>
               <p className="text-[13px] text-stone-500 mt-2 leading-relaxed">
-                Our Vivah expert will call you back shortly. 🙏 We'll help you plan the muhurat, the
-                rituals and everything your family needs.
+                {t("consult.receivedSub")}
               </p>
               <button
                 onClick={() => setSuccess(false)}
                 className="mt-5 w-full bg-gradient-to-r from-[#E25800] to-[#FF8A2B] text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform"
               >
-                Om Shubham 🪔
+                {t("consult.done")}
               </button>
             </motion.div>
           </motion.div>

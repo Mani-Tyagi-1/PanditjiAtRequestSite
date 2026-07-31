@@ -1,4 +1,6 @@
 import { ArrowRight, Check, Eye, Leaf, Plus } from "lucide-react";
+import Shloka, { VIVAH_SHLOKAS } from "./Shloka";
+import { useVivahLang } from "../../i18n/vivah";
 import { AnimatePresence, motion } from "framer-motion";
 import { fmtINR, type Ritual } from "../../data/vivahCatalog";
 import { Head, Orn, Wrap } from "./ui";
@@ -30,20 +32,22 @@ export default function VivahRitualCards({
   /** When true the family already has a package, so à-la-carte adds are hidden. */
   samagriIncluded?: boolean;
 }) {
+  const { t, tc, lang } = useVivahLang();
   const lift = useLift();
   const tap = useTap();
 
   return (
     <Wrap>
       <Reveal>
-        <Head
-          title="Your Vivah Ritual Journey"
-          sub="A harmonious flow of sacred rituals, from start to finish. Book the whole journey as a package — or choose only the rituals your family needs."
-        />
+        <Head title={t("journey.title")} sub={t("journey.sub")} />
+          <Shloka compact deva={VIVAH_SHLOKAS.saptapadi.deva} translit={VIVAH_SHLOKAS.saptapadi.translit} meaning={VIVAH_SHLOKAS.saptapadi.meaning} />
         <Orn className="mb-6" />
       </Reveal>
 
-      <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+      <Stagger
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5"
+        dep={rituals.map((r) => r.slug).join("|")}
+      >
         {rituals.map((r) => {
           const on = selected.has(r.slug);
           return (
@@ -66,7 +70,7 @@ export default function VivahRitualCards({
                       transition={{ type: "spring", stiffness: 460, damping: 26 }}
                       className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 text-[9.5px] font-bold tracking-[0.12em] uppercase bg-viv-orange text-white rounded-full px-2.5 py-1"
                     >
-                      <Check className="w-3 h-3" /> Added
+                      <Check className="w-3 h-3" /> {t("journey.added")}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -99,9 +103,9 @@ export default function VivahRitualCards({
 
                     <div className="min-w-0 flex-1 pr-12">
                       <h3 className="display text-[16px] text-viv-ink leading-snug">
-                        {r.titleEng}
+                        {tc(r.titleEng)}
                       </h3>
-                      {r.titleHindi && (
+                      {r.titleHindi && !(lang === "hi" && tc(r.titleEng) === r.titleHindi) && (
                         <p className="text-[12px] text-viv-maroon/80 mt-0.5">{r.titleHindi}</p>
                       )}
                     </div>
@@ -111,7 +115,7 @@ export default function VivahRitualCards({
                       itself lets the box grow past the clamp and leak a sliver
                       of the third line, so the spacer is kept separate. */}
                   <p className="text-[11.5px] text-viv-muted leading-relaxed mt-3 line-clamp-2 overflow-hidden h-[34px]">
-                    {r.journeyDesc || r.shortDesc}
+                    {tc(r.journeyDesc || r.shortDesc)}
                   </p>
                   <span className="flex-1" aria-hidden="true" />
 
@@ -121,7 +125,7 @@ export default function VivahRitualCards({
                       <div className="flex items-end justify-between gap-2">
                         <span>
                           <span className="block text-[9.5px] font-bold tracking-[0.12em] uppercase text-viv-muted-2">
-                            Dakshina
+                            {t("journey.dakshina")}
                           </span>
                           <span
                             className={`block text-[19px] font-semibold leading-none mt-0.5 ${
@@ -135,7 +139,7 @@ export default function VivahRitualCards({
                           <span className="text-right">
                             <span className="inline-flex items-center gap-1 text-[10px] text-viv-muted">
                               <Leaf className="w-3 h-3 text-viv-gold" />
-                              samagri
+                              {t("journey.samagri")}
                             </span>
                             <span className="block text-[12px] font-semibold text-viv-muted">
                               + {fmtINR(r.samagriPrice)}
@@ -144,9 +148,7 @@ export default function VivahRitualCards({
                         )}
                       </div>
                     ) : (
-                      <p className="text-[11.5px] text-viv-muted">
-                        Included in every marriage package
-                      </p>
+                      <p className="text-[11.5px] text-viv-muted">{t("journey.included")}</p>
                     )}
                   </div>
                 </div>
@@ -159,7 +161,7 @@ export default function VivahRitualCards({
                     onClick={() => onView(r)}
                     className="bg-white/90 hover:bg-viv-tint text-viv-maroon text-[12.5px] font-semibold py-3 inline-flex items-center justify-center gap-1.5 transition-colors"
                   >
-                    <Eye className="w-3.5 h-3.5" /> View
+                    <Eye className="w-3.5 h-3.5" /> {t("journey.view")}
                   </motion.button>
 
                   {r.price != null ? (
@@ -185,11 +187,11 @@ export default function VivahRitualCards({
                         >
                           {on ? (
                             <>
-                              <Check className="w-3.5 h-3.5" /> Added
+                              <Check className="w-3.5 h-3.5" /> {t("journey.added")}
                             </>
                           ) : (
                             <>
-                              <Plus className="w-3.5 h-3.5" /> Add
+                              <Plus className="w-3.5 h-3.5" /> {t("journey.add")}
                             </>
                           )}
                         </motion.span>
@@ -197,7 +199,7 @@ export default function VivahRitualCards({
                     </motion.button>
                   ) : (
                     <span className="bg-white/60 text-viv-muted-2 text-[12px] py-3 inline-flex items-center justify-center">
-                      In packages
+                      {t("journey.inPackages")}
                     </span>
                   )}
                 </div>
@@ -210,8 +212,7 @@ export default function VivahRitualCards({
       {!samagriIncluded && (
         <Reveal>
           <p className="text-center text-[11.5px] text-viv-muted-2 mt-5 italic">
-            Add the rituals you need and continue — or take a complete package above and every
-            ritual is included.{" "}
+            {t("journey.footer")}{" "}
             <span className="inline-flex items-center gap-1 not-italic font-semibold text-viv-orange">
               <ArrowRight className="w-3 h-3" />
             </span>

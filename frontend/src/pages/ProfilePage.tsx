@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     User,
     Phone,
+    ChevronDown,
     Mail,
     ChevronLeft,
     ChevronRight,
@@ -2257,8 +2258,35 @@ const VivahBookingCard = ({
     /** The next ceremony coming up — the one thing a family looks for first. */
     const nextIdx = steps.findIndex((s) => !s.completed);
     const visibleSteps = showAll ? steps : steps.slice(0, 4);
+    const [expanded, setExpanded] = useState(false);
+
+    /** "Next up" — the single answer a family opens this card for. */
+    const nextStep = nextIdx >= 0 ? steps[nextIdx] : null;
+    const nextInDays = (() => {
+        if (!nextStep?.scheduledDate) return null;
+        const v = vivahDateValue(nextStep.scheduledDate);
+        if (!Number.isFinite(v) || v <= 0) return null;
+        const days = Math.ceil((v - Date.now()) / 86400000);
+        return days >= 0 ? days : null;
+    })();
+
 
     const pandits: any[] = (booking.assignedPandits || []).filter((p: any) => p?.name);
+    /**
+     * The 4-stop journey tracker: Booked → Confirmed → Pandit Ji → Sampann.
+     * Derived, never stored — so it can't drift from the real booking.
+     */
+    const stage = isCancelled
+        ? -1
+        : isCompleted
+            ? 3
+            : (booking.panditAssigned?.name || pandits.length > 0)
+                ? 2
+                : booking.isPaymentDone || booking.status === "confirmed" || booking.status === "in_progress"
+                    ? 1
+                    : 0;
+    const STAGES = ["Booked", "Confirmed", "Pandit Ji", "Sampann"];
+
     const gifts: any[] = (booking.packageGifts || []).filter((g: any) => g?.title);
     const venue = [booking.address?.street, booking.address?.city, booking.address?.state, booking.address?.pincode]
         .filter(Boolean)
@@ -2395,34 +2423,88 @@ const VivahBookingCard = ({
             transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
             className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
         >
-            {/* ── Header ── */}
-            <div className="flex items-start justify-between gap-3">
+            {/* ── Header band — instantly identifiable, high contrast ── */}
+            <div className="-m-4 mb-0 px-4 py-3.5 bg-gradient-to-r from-[#5A1414] via-[#6E1A1A] to-[#57140F] flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-lg">💍</span>
-                        <h3 className="font-bold text-gray-800 text-sm truncate">Vedic Vivah Sanskar</h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-lg leading-none">💍</span>
+                        <h3 className="font-bold text-[#F7ECD8] text-[13.5px] truncate">Vedic Vivah Sanskar</h3>
                         {ref && (
-                            <span className="text-[8.5px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 border border-gray-100 rounded-full px-1.5 py-0.5">
+                            <span className="text-[8.5px] font-bold uppercase tracking-wider text-[#E8CE93]/80 border border-[#E8CE93]/30 rounded-full px-1.5 py-0.5">
                                 #{ref}
                             </span>
                         )}
-                        {booking.platform === "web" && (
-                            <span className="text-[8.5px] font-bold uppercase tracking-wider text-stone-400 border border-stone-200 rounded-full px-1.5 py-0.5">
-                                Web
-                            </span>
-                        )}
                     </div>
-                    <p className="text-xs text-gray-500 leading-snug">{selection}</p>
+                    <p className="text-[11.5px] text-[#F7ECD8]/75 leading-snug mt-1 truncate">{selection}</p>
                 </div>
                 <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${VIVAH_STATUS_STYLE[booking.status] || VIVAH_STATUS_STYLE.lead}`}>
                     {VIVAH_STATUS_LABEL[booking.status] || booking.status}
                 </span>
             </div>
 
+            {/* ── Journey tracker — where this booking stands, at a glance ── */}
+            {!isCancelled && (
+                <div className="mt-3.5 flex items-center">
+                    {STAGES.map((label, i) => (
+                        <div key={label} className={`flex items-center ${i > 0 ? "flex-1" : ""}`}>
+                            {i > 0 && (
+                                <div className={`h-[2px] flex-1 mx-1 rounded ${i <= stage ? "bg-emerald-400" : "bg-gray-150 bg-gray-200"}`} />
+                            )}
+                            <div className="flex flex-col items-center gap-1">
+                                <span
+                                    className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                                        i < stage
+                                            ? "bg-emerald-500"
+                                            : i === stage
+                                                ? "bg-[#FF7000] ring-4 ring-orange-100"
+                                                : "bg-gray-200"
+                                    }`}
+                                >
+                                    {i < stage ? (
+                                        <Check className="w-3 h-3 text-white" strokeWidth={3.5} />
+                                    ) : (
+                                        <span className={`w-1.5 h-1.5 rounded-full ${i === stage ? "bg-white" : "bg-gray-400"}`} />
+                                    )}
+                                </span>
+                                <span className={`text-[9px] font-bold ${i <= stage ? "text-gray-700" : "text-gray-300"}`}>
+                                    {label}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ── NEXT UP — the answer the family opened this card for ── */}
+            {!isCancelled && !isCompleted && nextStep && (
+                <div className="mt-3.5 rounded-2xl border border-orange-200/70 bg-gradient-to-r from-orange-50 to-amber-50/60 px-3.5 py-3 flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-xl bg-white border border-orange-100 flex items-center justify-center text-[18px] shrink-0">
+                        🪔
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[9.5px] font-bold uppercase tracking-wider text-[#C04A01]">Next up</p>
+                        <p className="text-[13px] font-bold text-gray-800 truncate">{nextStep.title}</p>
+                        <p className="text-[11px] text-gray-500">
+                            {nextStep.scheduledDate
+                                ? `${prettyVivahDate(nextStep.scheduledDate)}${
+                                      nextStep.scheduledTime ? `, ${prettyVivahTime(nextStep.scheduledTime)}` : ""
+                                  }`
+                                : "Date will be planned with you"}
+                        </p>
+                    </div>
+                    {nextInDays !== null && (
+                        <div className="text-center shrink-0 bg-white border border-orange-100 rounded-xl px-2.5 py-1.5">
+                            <p className="text-[16px] font-black text-[#FF7000] leading-none">{nextInDays === 0 ? "आज" : nextInDays}</p>
+                            <p className="text-[8.5px] font-bold uppercase text-gray-400 mt-0.5">{nextInDays === 0 ? "today" : nextInDays === 1 ? "day left" : "days left"}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* ── What's happening right now ── */}
             <div className="mt-3 flex items-start gap-2 bg-orange-50/50 border border-orange-100/50 rounded-xl px-3 py-2.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#FF7000] shrink-0 mt-0.5" />
-                <p className="text-[11.5px] text-gray-600 leading-relaxed flex-1">{vivahNarrative(booking)}</p>
+                <p className="text-[12px] text-gray-600 leading-relaxed flex-1">{vivahNarrative(booking)}</p>
             </div>
 
             {/* ── Muhurat ── */}
@@ -2554,8 +2636,17 @@ const VivahBookingCard = ({
                 </div>
             )}
 
+            {/* ── Expand: everything else lives behind one calm toggle ── */}
+            <button
+                onClick={() => setExpanded((v) => !v)}
+                className="mt-3 w-full flex items-center justify-center gap-1.5 text-[11px] font-bold text-gray-500 border border-gray-100 bg-gray-50/60 rounded-xl py-2 active:scale-[0.98] transition-transform"
+            >
+                {expanded ? "Hide full details" : "View full details"}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+            </button>
+
             {/* ── Inclusions ── */}
-            {(booking.kashiPandit?.invited || booking.liveDarshanTemple?.name || booking.language || booking.samagriNeeded) && (
+            {expanded && (booking.kashiPandit?.invited || booking.liveDarshanTemple?.name || booking.language || booking.samagriNeeded) && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                     {booking.kashiPandit?.invited && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5">
@@ -2581,7 +2672,7 @@ const VivahBookingCard = ({
             )}
 
             {/* ── Free gifts ── */}
-            {gifts.length > 0 && (
+            {expanded && gifts.length > 0 && (
                 <div className="mt-3">
                     <p className="text-[9px] text-gray-400 uppercase font-semibold mb-1.5">
                         Gifts included ({gifts.length})
@@ -2609,7 +2700,7 @@ const VivahBookingCard = ({
             )}
 
             {/* ── Where and when ── */}
-            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50">
+            <div className={`${expanded ? "" : "hidden"} grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50`}>
                 <div>
                     <p className="text-[9px] text-gray-400 uppercase font-semibold">Ceremony</p>
                     <p className="text-xs font-bold text-gray-700">{ceremony}</p>
@@ -2620,7 +2711,7 @@ const VivahBookingCard = ({
                 </div>
             </div>
 
-            {venue && (
+            {expanded && venue && (
                 <div className="mt-2 flex items-start gap-1.5">
                     <MapPin className="w-3 h-3 text-gray-300 shrink-0 mt-0.5" />
                     <p className="text-[10.5px] text-gray-500 leading-snug">{venue}</p>
@@ -2629,16 +2720,21 @@ const VivahBookingCard = ({
 
             {/* ── Money ── */}
             <div className="mt-3.5 pt-3 border-t border-orange-50/50">
-                <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400 font-medium">
-                        Paid: <span className="text-gray-600 font-bold">₹{paid.toLocaleString("en-IN")}</span>
-                        {balance > 0 && !isCancelled && (
-                            <> · Balance: <span className="text-[#FF7000] font-bold">₹{balance.toLocaleString("en-IN")}</span></>
-                        )}
-                    </span>
-                    <div className="flex items-center gap-1 text-[#FF7000]">
-                        <span className="text-[10px] font-bold text-gray-400">Total:</span>
-                        <span className="text-sm font-black">₹{total.toLocaleString("en-IN")}</span>
+                <div className="flex items-end justify-between">
+                    <div>
+                        <p className="text-[9.5px] font-bold uppercase tracking-wider text-gray-400">Payment</p>
+                        <p className="text-[12.5px] font-bold text-gray-700 mt-0.5">
+                            ₹{paid.toLocaleString("en-IN")} paid
+                            {balance > 0 && !isCancelled ? (
+                                <span className="text-[#FF7000]"> · ₹{balance.toLocaleString("en-IN")} balance</span>
+                            ) : !isCancelled ? (
+                                <span className="text-emerald-600"> · fully settled ✓</span>
+                            ) : null}
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9.5px] font-bold uppercase tracking-wider text-gray-400">Total</p>
+                        <p className="text-[16px] font-black text-gray-800 leading-tight">₹{total.toLocaleString("en-IN")}</p>
                     </div>
                 </div>
                 {total > 0 && !isCancelled && (

@@ -39,7 +39,10 @@ export function Reveal({
       className={className}
       initial={still ? { opacity: 0 } : { opacity: 0, y }}
       whileInView={still ? { opacity: 1 } : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15, margin: "0px 0px -60px 0px" }}
+      /* amount/margin kept permissive: a stricter threshold can leave short
+         blocks near the document end permanently un-triggered after an
+         instant jump (End key, "back" restore, prev/next navigation). */
+      viewport={{ once: true, amount: 0.01 }}
       transition={{ duration: 0.55, delay, ease: EASE }}
     >
       {children}
@@ -47,24 +50,36 @@ export function Reveal({
   );
 }
 
-/** Parent that reveals its <RevealItem> children one after another. */
+/**
+ * Parent that reveals its <RevealItem> children one after another.
+ *
+ * `dep` — REQUIRED whenever the child list is dynamic (filtered, fetched,
+ * toggled). A child that mounts after the parent's one-shot "show" animation
+ * has already fired inherits no variant transition and would sit at its
+ * `hidden` initial — invisible content. Passing the value the list derives
+ * from (filter, query, ids) keys the whole group, so a change remounts it and
+ * replays the reveal. Static lists can omit it.
+ */
 export function Stagger({
   children,
   className = "",
   gap = 0.07,
   delay = 0,
+  dep,
 }: {
   children: ReactNode;
   className?: string;
   gap?: number;
   delay?: number;
+  dep?: string | number | boolean;
 }) {
   return (
     <motion.div
+      key={dep === undefined ? undefined : String(dep)}
       className={className}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount: 0.1, margin: "0px 0px -60px 0px" }}
+      viewport={{ once: true, amount: 0.01 }}
       variants={{
         hidden: {},
         show: { transition: { staggerChildren: gap, delayChildren: delay } },

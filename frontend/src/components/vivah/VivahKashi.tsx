@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import Shloka, { VIVAH_SHLOKAS } from "./Shloka";
+import { useVivahLang, tfmt } from "../../i18n/vivah";
 import {
   ArrowRight,
   BadgeCheck,
@@ -95,6 +97,7 @@ export default function VivahKashi({
 }) {
   const lift = useLift();
   const tap = useTap();
+  const { t, tc } = useVivahLang();
   const premium = kashi.premiumPrice || 0;
   const pandits = kashi.pandits || [];
 
@@ -119,9 +122,9 @@ export default function VivahKashi({
   const advance = chosenPkg ? advanceOf(total, pct) : 0;
 
   const steps: Step[] = [
-    { n: 1, title: "Choose your Kashi Acharya", done: acharyaDone },
-    { n: 2, title: "Choose the package it joins", done: !!chosenPkg },
-    { n: 3, title: "Continue to checkout", done: false },
+    { n: 1, title: t("kashi.step1"), done: acharyaDone },
+    { n: 2, title: t("kashi.step2"), done: !!chosenPkg },
+    { n: 3, title: t("kashi.step3"), done: false },
   ];
 
   return (
@@ -129,25 +132,35 @@ export default function VivahKashi({
       <Reveal>
         <div className="text-center">
           <span className="inline-flex items-center gap-1.5 text-[9.5px] font-bold tracking-[0.16em] uppercase text-viv-orange bg-viv-tint border border-viv-hair rounded-full px-3 py-1.5">
-            <Sparkles className="w-3 h-3" /> Optional Add-on
+            <Sparkles className="w-3 h-3" /> {t("kashi.addon")}
           </span>
         </div>
         <Head
           className="mt-3"
-          title={kashi.title || "Invite a Pandit Ji from Kashi"}
-          sub={
-            kashi.description ||
-            "Have your vidhi performed by a revered Vedacharya from Kashi (Varanasi) — the spiritual heart of Sanatan Dharma."
-          }
+          title={kashi.title ? tc(kashi.title) : t("kashi.title")}
+          sub={kashi.description ? tc(kashi.description) : t("kashi.sub")}
         />
         {kashi.hindiName && (
           <p className="text-center text-[14px] text-viv-maroon mt-1.5">{kashi.hindiName}</p>
         )}
-        <p className="text-center text-[12.5px] text-viv-muted mt-2 max-w-[620px] mx-auto leading-relaxed">
-          This is an addition to a marriage package, not a package of its own —{" "}
-          <span className="font-semibold text-viv-orange">+{fmtINR(premium)}</span> on top of
-          whichever one you choose. Three steps and you're done.
+        <p className="text-center text-[12.5px] text-viv-muted mt-2 max-w-[560px] mx-auto leading-relaxed">
+          {(() => {
+            const [pre, post] = t("kashi.addonLine").split("{amt}");
+            return (
+              <>
+                {pre}
+                <span className="font-semibold text-viv-orange">+{fmtINR(premium)}</span>
+                {post}
+              </>
+            );
+          })()}
         </p>
+        <Shloka
+          compact
+          deva={VIVAH_SHLOKAS.shiva.deva}
+          translit={VIVAH_SHLOKAS.shiva.translit}
+          meaning={VIVAH_SHLOKAS.shiva.meaning}
+        />
         <Orn className="mb-6" />
       </Reveal>
 
@@ -156,14 +169,13 @@ export default function VivahKashi({
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(28,9,6,0.9)_0%,rgba(28,9,6,0.6)_50%,rgba(28,9,6,0.88)_100%)] sm:bg-[linear-gradient(95deg,rgba(28,9,6,0.95)_0%,rgba(28,9,6,0.84)_36%,rgba(28,9,6,0.25)_60%,rgba(28,9,6,0.08)_80%,rgba(28,9,6,0.5)_100%)]" />
           <div className="relative p-5 sm:p-6 max-w-[440px]">
             <p className="display text-[20px] sm:text-[22px] text-viv-cream leading-snug">
-              Blessings of Baba Vishwanath, at your mandap.
+              {t("kashi.blessTitle")}
             </p>
             <p className="text-[12px] text-viv-cream/70 mt-2 leading-relaxed">
-              A senior Kashi Acharya travels to your ceremony and performs the vidhi with a
-              special Ganga-Jal sankalp for the couple.
+              {t("kashi.blessText")}
             </p>
             <div className="flex flex-wrap gap-2 mt-3.5">
-              {["Verified & Trusted", "Ganga-Jal Sankalp", "Customised with your name"].map((c) => (
+              {[t("kashi.chip1"), t("kashi.chip2"), t("kashi.chip3")].map((c) => (
                 <span
                   key={c}
                   className="text-[10.5px] text-viv-cream/80 border border-viv-gold/30 bg-black/30 rounded-full px-3 py-1.5"
@@ -185,7 +197,7 @@ export default function VivahKashi({
               <StepHead
                 n={1}
                 title={steps[0].title}
-                hint={`${pandits.length} verified Acharya${pandits.length === 1 ? "" : "s"} available`}
+                hint={tfmt(t("kashi.acharyasAvail"), { n: pandits.length })}
                 done={steps[0].done}
               />
 
@@ -198,14 +210,18 @@ export default function VivahKashi({
                       setQuery(e.target.value);
                       setShowAll(true);
                     }}
-                    placeholder="Search by name or temple…"
+                    placeholder={t("kashi.search")}
                     className="flex-1 bg-transparent text-[13px] text-viv-ink placeholder-viv-muted-2 focus:outline-none"
                   />
                 </label>
               )}
 
               {/* Scales cleanly: 1 → 2 → 3 columns, any roster size. */}
-              <Stagger className="grid sm:grid-cols-2 xl:grid-cols-3 gap-2.5 mt-4" gap={0.04}>
+              <Stagger
+                className="grid sm:grid-cols-2 xl:grid-cols-3 gap-2.5 mt-4"
+                gap={0.04}
+                dep={`${query}|${showAll}|${pandits.length}`}
+              >
                 {visible.map((p) => {
                   const on = panditName === p.name;
                   return (
@@ -273,7 +289,7 @@ export default function VivahKashi({
 
               {filtered.length === 0 && (
                 <p className="text-[12.5px] text-viv-muted text-center py-6">
-                  No Acharya matches “{query}”. Clear the search to see all {pandits.length}.
+                  {tfmt(t("kashi.noMatch"), { q: query, n: pandits.length })}
                 </p>
               )}
 
@@ -282,7 +298,7 @@ export default function VivahKashi({
                   onClick={() => setShowAll(true)}
                   className="mt-3 w-full text-[12.5px] font-semibold text-viv-maroon border border-viv-hair rounded-xl py-2.5 inline-flex items-center justify-center gap-1.5 hover:border-viv-gold transition-colors"
                 >
-                  Show all {filtered.length} Acharyas
+                  {tfmt(t("kashi.showAll"), { n: filtered.length })}
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
               )}
@@ -310,10 +326,10 @@ export default function VivahKashi({
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[13px] font-semibold text-viv-ink">
-                    Assign any available Acharya
+                    {t("kashi.assignAny")}
                   </span>
                   <span className="block text-[11px] text-viv-muted mt-0.5">
-                    We'll match a senior Kashi Acharya to your muhurat.
+                    {t("kashi.assignAnySub")}
                   </span>
                 </span>
               </motion.button>
@@ -330,11 +346,7 @@ export default function VivahKashi({
               <StepHead
                 n={2}
                 title={steps[1].title}
-                hint={
-                  acharyaDone
-                    ? "The Acharya joins this package — every ritual stays included."
-                    : "Choose an Acharya above to continue."
-                }
+                hint={acharyaDone ? t("kashi.joins") : t("kashi.chooseFirst")}
                 done={steps[1].done}
               />
 
@@ -403,17 +415,17 @@ export default function VivahKashi({
             <div className="p-5">
               <div className="space-y-2.5">
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-[12px] text-viv-muted">Acharya</span>
+                  <span className="text-[12px] text-viv-muted">{t("kashi.acharya")}</span>
                   <span className="text-[12.5px] font-semibold text-viv-ink text-right">
                     {panditName === "ANY"
-                      ? "Any available Acharya"
-                      : panditName || <span className="text-viv-muted-2">Not chosen</span>}
+                      ? t("kashi.anyAcharya")
+                      : panditName || <span className="text-viv-muted-2">{t("kashi.notChosen")}</span>}
                   </span>
                 </div>
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-[12px] text-viv-muted">Package</span>
+                  <span className="text-[12px] text-viv-muted">{t("kashi.package")}</span>
                   <span className="text-[12.5px] font-semibold text-viv-ink text-right">
-                    {chosenPkg?.name || <span className="text-viv-muted-2">Not chosen</span>}
+                    {chosenPkg ? tc(chosenPkg.name) : <span className="text-viv-muted-2">{t("kashi.notChosen")}</span>}
                   </span>
                 </div>
               </div>
@@ -422,7 +434,7 @@ export default function VivahKashi({
 
               <div className="flex items-center justify-between text-[12.5px] py-1">
                 <span className="text-viv-muted">
-                  {chosenPkg ? `${chosenPkg.name} package` : "Package price"}
+                  {chosenPkg ? tfmt(t("kashi.pkgOf"), { name: tc(chosenPkg.name) }) : t("kashi.pkgPrice")}
                 </span>
                 <span className="font-semibold text-viv-ink">
                   {chosenPkg ? fmtINR(chosenPkg.price) : "—"}
@@ -430,14 +442,14 @@ export default function VivahKashi({
               </div>
               <div className="flex items-center justify-between text-[12.5px] py-1">
                 <span className="text-viv-muted inline-flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-viv-gold" /> Kashi Acharya
+                  <Sparkles className="w-3.5 h-3.5 text-viv-gold" /> {t("kashi.premiumRow")}
                 </span>
                 <span className="font-semibold text-viv-orange">+{fmtINR(premium)}</span>
               </div>
 
               <div className="h-px bg-viv-hair my-3" />
               <div className="flex items-center justify-between">
-                <span className="display text-[17px] text-viv-ink">Total</span>
+                <span className="display text-[17px] text-viv-ink">{t("kashi.total")}</span>
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.span
                     key={total}
@@ -453,7 +465,7 @@ export default function VivahKashi({
               </div>
               {chosenPkg && (
                 <p className="text-[11.5px] text-viv-muted mt-1 text-right">
-                  Reserve with {fmtINR(advance)} ({pct}% advance)
+                  {tfmt(t("kashi.reserveWith"), { amt: fmtINR(advance), pct })}
                 </p>
               )}
 
@@ -461,12 +473,8 @@ export default function VivahKashi({
               <div className="mt-4">
                 <StepHead
                   n={3}
-                  title="Continue to checkout"
-                  hint={
-                    chosenPkg && acharyaDone
-                      ? "Everything above is carried over — nothing to re-pick."
-                      : "Finish steps 1 and 2 first."
-                  }
+                  title={t("kashi.step3")}
+                  hint={chosenPkg && acharyaDone ? t("kashi.carried") : t("kashi.finishSteps")}
                   done={false}
                 />
                 <motion.div {...tap} className="mt-3">
@@ -477,14 +485,14 @@ export default function VivahKashi({
                     onClick={() => chosenPkg && onContinue(chosenPkg, panditName)}
                     className="w-full"
                   >
-                    Continue to checkout <ArrowRight className="w-4 h-4" />
+                    {t("kashi.step3")} <ArrowRight className="w-4 h-4" />
                   </Btn>
                 </motion.div>
               </div>
 
               {kashi.note && (
                 <p className="text-[10.5px] italic text-viv-muted-2 mt-3 leading-snug">
-                  {kashi.note}
+                  {tc(kashi.note)}
                 </p>
               )}
             </div>

@@ -62,7 +62,7 @@ export function Head({
       </h2>
       {sub && (
         <p
-          className={`mt-1.5 text-[12.5px] sm:text-[13.5px] leading-[1.6] max-w-[640px] mx-auto ${
+          className={`mt-2 text-[12.5px] sm:text-[13.5px] leading-[1.6] max-w-[640px] mx-auto ${
             light ? "text-[rgba(255,246,230,0.7)]" : "text-viv-muted"
           }`}
         >

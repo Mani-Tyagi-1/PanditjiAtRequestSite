@@ -228,7 +228,7 @@ export default function RitualSchedule({
             transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
           >
-            <div className="px-3.5 pb-3.5">
+            <div className="px-3 sm:px-3.5 pb-3 sm:pb-3.5">
               <p className="text-[11.5px] text-viv-muted leading-relaxed mb-3">
                 Every ceremony has its own day. We've filled in the customary dates around your
                 vivah — change any of them, or leave one blank and our team will fix it with you.
@@ -245,7 +245,7 @@ export default function RitualSchedule({
                 </button>
               )}
 
-              <div className="space-y-2.5">
+              <div className="space-y-2 sm:space-y-2.5">
                 {rituals.map((r, i) => {
                   const entry = plan[r.slug] || { date: "", time: "" };
                   const set = !!entry.date;
@@ -255,7 +255,7 @@ export default function RitualSchedule({
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: Math.min(i * 0.03, 0.24) }}
-                      className={`rounded-xl border px-3 py-2.5 transition-colors ${
+                      className={`rounded-xl border px-2.5 sm:px-3 py-2.5 transition-colors ${
                         set
                           ? "border-viv-gold/45 bg-viv-tint/45"
                           : "border-viv-hair bg-white/70"
@@ -288,8 +288,12 @@ export default function RitualSchedule({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 mt-2 pl-6">
-                        <label className="flex-1 flex items-center gap-1.5 bg-white border border-viv-hair rounded-lg px-2.5 py-1.5">
+                      {/* A native date and a native time field will not fit
+                          side by side on a phone: each has an intrinsic min
+                          width it refuses to shrink below, so the pair used to
+                          overflow the card. Stacked below sm, paired above. */}
+                      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_104px] gap-2 mt-2 pl-6">
+                        <label className="min-w-0 flex items-center gap-1.5 bg-white border border-viv-hair rounded-lg px-2.5 py-2 sm:py-1.5">
                           <CalendarDays className="w-3.5 h-3.5 text-viv-gold shrink-0" />
                           <input
                             type="date"
@@ -299,10 +303,10 @@ export default function RitualSchedule({
                             onChange={(e) =>
                               onChange(r.slug, { ...entry, date: fromISO(e.target.value) })
                             }
-                            className="w-full bg-transparent text-[12px] text-viv-ink focus:outline-none"
+                            className="w-full min-w-0 bg-transparent text-[12px] text-viv-ink focus:outline-none"
                           />
                         </label>
-                        <label className="w-[104px] flex items-center gap-1.5 bg-white border border-viv-hair rounded-lg px-2.5 py-1.5">
+                        <label className="min-w-0 flex items-center gap-1.5 bg-white border border-viv-hair rounded-lg px-2.5 py-2 sm:py-1.5">
                           <Clock className="w-3.5 h-3.5 text-viv-gold shrink-0" />
                           <input
                             type="time"
@@ -311,7 +315,7 @@ export default function RitualSchedule({
                             onChange={(e) =>
                               onChange(r.slug, { ...entry, time: e.target.value })
                             }
-                            className="w-full bg-transparent text-[12px] text-viv-ink focus:outline-none"
+                            className="w-full min-w-0 bg-transparent text-[12px] text-viv-ink focus:outline-none"
                           />
                         </label>
                       </div>

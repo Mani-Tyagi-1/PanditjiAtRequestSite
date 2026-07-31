@@ -1657,25 +1657,23 @@ export default function VivahCheckoutPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.24, ease: EASE }}
-                    className="rounded-xl border border-viv-orange bg-gradient-to-r from-viv-tint to-viv-tint-2 p-4"
+                    className="rounded-xl border border-viv-orange bg-gradient-to-r from-viv-tint to-viv-tint-2 p-3.5 sm:p-4"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="w-10 h-10 rounded-full bg-viv-orange text-white flex items-center justify-center shrink-0">
+                      <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-viv-orange text-white flex items-center justify-center shrink-0">
                         <Check className="w-4.5 h-4.5" />
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13.5px] font-semibold text-viv-ink">
-                          {kashiPanditName || "Any available Kashi Acharya"}
-                        </p>
-                        <p className="text-[11.5px] text-viv-muted mt-0.5 leading-snug">
-                          Added to your Vivah — travels to your ceremony and performs the vidhi
-                          with a Ganga-Jal sankalp.
-                        </p>
-                      </div>
+                      <p className="flex-1 min-w-0 text-[13.5px] font-semibold text-viv-ink">
+                        {kashiPanditName || "Any available Kashi Acharya"}
+                      </p>
                       <span className="text-[15px] font-bold text-viv-orange whitespace-nowrap">
                         +{fmtINR(kashiParam.premiumPrice)}
                       </span>
                     </div>
+                    <p className="text-[11.5px] text-viv-muted mt-2 leading-snug">
+                      Added to your Vivah — travels to your ceremony and performs the vidhi with a
+                      Ganga-Jal sankalp.
+                    </p>
 
                     {kashiParam.pandits?.length > 0 && (
                       <>
@@ -1724,22 +1722,26 @@ export default function VivahCheckoutPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.24, ease: EASE }}
                     onClick={() => setInviteKashi(true)}
-                    className="w-full rounded-xl border border-viv-hair bg-white/70 hover:border-viv-gold p-4 flex items-center gap-3 text-left transition-colors"
+                    className="w-full rounded-xl border border-viv-hair bg-white/70 hover:border-viv-gold p-3.5 sm:p-4 text-left transition-colors"
                   >
-                    <span className="w-10 h-10 rounded-full bg-viv-gold-pale text-viv-maroon flex items-center justify-center shrink-0">
-                      <Plus className="w-4.5 h-4.5" />
-                    </span>
-                    <span className="flex-1 min-w-0">
-                      <span className="block text-[13.5px] font-semibold text-viv-ink">
+                    {/* Name and price on one line, the blurb across the full
+                        card. Squeezed between the icon and a nowrap price it
+                        ran a dozen lines deep on a phone. */}
+                    <span className="flex items-center gap-3">
+                      <span className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-viv-gold-pale text-viv-maroon flex items-center justify-center shrink-0">
+                        <Plus className="w-4.5 h-4.5" />
+                      </span>
+                      <span className="flex-1 min-w-0 text-[13.5px] font-semibold text-viv-ink">
                         Add a Kashi Acharya
                       </span>
-                      <span className="block text-[11.5px] text-viv-muted mt-0.5 leading-snug">
-                        {kashiParam.description ||
-                          "Blessings of Baba Vishwanath at your vivah — performed by a revered Vedacharya from Kashi."}
+                      <span className="text-[15px] font-bold text-viv-orange whitespace-nowrap">
+                        +{fmtINR(kashiParam.premiumPrice)}
                       </span>
                     </span>
-                    <span className="text-[15px] font-bold text-viv-orange whitespace-nowrap">
-                      +{fmtINR(kashiParam.premiumPrice)}
+                    {/* Admin-authored, so it can run long — capped on a phone. */}
+                    <span className="block text-[11.5px] text-viv-muted mt-2 leading-snug line-clamp-3 sm:line-clamp-none">
+                      {kashiParam.description ||
+                        "Blessings of Baba Vishwanath at your vivah — performed by a revered Vedacharya from Kashi."}
                     </span>
                   </motion.button>
                 )}

@@ -43,6 +43,8 @@ const en: Record<string, string> = {
   "packages.title": "Complete Marriage Packages",
   "packages.sub": "All rituals. All blessings. Beautifully curated for your sacred journey.",
   "packages.covers": "Covers all {n} rituals",
+  "packages.morePerks": "+{n} more included",
+  "packages.fewerPerks": "Show less",
   "packages.allInclusive": "all-inclusive",
   "packages.youSave": "You save {amt}",
   "packages.pandit1": "{n} Pandit Ji",
@@ -109,6 +111,7 @@ const en: Record<string, string> = {
   // ── Elite ──
   "elite.title": "The Elite Vivah Experience",
   "elite.sub": "Crafted for families who seek the finest in tradition and service.",
+  "elite.showAll": "Show {n} more",
   "elite.f1t": "Senior Acharya Ji",
   "elite.f1d": "A senior, ceremony-specialist Pandit Ji reserved exclusively for your muhurat.",
   "elite.f2t": "Dedicated Concierge",
@@ -145,6 +148,7 @@ const en: Record<string, string> = {
 
   // ── FAQ ──
   "faq.title": "Frequently Asked Questions",
+  "faq.showAll": "Show {n} more questions",
   "faq.q1": "Is the Pandit Ji genuinely qualified to perform a Vedic wedding?",
   "faq.a1": "Yes. Every Pandit Ji is background-verified, trained in the Karmakanda (ritual science), and recites authentic mantras from the Grihya Sutras and Rig Veda. We match a Pandit Ji to your community and tradition (Rigvedi / Yajurvedi / Samavedi, and regional custom) so every rite is performed correctly.",
   "faq.q2": "Can the ceremony be tailored to our family's regional customs?",

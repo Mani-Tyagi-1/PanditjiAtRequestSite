@@ -30,7 +30,7 @@ export function Section({
   return (
     <section
       id={id}
-      className={`relative ${tight ? "py-8 lg:py-10" : "py-10 lg:py-16"} ${className}`}
+      className={`relative ${tight ? "py-6 sm:py-8 lg:py-10" : "py-8 sm:py-10 lg:py-16"} ${className}`}
     >
       {children}
     </section>
@@ -54,7 +54,7 @@ export function Head({
   return (
     <div className={`text-center ${className}`}>
       <h2
-        className={`text-[24px] sm:text-[30px] lg:text-[34px] ${
+        className={`text-[21px] sm:text-[30px] lg:text-[34px] leading-tight ${
           light ? "text-viv-cream" : "text-viv-ink"
         }`}
       >
@@ -62,7 +62,7 @@ export function Head({
       </h2>
       {sub && (
         <p
-          className={`mt-2 text-[12.5px] sm:text-[13.5px] leading-[1.6] max-w-[640px] mx-auto ${
+          className={`mt-1.5 sm:mt-2 text-[12px] sm:text-[13.5px] leading-[1.55] sm:leading-[1.6] max-w-[640px] mx-auto ${
             light ? "text-[rgba(255,246,230,0.7)]" : "text-viv-muted"
           }`}
         >

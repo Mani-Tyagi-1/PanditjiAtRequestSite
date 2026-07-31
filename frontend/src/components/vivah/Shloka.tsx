@@ -31,11 +31,13 @@ export default function Shloka({
   return (
     <Reveal>
       <figure
-        className={`text-center mx-auto max-w-[640px] ${compact ? "my-3" : "my-5"} ${className}`}
+        className={`text-center mx-auto max-w-[640px] ${
+          compact ? "my-2.5 sm:my-3" : "my-4 sm:my-5"
+        } ${className}`}
       >
         <div
           aria-hidden="true"
-          className={`flex items-center justify-center gap-2.5 mb-2.5 ${
+          className={`flex items-center justify-center gap-2.5 mb-2 sm:mb-2.5 ${
             cream ? "opacity-80" : ""
           }`}
         >
@@ -46,7 +48,7 @@ export default function Shloka({
 
         <blockquote
           lang="sa"
-          className={`display viv-shloka ${compact ? "text-[16px] sm:text-[18px]" : "text-[18px] sm:text-[21px]"} leading-[1.65] ${
+          className={`display viv-shloka ${compact ? "text-[14px] sm:text-[18px]" : "text-[16px] sm:text-[21px]"} leading-[1.6] sm:leading-[1.65] ${
             cream ? "viv-shloka-cream" : "viv-shloka-ink"
           }`}
         >
@@ -54,10 +56,13 @@ export default function Shloka({
         </blockquote>
 
         {(translit || meaning) && (
-          <figcaption className="mt-2">
+          <figcaption className="mt-1.5 sm:mt-2">
+            {/* The transliteration is a reading aid for the Devanagari above it.
+                On a phone it is the one line of the three we can spare, so the
+                mantra and its meaning still land without a wall of text. */}
             {translit && (
               <p
-                className={`text-[11px] italic tracking-wide ${
+                className={`hidden sm:block text-[11px] italic tracking-wide ${
                   cream ? "text-viv-cream/60" : "text-viv-muted-2"
                 }`}
               >
@@ -66,7 +71,7 @@ export default function Shloka({
             )}
             {meaning && (
               <p
-                className={`text-[11.5px] mt-1 leading-relaxed ${
+                className={`text-[11px] sm:text-[11.5px] mt-1 leading-relaxed ${
                   cream ? "text-viv-cream/75" : "text-viv-muted"
                 }`}
               >

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Shloka, { VIVAH_SHLOKAS } from "./Shloka";
 import { useVivahLang, tfmt } from "../../i18n/vivah";
 import {
@@ -104,6 +104,21 @@ export default function VivahKashi({
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
 
+  /* Step 3 stays live even before steps 1 and 2 are answered: a dead button
+     tells the family nothing about WHY it is dead. Pressing it walks them back
+     to the first unanswered step and pulses it — the same scroll-and-flash the
+     checkout uses for a missed field. */
+  const step1Ref = useRef<HTMLDivElement>(null);
+  const step2Ref = useRef<HTMLDivElement>(null);
+  const [flashStep, setFlashStep] = useState<1 | 2 | null>(null);
+
+  const scrollFlash = (n: 1 | 2) => {
+    const el = (n === 1 ? step1Ref : step2Ref).current;
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setFlashStep(n);
+    window.setTimeout(() => setFlashStep(null), 2600);
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return pandits;
@@ -193,7 +208,14 @@ export default function VivahKashi({
         <div className="space-y-4">
           {/* ── Step 1 — the Acharya ── */}
           <Reveal>
-            <div className="rounded-2xl border border-viv-hair bg-white p-5">
+            <div
+              ref={step1Ref}
+              /* .viv-flash carries a 12px radius for the checkout's square
+                 sections; these cards are rounded-2xl, so hold that. */
+              className={`rounded-2xl border border-viv-hair bg-white p-5 ${
+                flashStep === 1 ? "viv-flash !rounded-2xl" : ""
+              }`}
+            >
               <StepHead
                 n={1}
                 title={steps[0].title}
@@ -339,9 +361,10 @@ export default function VivahKashi({
           {/* ── Step 2 — the package ── */}
           <Reveal>
             <div
+              ref={step2Ref}
               className={`rounded-2xl border bg-white p-5 transition-opacity ${
                 acharyaDone ? "border-viv-hair" : "border-viv-hair/60 opacity-55"
-              }`}
+              } ${flashStep === 2 ? "viv-flash !rounded-2xl" : ""}`}
             >
               <StepHead
                 n={2}
@@ -481,8 +504,11 @@ export default function VivahKashi({
                   <Btn
                     variant="orange"
                     size="lg"
-                    disabled={!chosenPkg || !acharyaDone}
-                    onClick={() => chosenPkg && onContinue(chosenPkg, panditName)}
+                    onClick={() => {
+                      if (!acharyaDone) return scrollFlash(1);
+                      if (!chosenPkg) return scrollFlash(2);
+                      onContinue(chosenPkg, panditName);
+                    }}
                     className="w-full"
                   >
                     {t("kashi.step3")} <ArrowRight className="w-4 h-4" />

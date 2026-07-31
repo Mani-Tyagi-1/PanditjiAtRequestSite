@@ -45,7 +45,7 @@ export default function VivahRitualCards({
       </Reveal>
 
       <Stagger
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-3.5"
         dep={rituals.map((r) => r.slug).join("|")}
       >
         {rituals.map((r) => {
@@ -75,11 +75,11 @@ export default function VivahRitualCards({
                   )}
                 </AnimatePresence>
 
-                <div className="p-4 flex-1 flex flex-col">
+                <div className="p-3.5 sm:p-4 flex-1 flex flex-col">
                   <div className="flex items-start gap-3">
                     <span className="relative shrink-0">
                       <span
-                        className={`w-14 h-14 rounded-full flex items-center justify-center overflow-hidden border ${
+                        className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center overflow-hidden border ${
                           on
                             ? "border-viv-orange bg-white"
                             : "border-viv-hair bg-gradient-to-b from-viv-gold-pale to-[#EFD9AE]"
@@ -102,11 +102,36 @@ export default function VivahRitualCards({
                     </span>
 
                     <div className="min-w-0 flex-1 pr-12">
-                      <h3 className="display text-[16px] text-viv-ink leading-snug">
+                      <h3 className="display text-[15px] sm:text-[16px] text-viv-ink leading-snug">
                         {tc(r.titleEng)}
                       </h3>
                       {r.titleHindi && !(lang === "hi" && tc(r.titleEng) === r.titleHindi) && (
-                        <p className="text-[12px] text-viv-maroon/80 mt-0.5">{r.titleHindi}</p>
+                        <p className="text-[11.5px] sm:text-[12px] text-viv-maroon/80 mt-0.5">
+                          {r.titleHindi}
+                        </p>
+                      )}
+
+                      {/* Phone: the price rides alongside the name instead of
+                          claiming its own row, so nine rituals stay scannable.
+                          "View" opens the full detail either way. */}
+                      {r.price != null ? (
+                        <p className="sm:hidden mt-1 text-[12px] leading-snug">
+                          <span
+                            className={`font-semibold ${on ? "text-viv-orange" : "text-viv-ink"}`}
+                          >
+                            {fmtINR(r.price)}
+                          </span>
+                          {r.samagriPrice > 0 && (
+                            <span className="text-viv-muted">
+                              {" "}
+                              + {fmtINR(r.samagriPrice)} {t("journey.samagri")}
+                            </span>
+                          )}
+                        </p>
+                      ) : (
+                        <p className="sm:hidden mt-1 text-[11.5px] text-viv-muted leading-snug">
+                          {t("journey.included")}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -114,13 +139,13 @@ export default function VivahRitualCards({
                   {/* Fixed two-line measure: `flex-1` on the clamped element
                       itself lets the box grow past the clamp and leak a sliver
                       of the third line, so the spacer is kept separate. */}
-                  <p className="text-[11.5px] text-viv-muted leading-relaxed mt-3 line-clamp-2 overflow-hidden h-[34px]">
+                  <p className="hidden sm:block text-[11.5px] text-viv-muted leading-relaxed mt-3 line-clamp-2 overflow-hidden h-[34px]">
                     {tc(r.journeyDesc || r.shortDesc)}
                   </p>
-                  <span className="flex-1" aria-hidden="true" />
+                  <span className="hidden sm:block flex-1" aria-hidden="true" />
 
                   {/* Pricing */}
-                  <div className="mt-3 pt-3 border-t border-viv-hair/70">
+                  <div className="hidden sm:block mt-3 pt-3 border-t border-viv-hair/70">
                     {r.price != null ? (
                       <div className="flex items-end justify-between gap-2">
                         <span>
@@ -159,7 +184,7 @@ export default function VivahRitualCards({
                     type="button"
                     {...tap}
                     onClick={() => onView(r)}
-                    className="bg-white/90 hover:bg-viv-tint text-viv-maroon text-[12.5px] font-semibold py-3 inline-flex items-center justify-center gap-1.5 transition-colors"
+                    className="bg-white/90 hover:bg-viv-tint text-viv-maroon text-[12.5px] font-semibold py-2.5 sm:py-3 inline-flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" /> {t("journey.view")}
                   </motion.button>
@@ -170,7 +195,7 @@ export default function VivahRitualCards({
                       {...tap}
                       onClick={() => onToggle(r.slug)}
                       aria-pressed={on}
-                      className={`text-[12.5px] font-semibold py-3 inline-flex items-center justify-center gap-1.5 transition-colors ${
+                      className={`text-[12.5px] font-semibold py-2.5 sm:py-3 inline-flex items-center justify-center gap-1.5 transition-colors ${
                         on
                           ? "bg-viv-orange text-white hover:brightness-105"
                           : "bg-white/90 text-viv-orange hover:bg-viv-tint"
@@ -198,7 +223,7 @@ export default function VivahRitualCards({
                       </AnimatePresence>
                     </motion.button>
                   ) : (
-                    <span className="bg-white/60 text-viv-muted-2 text-[12px] py-3 inline-flex items-center justify-center">
+                    <span className="bg-white/60 text-viv-muted-2 text-[12px] py-2.5 sm:py-3 inline-flex items-center justify-center">
                       {t("journey.inPackages")}
                     </span>
                   )}

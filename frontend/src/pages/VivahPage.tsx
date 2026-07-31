@@ -88,6 +88,10 @@ const TRUST_FIVE = [
 
 const ELITE_ICON = [Gem, Sparkles, Flower2, Award];
 
+/* How much of the long lists a phone opens with, before its "show all". */
+const ELITE_ON_PHONE = 4;
+const FAQ_ON_PHONE = 5;
+
 const KNOW_TILES = [
   { Icon: LibraryBig, title: "know.1t", sub: "know.1s" },
   { Icon: BookOpen, title: "know.2t", sub: "know.2s" },
@@ -161,6 +165,10 @@ export default function VivahPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [allReviews, setAllReviews] = useState(false);
+  /* Phone-only folds. Both lists render in full from sm up; on a narrow screen
+     they stack into a very long column, so we open with a readable slice. */
+  const [allElite, setAllElite] = useState(false);
+  const [allFaq, setAllFaq] = useState(false);
   const [pandits, setPandits] = useState<PanditCard[]>(FALLBACK_PANDITS);
 
   /**
@@ -392,7 +400,10 @@ export default function VivahPage() {
 
       {/* ───────────────────────────── HERO ───────────────────────────── */}
       <section className="relative">
-        <div className="relative bg-viv-deep aspect-[1000/694] sm:aspect-[2244/701] w-full flex items-center overflow-hidden">
+        {/* On a phone the stacked copy is taller than a 1000/694 box, and a
+            fixed aspect-ratio would clip the top of the headline. Let the
+            content set the height there and keep the drawn ratio from sm up. */}
+        <div className="relative bg-viv-deep min-h-[480px] sm:min-h-0 sm:aspect-[2244/701] w-full flex items-center overflow-hidden">
           {/* Two crops from the supplied artwork: the tall one frames the havan
               on a phone, the wide one keeps the mandap in view on a desktop. */}
           <div
@@ -402,43 +413,48 @@ export default function VivahPage() {
             className="viv-art-hero-desktop absolute inset-0 bg-cover bg-center hidden sm:block"
           />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(33,9,8,0.9)_0%,rgba(33,9,8,0.42)_46%,rgba(33,9,8,0.88)_100%)] sm:bg-[linear-gradient(100deg,rgba(33,9,8,0.96)_0%,rgba(33,9,8,0.9)_34%,rgba(33,9,8,0.45)_58%,rgba(33,9,8,0.12)_78%)]" />
-          <Wrap className="relative py-12 lg:py-16">
+          <Wrap className="relative py-10 sm:py-12 lg:py-16">
             <div className="max-w-[620px]">
-              <h1 className="text-[38px] sm:text-[50px] lg:text-[62px] text-viv-cream leading-[1.02]">
+              <h1 className="text-[30px] sm:text-[50px] lg:text-[62px] text-viv-cream leading-[1.06] sm:leading-[1.02]">
                 {t("hero.title1")}
                 <br />
                 {t("hero.title2")}
               </h1>
-              <p className="display text-[19px] sm:text-[22px] text-viv-gold-lt mt-3">
+              <p className="display text-[16px] sm:text-[22px] text-viv-gold-lt mt-2 sm:mt-3">
                 {t("hero.tag")}
               </p>
-              {/* The Mangalacharan — the blessing every shubh karya opens with. */}
-              <div className="mt-4 max-w-[480px]">
-                <blockquote lang="sa" className="display viv-shloka-cream text-[14.5px] sm:text-[16px] leading-[1.7]">
+              {/* The Mangalacharan — the blessing every shubh karya opens with.
+                  Its translation is dropped on a phone; the mantra itself is
+                  the part that has to be there. */}
+              <div className="mt-3 sm:mt-4 max-w-[480px]">
+                <blockquote lang="sa" className="display viv-shloka-cream text-[13px] sm:text-[16px] leading-[1.65] sm:leading-[1.7]">
                   {VIVAH_SHLOKAS.mangal.deva}
                 </blockquote>
-                <p className="text-[10.5px] text-viv-cream/55 italic mt-1.5">
+                <p className="hidden sm:block text-[10.5px] text-viv-cream/55 italic mt-1.5">
                   {VIVAH_SHLOKAS.mangal.meaning}
                 </p>
               </div>
-              <p className="text-[13px] sm:text-[14px] text-viv-cream/75 mt-3.5 leading-relaxed max-w-[440px]">
+              <p className="text-[12.5px] sm:text-[14px] text-viv-cream/75 mt-3 sm:mt-3.5 leading-relaxed max-w-[440px]">
                 {t("hero.para")}
               </p>
 
-              <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
+              {/* Four stats: a tidy 2×2 on a phone, one proof row from sm up. */}
+              <div className="mt-6 sm:mt-7 grid grid-cols-2 gap-x-4 gap-y-4 sm:flex sm:flex-wrap sm:items-center sm:gap-x-6">
                 {HERO_STATS.map(({ Icon, value, label }, i) => (
                   <div
                     key={label}
-                    className={`flex items-center gap-2.5 ${
+                    className={`flex items-center gap-2 sm:gap-2.5 ${
                       i > 0 ? "sm:pl-6 sm:border-l sm:border-viv-gold/25" : ""
                     }`}
                   >
-                    <Icon className="w-5 h-5 text-viv-gold-lt shrink-0" />
-                    <span>
-                      <span className="block text-[17px] sm:text-[19px] font-semibold text-viv-cream leading-none">
+                    <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-viv-gold-lt shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-[16px] sm:text-[19px] font-semibold text-viv-cream leading-none">
                         {value}
                       </span>
-                      <span className="block text-[10.5px] text-viv-cream/60 mt-1">{t(label)}</span>
+                      <span className="block text-[10px] sm:text-[10.5px] text-viv-cream/60 mt-1 leading-snug">
+                        {t(label)}
+                      </span>
                     </span>
                   </div>
                 ))}
@@ -451,8 +467,8 @@ export default function VivahPage() {
       {/* ───────────────────── HOW WOULD YOU LIKE TO BEGIN ───────────────────── */}
       <Wrap className="relative -mt-8 lg:-mt-10 z-10">
         <Reveal y={30}>
-        <Card className="viv-mandala bg-[position:center] px-5 sm:px-8 py-6 lg:py-8 !bg-viv-sheet">
-          <p className="display text-center text-[14px] sm:text-[16px] italic text-viv-maroon/85 leading-relaxed max-w-[760px] mx-auto">
+        <Card className="viv-mandala bg-[position:center] px-4 sm:px-8 py-5 sm:py-6 lg:py-8 !bg-viv-sheet">
+          <p className="display text-center text-[12.5px] sm:text-[16px] italic text-viv-maroon/85 leading-relaxed max-w-[760px] mx-auto">
             {t("begin.reassure")}
           </p>
 
@@ -464,13 +480,13 @@ export default function VivahPage() {
           />
           <div className="mt-2 flex items-center justify-center gap-3">
             <span className="h-px flex-1 max-w-[160px] bg-gradient-to-r from-transparent to-viv-gold/50" />
-            <h2 className="text-[20px] sm:text-[24px] text-viv-ink text-center">
+            <h2 className="text-[17px] sm:text-[24px] text-viv-ink text-center leading-tight">
               {t("begin.title")}
             </h2>
             <span className="h-px flex-1 max-w-[160px] bg-gradient-to-l from-transparent to-viv-gold/50" />
           </div>
 
-          <Stagger className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3" gap={0.06}>
+          <Stagger className="mt-4 sm:mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3" gap={0.06}>
             {[
               {
                 Icon: BookOpen,
@@ -501,14 +517,18 @@ export default function VivahPage() {
                 <motion.button
                   onClick={run}
                   {...lift}
-                  className="w-full h-full bg-white border border-viv-hair rounded-xl px-3 py-4 flex items-center justify-center gap-2.5 text-left hover:border-viv-gold hover:shadow-[0_8px_20px_-14px_rgba(90,40,10,0.45)] transition-colors"
+                  className="w-full h-full bg-white border border-viv-hair rounded-xl px-2.5 sm:px-3 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2.5 text-center sm:text-left hover:border-viv-gold hover:shadow-[0_8px_20px_-14px_rgba(90,40,10,0.45)] transition-colors"
                 >
-                  <Icon className="w-5 h-5 text-viv-gold shrink-0" />
+                  <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-viv-gold shrink-0" />
                   <span className="min-w-0">
-                    <span className="block text-[12.5px] font-semibold text-viv-ink leading-snug">
+                    <span className="block text-[12px] sm:text-[12.5px] font-semibold text-viv-ink leading-snug">
                       {title}
                     </span>
-                    <span className="block text-[11px] text-viv-muted leading-snug">{sub}</span>
+                    {/* Two lines per tile don't fit two-up on a phone — the
+                        label already says where each choice leads. */}
+                    <span className="hidden sm:block text-[11px] text-viv-muted leading-snug">
+                      {sub}
+                    </span>
                   </span>
                 </motion.button>
               </RevealItem>
@@ -610,16 +630,16 @@ export default function VivahPage() {
           </Reveal>
 
           <Stagger
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3"
             dep={pandits.map((p) => p.id).join("|")}
           >
             {pandits.map((p) => (
               <RevealItem key={p.id} className="h-full">
                 <motion.div
                   {...lift}
-                  className="h-full bg-white border border-viv-hair rounded-2xl shadow-[0_2px_14px_-8px_rgba(90,40,10,0.16)] hover:border-viv-gold transition-colors p-4 text-center"
+                  className="h-full bg-white border border-viv-hair rounded-2xl shadow-[0_2px_14px_-8px_rgba(90,40,10,0.16)] hover:border-viv-gold transition-colors p-3 sm:p-4 text-center"
                 >
-                <div className="w-16 h-16 mx-auto rounded-full overflow-hidden border border-viv-hair bg-viv-gold-pale flex items-center justify-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full overflow-hidden border border-viv-hair bg-viv-gold-pale flex items-center justify-center">
                   {p.image ? (
                     <img
                       src={p.image}
@@ -633,7 +653,9 @@ export default function VivahPage() {
                     </span>
                   )}
                 </div>
-                <p className="display text-[14px] text-viv-ink mt-2.5 leading-snug">{p.name}</p>
+                <p className="display text-[13px] sm:text-[14px] text-viv-ink mt-2 sm:mt-2.5 leading-snug">
+                  {p.name}
+                </p>
                 {p.years > 0 && (
                   <p className="text-[11px] text-viv-muted mt-0.5">{tfmt(t("pandits.years"), { n: p.years })}</p>
                 )}
@@ -665,23 +687,29 @@ export default function VivahPage() {
           className="viv-art-elite relative rounded-[18px] overflow-hidden bg-viv-maroon-900 bg-cover bg-center"
         >
           <div className="absolute inset-0 bg-[linear-gradient(95deg,rgba(50,17,16,0.97)_0%,rgba(50,17,16,0.94)_42%,rgba(50,17,16,0.4)_64%,rgba(50,17,16,0.2)_100%)]" />
-          <div className="relative p-6 lg:p-9 max-w-[720px]">
-            <h2 className="text-[26px] lg:text-[32px] text-viv-cream">{t("elite.title")}</h2>
-            <p className="text-[12.5px] text-viv-cream/65 mt-1.5">{t("elite.sub")}</p>
-            <blockquote lang="sa" className="display viv-shloka-cream text-[14px] leading-[1.7] mt-3 max-w-[520px]">
+          <div className="relative p-5 sm:p-6 lg:p-9 max-w-[720px]">
+            <h2 className="text-[21px] sm:text-[26px] lg:text-[32px] text-viv-cream leading-tight">
+              {t("elite.title")}
+            </h2>
+            <p className="text-[12px] sm:text-[12.5px] text-viv-cream/65 mt-1.5">{t("elite.sub")}</p>
+            {/* Two shlokas already open the page; this one is decorative, so a
+                phone doesn't need a third block of Sanskrit. */}
+            <blockquote lang="sa" className="hidden sm:block display viv-shloka-cream text-[14px] leading-[1.7] mt-3 max-w-[520px]">
               {VIVAH_SHLOKAS.blessing.deva}
             </blockquote>
-            <Stagger className="mt-5 grid sm:grid-cols-2 gap-3" gap={0.06}>
+            <Stagger className="mt-4 sm:mt-5 grid sm:grid-cols-2 gap-2.5 sm:gap-3" gap={0.06}>
               {VIVAH_ELITE.map((e, i) => {
                 const Icon = ELITE_ICON[i % ELITE_ICON.length];
                 return (
                   <RevealItem
                     key={e.title}
-                    className="flex gap-3 border border-viv-gold/22 bg-black/25 rounded-lg p-3.5"
+                    className={`gap-3 border border-viv-gold/22 bg-black/25 rounded-lg p-3 sm:p-3.5 ${
+                      i < ELITE_ON_PHONE || allElite ? "flex" : "hidden sm:flex"
+                    }`}
                   >
-                    <Icon className="w-5 h-5 text-viv-gold-lt shrink-0 mt-0.5" />
+                    <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-viv-gold-lt shrink-0 mt-0.5" />
                     <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-viv-cream leading-snug">
+                      <p className="text-[12.5px] sm:text-[13px] font-semibold text-viv-cream leading-snug">
                         {i < 4 ? t(`elite.f${i + 1}t`) : e.title}
                       </p>
                       <p className="text-[11px] text-viv-cream/60 mt-1 leading-snug">
@@ -692,6 +720,15 @@ export default function VivahPage() {
                 );
               })}
             </Stagger>
+            {VIVAH_ELITE.length > ELITE_ON_PHONE && !allElite && (
+              <button
+                onClick={() => setAllElite(true)}
+                className="sm:hidden mt-3 text-[12px] font-semibold text-viv-gold-lt inline-flex items-center gap-1"
+              >
+                {tfmt(t("elite.showAll"), { n: VIVAH_ELITE.length - ELITE_ON_PHONE })}
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
         </Reveal>
@@ -701,22 +738,30 @@ export default function VivahPage() {
       <Section id="how-it-works" tight>
         <Wrap>
           <Reveal>
-          <Card className="!bg-viv-sheet px-5 sm:px-7 py-7">
-            <h2 className="text-[22px] sm:text-[26px] text-viv-ink text-center">
+          <Card className="!bg-viv-sheet px-4 sm:px-7 py-5 sm:py-7">
+            <h2 className="text-[18px] sm:text-[26px] text-viv-ink text-center leading-tight">
               {t("trust.title")}
             </h2>
-            <Orn className="mb-6" />
-            <Stagger className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" gap={0.05}>
+            <Orn className="mb-4 sm:mb-6" />
+            <Stagger
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-2.5 gap-y-1 sm:gap-3"
+              gap={0.05}
+            >
               {TRUST_FIVE.map(({ Icon, title, sub }) => (
-                <RevealItem key={title} className="flex items-center gap-3 px-1 py-2">
-                  <Medallion size={42}>
-                    <Icon className="w-5 h-5" />
+                <RevealItem
+                  key={title}
+                  className="flex items-center gap-2.5 sm:gap-3 px-0.5 sm:px-1 py-2"
+                >
+                  <Medallion size={38} className="sm:!w-[42px] sm:!h-[42px]">
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Medallion>
                   <span className="min-w-0">
-                    <span className="display block text-[13px] text-viv-ink leading-snug">
+                    <span className="display block text-[12px] sm:text-[13px] text-viv-ink leading-snug">
                       {t(title)}
                     </span>
-                    <span className="block text-[11px] text-viv-muted leading-snug">{t(sub)}</span>
+                    <span className="block text-[10.5px] sm:text-[11px] text-viv-muted leading-snug">
+                      {t(sub)}
+                    </span>
                   </span>
                 </RevealItem>
               ))}
@@ -734,12 +779,12 @@ export default function VivahPage() {
             <Orn className="mb-6" />
           </Reveal>
 
-          <Stagger className="grid md:grid-cols-3 gap-4" dep={allReviews}>
+          <Stagger className="grid md:grid-cols-3 gap-3 sm:gap-4" dep={allReviews}>
             {(allReviews ? VIVAH_TESTIMONIALS : VIVAH_TESTIMONIALS.slice(0, 3)).map((tm, ti) => (
               <RevealItem key={tm.id} className="h-full">
                 <motion.div
                   {...lift}
-                  className="h-full bg-viv-sheet border border-viv-hair rounded-2xl shadow-[0_2px_14px_-8px_rgba(90,40,10,0.16)] p-5"
+                  className="h-full bg-viv-sheet border border-viv-hair rounded-2xl shadow-[0_2px_14px_-8px_rgba(90,40,10,0.16)] p-4 sm:p-5"
                 >
                 <span className="display text-[34px] leading-none text-viv-gold/60">“</span>
                 <p className="text-[12.5px] italic text-viv-ink/85 leading-relaxed -mt-3">
@@ -791,7 +836,7 @@ export default function VivahPage() {
             <Head title={t("faq.title")} />
             <Orn className="mb-6" />
           </Reveal>
-          <div className="grid md:grid-cols-2 gap-x-5 gap-y-2.5">
+          <div className="grid md:grid-cols-2 gap-x-5 gap-y-2 sm:gap-y-2.5">
             {VIVAH_FAQ.map((f, i) => {
               const open = openFaq === i;
               const q = i < 9 ? t(`faq.q${i + 1}`) : f.q;
@@ -801,12 +846,12 @@ export default function VivahPage() {
                   key={f.q}
                   className={`bg-white border rounded-xl overflow-hidden h-fit transition-colors ${
                     open ? "border-viv-gold" : "border-viv-hair"
-                  }`}
+                  } ${i < FAQ_ON_PHONE || allFaq ? "block" : "hidden md:block"}`}
                 >
                   <button
                     onClick={() => setOpenFaq(open ? null : i)}
                     aria-expanded={open}
-                    className="w-full flex items-center gap-3 text-left px-4 py-3"
+                    className="w-full flex items-center gap-3 text-left px-3.5 sm:px-4 py-3"
                   >
                     <span className="flex-1 text-[12.5px] font-medium text-viv-ink leading-snug">
                       {q}
@@ -820,7 +865,7 @@ export default function VivahPage() {
                   <AnimatePresence initial={false}>
                     {open && (
                       <motion.div key="a" {...collapse}>
-                        <p className="px-4 pb-4 -mt-0.5 text-[12px] text-viv-muted leading-relaxed">
+                        <p className="px-3.5 sm:px-4 pb-4 -mt-0.5 text-[12px] text-viv-muted leading-relaxed">
                           {a}
                         </p>
                       </motion.div>
@@ -830,21 +875,34 @@ export default function VivahPage() {
               );
             })}
           </div>
+
+          {VIVAH_FAQ.length > FAQ_ON_PHONE && !allFaq && (
+            <div className="md:hidden text-center mt-4">
+              <Btn variant="ghost" size="sm" onClick={() => setAllFaq(true)}>
+                {tfmt(t("faq.showAll"), { n: VIVAH_FAQ.length - FAQ_ON_PHONE })}
+                <ChevronDown className="w-3.5 h-3.5" />
+              </Btn>
+            </div>
+          )}
         </Wrap>
       </Section>
 
       {/* ─────────────────── TALK TO A PANDIT JI ─────────────────── */}
       <Wrap className="py-2">
         <Reveal>
-        <div className="rounded-[18px] border border-viv-hair bg-gradient-to-r from-viv-tint to-viv-tint-2 px-5 sm:px-7 py-6 grid lg:grid-cols-[1fr_auto_1fr] items-center gap-5">
+        <div className="rounded-[18px] border border-viv-hair bg-gradient-to-r from-viv-tint to-viv-tint-2 px-4 sm:px-7 py-5 sm:py-6 grid lg:grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-5">
           <div>
-            <h2 className="text-[22px] text-viv-maroon">{t("talk.title")}</h2>
-            <p className="text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">{t("talk.sub")}</p>
+            <h2 className="text-[19px] sm:text-[22px] text-viv-maroon leading-tight">
+              {t("talk.title")}
+            </h2>
+            <p className="text-[12px] sm:text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">
+              {t("talk.sub")}
+            </p>
           </div>
-          <Btn variant="maroon" size="lg" onClick={() => setConsultOpen(true)}>
+          <Btn variant="maroon" size="lg" onClick={() => setConsultOpen(true)} className="w-full lg:w-auto">
             <MessageCircle className="w-4 h-4" /> {t("talk.cta")} →
           </Btn>
-          <div className="flex flex-wrap justify-start lg:justify-end gap-x-6 gap-y-2">
+          <div className="flex flex-wrap justify-start lg:justify-end gap-x-4 sm:gap-x-6 gap-y-2">
             {[t("talk.chip1"), t("talk.chip2"), t("talk.chip3")].map((l) => (
               <span
                 key={l}
@@ -865,14 +923,16 @@ export default function VivahPage() {
       <Section id="about" tight>
         <Wrap>
           <Reveal>
-          <Card className="!bg-viv-sheet p-5 sm:p-7 grid lg:grid-cols-[1.15fr_1fr] gap-6">
+          <Card className="!bg-viv-sheet p-4 sm:p-7 grid lg:grid-cols-[1.15fr_1fr] gap-4 sm:gap-6">
             <div className="flex gap-4">
               <Medallion size={46} className="hidden sm:inline-flex">
                 <Landmark className="w-5 h-5" />
               </Medallion>
               <div className="min-w-0">
-                <h2 className="text-[22px] sm:text-[25px] text-viv-ink">{t("about.title")}</h2>
-                <p className="text-[12.5px] text-viv-muted mt-2 leading-relaxed">
+                <h2 className="text-[19px] sm:text-[25px] text-viv-ink leading-tight">
+                  {t("about.title")}
+                </h2>
+                <p className="text-[12px] sm:text-[12.5px] text-viv-muted mt-2 leading-relaxed line-clamp-4 sm:line-clamp-none">
                   {t("about.intro")}
                 </p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
@@ -956,7 +1016,7 @@ export default function VivahPage() {
               <Orn className="mb-6" />
             </Reveal>
 
-            <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5" gap={0.05}>
+            <Stagger className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5" gap={0.05}>
               {FEATURED_GUIDES.map((g) => (
                 <RevealItem key={g.slug} className="h-full">
                   <motion.article {...lift} className="h-full">
@@ -964,7 +1024,7 @@ export default function VivahPage() {
                       to={`/vedic-vivah/guides/${g.slug}`}
                       className="flex flex-col h-full bg-white border border-viv-hair rounded-2xl overflow-hidden shadow-[0_10px_26px_-22px_rgba(90,40,10,0.6)] hover:border-viv-gold transition-colors"
                     >
-                      <div className="relative h-[120px] overflow-hidden bg-viv-maroon-900">
+                      <div className="relative h-[92px] sm:h-[120px] overflow-hidden bg-viv-maroon-900">
                         <img
                           src={g.cover}
                           srcSet={`${g.cover} 1x, ${g.cover.replace(/\.(webp|jpg)$/, "@2x.$1")} 2x`}
@@ -979,14 +1039,17 @@ export default function VivahPage() {
                           {g.category}
                         </span>
                       </div>
-                      <div className="p-3.5 flex-1 flex flex-col">
-                        <h3 className="display text-[15px] text-viv-ink leading-snug line-clamp-2">
+                      <div className="p-3 sm:p-3.5 flex-1 flex flex-col">
+                        <h3 className="display text-[13px] sm:text-[15px] text-viv-ink leading-snug line-clamp-2">
                           {lang === "hi" && g.hindiTitle ? g.hindiTitle : g.title}
                         </h3>
+                        {/* Two titles in a half-width card is one too many. */}
                         {g.hindiTitle && lang !== "hi" && (
-                          <p className="text-[11px] text-viv-maroon/80 mt-0.5">{g.hindiTitle}</p>
+                          <p className="hidden sm:block text-[11px] text-viv-maroon/80 mt-0.5">
+                            {g.hindiTitle}
+                          </p>
                         )}
-                        <span className="flex items-center justify-between mt-auto pt-3 text-[11px]">
+                        <span className="flex items-center justify-between mt-auto pt-2.5 sm:pt-3 text-[10.5px] sm:text-[11px]">
                           <span className="text-viv-muted-2">{g.minutes} {t("blog.min")}</span>
                           <span className="inline-flex items-center gap-1 font-semibold text-viv-orange">
                             {t("blog.read")} <ChevronRight className="w-3 h-3" />
@@ -1010,8 +1073,8 @@ export default function VivahPage() {
       </Section>
 
       {/* ───────────────────────── HELP TILES ───────────────────────── */}
-      <Wrap className="pb-10">
-        <Stagger className="grid grid-cols-2 lg:grid-cols-4 gap-3" gap={0.05}>
+      <Wrap className="pb-8 sm:pb-10">
+        <Stagger className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3" gap={0.05}>
           {HELP_TILES.map(({ Icon, title, sub, action }) => (
             <RevealItem key={title} className="h-full">
             <motion.button
@@ -1021,14 +1084,18 @@ export default function VivahPage() {
                 else if (action === "account") navigate("/account?tab=vivah");
                 else scrollTo("#packages");
               }}
-              className="flex items-center gap-3 bg-white border border-viv-hair rounded-xl px-3.5 py-3.5 text-left hover:border-viv-gold transition-colors"
+              className="w-full h-full flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-3 bg-white border border-viv-hair rounded-xl px-2.5 sm:px-3.5 py-3 sm:py-3.5 text-center sm:text-left hover:border-viv-gold transition-colors"
             >
-              <Medallion size={38}>
+              <Medallion size={34} className="sm:!w-[38px] sm:!h-[38px]">
                 <Icon className="w-4 h-4" />
               </Medallion>
               <span className="min-w-0">
-                <span className="display block text-[13px] text-viv-ink leading-snug">{t(title)}</span>
-                <span className="block text-[11px] text-viv-muted leading-snug">{t(sub)}</span>
+                <span className="display block text-[12px] sm:text-[13px] text-viv-ink leading-snug">
+                  {t(title)}
+                </span>
+                <span className="block text-[10.5px] sm:text-[11px] text-viv-muted leading-snug">
+                  {t(sub)}
+                </span>
               </span>
             </motion.button>
             </RevealItem>

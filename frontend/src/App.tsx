@@ -132,6 +132,8 @@ const SavanPujaPage = React.lazy(() => import("./pages/SavanPujaPage"));
 const SavanPujaBookingPage = React.lazy(() => import("./pages/SavanPujaBookingPage"));
 const KaalBhairavPage = React.lazy(() => import("./pages/KaalBhairav"));
 const KaalBhairavBookingPage = React.lazy(() => import("./pages/KaalBhairavBookingPage"));
+const BankeBihariPage = React.lazy(() => import("./pages/BankeBihari"));
+const BankeBihariBookingPage = React.lazy(() => import("./pages/BankeBihariBookingPage"));
 const Hanumanjipage = React.lazy(() => import("./pages/Hanumanjipage"));
 const HanumanBookingPage = React.lazy(() => import("./pages/HanumanBookingPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
@@ -292,6 +294,14 @@ function App() {
           {/* Short alias — easier to type/share in ads & WhatsApp */}
           <Route path="/kaal-bhairav-puja" element={<Navigate to="/kashi-kaal-bhairav-puja" replace />} />
           <Route path="/kaal-bhairav-puja/booking" element={<Navigate to="/kashi-kaal-bhairav-puja/booking" replace />} />
+          {/* Banke Bihari — Janmashtami puja at Shri Banke Bihari Ji Mandir, Vrindavan */}
+          <Route path="/vrindavan-banke-bihari-puja" element={<BankeBihariPage />} />
+          <Route path="/vrindavan-banke-bihari-puja/booking" element={<BankeBihariBookingPage />} />
+          {/* Short aliases — easier to type/share in ads & WhatsApp */}
+          <Route path="/banke-bihari-puja" element={<Navigate to="/vrindavan-banke-bihari-puja" replace />} />
+          <Route path="/banke-bihari-puja/booking" element={<Navigate to="/vrindavan-banke-bihari-puja/booking" replace />} />
+          <Route path="/janmashtami-puja" element={<Navigate to="/vrindavan-banke-bihari-puja" replace />} />
+          <Route path="/janmashtami-puja/booking" element={<Navigate to="/vrindavan-banke-bihari-puja/booking" replace />} />
           {/* Hanuman — Bada Mangal puja at Shri Hanuman Garhi Mandir, Ayodhya */}
           <Route path="/ayodhya-hanuman-garhi-puja" element={<Hanumanjipage />} />
           <Route path="/ayodhya-hanuman-garhi-puja/booking" element={<HanumanBookingPage />} />

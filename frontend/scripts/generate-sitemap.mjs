@@ -58,6 +58,8 @@ const STATIC_ROUTES = [
   { path: "/kashi-mahadev-savan-puja", priority: "0.9", changefreq: "daily" },
   // Kaal Bhairav Kalashtami 2026 campaign page — remove after 11 Aug 2026
   { path: "/kashi-kaal-bhairav-puja", priority: "0.9", changefreq: "daily" },
+  // Banke Bihari Janmashtami 2026 campaign page — remove after 4 Sep 2026
+  { path: "/vrindavan-banke-bihari-puja", priority: "0.9", changefreq: "daily" },
   { path: "/join-as-panditji", priority: "0.5", changefreq: "monthly" },
   { path: "/privacypolicy", priority: "0.3", changefreq: "yearly" },
   { path: "/termsandconditions", priority: "0.3", changefreq: "yearly" },

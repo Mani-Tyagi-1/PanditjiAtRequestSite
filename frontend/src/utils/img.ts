@@ -9,13 +9,18 @@
 //
 // NOTE: weserv is a free service — fine as a stopgap. The permanent fix is to
 // upload already-optimized WebP images at display size to the CDN.
+// `trim` additionally crops away a uniform / fully transparent border before
+// resizing. Useful for CDN artwork exported on an oversized canvas: without it
+// the transparent padding is laid out as real (empty) space in the page.
 export function optimizedImg(
   url: string | undefined | null,
   width: number,
-  quality = 75
+  quality = 75,
+  opts: { trim?: boolean } = {}
 ): string {
   if (!url || typeof url !== "string") return "";
   if (!/^https?:\/\//i.test(url) || url.startsWith("data:")) return url;
   const source = url.replace(/^https:\/\//i, "ssl:").replace(/^http:\/\//i, "");
-  return `https://images.weserv.nl/?url=${encodeURIComponent(source)}&w=${width}&output=webp&q=${quality}&we`;
+  const trim = opts.trim ? "&trim=1" : "";
+  return `https://images.weserv.nl/?url=${encodeURIComponent(source)}&w=${width}&output=webp&q=${quality}&we${trim}`;
 }

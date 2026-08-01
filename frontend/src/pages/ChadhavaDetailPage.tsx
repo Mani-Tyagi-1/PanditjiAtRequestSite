@@ -210,18 +210,30 @@ export default function ChadhavaDetailPage() {
                 const raw = json.data;
                 if (!raw) throw new Error("Chadhava data is empty");
                 
-                // Collect every banner image the backend exposes so the hero
-                // carousel + dots reflect the actual number of images available.
+                // Hero carousel images, in the order they are shown: the web card
+                // image FIRST, then the inner images. The remaining arrays are
+                // only carried for legacy Vedic Vaibhav docs, which expose none
+                // of the two fields above — for a current PJAR doc they are all
+                // empty, so the carousel is exactly [webCard, ...inner].
+                //
+                // `chadhavaAppImage` is deliberately NOT in this list: it is the
+                // app-shaped crop of the same artwork as the web card, so
+                // including it appended a near-duplicate slide. It is used only
+                // as a last-resort fallback below, when a doc exposes nothing
+                // else at all.
                 const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
                 const bannerImages = Array.from(new Set([
-                    ...(Array.isArray(raw.chadhavaImages) ? raw.chadhavaImages : []),
+                    raw.chadhavaWebCardImage,
                     ...(Array.isArray(raw.chadhavaInnerImages) ? raw.chadhavaInnerImages : []),
+                    ...(Array.isArray(raw.chadhavaImages) ? raw.chadhavaImages : []),
                     ...(Array.isArray(raw.bannerImages) ? raw.bannerImages : []),
                     ...(Array.isArray(raw.images) ? raw.images : []),
-                    raw.chadhavaWebCardImage,
-                    raw.chadhavaAppImage,
                     raw.image,
                 ].map(imgLoc).filter(Boolean)));
+                if (bannerImages.length === 0) {
+                    const fallback = imgLoc(raw.chadhavaAppImage);
+                    if (fallback) bannerImages.push(fallback);
+                }
 
                 // Legacy Vedic Vaibhav docs use `selectedMandirs`; new PJAR docs use `mandirs`.
                 const mandir = raw.selectedMandirs?.[0] || raw.mandirs?.[0] || {};

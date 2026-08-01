@@ -93,10 +93,13 @@ const normalizeChadhava = (item: any): Chadhava => {
     }
 
     const deity = item.deity || item.chadhavaName || "";
-    const mandir = item.selectedMandirs?.[0];
+    // Legacy Vedic Vaibhav docs expose `selectedMandirs`; current PJAR docs
+    // expose `mandirs`. Reading only the legacy key left templeName empty on
+    // every PJAR chadhava. Same both-shapes lookup ChadhavaPage/DetailPage do.
+    const mandir = item.selectedMandirs?.[0] || item.mandirs?.[0];
     let templeName = item.templeName || "";
     if (mandir && !templeName) {
-        templeName = mandir.nameEnglish || "";
+        templeName = mandir.nameEnglish || mandir.mandirName || mandir.name || "";
     }
     
     // Images may be plain URL strings (new PJAR format) or upload objects (legacy VV).

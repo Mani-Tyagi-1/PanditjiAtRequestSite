@@ -7,6 +7,18 @@ import API_URL from "../utils/apiConfig";
 // and the <DevshayaniComboCard/> below to disable the whole feature)
 import { DevshayaniComboCard } from "../components/DevshayaniComboCard";
 
+/**
+ * Chadhava records to hide from THIS listing, by Mongo `_id`.
+ *
+ * A presentation-only filter: the record stays active in the backend and its
+ * detail page at /chadhava/<id> still resolves, so any link already shared or
+ * running in an ad keeps working — it is only withheld from the grid here.
+ * Deactivate the record in the admin instead if it should be gone everywhere.
+ */
+const HIDDEN_CHADHAVA_IDS = new Set<string>([
+    "6a67a05951d2fb61b47ddd5c",
+]);
+
 type Chadhava = {
     id: string;
     slug: string;
@@ -164,12 +176,17 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
     }
 
     const deity = item.deity || item.chadhavaName || "";
-    const mandir = item.selectedMandirs?.[0];
+    // Legacy Vedic Vaibhav docs expose `selectedMandirs`; current PJAR docs
+    // expose `mandirs`. Reading only the legacy key left templeName/Location
+    // empty on every PJAR chadhava, so the card rendered a bare map pin with no
+    // text beside it. Same both-shapes lookup ChadhavaDetailPage already does.
+    const mandir = item.selectedMandirs?.[0] || item.mandirs?.[0];
     let templeName = item.templeName || "";
     let templeLocation = item.templeLocation || "";
     if (mandir) {
-        if (!templeName) templeName = mandir.nameEnglish || "";
-        if (!templeLocation) templeLocation = mandir.city || "";
+        // `nameEnglish` is the PJAR/VV field; the others cover older records.
+        if (!templeName) templeName = mandir.nameEnglish || mandir.mandirName || mandir.name || "";
+        if (!templeLocation) templeLocation = mandir.city || mandir.location || "";
     }
     
     // Images may be plain URL strings (new PJAR format) or upload objects (legacy VV).
@@ -257,6 +274,7 @@ export default function ChadhavaPage() {
                 const activeItems = rawItems.filter(
                     (item: any) =>
                         item?.isActive !== false &&
+                        !HIDDEN_CHADHAVA_IDS.has(String(item?._id || item?.id || "")) &&
                         (Array.isArray(item?.availableDates) ? item.availableDates.some(isTodayOrFutureDate) : true)
                 );
 

@@ -4,7 +4,7 @@ import {
     ArrowLeft, Check, ShieldCheck, Gift, Calendar, Sparkles,
     Star, Lock, ChevronDown, MessageCircle, Phone, BadgeCheck,
     Video, MapPin, Share2, HelpCircle, Heart, Milk, Droplets,
-    Flower2, Feather, Music,
+    Flower2, Feather, Music, Leaf, Cookie, Flame, UtensilsCrossed,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "../context/AuthContext";
@@ -15,9 +15,12 @@ import { optimizedImg } from "../utils/img";
 import {
     bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, DEFAULT_PACKAGE_ID, getPackage,
     PEACOCK_FEATHER_IMAGE, CTA_BANNER_IMAGE, FLUTE_FEATHER_IMAGE,
+    PRASAD_BOX_PRICE, EXTRA_FAMILY_MEMBER_PRICE, PRASAD_BOXES, BANKE_BIHARI_PACKAGES,
+    canAddPrasadBox, prasadBoxCost, packageOfferings, packageTotal, shippedPrasadBox,
     type PujaPackageId,
 } from "../data/bankeBihariPuja";
 import PujaPackages from "../components/bankeBihari/PujaPackages";
+import { ItemTileRow } from "../components/bankeBihari/ItemTiles";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -252,7 +255,29 @@ export default function BankeBihariPage() {
     // booking page as navigation state so it opens pre-selected.
     const [packageId, setPackageId] = useState<PujaPackageId>(DEFAULT_PACKAGE_ID);
     const selectedPkg = getPackage(packageId);
-    const price = selectedPkg.price;
+
+    // The optional ₹501 prasad box. OFF by default — it may only ever be added
+    // by a deliberate tap, never pre-ticked into someone's bill. Carried to the
+    // booking page alongside the package so the choice survives the hop.
+    const [addPrasadBox, setAddPrasadBox] = useState(false);
+
+    // Higher packages already ship a richer box free, so the paid add-on is not
+    // offered there. Switching up to one must therefore also clear the flag —
+    // otherwise a devotee who ticked it on ₹2100 would keep paying ₹501 for a
+    // box that is now free, with no visible control left to untick.
+    const prasadBoxAdded = canAddPrasadBox(selectedPkg) && addPrasadBox;
+
+    // Nothing above this tier to upsell to (drives the "higher packages offer
+    // more" hint), read off the list so adding a fifth package needs no edit.
+    const isTopPackage = selectedPkg.id === BANKE_BIHARI_PACKAGES[BANKE_BIHARI_PACKAGES.length - 1].id;
+
+    // The box this booking would actually ship (free tier, opted-in ₹501 box,
+    // or none) — null when nothing is couriered at all.
+    const shippedBox = shippedPrasadBox(selectedPkg, prasadBoxAdded);
+
+    // The sticky CTA quotes the package + prasad box. Extra family Sankalps are
+    // chosen on the booking page, so they can't be priced in yet.
+    const price = packageTotal(selectedPkg, 0, prasadBoxAdded);
 
     // ViewContent on load
     useEffect(() => {
@@ -333,15 +358,32 @@ export default function BankeBihariPage() {
     const whatYouGet = [
         { icon: BadgeCheck, title: "Personalized seva", sub: "Performed in your name & gotra" },
         { icon: Video, title: "Puja video on WhatsApp", sub: "Full recording delivered to you" },
-        { icon: Gift, title: "Prasad at your home", sub: "Makhan-mishri couriered to you" },
+        { icon: Gift, title: "Prasad at your home", sub: "Free in ₹5100 & ₹11000, else ₹501" },
     ];
 
     // The sacred offerings made during the Janmashtami seva.
+    //
+    // Panchamrit and tulsi archana are part of the Vedic vidhi itself, so they
+    // are offered in EVERY package; everything after them is unlocked by the
+    // chosen package and comes straight from the package data, so this grid can
+    // never quietly promise an offering the selected tier doesn't include.
+    const OFFERING_META: Record<string, { icon: typeof Milk; sub: string }> = {
+        "Makhan Mishri": { icon: Milk, sub: "His dearest bhog" },
+        "Mor Pankh": { icon: Feather, sub: "At his charan" },
+        Paan: { icon: Leaf, sub: "Offered after bhog" },
+        Bansuri: { icon: Music, sub: "Krishna's flute" },
+        Laddu: { icon: Cookie, sub: "Bhog of laddu" },
+        "Deepak Seva": { icon: Flame, sub: "Ghee deepak lit" },
+        "Bade Bhog Thali": { icon: UtensilsCrossed, sub: "Grand bhog thali" },
+    };
     const offerings = [
         { icon: Droplets, label: "Panchamrit", sub: "Abhishek of Kanha" },
-        { icon: Milk, label: "Makhan Mishri", sub: "His dearest bhog" },
         { icon: Flower2, label: "Tulsi Archana", sub: "Tulsi dal offering" },
-        { icon: Feather, label: "Mor Pankh", sub: "Offered at his charan" },
+        ...packageOfferings(selectedPkg).map((label) => ({
+            label,
+            icon: OFFERING_META[label]?.icon ?? Flower2,
+            sub: OFFERING_META[label]?.sub ?? "Offered in your name",
+        })),
     ];
 
     // Main CTA goes straight to the booking page.
@@ -349,9 +391,9 @@ export default function BankeBihariPage() {
     // InitiateCheckout / Purchase then fire on the booking page itself, so the
     // three funnel steps stay distinct instead of collapsing onto one trigger.
     //
-    // ViewContent / AddToCart here necessarily report the package base price:
-    // extra Sankalp names are chosen on the booking page, so no add-on exists
-    // yet at this point in the funnel. The booking's real value (base + extras)
+    // AddToCart here reports package + prasad box, the only two choices this
+    // page can make; extra Sankalp names are chosen on the booking page, so
+    // they cannot be priced in yet. The booking's real value (base + extras)
     // is reported by InitiateCheckout / Purchase from BankeBihariBookingPage and
     // by the server CAPI Purchase — read those, not these, when reconciling
     // revenue in Events Manager.
@@ -368,9 +410,10 @@ export default function BankeBihariPage() {
             value: price,
             currency: "INR",
         });
-        track("puja_cta_click", { source, package: selectedPkg.id, value: price }, true);
-        // Hand the chosen package to the booking page so it opens pre-selected.
-        navigate(`/${BANKE_BIHARI_PUJA_SLUG}/booking`, { state: { packageId } });
+        track("puja_cta_click", { source, package: selectedPkg.id, prasadBox: prasadBoxAdded, value: price }, true);
+        // Hand the chosen package AND the prasad-box choice to the booking page
+        // so it opens exactly as the devotee left this one.
+        navigate(`/${BANKE_BIHARI_PUJA_SLUG}/booking`, { state: { packageId, addPrasadBox: prasadBoxAdded } });
     };
 
     const handleShare = async () => {
@@ -416,11 +459,11 @@ export default function BankeBihariPage() {
           <meta property="og:type" content="product" />
           <meta property="og:site_name" content="Pandit Ji At Request" />
           <meta property="og:title" content={`${puja.poojaNameEng} — Janmashtami Puja at ${puja.templeName}, Vrindavan`} />
-          <meta property="og:description" content={`Krishna Janmashtami seva performed on your behalf at ${mandirName}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹501.`} />
+          <meta property="og:description" content={`Krishna Janmashtami seva performed on your behalf at ${mandirName}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹1100.`} />
           <meta property="og:url" content={`https://panditjiatrequest.com/${BANKE_BIHARI_PUJA_SLUG}`} />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={`${puja.poojaNameEng} — Janmashtami Puja at Vrindavan`} />
-          <meta name="twitter:description" content={`Janmashtami seva at ${mandirName}. Packages from ₹501, puja video on WhatsApp.`} />
+          <meta name="twitter:description" content={`Janmashtami seva at ${mandirName}. Packages from ₹1100, puja video on WhatsApp.`} />
           {/* Image tags & the LCP preload are only emitted once the banner
               artwork exists — an empty og:image is worse than none. */}
           {image && <meta property="og:image" content={image} />}
@@ -499,10 +542,11 @@ export default function BankeBihariPage() {
             <p className="text-[13px] text-[#D63D72] font-medium mt-0.5">
               {puja.poojaNameHindi}
             </p>
+            {/* Meta on two tight rows. The deity chip is gone — the title
+                already opens with "Shree Banke Bihari Ji", so it only repeated
+                itself — and the date no longer re-states the occasion that the
+                green chip beside it carries. */}
             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
-              <span className="bg-[#FFE9D8] text-[#D63D72] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
-                {puja.deity}
-              </span>
               <span className="bg-[#EDF9F0] border border-[#A7D8B6] text-[#1F7A50] text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
                 {puja.occasion}
               </span>
@@ -514,28 +558,88 @@ export default function BankeBihariPage() {
                 </span>
               </span>
             </div>
-            <div className="flex flex-col gap-1 mt-2 text-[12px] text-[#555555]">
-              <span className="flex items-start gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#D63D72] shrink-0 mt-0.5" />
-                <span className="leading-snug">{mandirName}</span>
+            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[12px] text-[#555555]">
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#D63D72] shrink-0" />
+                {puja.templeName}, Vrindavan
               </span>
               <span className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#D63D72] shrink-0" />
-                {puja.pujaDate} · {puja.occasion}
+                {puja.pujaDate}
               </span>
             </div>
           </div>
-
-          
 
           {/* ── Choose your seva (comparison) ── */}
           <div id="packages">
             <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               Choose your seva
             </SectionTitle>
-            <PujaPackages selectedId={packageId} onSelect={setPackageId} />
+            {/* One line only — every card already carries its own "Tap to see
+                everything included" prompt, so spelling that out here twice was
+                the bulk of the copy in this block. */}
+            {/* No "each package includes the one before it" line any more: the
+                cards no longer lean on that shorthand, they each list their own
+                contents in full. */}
+            {/* The prasad box is chosen inside the cards themselves — the package
+                and its box are one decision, so splitting them across two
+                sections made devotees scroll back up to check what they'd
+                picked. */}
+            <PujaPackages
+              selectedId={packageId}
+              onSelect={setPackageId}
+              prasadBoxAdded={prasadBoxAdded}
+              onTogglePrasadBox={(next) => {
+                setAddPrasadBox(next);
+                track(
+                  "puja_prasad_box_toggle",
+                  { added: next, package: selectedPkg.id, value: PRASAD_BOX_PRICE },
+                  true,
+                );
+              }}
+            />
+
+            {/* Running total, so the two price-changing choices on this page
+                (package + prasad box) always add up in front of the devotee
+                rather than only in the sticky bar. */}
+            <div className="mt-3 rounded-2xl border border-[#F4DFC2] bg-white p-3 shadow-sm">
+              <div className="flex items-center justify-between text-[12.5px] text-[#555555]">
+                <span>{selectedPkg.name}</span>
+                <span className="font-bold text-[#5C1A34]">
+                  ₹{selectedPkg.price.toLocaleString("en-IN")}
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between text-[12.5px] text-[#555555]">
+                <span className="flex items-center gap-1.5">
+                  <Gift className="w-3.5 h-3.5 text-[#E7B63A]" />
+                  {selectedPkg.freePrasadBox
+                    ? PRASAD_BOXES[selectedPkg.freePrasadBox].name
+                    : "Prasad Box (optional)"}
+                </span>
+                {selectedPkg.freePrasadBox ? (
+                  <span className="text-[11px] font-bold text-[#2E8B57]">FREE</span>
+                ) : prasadBoxAdded ? (
+                  <span className="font-bold text-[#5C1A34]">
+                    +₹{prasadBoxCost(selectedPkg, true).toLocaleString("en-IN")}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-semibold text-[#8A8A8A]">Not added</span>
+                )}
+              </div>
+              <div className="mt-2 pt-2 border-t border-[#F4DFC2] flex items-baseline justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-[#8A8A8A]">
+                  Total today
+                </span>
+                <span className="text-[19px] font-extrabold text-[#D63D72]">
+                  ₹{price.toLocaleString("en-IN")}
+                </span>
+              </div>
+            </div>
+
             <p className="mt-2 text-[10.5px] text-[#8A8A8A] leading-snug text-center">
-              Extra family members can be added at ₹151 each on the next step.
+              {selectedPkg.freeFamilyMembers > 0
+                ? `${selectedPkg.freeFamilyMembers} family Sankalp${selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free in this package · extra names ₹${EXTRA_FAMILY_MEMBER_PRICE} each on the next step.`
+                : `Family members can be added at ₹${EXTRA_FAMILY_MEMBER_PRICE} each on the next step.`}
             </p>
           </div>
 
@@ -569,7 +673,7 @@ export default function BankeBihariPage() {
                 "Janmashtami seva at Banke Bihari Ji Mandir, Vrindavan",
                 "Personalised Sankalp in your name & gotra",
                 "Puja video shared on WhatsApp",
-                "Makhan-mishri prasad & Tulsi mala in premium packages",
+                "Prasad box free in ₹5100 & ₹11000 — optional ₹501 otherwise",
               ].map((t) => (
                 <div key={t} className="flex items-start gap-2 text-[12.5px] text-[#555555]">
                   <Check className="w-3.5 h-3.5 text-[#2E8B57] shrink-0 mt-0.5" strokeWidth={3} />
@@ -625,6 +729,10 @@ export default function BankeBihariPage() {
             <SectionTitle icon={<Flower2 className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               What is offered in your name
             </SectionTitle>
+            <p className="-mt-1.5 mb-2 text-[11px] text-[#7A3E55]">
+              With your selected <b className="text-[#5C1A34]">{selectedPkg.name}</b>
+              {isTopPackage ? " — the fullest set of offerings" : " — higher packages offer more"}
+            </p>
             <div className="grid grid-cols-4 gap-2">
               {offerings.map(({ icon: Icon, label, sub }) => (
                 <div
@@ -639,6 +747,55 @@ export default function BankeBihariPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* ── The three prasad boxes, side by side ──
+              The packages section shows the ONE box that applies to the current
+              selection; this shows all three at once, so a devotee can see what
+              upgrading actually buys before they commit. Each tier lists only
+              what it adds, under an explicit "everything in the box above" line,
+              which is also how the data itself is modelled. */}
+          <div>
+            <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-[#E7B63A]" />}>
+              What's in each prasad box
+            </SectionTitle>
+            <div className="space-y-2">
+              {([
+                { tier: "standard", how: `Optional add-on · ₹${PRASAD_BOX_PRICE}`, free: false },
+                { tier: "premium", how: "FREE with ₹5,100 Shringar Seva", free: true },
+                { tier: "royal", how: "FREE with ₹11,000 Raj Bhog Seva", free: true },
+              ] as const).map(({ tier, how, free }) => {
+                const box = PRASAD_BOXES[tier];
+                const parent = box.inherits ? PRASAD_BOXES[box.inherits] : null;
+                return (
+                  <div
+                    key={tier}
+                    className={`rounded-2xl border p-3 shadow-sm ${
+                      free ? "border-[#A7D8B6] bg-[#EDF9F0]" : "border-[#E0CDB4] bg-white"
+                    }`}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-[12.5px] font-bold text-[#5C1A34]">{box.name}</p>
+                      <p className={`text-[10px] font-bold uppercase tracking-wide shrink-0 ${free ? "text-[#1F7A50]" : "text-[#8A5A12]"}`}>
+                        {how}
+                      </p>
+                    </div>
+                    {parent && (
+                      <p className="mt-1.5 text-[11px] font-semibold text-[#7A3E55]">
+                        Everything in the {parent.name}, plus:
+                      </p>
+                    )}
+                    <div className="mt-1.5">
+                      <ItemTileRow items={box.adds} tone={free ? "green" : "sand"} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10.5px] text-[#8A8A8A] leading-snug text-center">
+              The ₹{PRASAD_BOX_PRICE} box is entirely optional — the ₹1,100 and ₹2,100
+              packages are complete sevas without it.
+            </p>
           </div>
 
           <FluteDivider />
@@ -657,7 +814,9 @@ export default function BankeBihariPage() {
                 `Pandit ji performs the Janmashtami seva at ${puja.templeName}`,
                 "Sankalp is taken in your name & gotra",
                 "Puja video is shared with you on WhatsApp",
-                "Blessed makhan-mishri prasad is delivered to your home",
+                shippedBox
+                  ? `Your ${shippedBox.name} is couriered to your home`
+                  : "Add the prasad box if you'd like blessed prasad couriered home",
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-2.5">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center text-[11px] font-bold mt-0.5">

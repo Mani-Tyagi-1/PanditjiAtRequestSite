@@ -9,9 +9,13 @@ import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
 import {
     bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, BANKE_BIHARI_POOJA_ID,
-    EXTRA_FAMILY_MEMBER_PRICE, DEFAULT_PACKAGE_ID, getPackage, BANKE_BIHARI_PACKAGES,
-    extraFamilyCount, packageTotal, packageNeedsDelivery, type PujaPackageId,
+    EXTRA_FAMILY_MEMBER_PRICE, PRASAD_BOX_PRICE, DEFAULT_PACKAGE_ID, getPackage,
+    BANKE_BIHARI_PACKAGES, extraFamilyCount, packageTotal, packageNeedsDelivery,
+    canAddPrasadBox, prasadBoxCost, shippedPrasadBox, prasadBoxContents,
+    packageOfferings, type PujaPackageId,
 } from "../data/bankeBihariPuja";
+import PrasadBoxAddon from "../components/bankeBihari/PrasadBoxAddon";
+import { ItemTileRow } from "../components/bankeBihari/ItemTiles";
 
 type Step = "details" | "success";
 
@@ -40,14 +44,22 @@ export default function BankeBihariBookingPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Package chosen on the detail page (handed over as navigation state); the
-    // devotee can still switch it here. Defaults to the recommended package when
-    // the booking page is opened directly.
-    const initialPackageId =
-        (location.state as { packageId?: PujaPackageId } | null)?.packageId ?? DEFAULT_PACKAGE_ID;
-    const [packageId, setPackageId] = useState<PujaPackageId>(initialPackageId);
+    // Package + prasad-box choice made on the detail page (handed over as
+    // navigation state); the devotee can still change both here. Defaults to the
+    // recommended package and no box when the booking page is opened directly.
+    const handover = location.state as
+        | { packageId?: PujaPackageId; addPrasadBox?: boolean }
+        | null;
+    const [packageId, setPackageId] = useState<PujaPackageId>(handover?.packageId ?? DEFAULT_PACKAGE_ID);
+    const [addPrasadBox, setAddPrasadBox] = useState(handover?.addPrasadBox ?? false);
     const selectedPkg = getPackage(packageId);
-    const needsDelivery = packageNeedsDelivery(selectedPkg);
+
+    // Upgrading to a package that already includes a box free must drop the paid
+    // add-on: its control disappears with the upgrade, so leaving the flag set
+    // would charge ₹501 the devotee can no longer see or remove.
+    const prasadBoxAdded = canAddPrasadBox(selectedPkg) && addPrasadBox;
+    const shippedBox = shippedPrasadBox(selectedPkg, prasadBoxAdded);
+    const needsDelivery = packageNeedsDelivery(selectedPkg, prasadBoxAdded);
 
     // Static frontend puja data.
     const puja = bankeBihariPuja;
@@ -152,23 +164,28 @@ export default function BankeBihariBookingPage() {
         setForm((f) => ({ ...f, familyMembers: f.familyMembers.filter((_, i) => i !== index) }));
     };
 
-    // Family members beyond the package's free allowance are the only charged
-    // extras; the package price already covers prasad / mala inclusions.
+    // Two things are billed on top of the package: family members beyond its
+    // free allowance, and the optional prasad box (only on packages that don't
+    // already include one free).
     const basePrice = selectedPkg.price;
     const chargedMembers = extraFamilyCount(selectedPkg, form.familyMembers.length);
     const familyCost = chargedMembers * EXTRA_FAMILY_MEMBER_PRICE;
-    const totalPrice = packageTotal(selectedPkg, form.familyMembers.length);
+    const prasadCost = prasadBoxCost(selectedPkg, prasadBoxAdded);
+    const totalPrice = packageTotal(selectedPkg, form.familyMembers.length, prasadBoxAdded);
 
-    // Human-readable perks bundled in the chosen package — appended to the
-    // booking name so the WhatsApp/admin/pandit notifications spell out exactly
-    // which physical blessings must be couriered.
-    const perkList = [
-        selectedPkg.prasadBox && "Makhan-Mishri Prasad Box",
-        selectedPkg.tulsiMala && "Tulsi Kanthi Mala",
-        selectedPkg.morPankh && "Blessed Mor Pankh",
-    ].filter(Boolean) as string[];
-    // e.g. "Shree Banke Bihari Ji Janmashtami Mahapuja — Bihari Kripa [Makhan-Mishri Prasad Box, Tulsi Kanthi Mala]"
-    const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${perkList.length ? ` [${perkList.join(", ")}]` : ""}`;
+    // Everything offered to Bihari Ji at this tier, in the devotee's name.
+    const offerings = packageOfferings(selectedPkg);
+
+    // What must physically be couriered — appended to the booking name so the
+    // WhatsApp/admin/pandit notifications spell out exactly what to pack. The
+    // box name alone would be ambiguous between the three tiers, so the contents
+    // ride along with it.
+    const shipList = shippedBox ? prasadBoxContents(shippedBox.tier) : [];
+    const boxLabel = shippedBox
+        ? `${shippedBox.name}${selectedPkg.freePrasadBox ? " (free)" : ` (paid add-on ₹${PRASAD_BOX_PRICE})`}: ${shipList.join(", ")}`
+        : "";
+    // e.g. "Shree Banke Bihari Ji Janmashtami Mahapuja — Shringar Seva [Premium Prasad Box (free): Dry prasad…]"
+    const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${boxLabel ? ` [${boxLabel}]` : ""}`;
 
     // Line-item breakdown reported to Meta alongside `value`. The package price
     // is the base line; extra Sankalp names (beyond the free allowance) are a
@@ -183,6 +200,15 @@ export default function BankeBihariBookingPage() {
                 id: `${puja.poojaNameEng} — Extra Sankalp Name`,
                 quantity: chargedMembers,
                 item_price: EXTRA_FAMILY_MEMBER_PRICE,
+            }]
+            : []),
+        // Only the PAID box is a line item; the free ones are part of the
+        // package price and would double-count the order value here.
+        ...(prasadCost > 0
+            ? [{
+                id: `${puja.poojaNameEng} — Prasad Box`,
+                quantity: 1,
+                item_price: PRASAD_BOX_PRICE,
             }]
             : []),
     ];
@@ -216,7 +242,12 @@ export default function BankeBihariBookingPage() {
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
-        extra: { time: form.time, pujaDate: puja.pujaDate },
+        extra: {
+            time: form.time,
+            pujaDate: puja.pujaDate,
+            prasadBox: shippedBox ? shippedBox.name : "none",
+            prasadBoxPaid: prasadCost > 0,
+        },
     });
 
     // Fires once the devotee has a usable name + phone in the form, on blur of
@@ -339,8 +370,9 @@ export default function BankeBihariBookingPage() {
                     contactNumber: phoneDigits,
                     phone: phoneDigits,
                     emailId: form.email.trim(),
-                    // True whenever the package bundles the blessed prasad box.
-                    prasadAdded: selectedPkg.prasadBox,
+                    // True whenever a box ships at all — bundled free with the
+                    // package or added as the paid ₹501 option.
+                    prasadAdded: shippedBox !== null,
                     // Stored on the booking by the isLiveMandir branch of
                     // create-pending, so the pandit knows every name to take
                     // during the Sankalp.
@@ -526,16 +558,36 @@ export default function BankeBihariBookingPage() {
                                     <span className="text-[13px] font-bold text-[#5C1A34]">₹{basePrice.toLocaleString("en-IN")}</span>
                                 </div>
 
-                                {/* Included physical blessings — shown as "Included" so the value is visible */}
-                                {perkList.map((perk) => (
-                                    <div key={perk} className="flex items-center justify-between">
-                                        <span className="text-[12px] text-[#555555] font-medium flex items-center gap-1.5">
-                                            {perk.includes("Prasad") ? <Gift className="w-3.5 h-3.5 text-[#E7B63A]" /> : <Flower2 className="w-3.5 h-3.5 text-[#2E8B57]" />}
-                                            {perk}
+                                {/* Offerings made in your name — shown as "Included"
+                                    so the value of the tier is visible on the bill. */}
+                                {offerings.length > 0 && (
+                                    <div className="flex items-start justify-between gap-2">
+                                        <span className="text-[12px] text-[#555555] font-medium flex items-start gap-1.5 min-w-0">
+                                            <Flower2 className="w-3.5 h-3.5 text-[#2E8B57] shrink-0 mt-0.5" />
+                                            <span className="leading-snug">{offerings.join(", ")} offered in your name</span>
                                         </span>
-                                        <span className="text-[11px] font-bold text-[#2E8B57]">Included</span>
+                                        <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">Included</span>
                                     </div>
-                                ))}
+                                )}
+
+                                {/* Prasad box — free with the tier, a priced line
+                                    when it was opted into, and explicitly "Not
+                                    added" otherwise so its absence is never a
+                                    silent surprise at delivery time. */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[12px] text-[#555555] font-medium flex items-center gap-1.5 min-w-0">
+                                        <Gift className="w-3.5 h-3.5 text-[#E7B63A] shrink-0" />
+                                        <span className="truncate">{shippedBox ? shippedBox.name : "Prasad Box (optional)"}</span>
+                                    </span>
+                                    {selectedPkg.freePrasadBox ? (
+                                        <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">Free</span>
+                                    ) : prasadCost > 0 ? (
+                                        <span className="text-[13px] font-bold text-[#5C1A34] shrink-0">+₹{prasadCost.toLocaleString("en-IN")}</span>
+                                    ) : (
+                                        <span className="text-[11px] font-semibold text-[#8A8A8A] shrink-0">Not added</span>
+                                    )}
+                                </div>
+
                                 {selectedPkg.freeFamilyMembers > 0 && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-[12px] text-[#555555] font-medium flex items-center gap-1.5">
@@ -563,54 +615,71 @@ export default function BankeBihariBookingPage() {
                             </div>
                         </div>
 
-                        {/* Package chosen on the detail page. For the Makhan Bhog
-                            (₹501) package we offer an upgrade here; the premium/royal
-                            inclusions are shown on the detail page, not here. */}
-                        {selectedPkg.id === "basic" && (
-                            <div className="space-y-2.5">
-                                <p className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-[#D63D72]">
-                                    <Sparkles className="w-3.5 h-3.5 text-[#E7B63A]" /> Upgrade & get more
-                                </p>
-                                {BANKE_BIHARI_PACKAGES.filter((p) => p.id !== "basic").map((pkg) => {
-                                    const diff = pkg.price - getPackage("basic").price;
-                                    return (
-                                        <button
-                                            key={pkg.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setPackageId(pkg.id);
-                                                if ((window as any).fbq) {
-                                                    (window as any).fbq("trackCustom", "PujaPackageUpgrade", { to: pkg.id, value: pkg.price, currency: "INR" });
-                                                }
-                                            }}
-                                            className="w-full text-left rounded-2xl border border-[#F4DFC2] bg-white shadow-sm p-3.5 transition-all active:scale-[0.99] hover:border-[#F8A9C4]"
-                                        >
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0">
-                                                    <p className="text-[14px] font-bold text-[#5C1A34] leading-tight">{pkg.name}</p>
-                                                    <p className="text-[11px] text-[#7A3E55] mt-0.5">{pkg.tagline}</p>
-                                                </div>
-                                                <div className="text-right shrink-0">
-                                                    <p className="text-[17px] font-extrabold text-[#D63D72] leading-none">₹{pkg.price.toLocaleString("en-IN")}</p>
-                                                    <p className="text-[9.5px] font-bold text-[#E7B63A] mt-0.5">+₹{diff.toLocaleString("en-IN")}</p>
-                                                </div>
-                                            </div>
-                                            <div className="mt-2.5 pt-2.5 border-t border-[#F4DFC2] space-y-1.5">
-                                                {pkg.highlights.map((h) => (
-                                                    <div key={h} className="flex items-start gap-2">
-                                                        <Check className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#2E8B57]" strokeWidth={3} />
-                                                        <span className="text-[12px] leading-snug text-[#555555]">{h}</span>
+                        {/* Upgrade offers — every package priced above the chosen
+                            one. Each is a strict superset, so the pitch is just
+                            what it ADDS: the extra offerings, the extra free
+                            Sankalps and the prasad box going free. */}
+                        {(() => {
+                            const upgrades = BANKE_BIHARI_PACKAGES.filter((p) => p.price > selectedPkg.price);
+                            if (upgrades.length === 0) return null;
+                            return (
+                                <div className="space-y-2.5">
+                                    <p className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-[#D63D72]">
+                                        <Sparkles className="w-3.5 h-3.5 text-[#E7B63A]" /> Upgrade &amp; get more
+                                    </p>
+                                    {upgrades.map((pkg) => {
+                                        const diff = pkg.price - selectedPkg.price;
+                                        const extraFree = pkg.freeFamilyMembers - selectedPkg.freeFamilyMembers;
+                                        const newOfferings = packageOfferings(pkg).filter((o) => !offerings.includes(o));
+                                        const gains = [
+                                            extraFree > 0 && `${extraFree} more family member${extraFree > 1 ? "s" : ""} free in the Sankalp`,
+                                            newOfferings.length > 0 && `${newOfferings.join(", ")} also offered to Bihari Ji in your name`,
+                                            pkg.freePrasadBox &&
+                                                `FREE ${shippedPrasadBox(pkg, false)!.name}${canAddPrasadBox(selectedPkg) ? ` — no ₹${PRASAD_BOX_PRICE} add-on needed` : ""}`,
+                                        ].filter(Boolean) as string[];
+                                        return (
+                                            <button
+                                                key={pkg.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setPackageId(pkg.id);
+                                                    if ((window as any).fbq) {
+                                                        (window as any).fbq("trackCustom", "PujaPackageUpgrade", { to: pkg.id, value: pkg.price, currency: "INR" });
+                                                    }
+                                                }}
+                                                className="w-full text-left rounded-2xl border border-[#F4DFC2] bg-white shadow-sm p-3.5 transition-all active:scale-[0.99] hover:border-[#F8A9C4] cursor-pointer"
+                                            >
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <div className="min-w-0">
+                                                        <p className="text-[14px] font-bold text-[#5C1A34] leading-tight">{pkg.name}</p>
+                                                        <p className="text-[11px] text-[#7A3E55] mt-0.5">{pkg.tagline}</p>
                                                     </div>
-                                                ))}
-                                            </div>
-                                            <span className="mt-2.5 flex items-center justify-center gap-1 text-[11.5px] font-bold text-[#D63D72] bg-[#FFF1F5] border border-[#F8B5CB] rounded-lg py-2">
-                                                Upgrade to {pkg.name} <ChevronRight className="w-3.5 h-3.5" />
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                                    <div className="text-right shrink-0">
+                                                        <p className="text-[17px] font-extrabold text-[#D63D72] leading-none">₹{pkg.price.toLocaleString("en-IN")}</p>
+                                                        <p className="text-[9.5px] font-bold text-[#E7B63A] mt-0.5">+₹{diff.toLocaleString("en-IN")}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-2.5 pt-2.5 border-t border-[#F4DFC2] space-y-1.5">
+                                                    <p className="inline-flex items-center gap-1 rounded-full bg-[#FFF2E4] border border-[#E7B63A]/50 px-2 py-0.5 text-[10.5px] font-bold text-[#8A5A12]">
+                                                        <Check className="w-3 h-3 shrink-0" strokeWidth={3} />
+                                                        Everything in {selectedPkg.name}
+                                                    </p>
+                                                    {gains.map((g) => (
+                                                        <div key={g} className="flex items-start gap-2">
+                                                            <Check className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#2E8B57]" strokeWidth={3} />
+                                                            <span className="text-[12px] leading-snug text-[#555555]">{g}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <span className="mt-2.5 flex items-center justify-center gap-1 text-[11.5px] font-bold text-[#D63D72] bg-[#FFF1F5] border border-[#F8B5CB] rounded-lg py-2">
+                                                    Upgrade to {pkg.name} <ChevronRight className="w-3.5 h-3.5" />
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
 
                         {/* Step 1: Devotee Details */}
                         <div className="space-y-3">
@@ -775,32 +844,60 @@ export default function BankeBihariBookingPage() {
                             )}
                         </div>
 
-                        {/* Step 3: Delivery Address — only for packages that ship a
-                            physical blessing (prasad / tulsi mala / mor pankh). The
-                            Makhan Bhog package has nothing to courier, so this step
-                            is hidden. */}
-                        {needsDelivery && (
-                        <div className="space-y-3 pb-6">
+                        {/* Step 3: Prasad Box — the paid opt-in on the ₹1100/₹2100
+                            packages, and a read-only "already free" confirmation on
+                            the two higher ones. Rendered in both cases so the step
+                            numbering is stable and nobody has to wonder whether
+                            they missed a prasad option. */}
+                        <div className="space-y-3">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-[#F4DFC2]">
                                 <span className="w-7 h-7 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
+                                    <h3 className="font-bold text-[#5C1A34] text-[14px]">Prasad Box</h3>
+                                    <p className="text-[11px] text-[#8A8A8A]">
+                                        {selectedPkg.freePrasadBox
+                                            ? `Included free with ${selectedPkg.name}`
+                                            : `Optional · ₹${PRASAD_BOX_PRICE} if you'd like prasad at home`}
+                                    </p>
+                                </div>
+                            </div>
+                            <PrasadBoxAddon
+                                pkg={selectedPkg}
+                                added={prasadBoxAdded}
+                                onToggle={(next) => {
+                                    setAddPrasadBox(next);
+                                    if ((window as any).fbq) {
+                                        (window as any).fbq("trackCustom", "PujaPrasadBoxToggle", {
+                                            added: next,
+                                            package: selectedPkg.id,
+                                            value: PRASAD_BOX_PRICE,
+                                            currency: "INR",
+                                        });
+                                    }
+                                }}
+                            />
+                        </div>
+
+                        {/* Step 4: Delivery Address — only when a box actually ships
+                            (bundled free, or the ₹501 add-on opted into). Without a
+                            box there is nothing to courier, so this step is hidden. */}
+                        {needsDelivery && (
+                        <div className="space-y-3 pb-6">
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#F4DFC2]">
+                                <span className="w-7 h-7 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center font-bold text-sm">04</span>
+                                <div>
                                     <h3 className="font-bold text-[#5C1A34] text-[14px]">Delivery Address</h3>
-                                    <p className="text-[11px] text-[#8A8A8A]">Where we courier your {selectedPkg.name} blessings</p>
+                                    <p className="text-[11px] text-[#8A8A8A]">Where we courier your {shippedBox?.name}</p>
                                 </div>
                             </div>
 
-                            {/* What ships with this package — reassures the devotee
-                                the prasad/mala is included, not an upsell. */}
+                            {/* Exactly what is in the box being shipped, so the
+                                address is being given for something concrete. */}
                             <div className="bg-[#EDF9F0] border border-[#A7D8B6] rounded-2xl p-3.5">
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-[#1F7A50] mb-2">Couriered to your home · included</p>
-                                <div className="space-y-1.5">
-                                    {perkList.map((perk) => (
-                                        <div key={perk} className="flex items-center gap-2 text-[12.5px] text-[#555555]">
-                                            {perk.includes("Prasad") ? <Gift className="w-3.5 h-3.5 text-[#E7B63A] shrink-0" /> : <Flower2 className="w-3.5 h-3.5 text-[#2E8B57] shrink-0" />}
-                                            {perk}
-                                        </div>
-                                    ))}
-                                </div>
+                                <p className="text-[11px] font-bold uppercase tracking-wide text-[#1F7A50] mb-2">
+                                    Couriered to your home · {shippedBox?.name}
+                                </p>
+                                <ItemTileRow items={shipList} tone="green" />
                             </div>
 
                             {user && addresses.length > 0 && !showNewAddressForm && (

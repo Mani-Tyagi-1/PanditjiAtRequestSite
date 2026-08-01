@@ -5,7 +5,12 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const metaPixelId = env.VITE_META_PIXEL_ID || ''
+  // Production builds only. `yarn dev` runs with mode=development, and .env
+  // carries the LIVE pixel id — without this gate a local test booking fires a
+  // real Purchase into Events Manager and pollutes ad optimisation data.
+  // Set VITE_META_PIXEL_FORCE=1 to opt back in when debugging the pixel itself.
+  const pixelAllowed = mode === 'production' || env.VITE_META_PIXEL_FORCE === '1'
+  const metaPixelId = pixelAllowed ? env.VITE_META_PIXEL_ID || '' : ''
 
   return {
     plugins: [

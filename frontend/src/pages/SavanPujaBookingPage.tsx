@@ -7,13 +7,24 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
-import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE } from "../data/kashiMahadevPuja";
+import { optimizedImg } from "../utils/img";
+import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE, RUDRAKSH_BRACELET_IMAGE } from "../data/kashiMahadevPuja";
 
 type Step = "details" | "success";
 
 const INPUT =
     "w-full bg-[#F0FAF7] border border-[#DDEBE6] rounded-xl px-4 py-3 text-sm text-[#17211D] placeholder-[#66736E] focus:outline-none focus:border-[#008C68] focus:ring-2 focus:ring-[#008C68]/20 transition-all";
 const LABEL = "text-[11px] font-bold text-[#66736E] uppercase tracking-wide mb-1.5 block";
+
+/**
+ * Beat before the free-bracelet toast appears, and how long it stays.
+ *
+ * The delay is long enough that it lands after the devotee has settled into
+ * the form rather than on top of the page they just opened, and the lifetime
+ * is long enough to read the offer and reach for it on a phone.
+ */
+const PRASAD_NUDGE_DELAY_MS = 5000;
+const PRASAD_NUDGE_VISIBLE_MS = 12000;
 
 // Meta's browser pixel drops _fbp / _fbc; both are forwarded to the server so
 // its CAPI Purchase can be matched and deduplicated against the browser event.
@@ -66,6 +77,52 @@ export default function SavanPujaBookingPage() {
     // surfaced loudly in the UI and blocks checkout rather than being dropped.
     const [familyInput, setFamilyInput] = useState({ name: "", gotra: "" });
     const pendingFamilyName = familyInput.name.trim();
+
+    /**
+     * Prasad nudge — the toast that surfaces the free Rudraksh bracelet a few
+     * seconds in, for devotees who scrolled past the Step 3 checkbox.
+     *
+     * `nudgeDue` is only "the timer has elapsed"; whether it actually shows is
+     * derived at render time. That split is deliberate — the delay timer runs
+     * once on mount with no deps, so ticking the prasad box can never restart
+     * it, and a devotee who adds the box before or during the toast makes it
+     * disappear without any extra effect wiring.
+     *
+     * Dismissal is permanent for the visit (including the auto-hide): a repeat
+     * toast over a checkout form is nagging, and the offer is still sitting in
+     * Step 3 where the toast points.
+     */
+    const [nudgeDue, setNudgeDue] = useState(false);
+    const [nudgeDismissed, setNudgeDismissed] = useState(false);
+    const prasadSectionRef = useRef<HTMLDivElement | null>(null);
+    const showPrasadNudge = nudgeDue && !nudgeDismissed && !form.prasadAdded && step === "details";
+
+    useEffect(() => {
+        const t = setTimeout(() => setNudgeDue(true), PRASAD_NUDGE_DELAY_MS);
+        return () => clearTimeout(t);
+    }, []);
+
+    useEffect(() => {
+        if (!showPrasadNudge) return;
+        const t = setTimeout(() => setNudgeDismissed(true), PRASAD_NUDGE_VISIBLE_MS);
+        return () => clearTimeout(t);
+    }, [showPrasadNudge]);
+
+    // Taking the offer from the toast: tick the box, retire the toast, and put
+    // the devotee at Step 3 so the delivery address it just made mandatory is
+    // on screen rather than somewhere below the fold.
+    const acceptPrasadNudge = () => {
+        setForm((f) => ({ ...f, prasadAdded: true }));
+        setNudgeDismissed(true);
+        if ((window as any).fbq) {
+            (window as any).fbq("trackCustom", "PrasadNudgeAccepted", {
+                content_name: puja.poojaNameEng,
+                value: PRASAD_BOX_PRICE,
+                currency: "INR",
+            });
+        }
+        prasadSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
 
     // Delivery address (only required when blessed prasad is added)
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -145,7 +202,7 @@ export default function SavanPujaBookingPage() {
     const totalPrice = basePrice + prasadCost + familyCost;
 
     // Line-item breakdown reported to Meta alongside `value`. The base seva is
-    // ₹1100, but a booking with the prasad box and extra Sankalp names costs
+    // ₹851, but a booking with the prasad box and extra Sankalp names costs
     // more — without this, every order looks like one anonymous unit in Events
     // Manager and the higher value can't be reconciled against the puja price.
     // Ids mirror the ones the server CAPI Purchase sends (built off
@@ -506,13 +563,25 @@ export default function SavanPujaBookingPage() {
                                         </div>
                                     )}
                                     {form.prasadAdded && (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
-                                                <Gift className="w-3.5 h-3.5 text-[#086B50]" />
-                                                Sacred Prasad Box
-                                            </span>
-                                            <span className="text-[13px] font-bold text-[#17211D]">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
-                                        </div>
+                                        <>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
+                                                    <Gift className="w-3.5 h-3.5 text-[#086B50]" />
+                                                    Sacred Prasad Box
+                                                </span>
+                                                <span className="text-[13px] font-bold text-[#17211D]">+₹{PRASAD_BOX_PRICE.toLocaleString("en-IN")}</span>
+                                            </div>
+                                            {/* The bracelet rides along with the box and adds
+                                                nothing to the total — priced at ₹0 here so the
+                                                devotee sees it counted, not just promised. */}
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
+                                                    <Gift className="w-3.5 h-3.5 text-[#C89B3C]" />
+                                                    Rudraksh Bracelet
+                                                </span>
+                                                <span className="text-[11px] font-extrabold uppercase tracking-wide text-[#C89B3C]">Free</span>
+                                            </div>
+                                        </>
                                     )}
                                     <div className="flex items-baseline justify-between pt-2 border-t border-[#DDEBE6]">
                                         <span className="text-[10px] font-bold uppercase tracking-wide text-[#66736E]">Total</span>
@@ -669,7 +738,7 @@ export default function SavanPujaBookingPage() {
                         </div>
 
                         {/* Step 3: Prasad Delivery (optional) */}
-                        <div className="space-y-3 pb-6">
+                        <div ref={prasadSectionRef} className="space-y-3 pb-6">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
                                 <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
@@ -678,17 +747,48 @@ export default function SavanPujaBookingPage() {
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-3 bg-white border border-[#DDEBE6] rounded-2xl p-4 shadow-sm cursor-pointer select-none">
+                            {/* The prasad box carries the free Rudraksh bracelet, so the
+                                gift is sold on this checkbox rather than mentioned once
+                                in the summary — this is the moment the devotee decides.
+                                The card turns gold when ticked so the choice reads as
+                                claimed, not merely selected. */}
+                            <label
+                                className={`flex items-center gap-3 rounded-2xl p-4 shadow-sm cursor-pointer select-none border transition-colors ${form.prasadAdded
+                                    ? "bg-gradient-to-br from-[#FFF8E7] to-[#FFF3DC] border-[#E8CF9A]"
+                                    : "bg-white border-[#DDEBE6]"
+                                    }`}
+                            >
                                 <input
                                     type="checkbox"
                                     checked={form.prasadAdded}
                                     onChange={(e) => setForm((f) => ({ ...f, prasadAdded: e.target.checked }))}
-                                    className="w-4 h-4 rounded text-[#008C68] focus:ring-[#008C68] border-[#DDEBE6]"
+                                    className="w-4 h-4 shrink-0 rounded text-[#008C68] focus:ring-[#008C68] border-[#DDEBE6]"
                                 />
-                                <div>
+                                <div className="min-w-0 flex-1">
                                     <p className="text-xs font-bold text-[#17211D]">Add Sacred Prasad</p>
                                     <p className="text-[11px] text-[#66736E] mt-0.5">Blessed at {puja.templeName} · +₹{PRASAD_BOX_PRICE}</p>
+                                    <p className="text-[11px] font-bold text-[#8A6A1F] mt-1 leading-snug">
+                                        {form.prasadAdded
+                                            ? "Free Rudraksh bracelet added 🎁"
+                                            : "Includes a FREE Rudraksh bracelet"}
+                                    </p>
                                 </div>
+                                {/* Drawn at 48px; 140px covers ~3x density. onError falls
+                                    back to the origin URL — the convention `optimizedImg`
+                                    documents — so a proxy hiccup can't blank the gift. */}
+                                <span className="relative shrink-0">
+                                    <img
+                                        src={optimizedImg(RUDRAKSH_BRACELET_IMAGE, 140)}
+                                        onError={(e) => { e.currentTarget.src = RUDRAKSH_BRACELET_IMAGE; }}
+                                        alt="Free 5 Mukhi Rudraksh bracelet"
+                                        loading="lazy"
+                                        decoding="async"
+                                        className="w-12 h-12 rounded-xl object-cover border border-[#F0E2C2]"
+                                    />
+                                    <span className="absolute -top-1.5 -right-1.5 bg-[#C89B3C] text-white text-[7.5px] font-extrabold uppercase tracking-wide px-1.5 py-[1px] rounded-full shadow-sm">
+                                        Free
+                                    </span>
+                                </span>
                             </label>
 
                             {form.prasadAdded && user && addresses.length > 0 && !showNewAddressForm && (
@@ -814,6 +914,65 @@ export default function SavanPujaBookingPage() {
                     </motion.div>
                 )}
             </div>
+
+            {/* Free-bracelet nudge — drops in at the TOP, clear of both the
+                form fields and the pay button, so it never sits between the
+                devotee and the next thing they were about to tap.
+
+                `top-[72px]` parks it below the sticky header (~62px) instead of
+                over the back button and title — with enough clearance that the
+                close button, which hangs 8px above the card, still lands clear
+                of the header. Same max-w-md rail as the header, so the two
+                line up as one stack on desktop.
+
+                z-50 puts it over the header's z-40; nothing else on this page
+                sits higher. It is dismissible and self-retiring — see the
+                nudge state above for why it never returns once closed. */}
+            {showPrasadNudge && (
+                <motion.div
+                    initial={{ opacity: 0, y: -16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, ease: "easeOut" }}
+                    role="status"
+                    className="fixed top-[72px] left-0 right-0 z-50 max-w-md mx-auto px-4"
+                >
+                    <div className="relative flex items-center gap-3 rounded-2xl border border-[#E8CF9A] bg-gradient-to-br from-[#FFF8E7] to-[#FFF3DC] px-3 py-2.5 shadow-lg">
+                        {/* Drawn at 44px; 140px covers ~3x density. onError falls
+                            back to the origin URL — the convention `optimizedImg`
+                            documents — so a proxy hiccup can't blank the gift. */}
+                        <img
+                            src={optimizedImg(RUDRAKSH_BRACELET_IMAGE, 140)}
+                            onError={(e) => { e.currentTarget.src = RUDRAKSH_BRACELET_IMAGE; }}
+                            alt="Free 5 Mukhi Rudraksh bracelet"
+                            loading="lazy"
+                            decoding="async"
+                            className="w-11 h-11 shrink-0 rounded-xl object-cover border border-[#F0E2C2]"
+                        />
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-bold text-[#17211D] leading-tight">
+                                Get a FREE Rudraksh bracelet
+                            </p>
+                            <p className="text-[10.5px] text-[#66736E] leading-snug mt-0.5">
+                                Add the Sacred Prasad Box (+₹{PRASAD_BOX_PRICE}) and we'll send the
+                                bracelet with it.
+                            </p>
+                        </div>
+                        <button
+                            onClick={acceptPrasadNudge}
+                            className="shrink-0 bg-[#C89B3C] hover:bg-[#B98C2F] text-white text-[11px] font-extrabold px-3 py-2 rounded-full shadow-sm active:scale-95 transition-all cursor-pointer"
+                        >
+                            Add
+                        </button>
+                        <button
+                            onClick={() => setNudgeDismissed(true)}
+                            aria-label="Dismiss offer"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-[#E8CF9A] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
+                        >
+                            <X className="w-3.5 h-3.5 text-[#66736E]" />
+                        </button>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Sticky Footer */}
             {step !== "success" && (

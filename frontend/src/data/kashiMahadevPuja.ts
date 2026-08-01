@@ -54,6 +54,19 @@ export const KASHI_MAHADEV_POOJA_ID = "RF_SAVAN_01";
 export const PRASAD_BOX_PRICE = 298;
 
 /**
+ * Free 5 Mukhi Rudraksh bracelet that ships inside the prasad box — the gift
+ * teased on the landing page and promised on the booking page's prasad
+ * add-on. It has no line of its own in the total: it rides along with
+ * PRASAD_BOX_PRICE, so the two are only ever offered together.
+ *
+ * Same product shot the Kaal Bhairav packages use (see data/kaalBhairavPuja.ts)
+ * so the pages can never drift to different bracelets. Both Savan pages import
+ * it from here rather than keeping their own copy of the URL.
+ */
+export const RUDRAKSH_BRACELET_IMAGE =
+    "https://vedicshop.store/cdn/shop/files/5_mukhi_rudraksha_bracelet.jpg?v=1774855990&width=1200";
+
+/**
  * Per-person price for adding a family member to the Sankalp (₹).
  * Each name added is taken during the Sankalp alongside the main devotee, and
  * adds this much to the booking total. Matches the Live Mandir flow's rate.
@@ -77,8 +90,8 @@ export const kashiMahadevPuja = {
     poojaNameEng: "Shree Kashi Rudrabhishek Mahapuja",
     poojaNameHindi: "श्री काशी रुद्राभिषेक महापूजा",
     poojaMode: "online", // performed at Kashi Vishwanath Temple on your behalf
-    poojaPriceOnline: 1100,
-    poojaPriceOffline: 1100,
+    poojaPriceOnline: 851,
+    poojaPriceOffline: 851,
     poojaGods: [] as string[],
     // Kashi banner artwork.
     poojaCardImage:
@@ -117,7 +130,7 @@ export const kashiMahadevPuja = {
     isFeatured: true,
     isExclusive: true,
     // Dakshina must stay ≤ the price: the backend derives the stored pooja
-    // price as (amount − panditDakshina). ₹1100 − ₹251 dakshina → ₹849 pooja price.
+    // price as (amount − panditDakshina). ₹851 − ₹251 dakshina → ₹600 pooja price.
     panditDakshina: 251,
     samagriDetails: [] as any[],
     samagriPrice: 0,

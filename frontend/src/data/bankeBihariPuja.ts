@@ -50,8 +50,15 @@ export const BANKE_BIHARI_PUJA_SLUG = "vrindavan-banke-bihari-puja";
  */
 export const BANKE_BIHARI_POOJA_ID = "RF_BIHARI_01";
 
-/** Add-on price for the optional blessed prasad box (₹). */
-export const PRASAD_BOX_PRICE = 298;
+/**
+ * Price (₹) of the OPTIONAL blessed prasad box add-on.
+ *
+ * The two lower packages (₹1100 / ₹2100) do not ship a box; the devotee may add
+ * this one and it is billed on top of the package price. The two higher
+ * packages (₹5100 / ₹11000) already include a richer box FREE, so the add-on is
+ * never offered there (see `canAddPrasadBox`).
+ */
+export const PRASAD_BOX_PRICE = 501;
 
 /**
  * Price (₹) of every family-member Sankalp added BEYOND the free allowance
@@ -70,7 +77,90 @@ export const EXTRA_FAMILY_MEMBER_PRICE = 151;
  */
 export const BANKE_BIHARI_PUJA_DATE = "September 4, 2026";
 
-export type PujaPackageId = "basic" | "premium" | "royal";
+// ── Prasad box ────────────────────────────────────────────────────────────
+//
+// Three nested boxes. Each tier contains EVERYTHING in the tier below it plus
+// its own `adds` — so the contents are declared once and never repeated, and
+// the UI can render either "what's new in this box" or the full flattened list
+// (`prasadBoxContents`) without the two drifting apart.
+//
+//   standard — the ₹501 optional add-on (packages ₹1100 & ₹2100)
+//   premium  — free with ₹5100
+//   royal    — free with ₹11000
+
+export type PrasadBoxTier = "standard" | "premium" | "royal";
+
+export interface PrasadBox {
+    tier: PrasadBoxTier;
+    /** Name shown on the card / booking summary. */
+    name: string;
+    /** The cheaper box whose full contents this one also contains. */
+    inherits?: PrasadBoxTier;
+    /** Items this tier ADDS on top of `inherits`. */
+    adds: string[];
+}
+
+export const PRASAD_BOXES: Record<PrasadBoxTier, PrasadBox> = {
+    standard: {
+        tier: "standard",
+        name: "Prasad Box",
+        adds: ["Dry Prasad", "Bansuri", "Tulsi Mala", "Jaap Counter"],
+    },
+    premium: {
+        tier: "premium",
+        name: "Premium Prasad Box",
+        inherits: "standard",
+        adds: ["Radha Naam Tulsi Mala", "Mor Pankh", "Small Dahi Handi"],
+    },
+    royal: {
+        tier: "royal",
+        name: "Royal Prasad Box",
+        inherits: "premium",
+        adds: ["Laddu Gopal Idol", "Laddu Gopal Dress"],
+    },
+};
+
+/**
+ * ▶ PASTE PRODUCT PHOTOS HERE ◀
+ *
+ * Artwork for every physical item named anywhere in this file — the prasad-box
+ * contents above and the `addedOfferings` on the packages below. Keys must match
+ * those strings EXACTLY; a missing or empty entry is not a bug, it renders a
+ * tinted icon tile instead, so the page ships fine before the photos land and
+ * improves item by item as they arrive.
+ *
+ * Square crops on a plain/transparent background look best — they are drawn at
+ * ~56 px and served through the resizer, so anything above ~200 px wide is
+ * wasted bytes.
+ */
+export const ITEM_IMAGES: Record<string, string> = {
+    // ── Prasad box contents ──
+    "Dry Prasad": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Prasad.webp",
+    Bansuri: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/bansuri.webp",
+    "Tulsi Mala": "https://sanatanseva.com/cdn/shop/files/1_0cc0f933-8fad-4077-8587-e010226d80b8.jpg?v=1740658048&width=1946",
+    "Jaap Counter": "https://rukminim2.flixcart.com/image/480/640/xif0q/tally-counter/q/w/d/99999-dg11pcs1-degno-original-imahfzeztnjd49f9.jpeg?q=90",
+    "Radha Naam Tulsi Mala": "",
+    "Mor Pankh": "https://png.pngtree.com/png-vector/20250310/ourmid/pngtree-3d-realistic-peacock-feather-png-image_15681047.png",
+    "Small Dahi Handi": "",
+    "Laddu Gopal Idol": "",
+    "Laddu Gopal Dress": "",
+    // ── Offered to Bihari Ji in your name ──
+    "Makhan Mishri": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Makhan%20Mishri.webp",
+    Paan: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_4_1776952020655.jpg",
+    Laddu: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_3_1776952020653.jpg",
+    "Deepak Seva": "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_3_1776952020653.jpg",
+    "Bade Bhog Thali": "",
+};
+
+/** Every item inside a box, inherited tiers first. */
+export function prasadBoxContents(tier: PrasadBoxTier): string[] {
+    const box = PRASAD_BOXES[tier];
+    return box.inherits ? [...prasadBoxContents(box.inherits), ...box.adds] : [...box.adds];
+}
+
+// ── Packages ──────────────────────────────────────────────────────────────
+
+export type PujaPackageId = "makhan" | "kripa" | "shringar" | "rajbhog";
 
 export interface PujaPackage {
     id: PujaPackageId;
@@ -80,26 +170,27 @@ export interface PujaPackage {
     tagline: string;
     /** Package price in ₹ (the booking's base amount). */
     price: number;
+    /**
+     * The cheaper package this one fully contains. Drives the "Everything in
+     * <name>" line on the card and the cumulative offerings list, so each
+     * package only ever declares what it ADDS.
+     */
+    inherits?: PujaPackageId;
+    /** The core seva every package includes — declared on the base package only. */
+    core?: string[];
+    /** Offerings this tier ADDS at Bihari Ji's charan, in your name. */
+    addedOfferings: string[];
     /** How many family-member Sankalps are included free in this package. */
     freeFamilyMembers: number;
-    /** Blessed prasad box (makhan-mishri peda) couriered home. */
-    prasadBox: boolean;
-    /** Tulsi kanthi mala from Vrindavan couriered home. */
-    tulsiMala: boolean;
-    /** Mor pankh (peacock feather) offered at Bihari Ji's charan, couriered home. */
-    morPankh: boolean;
+    /**
+     * Prasad box shipped FREE with this package, or `null` when the box is the
+     * optional ₹501 add-on instead.
+     */
+    freePrasadBox: PrasadBoxTier | null;
     /** Optional corner badge, e.g. "Most Popular". */
     badge?: string;
     /** Marks the recommended / default package. */
     highlight?: boolean;
-    /** 2–3 short "what you get" lines shown on the card (positives only). */
-    highlights: string[];
-    /**
-     * Physical items shipped with the package, shown as a row of images under
-     * the selected card (premium/royal only). Paste the product image URL into
-     * each `image`; an empty string renders a placeholder tile.
-     */
-    includedItems?: { label: string; image: string }[];
 }
 
 /**
@@ -152,83 +243,96 @@ export const MAKHAN_MATKI_IMAGE =
 
     
 
-// TODO: paste the real product image URLs. Empty strings render a graceful
-// placeholder tile, so the page is safe to ship before the artwork lands.
-const PRASAD_BOX_IMAGE = "";
-const TULSI_MALA_IMAGE = "";
-const MOR_PANKH_IMAGE = "";
-
 /**
- * The three booking packages. Every package includes the core Janmashtami
- * puja, personalised Sankalp and the puja video; they differ in the number of
- * free family Sankalps and the physical blessings couriered home. Extra family
- * members beyond a package's free allowance cost EXTRA_FAMILY_MEMBER_PRICE each.
+ * The four booking packages, cheapest first.
+ *
+ * Each tier is strictly a superset of the one below it (`inherits`), so it only
+ * declares what it ADDS — the UI renders "Everything in <cheaper package>" and
+ * then the new lines. That keeps the four cards honest by construction: a perk
+ * can never appear on ₹2100 and go missing on ₹5100.
+ *
+ * Two things are billed on top of the package price:
+ *   • family Sankalps beyond `freeFamilyMembers` — EXTRA_FAMILY_MEMBER_PRICE each
+ *   • the optional prasad box — PRASAD_BOX_PRICE, and only on the two packages
+ *     that don't already include a box free (`freePrasadBox === null`)
  */
 export const BANKE_BIHARI_PACKAGES: PujaPackage[] = [
     {
-        id: "basic",
-        name: "Makhan Bhog",
+        id: "makhan",
+        name: "Makhan Bhog Seva",
         tagline: "The essential Janmashtami seva",
-        price: 501,
-        freeFamilyMembers: 0,
-        prasadBox: false,
-        tulsiMala: false,
-        morPankh: false,
-        highlights: [
-            "Puja in your name & gotra",
-            "Personalised Sankalp + puja video",
+        price: 1100,
+        core: [
+            "Janmashtami Mahapuja performed in your name",
+            "Personalised Sankalp with your name & gotra",
+            "Full puja video shared on WhatsApp",
         ],
+        addedOfferings: [],
+        freeFamilyMembers: 0,
+        freePrasadBox: null,
     },
     {
-        id: "premium",
-        name: "Bihari Kripa",
-        tagline: "Most-loved · seva with blessings",
-        price: 1100,
-        freeFamilyMembers: 2,
-        prasadBox: true,
-        tulsiMala: true,
-        morPankh: false,
+        id: "kripa",
+        name: "Bihari Kripa Seva",
+        tagline: "Most-loved · offerings in your name",
+        price: 2100,
+        inherits: "makhan",
+        addedOfferings: ["Makhan Mishri", "Mor Pankh"],
+        freeFamilyMembers: 1,
+        freePrasadBox: null,
         badge: "Most Popular",
         highlight: true,
-        highlights: [
-            "2 family members added free",
-            "Makhan-Mishri Prasad Box couriered home",
-            "Free Tulsi Kanthi Mala from Vrindavan",
-        ],
-        includedItems: [
-            { label: "Makhan-Mishri Prasad", image: PRASAD_BOX_IMAGE },
-            { label: "Tulsi Kanthi Mala", image: TULSI_MALA_IMAGE },
-        ],
     },
     {
-        id: "royal",
-        name: "Raas Vihari",
-        tagline: "Complete seva for the whole family",
-        price: 2100,
-        freeFamilyMembers: 4,
-        prasadBox: true,
-        tulsiMala: true,
-        morPankh: true,
+        id: "shringar",
+        name: "Shringar Seva",
+        tagline: "Free prasad box + fuller offerings",
+        price: 5100,
+        inherits: "kripa",
+        addedOfferings: ["Paan", "Bansuri", "Laddu"],
+        freeFamilyMembers: 2,
+        freePrasadBox: "premium",
         badge: "Best Value",
-        highlights: [
-            "4 family members added free",
-            "Premium Prasad Box + Tulsi Kanthi Mala",
-            "Free blessed Mor Pankh from Bihari Ji's charan",
-        ],
-        includedItems: [
-            { label: "Makhan-Mishri Prasad", image: PRASAD_BOX_IMAGE },
-            { label: "Tulsi Kanthi Mala", image: TULSI_MALA_IMAGE },
-            { label: "Blessed Mor Pankh", image: MOR_PANKH_IMAGE },
-        ],
+    },
+    {
+        id: "rajbhog",
+        name: "Raj Bhog Seva",
+        tagline: "The complete seva for the whole family",
+        price: 11000,
+        inherits: "shringar",
+        addedOfferings: ["Deepak Seva", "Bade Bhog Thali"],
+        freeFamilyMembers: 3,
+        freePrasadBox: "royal",
     },
 ];
 
 /** The recommended package, pre-selected on first load. */
-export const DEFAULT_PACKAGE_ID: PujaPackageId = "premium";
+export const DEFAULT_PACKAGE_ID: PujaPackageId = "kripa";
 
 /** Resolve a package by id, falling back to the first (cheapest) package. */
 export function getPackage(id: PujaPackageId | undefined): PujaPackage {
     return BANKE_BIHARI_PACKAGES.find((p) => p.id === id) || BANKE_BIHARI_PACKAGES[0];
+}
+
+/** The core seva shared by every package (declared on the base package). */
+export function packageCore(pkg: PujaPackage): string[] {
+    return pkg.core ?? (pkg.inherits ? packageCore(getPackage(pkg.inherits)) : []);
+}
+
+/** Everything offered to Bihari Ji in your name at this tier, cheapest tier first. */
+export function packageOfferings(pkg: PujaPackage): string[] {
+    return pkg.inherits
+        ? [...packageOfferings(getPackage(pkg.inherits)), ...pkg.addedOfferings]
+        : [...pkg.addedOfferings];
+}
+
+/**
+ * Whether the ₹501 prasad box may be added to this package. False for the two
+ * higher packages — they already ship a richer box free, so offering a paid one
+ * would read as charging twice for the same thing.
+ */
+export function canAddPrasadBox(pkg: PujaPackage): boolean {
+    return pkg.freePrasadBox === null;
 }
 
 /** Family members that fall OUTSIDE the package's free allowance (charged). */
@@ -236,14 +340,36 @@ export function extraFamilyCount(pkg: PujaPackage, familyCount: number): number 
     return Math.max(0, familyCount - pkg.freeFamilyMembers);
 }
 
-/** Booking total = package price + chargeable extra family members. */
-export function packageTotal(pkg: PujaPackage, familyCount: number): number {
-    return pkg.price + extraFamilyCount(pkg, familyCount) * EXTRA_FAMILY_MEMBER_PRICE;
+/** The prasad-box line on the bill — ₹0 unless the optional box was added. */
+export function prasadBoxCost(pkg: PujaPackage, prasadBoxAdded: boolean): number {
+    return canAddPrasadBox(pkg) && prasadBoxAdded ? PRASAD_BOX_PRICE : 0;
 }
 
-/** Whether a package ships a physical item and therefore needs a delivery address. */
-export function packageNeedsDelivery(pkg: PujaPackage): boolean {
-    return pkg.prasadBox || pkg.tulsiMala || pkg.morPankh;
+/** Booking total = package price + chargeable extra Sankalps + optional prasad box. */
+export function packageTotal(
+    pkg: PujaPackage,
+    familyCount: number,
+    prasadBoxAdded = false,
+): number {
+    return (
+        pkg.price +
+        extraFamilyCount(pkg, familyCount) * EXTRA_FAMILY_MEMBER_PRICE +
+        prasadBoxCost(pkg, prasadBoxAdded)
+    );
+}
+
+/** The box actually being shipped for this booking, if any. */
+export function shippedPrasadBox(
+    pkg: PujaPackage,
+    prasadBoxAdded: boolean,
+): PrasadBox | null {
+    if (pkg.freePrasadBox) return PRASAD_BOXES[pkg.freePrasadBox];
+    return canAddPrasadBox(pkg) && prasadBoxAdded ? PRASAD_BOXES.standard : null;
+}
+
+/** Whether this booking ships a physical item and therefore needs a delivery address. */
+export function packageNeedsDelivery(pkg: PujaPackage, prasadBoxAdded = false): boolean {
+    return shippedPrasadBox(pkg, prasadBoxAdded) !== null;
 }
 
 /**
@@ -343,7 +469,7 @@ export const bankeBihariPuja = {
             headingId: "6",
             heading: "What you will receive",
             description:
-                "<p>• Personalised <strong>Sankalp</strong> performed in your name &amp; gotra</p><p> • Full <strong>puja video</strong> shared on WhatsApp</p><p> • Photos of the offerings made in your name</p><p> • Blessed <strong>makhan-mishri prasad</strong> couriered to your home</p><p> • Post-puja guidance from our team</p>",
+                "<p>• Personalised <strong>Sankalp</strong> performed in your name &amp; gotra</p><p> • Full <strong>puja video</strong> shared on WhatsApp</p><p> • Photos of the offerings made in your name</p><p> • A blessed <strong>prasad box</strong> couriered home — <strong>free</strong> in the ₹5100 &amp; ₹11000 packages, or added for ₹501 in the ₹1100 &amp; ₹2100 packages</p><p> • Post-puja guidance from our team</p>",
         },
         {
             headingId: "7",
@@ -376,8 +502,12 @@ export const bankeBihariPuja = {
             answer: "Vrindavan is Krishna's own leela bhoomi — the land of his childhood, his raas and his makhan chori. Seva offered here on Janmashtami, the night of his avataran, is held to be among the most meritorious worship a devotee can offer.",
         },
         {
-            question: "Is prasad included?",
-            answer: "Yes, in the Bihari Kripa and Raas Vihari packages. Blessed makhan-mishri prasad from the mandir is couriered to your home after the seva.",
+            question: "Is the prasad box included?",
+            answer: "In the ₹5100 Shringar Seva and the ₹11000 Raj Bhog Seva the prasad box is FREE — Shringar ships the Premium box (dry prasad, bansuri, tulsi mala, jaap counter, Radha naam tulsi mala, mor pankh and a small dahi handi) and Raj Bhog ships the Royal box, which adds a brass Laddu Gopal ji idol and a Laddu Gopal ji dress. In the ₹1100 and ₹2100 packages the prasad box is optional: add it for ₹501 during booking and it is couriered to your home.",
+        },
+        {
+            question: "What is inside the ₹501 prasad box?",
+            answer: "Dry prasad from the mandir, a bansuri, a tulsi mala and a jaap counter — blessed at Shri Banke Bihari Ji Mandir and couriered to your home. It is completely optional; skip it and you pay only the package price.",
         },
         {
             question: "Can I book from outside India?",
@@ -389,7 +519,7 @@ export const bankeBihariPuja = {
         },
         {
             question: "Can I add my family members to the Sankalp?",
-            answer: "Yes. The Bihari Kripa package includes 2 family Sankalps free and Raas Vihari includes 4. Any name beyond your package's free allowance can be added for ₹151 each during booking, and every name is taken by the pandit during the Sankalp.",
+            answer: "Yes. Bihari Kripa (₹2100) includes 1 family Sankalp free, Shringar Seva (₹5100) includes 2 and Raj Bhog Seva (₹11000) includes 3. Any name beyond your package's free allowance can be added for ₹151 each during booking, and every name is taken by the pandit during the Sankalp.",
         },
     ] as { question: string; answer: string }[],
 };

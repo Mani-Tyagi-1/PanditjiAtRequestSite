@@ -110,7 +110,7 @@ const BANKE_BIHARI_PUJA = {
       headingId: "5",
       heading: "What you will receive",
       description:
-        "<p>• Personalised <strong>Sankalp</strong> performed in your name &amp; gotra</p><p> • Full <strong>puja video</strong> shared on WhatsApp</p><p> • Photos of the offerings made in your name</p><p> • Blessed <strong>makhan-mishri prasad</strong> couriered to your home</p>",
+        "<p>• Personalised <strong>Sankalp</strong> performed in your name &amp; gotra</p><p> • Full <strong>puja video</strong> shared on WhatsApp</p><p> • Photos of the offerings made in your name</p><p> • A blessed <strong>prasad box</strong> couriered home — free in the ₹5100 &amp; ₹11000 packages, or an optional ₹501 add-on in the ₹1100 &amp; ₹2100 packages</p>",
     },
   ],
   faqs: [
@@ -130,9 +130,9 @@ const BANKE_BIHARI_PUJA = {
         "Banke Bihari Ji is the beloved swaroop of Shri Krishna worshipped at Vrindavan. 'Banke' means bent in three places (tribhanga) and 'Bihari' means the supreme enjoyer. He is known as the deity of prem and kripa.",
     },
     {
-      question: "Is prasad included?",
+      question: "Is the prasad box included?",
       answer:
-        "Yes, in the Bihari Kripa and Raas Vihari packages. Blessed makhan-mishri prasad from the mandir is couriered to your home after the seva.",
+        "The prasad box is FREE in the ₹5100 Shringar Seva (dry prasad, bansuri, tulsi mala, jaap counter, Radha naam tulsi mala, mor pankh, small dahi handi) and in the ₹11000 Raj Bhog Seva, which also adds a brass Laddu Gopal Ji idol and a Laddu Gopal Ji dress. In the ₹1100 and ₹2100 packages it is an optional ₹501 add-on chosen during booking.",
     },
   ],
   isActive: true,

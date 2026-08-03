@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
-import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG } from "../data/kashiMahadevPuja";
+// import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG } from "../data/kashiMahadevPuja";
 // import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG } from "../data/kaalBhairavPuja";
 // import { hanumanPuja, HANUMAN_PUJA_SLUG } from "../data/hanumanPuja";
 import OurServices from "../components/home/OurServices";
@@ -35,17 +35,19 @@ const LOGO =
 // ── Featured puja banner (Home, between "Book Puja" and "Our Services") ──
 // 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kashi banner so the slot is
 //    never broken; swap the string for your own artwork when it's ready.
-const FEATURED_PUJA_BANNER =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner1.png";
+// CAMPAIGN STOPPED (Savan 2026 / Kashi Rudrabhishek) — the banner section below
+// is commented out along with these constants and the route in App.tsx.
+// const FEATURED_PUJA_BANNER =
+//     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner1.png";
 
 // Where the banner sends the devotee. Kept next to the image so the creative and
 // its destination can never drift apart.
-const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
+// const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
 
 // Intrinsic size of the creative, used only to reserve the right amount of
 // vertical space while it loads so the sections below don't jump (CLS).
-const FEATURED_PUJA_BANNER_W = 1080;
-const FEATURED_PUJA_BANNER_H = 566;
+// const FEATURED_PUJA_BANNER_W = 1080;
+// const FEATURED_PUJA_BANNER_H = 566;
 
 // ── Second featured puja banner: Kaal Bhairav Kalashtami campaign ──
 // 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kaal Bhairav banner so the
@@ -321,10 +323,10 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── Featured puja banner ──
+            {/* ── Featured puja banner ── CAMPAIGN STOPPED (Savan 2026).
                 A single tappable creative promoting the Savan Rudrabhishek page.
                 Swap FEATURED_PUJA_BANNER at the top of this file to change the
-                artwork; the destination lives next to it. */}
+                artwork; the destination lives next to it.
             <section className="px-4">
                 <button
                     onClick={() => {
@@ -353,8 +355,9 @@ export default function HomePage() {
                     />
                 </button>
             </section>
+            */}
 
-            
+
 
              {/* ── Our Services ── */}
             <OurServices />

@@ -44,6 +44,10 @@ const DIST = resolve(__dirname, "../dist");
 const SRC = resolve(__dirname, "../src");
 
 const ROUTES = [
+  // CAMPAIGN STOPPED (Savan 2026) — the route is commented out in App.tsx, so
+  // SavanPujaPage.tsx is no longer a React.lazy chunk and routeChunkLinks()
+  // would throw here and fail the build. Uncomment together with the route.
+  /*
   {
     path: "/kashi-mahadev-savan-puja",
     page: "pages/SavanPujaPage.tsx",
@@ -58,6 +62,7 @@ const ROUTES = [
     // use for the resizer origin.
     dropOrigins: ["images.weserv.nl"],
   },
+  */
 ];
 
 /** Reads a source file, or fails the build with a pointer to what broke. */

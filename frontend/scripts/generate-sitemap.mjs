@@ -54,8 +54,10 @@ const STATIC_ROUTES = [
   { path: "/free-consultation", priority: "0.7", changefreq: "monthly" },
   { path: "/paid-consultation", priority: "0.6", changefreq: "monthly" },
   { path: "/blog", priority: "0.7", changefreq: "weekly" },
-  // Savan 2026 seasonal campaign page — remove after 28 Aug 2026
-  { path: "/kashi-mahadev-savan-puja", priority: "0.9", changefreq: "daily" },
+  // Savan 2026 seasonal campaign page — CAMPAIGN STOPPED. The route is
+  // commented out in App.tsx and now redirects to home, so listing it here
+  // would advertise a soft-404 to Google.
+  // { path: "/kashi-mahadev-savan-puja", priority: "0.9", changefreq: "daily" },
   // Kaal Bhairav Kalashtami 2026 campaign page — remove after 11 Aug 2026
   { path: "/kashi-kaal-bhairav-puja", priority: "0.9", changefreq: "daily" },
   // Banke Bihari Janmashtami 2026 campaign page — remove after 4 Sep 2026

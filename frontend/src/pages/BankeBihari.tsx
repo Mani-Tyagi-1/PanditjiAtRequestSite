@@ -41,18 +41,18 @@ const HERO_VALUE_IMAGE = "";
 // Banke Bihari Janmashtami online-puja devotee reviews (auto-scrolling marquee).
 type Review = { name: string; rating: number; date: string; text: string; verified: boolean };
 const PLACEHOLDER_REVIEWS: Review[] = [
-    { name: "Sunita Devi", rating: 5, date: "1 week ago", text: "Bihari Ji ki puja ka video WhatsApp pe mil gaya, pandit ji ne mera naam aur gotra se sankalp kiya. 🙏", verified: true },
-    { name: "Rakesh Kumar", rating: 5, date: "3 weeks ago", text: "Janmashtami pe Vrindavan se seva karwayi. Ghar mein bahut positive feel hua. ₹1100 mein easy tha.", verified: true },
-    { name: "Pooja Sharma", rating: 5, date: "2 weeks ago", text: "Makhan-mishri prasad 5 din mein ghar aa gaya. Tulsi mala bhi mili. Bahut khush hoon. 🙏", verified: true },
-    { name: "Amit Verma", rating: 4, date: "1 month ago", text: "Puja theek se hui, video bhi mil gaya. Midnight aarti dekh ke aankhein bhar aayi.", verified: true },
-    { name: "Deepak Yadav", rating: 5, date: "5 days ago", text: "Parents ke naam se book kiya tha. Pandit ji ne aarti mein dono ka naam liya. Family khush.", verified: true },
-    { name: "Anjali Nair", rating: 5, date: "2 months ago", text: "Booked from Dubai. Kanha ji ki kripa chahiye thi. Simple aur genuine process.", verified: false },
-    { name: "Manoj Tiwari", rating: 4, date: "3 weeks ago", text: "Sankalp naam aur gotra se hua. Bachon ke liye karwaya tha. Booking aasan thi.", verified: true },
-    { name: "Kavita Singh", rating: 5, date: "1 month ago", text: "Banke Bihari ji ke darbar se seva karwa ke mann ko bahut shanti mili. 🙏", verified: true },
-    { name: "Ramesh Patel", rating: 5, date: "2 weeks ago", text: "Genuine service. Koi extra paisa nahi maanga. Video proof bhi diya jaisa bola tha.", verified: true },
-    { name: "Neha Joshi", rating: 4, date: "6 days ago", text: "Achhi service. Puja ki timing WhatsApp pe confirm kar di thi. Recommend karungi.", verified: false },
-    { name: "Suresh Gupta", rating: 5, date: "1 month ago", text: "Business mein barkat ke liye Janmashtami seva karwayi. Sab time pe aur proper hua. 🙏", verified: true },
-    { name: "Priya Reddy", rating: 5, date: "3 weeks ago", text: "Pehli baar online puja book ki thi, dar tha par sab genuine nikla. Phir se karwaungi.", verified: true },
+    { name: "Ashok Mishra", rating: 5, date: "1 week ago", text: "Pichli seva ka experience achha tha, is baar Janmashtami bhi yahin se book ki. 🙏", verified: true },
+    { name: "Meher Prakash", rating: 5, date: "3 weeks ago", text: "Booking process simple tha aur support bhi achha mila.", verified: true },
+    { name: "Ashu Dogra", rating: 4, date: "2 weeks ago", text: "Kashi Rudrabhishek ke baad trust bana, ab Vrindavan ki seva bhi book kar di.", verified: true },
+    { name: "Sourav Sahoo", rating: 5, date: "1 month ago", text: "Sab details clearly mil gayi thi, isliye bina soche booking kar di.", verified: true },
+    { name: "Amit Beriha", rating: 4, date: "5 days ago", text: "Pehle bhi seva karwayi thi, experience sahi raha tha.", verified: true },
+    { name: "Dr. Rahul Singh", rating: 5, date: "2 months ago", text: "Kashi wali puja ka video time par mila tha, isliye Janmashtami seva bhi book ki.", verified: true },
+    { name: "Anshul Sharma", rating: 5, date: "3 weeks ago", text: "Team ka response quick tha. Booking karna kaafi easy laga.", verified: true },
+    { name: "Shripad Hebbar", rating: 4, date: "1 month ago", text: "Sab kuch transparent laga. Achha experience raha.", verified: true },
+    { name: "Deepti Gupta", rating: 5, date: "2 weeks ago", text: "Kashi mein seva achhi lagi thi, ab Banke Bihari ji ke liye bhi booking kar di. 🙏", verified: true },
+    { name: "Sapna Saxena", rating: 4, date: "6 days ago", text: "Website use karna easy tha aur booking jaldi ho gayi.", verified: true },
+    { name: "Sunita Sharma", rating: 5, date: "1 month ago", text: "Pehle Rudrabhishek karwaya tha, sab sahi raha. Is baar Janmashtami seva bhi book ki.", verified: true },
+    { name: "Rekha Sharma", rating: 4, date: "3 weeks ago", text: "Kashi ki puja aur video se bharosa bana, ab Vrindavan ki seva bhi yahin se li.", verified: true },
 ];
 
 function seededReviews(seed: string, count: number): Review[] {
@@ -518,16 +518,20 @@ export default function BankeBihariPage() {
               temple line. `object-contain` (not cover) because the asset is a
               3:2 cut-out on transparency: cover would fill the 16:9-ish band by
               cropping the eye and the tail off. Contain shows the whole feather
-              and lets the theme gradient behind it read as the backdrop. */}
+              and lets the theme gradient behind it read as the backdrop.
+              Trimmed via the resizer because the source canvas carries a wide
+              transparent margin — without it that margin shows as empty space
+              on both sides. */}
           <img
-            src={image}
+            src={optimizedImg(image, 900, 85, { trim: true })}
+            onError={(e) => { e.currentTarget.src = image; }}
             width={432}
             height={224}
             alt={puja.poojaNameEng}
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-fit"
           />
           {/* Compact live countdown, tucked into the hero's bottom-right. */}
           <HeroCountdown target={targetTs} />

@@ -139,17 +139,17 @@ export const ITEM_IMAGES: Record<string, string> = {
     Bansuri: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/bansuri.webp",
     "Tulsi Mala": "https://sanatanseva.com/cdn/shop/files/1_0cc0f933-8fad-4077-8587-e010226d80b8.jpg?v=1740658048&width=1946",
     "Jaap Counter": "https://rukminim2.flixcart.com/image/480/640/xif0q/tally-counter/q/w/d/99999-dg11pcs1-degno-original-imahfzeztnjd49f9.jpeg?q=90",
-    "Radha Naam Tulsi Mala": "",
+    "Radha Naam Tulsi Mala": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/RADHA_NAAM_MALA.png",
     "Mor Pankh": "https://png.pngtree.com/png-vector/20250310/ourmid/pngtree-3d-realistic-peacock-feather-png-image_15681047.png",
-    "Small Dahi Handi": "",
-    "Laddu Gopal Idol": "",
-    "Laddu Gopal Dress": "",
+    "Small Dahi Handi": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DAHI_HANDI.png",
+    "Laddu Gopal Idol": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_IDOL.png",
+    "Laddu Gopal Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
     // ── Offered to Bihari Ji in your name ──
     "Makhan Mishri": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Makhan%20Mishri.webp",
     Paan: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_4_1776952020655.jpg",
     Laddu: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_3_1776952020653.jpg",
-    "Deepak Seva": "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_3_1776952020653.jpg",
-    "Bade Bhog Thali": "",
+    "Deepak Seva": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DEEPAK_SEWA.png",
+    "Bade Bhog Thali": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/BADI_THALI_BHOG.png",
 };
 
 /** Every item inside a box, inherited tiers first. */
@@ -239,8 +239,7 @@ export const MAKHAN_MATKI_IMAGE =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/With%20makhan.webp";
 
  export const BANNER_IMG =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banke%20bihariji%20banner1.webp ";   
-
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banke%20bihariji%20banner1.webp";
     
 
 /**
@@ -389,17 +388,11 @@ export const bankeBihariPuja = {
     poojaPriceOnline: 1100,
     poojaPriceOffline: 1100,
     poojaGods: [] as string[],
-    // Banner / card artwork.
-    //
-    // NOTE: this asset is the peacock-feather cut-out on a TRANSPARENT
-    // background — it carries no deity portrait and no text (no title, temple
-    // name or occasion). The hero therefore renders it with `object-contain`
-    // over the theme's cream gradient rather than `object-cover`, so the whole
-    // feather is visible and nothing is cropped. Swap in a designed Janmashtami
-    // banner here if the hero should carry artwork + title instead.
-    poojaCardImage: BANNER_IMG ,
-    poojaMainImage: BANNER_IMG ,
-    poojaImages: [BANNER_IMG ],
+    // Banner / card artwork — the designed Janmashtami banner (opaque, no
+    // transparent margin). The hero renders it with `object-cover`.
+    poojaCardImage: BANNER_IMG,
+    poojaMainImage: BANNER_IMG,
+    poojaImages: [BANNER_IMG],
     poojaVideoLink: "",
 
     // ── Presentation-only fields (used by the Banke Bihari themed page) ──
@@ -407,8 +400,8 @@ export const bankeBihariPuja = {
     /** Temple where the online puja is performed on your behalf. */
     templeName: "Shri Banke Bihari Ji Mandir",
     templeLocation: "Vrindavan, Mathura",
-    rating: 4.9,
-    devoteesLabel: "75K+",
+    rating: 4.6,
+    devoteesLabel: "13K+",
     /** Scheduled date of this puja — Krishna Janmashtami 2026. */
     pujaDate: BANKE_BIHARI_PUJA_DATE,
     /** Janmashtami framing shown in the hero. */

@@ -893,12 +893,12 @@ export default function BankeBihariBookingPage() {
 
                             {/* Exactly what is in the box being shipped, so the
                                 address is being given for something concrete. */}
-                            <div className="bg-[#EDF9F0] border border-[#A7D8B6] rounded-2xl p-3.5">
+                            {/* <div className="bg-[#EDF9F0] border border-[#A7D8B6] rounded-2xl p-3.5">
                                 <p className="text-[11px] font-bold uppercase tracking-wide text-[#1F7A50] mb-2">
                                     Couriered to your home · {shippedBox?.name}
                                 </p>
                                 <ItemTileRow items={shipList} tone="green" />
-                            </div>
+                            </div> */}
 
                             {user && addresses.length > 0 && !showNewAddressForm && (
                                 <div className="space-y-2">

@@ -72,7 +72,7 @@ const PLACEHOLDER_REVIEWS: Review[] = [
     { name: "Dr. Rahul Singh", rating: 5, date: "2 months ago", text: "Kashi wali puja ka video time par mila tha, isliye Janmashtami seva bhi book ki.", verified: true },
     { name: "Anshul Sharma", rating: 5, date: "3 weeks ago", text: "Team ka response quick tha. Booking karna kaafi easy laga.", verified: true },
     { name: "Shripad Hebbar", rating: 4, date: "1 month ago", text: "Sab kuch transparent laga. Achha experience raha.", verified: true },
-    { name: "Deepti Gupta", rating: 5, date: "2 weeks ago", text: "Kashi mein seva achhi lagi thi, ab Banke Bihari ji ke liye bhi booking kar di. 🙏", verified: true },
+    { name: "Deepti Gupta", rating: 5, date: "2 weeks ago", text: "Kashi mein seva achhi lagi thi, ab Banke Bihari Ji ke liye bhi booking kar di. 🙏", verified: true },
     { name: "Sapna Saxena", rating: 4, date: "6 days ago", text: "Website use karna easy tha aur booking jaldi ho gayi.", verified: true },
     { name: "Sunita Sharma", rating: 5, date: "1 month ago", text: "Pehle Rudrabhishek karwaya tha, sab sahi raha. Is baar Janmashtami seva bhi book ki.", verified: true },
     { name: "Rekha Sharma", rating: 4, date: "3 weeks ago", text: "Kashi ki puja aur video se bharosa bana, ab Vrindavan ki seva bhi yahin se li.", verified: true },
@@ -493,7 +493,7 @@ export default function BankeBihariPage() {
         "Dry Fruits": { icon: Grape, sub: "Bhog of dry fruits" },
         "Tulsi Mala": { icon: Flower2, sub: "Tulsi mala offered" },
         "Phool Mala": { icon: Flower, sub: "Floral shringar" },
-        Murli: { icon: Music, sub: "Krishna's flute" },
+        Murli: { icon: Music, sub: "Krishna Ji's flute" },
         Laddu: { icon: Cookie, sub: "Bhog of laddu" },
         Paan: { icon: Leaf, sub: "Offered after bhog" },
         "Deepak Seva": { icon: Flame, sub: "Ghee deepak lit" },
@@ -501,7 +501,7 @@ export default function BankeBihariPage() {
         "Raj Bhog Thali": { icon: UtensilsCrossed, sub: "Grand raj bhog" },
     };
     const offerings = [
-        { icon: Droplets, label: "Panchamrit", sub: "Abhishek of Kanha" },
+        { icon: Droplets, label: "Panchamrit", sub: "Abhishek of Kanha Ji" },
         { icon: Flower2, label: "Tulsi Archana", sub: "Tulsi dal offering" },
         ...packageOfferings(selectedPkg).map((label) => ({
             label,

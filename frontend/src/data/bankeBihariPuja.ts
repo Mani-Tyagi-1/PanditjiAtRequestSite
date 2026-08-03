@@ -101,7 +101,7 @@ export interface PrasadBox {
     /**
      * Inherited items this tier SUPERSEDES. Nesting is the rule, this is the
      * rare exception: the premium box swaps the plain tulsi mala for the Radha
-     * naam one, and the royal box ships 5 Laddu Gopal ji dresses instead of the
+     * naam one, and the royal box ships 5 Laddu Gopal Ji dresses instead of the
      * premium box's 3 — so the flattened list has to drop the superseded line
      * rather than list both counts side by side.
      */
@@ -131,7 +131,7 @@ export const PRASAD_BOXES: Record<PrasadBoxTier, PrasadBox> = {
         name: "Royal Prasad Box",
         inherits: "premium",
         removes: ["3 Laddu Gopal Ji Dress"],
-        adds: ["Brass Laddu Gopal Idol", "5 Laddu Gopal Ji Dress"],
+        adds: ["Brass Laddu Gopal Ji Idol", "5 Laddu Gopal Ji Dress"],
     },
 };
 
@@ -157,7 +157,7 @@ export const ITEM_IMAGES: Record<string, string> = {
     "Radha Naam Tulsi Mala": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/RADHA_NAAM_MALA.png",
     "Mor Pankh": "https://png.pngtree.com/png-vector/20250310/ourmid/pngtree-3d-realistic-peacock-feather-png-image_15681047.png",
     "Small Dahi Handi": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DAHI_HANDI.png",
-    "Brass Laddu Gopal Idol": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_IDOL.png",
+    "Brass Laddu Gopal Ji Idol": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_IDOL.png",
     "3 Laddu Gopal Ji Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
     "5 Laddu Gopal Ji Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
     Makhan: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Makhan%20Mishri.webp",
@@ -225,7 +225,7 @@ export const PEACOCK_FEATHER_IMAGE =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/peacock%20feather%20(2).webp";
 
 /**
- * Mid-page CTA artwork — a fully designed strip (Laddu Gopal, the headline
+ * Mid-page CTA artwork — a fully designed strip (Laddu Gopal Ji, the headline
  * "Seek the blessings of Banke Bihari Ji on this Janmashtami", a gold "Proceed
  * to Payment" button and a trust line), so the page renders it on its own with
  * no overlaid copy or container chrome.
@@ -238,7 +238,7 @@ export const CTA_BANNER_IMAGE =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banke%20bihari%20ji%20cta.webp";
 
 /**
- * Bansuri-and-mor-pankh motif — Krishna's flute laid across a peacock feather
+ * Bansuri-and-mor-pankh motif — Krishna Ji's flute laid across a peacock feather
  * with plumeria and gold tassels. The page's signature Janmashtami ornament,
  * used as a centred section divider.
  *
@@ -315,7 +315,7 @@ export const BANKE_BIHARI_PACKAGES: PujaPackage[] = [
     },
     {
         id: "kripa",
-        name: "Bihari Kripa Seva",
+        name: "Bihari Ji Kripa Seva",
         tagline: "Most-loved · offerings in your name",
         price: 2100,
         inherits: "makhan",
@@ -453,11 +453,11 @@ export const bankeBihariPuja = {
     occasionHindi: "जन्माष्टमी",
     /** Short outcome bullets shown in the "Why perform this puja" card. */
     benefits: [
-        "Banke Bihari Ji is the most loving swaroop of Shri Krishna — his kripa fulfils every heartfelt wish",
+        "Banke Bihari Ji is the most loving swaroop of Shri Krishna Ji — his kripa fulfils every heartfelt wish",
         "Janmashtami seva at Vrindavan brings prem, shanti and happiness into the home",
         "Removes rukawat in marriage, love and family relationships",
         "Blesses children with good health, buddhi, sanskaar and a bright future",
-        "As Yogeshwar Krishna, brings abundance, growth and success in business",
+        "As Yogeshwar Krishna Ji, brings abundance, growth and success in business",
         "Frees the mind from chinta and grants bhakti, contentment and inner peace",
     ],
 
@@ -470,37 +470,37 @@ export const bankeBihariPuja = {
     samagriDetails: [] as any[],
     samagriPrice: 0,
     poojaBenefitsDescription:
-        "Verified pandits perform the Janmashtami Mahapuja on your behalf at Shri Banke Bihari Ji Mandir in Vrindavan with traditional Vedic vidhi.<br>\r\nA personalised Sankalp is done in your name and gotra so the seva is dedicated to you and your family.<br>\r\nOfferings include Panchamrit abhishek, makhan-mishri bhog, peetambar vastra, tulsi archana, vaijayanti mala and mor pankh, with Krishna mantra japa and the midnight Janmashtami aarti.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and blessed prasad couriered to your home.<br>",
+        "Verified pandits perform the Janmashtami Mahapuja on your behalf at Shri Banke Bihari Ji Mandir in Vrindavan with traditional Vedic vidhi.<br>\r\nA personalised Sankalp is done in your name and gotra so the seva is dedicated to you and your family.<br>\r\nOfferings include Panchamrit abhishek, makhan-mishri bhog, peetambar vastra, tulsi archana, vaijayanti mala and mor pankh, with Krishna Ji mantra japa and the midnight Janmashtami aarti.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and blessed prasad couriered to your home.<br>",
     poojaDescription: [
         {
             headingId: "1",
             heading: "Purpose of Puja",
             description:
-                "<p>To seek the <strong>kripa</strong> of <strong>Shri Banke Bihari Ji</strong> — the enchanting swaroop of <strong>Shri Krishna</strong> who resides in <strong>Vrindavan</strong> and is worshipped as the deity who never refuses a devotee who comes with love.</p><p>This online seva is performed on your behalf at his mandir in <strong>Vrindavan</strong> on <strong>Krishna Janmashtami</strong> — the night of his avataran — to invite prem, prosperity, family harmony and the fulfilment of your heart's wish.</p>",
+                "<p>To seek the <strong>kripa</strong> of <strong>Shri Banke Bihari Ji</strong> — the enchanting swaroop of <strong>Shri Krishna Ji</strong> who resides in <strong>Vrindavan</strong> and is worshipped as the deity who never refuses a devotee who comes with love.</p><p>This online seva is performed on your behalf at his mandir in <strong>Vrindavan</strong> on <strong>Krishna Janmashtami</strong> — the night of his avataran — to invite prem, prosperity, family harmony and the fulfilment of your heart's wish.</p>",
         },
         {
             headingId: "2",
             heading: "Best Time to Perform",
             description:
-                "<p><strong>Day:</strong> Friday, 4 September 2026 — <strong>Krishna Janmashtami</strong>, the Ashtami of Bhadrapada Krishna Paksha.</p><p>The <strong>Nishith Kaal</strong> (midnight muhurat) of Janmashtami — the very moment of Kanha's birth — is held to be the most powerful time of the entire year to invoke Shri Krishna. Seva offered at <strong>Vrindavan</strong> on this night is believed to carry manifold merit.</p>",
+                "<p><strong>Day:</strong> Friday, 4 September 2026 — <strong>Krishna Janmashtami</strong>, the Ashtami of Bhadrapada Krishna Paksha.</p><p>The <strong>Nishith Kaal</strong> (midnight muhurat) of Janmashtami — the very moment of Kanha Ji's birth — is held to be the most powerful time of the entire year to invoke Shri Krishna. Seva offered at <strong>Vrindavan</strong> on this night is believed to carry manifold merit.</p>",
         },
         {
             headingId: "3",
             heading: "Benefits of Puja",
             description:
-                "<p>• <strong>Kripa</strong> of Banke Bihari Ji — the fulfilment of your heartfelt wish.</p><p> • Brings <strong>prem, shanti</strong> and happiness into the home.</p><p> • Removes <strong>rukawat</strong> in marriage, love and family relationships.</p><p> • Blesses <strong>children</strong> with health, buddhi and sanskaar.</p><p> • As <strong>Yogeshwar Krishna</strong>, brings growth and success in business.</p><p> • Frees the mind from chinta and grants <strong>bhakti</strong> and contentment.</p>",
+                "<p>• <strong>Kripa</strong> of Banke Bihari Ji — the fulfilment of your heartfelt wish.</p><p> • Brings <strong>prem, shanti</strong> and happiness into the home.</p><p> • Removes <strong>rukawat</strong> in marriage, love and family relationships.</p><p> • Blesses <strong>children</strong> with health, buddhi and sanskaar.</p><p> • As <strong>Yogeshwar Krishna Ji</strong>, brings growth and success in business.</p><p> • Frees the mind from chinta and grants <strong>bhakti</strong> and contentment.</p>",
         },
         {
             headingId: "4",
             heading: "What is performed",
             description:
-                "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Banke Bihari Ji Mandir, Vrindavan</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Panchamrit abhishek</strong> of Laddu Gopal, <strong>makhan-mishri bhog</strong>, tulsi archana, <strong>Krishna mantra japa</strong> and the midnight <strong>Janmashtami aarti</strong>.</p><p>The entire seva is dedicated specifically to you and your family, and is recorded for you.</p>",
+                "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Banke Bihari Ji Mandir, Vrindavan</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Panchamrit abhishek</strong> of Laddu Gopal Ji, <strong>makhan-mishri bhog</strong>, tulsi archana, <strong>Krishna Ji mantra japa</strong> and the midnight <strong>Janmashtami aarti</strong>.</p><p>The entire seva is dedicated specifically to you and your family, and is recorded for you.</p>",
         },
         {
             headingId: "5",
             heading: "Offerings made on your behalf",
             description:
-                "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and murli offered at his charan</p><p> • <strong>Krishna mantra japa</strong> and the midnight Janmashtami aarti</p>",
+                "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha Ji</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and murli offered at his charan</p><p> • <strong>Krishna Ji mantra japa</strong> and the midnight Janmashtami aarti</p>",
         },
         {
             headingId: "6",
@@ -512,7 +512,7 @@ export const bankeBihariPuja = {
             headingId: "7",
             heading: "Colours Preferred",
             description:
-                "<p><strong>Peela (yellow)</strong> and <strong>Mor-pankhi (peacock green-blue)</strong></p><p>Yellow is the colour of Krishna's <strong>peetambar</strong>, marking joy, auspiciousness and abundance, while peacock green-blue reflects the <strong>mor pankh</strong> he wears in his crown. Together they are the most auspicious colours for his worship.</p>",
+                "<p><strong>Peela (yellow)</strong> and <strong>Mor-pankhi (peacock green-blue)</strong></p><p>Yellow is the colour of Krishna Ji's <strong>peetambar</strong>, marking joy, auspiciousness and abundance, while peacock green-blue reflects the <strong>mor pankh</strong> he wears in his crown. Together they are the most auspicious colours for his worship.</p>",
         },
         {
             headingId: "8",
@@ -532,15 +532,15 @@ export const bankeBihariPuja = {
         },
         {
             question: "Who is Banke Bihari Ji?",
-            answer: "Banke Bihari Ji is the beloved swaroop of Shri Krishna worshipped at Vrindavan. 'Banke' means bent in three places (tribhanga) and 'Bihari' means the supreme enjoyer. He is known as the deity of prem and kripa, who fulfils the wishes of anyone who comes to him with love.",
+            answer: "Banke Bihari Ji is the beloved swaroop of Shri Krishna Ji worshipped at Vrindavan. 'Banke' means bent in three places (tribhanga) and 'Bihari' means the supreme enjoyer. He is known as the deity of prem and kripa, who fulfils the wishes of anyone who comes to him with love.",
         },
         {
             question: "Why is Vrindavan special for Janmashtami puja?",
-            answer: "Vrindavan is Krishna's own leela bhoomi — the land of his childhood, his raas and his makhan chori. Seva offered here on Janmashtami, the night of his avataran, is held to be among the most meritorious worship a devotee can offer.",
+            answer: "Vrindavan is Krishna Ji's own leela bhoomi — the land of his childhood, his raas and his makhan chori. Seva offered here on Janmashtami, the night of his avataran, is held to be among the most meritorious worship a devotee can offer.",
         },
         {
             question: "Is the prasad box included?",
-            answer: "In the ₹5100 Shringar Seva and the ₹11000 Raj Bhog Seva the prasad box is FREE — Shringar ships the Premium box (dry prasad, murli, jaap counter, Radha naam tulsi mala, mor pankh, a small handi for Laddu Gopal ji and 3 Laddu Gopal ji dresses) and Raj Bhog ships the Royal box, which has everything in the Premium box plus a brass Laddu Gopal ji idol and 5 Laddu Gopal ji dresses. In the ₹1100 and ₹2100 packages the prasad box is optional: add it for ₹501 during booking and it is couriered to your home.",
+            answer: "In the ₹5100 Shringar Seva and the ₹11000 Raj Bhog Seva the prasad box is FREE — Shringar ships the Premium box (dry prasad, murli, jaap counter, Radha naam tulsi mala, mor pankh, a small handi for Laddu Gopal Ji and 3 Laddu Gopal Ji dresses) and Raj Bhog ships the Royal box, which has everything in the Premium box plus a brass Laddu Gopal Ji idol and 5 Laddu Gopal Ji dresses. In the ₹1100 and ₹2100 packages the prasad box is optional: add it for ₹501 during booking and it is couriered to your home.",
         },
         {
             question: "What is inside the ₹501 prasad box?",
@@ -556,7 +556,7 @@ export const bankeBihariPuja = {
         },
         {
             question: "Can I add my family members to the Sankalp?",
-            answer: "Yes. Bihari Kripa (₹2100) includes 1 family Sankalp free, Shringar Seva (₹5100) includes 2 and Raj Bhog Seva (₹11000) includes 3. Any name beyond your package's free allowance can be added for ₹151 each during booking, and every name is taken by the pandit during the Sankalp.",
+            answer: "Yes. Bihari Ji Kripa (₹2100) includes 1 family Sankalp free, Shringar Seva (₹5100) includes 2 and Raj Bhog Seva (₹11000) includes 3. Any name beyond your package's free allowance can be added for ₹151 each during booking, and every name is taken by the pandit during the Sankalp.",
         },
     ] as { question: string; answer: string }[],
 };

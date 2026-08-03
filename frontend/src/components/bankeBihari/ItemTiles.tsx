@@ -35,7 +35,7 @@ const ITEM_ICONS: Record<string, LucideIcon> = {
     "Radha Naam Tulsi Mala": Heart,
     "Mor Pankh": Feather,
     "Small Dahi Handi": Amphora,
-    "Brass Laddu Gopal Idol": Crown,
+    "Brass Laddu Gopal Ji Idol": Crown,
     "3 Laddu Gopal Ji Dress": Shirt,
     "5 Laddu Gopal Ji Dress": Shirt,
     // Offerings

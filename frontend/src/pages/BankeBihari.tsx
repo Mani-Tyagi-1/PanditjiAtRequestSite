@@ -1,10 +1,11 @@
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Gift, Calendar, Sparkles,
     Star, Lock, ChevronDown, MessageCircle, Phone, BadgeCheck,
-    Video, MapPin, Share2, HelpCircle, Heart, Milk, Droplets,
-    Flower2, Feather, Music, Leaf, Cookie, Flame, UtensilsCrossed,
+    Video, MapPin, Share2, HelpCircle, Heart, Milk, Droplets, Droplet,
+    Flower, Flower2, Feather, Music, Leaf, Cookie, Flame, UtensilsCrossed,
+    Grape, Candy,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "../context/AuthContext";
@@ -19,8 +20,10 @@ import {
     canAddPrasadBox, prasadBoxCost, packageOfferings, packageTotal, shippedPrasadBox,
     type PujaPackageId,
 } from "../data/bankeBihariPuja";
-import PujaPackages from "../components/bankeBihari/PujaPackages";
+import PujaPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/bankeBihari/PujaPackages";
 import { ItemTileRow } from "../components/bankeBihari/ItemTiles";
+import PrasadBoxNudge, { type PrasadNudge } from "../components/bankeBihari/PrasadBoxNudge";
+import HeroBannerCarousel, { bannerImg } from "../components/bankeBihari/HeroBannerCarousel";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -32,11 +35,31 @@ function track(event: string, params?: Record<string, unknown>, custom = false) 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /**
- * Decorative image beside the hero value-props card. Paste the image URL here.
- * It is allowed to spill outside the card edges for a premium, layered look.
- * Leave as "" to hide it entirely (the card falls back to full-width text).
+ * Decorative image for the "Choose your seva" block. Paste the image URL here.
+ * It is allowed to spill outside the block's top-right corner for a premium,
+ * layered look. Leave as "" and a peacock feather is drawn in its place.
  */
-const HERO_VALUE_IMAGE = "";
+const PACKAGES_ORNAMENT_IMAGE = "";
+
+/**
+ * How long after picking a package the prasad-box toast appears.
+ *
+ * Long enough that it reads as a reminder rather than an interruption — the
+ * devotee gets to look over the card they just tapped first — and short enough
+ * to still land before they reach the payment bar.
+ */
+const PRASAD_NUDGE_DELAY_MS = 3500;
+
+/**
+ * Where the one-time autoscroll parks the FIRST PACKAGE CARD — how far below
+ * the viewport top its top edge lands.
+ *
+ * The glide deliberately overshoots the "Choose your seva" heading and the
+ * "In every seva" strip: both are read-once context, and ending on them left
+ * the thing the devotee has to actually choose from half off the bottom of the
+ * screen. 70 clears the 56 px sticky header with a small breathing gap.
+ */
+const PACKAGES_SCROLL_OFFSET = 70;
 
 // Banke Bihari Janmashtami online-puja devotee reviews (auto-scrolling marquee).
 type Review = { name: string; rating: number; date: string; text: string; verified: boolean };
@@ -279,6 +302,84 @@ export default function BankeBihariPage() {
     // chosen on the booking page, so they can't be priced in yet.
     const price = packageTotal(selectedPkg, 0, prasadBoxAdded);
 
+    // ── Prasad-box toast ──────────────────────────────────────────────────
+    //
+    // The tick that adds the box lives inside the selected package card, which
+    // is where the decision belongs, but devotees were scrolling past it to the
+    // payment bar without registering it at all. A few seconds after a package
+    // is picked, the same choice is repeated as a toast above the CTA.
+    //
+    // Three rules keep a nudge from becoming nagging, and all three live here so
+    // the toast component itself can never be the cause of one:
+    //   1. nothing until the devotee has actually tapped a package — an unasked
+    //      upsell on a page they are still reading is just an interruption
+    //   2. at most ONCE per package, so re-tapping a card never re-fires it
+    //   3. dismissing it ends nudging for the rest of the visit
+    //
+    // There is deliberately NO rule silencing it when the box is already added:
+    // that state gets its own confirmation toast instead. A branch that showed
+    // nothing meant the whole feature could sit there doing nothing at all with
+    // no way to tell that apart from a bug.
+    const [nudge, setNudge] = useState<PrasadNudge | null>(null);
+    const nudgedPkgs = useRef(new Set<PujaPackageId>());
+    const nudgingOff = useRef(false);
+
+    /**
+     * Bumped by every package tap, and the real trigger for the toast.
+     *
+     * Keying the effect on `packageId` alone looked equivalent and was not:
+     * tapping the ALREADY-selected card sets the same id, React bails out of the
+     * re-render, and the effect never runs. Since ₹2100 is the pre-selected
+     * "Most Popular" card, that was the single most common tap on the page and
+     * it produced no toast — which is most of why the paid-box nudge seemed
+     * never to fire. A counter changes on every tap, selection or re-selection.
+     */
+    const [nudgeTick, setNudgeTick] = useState(0);
+
+    useEffect(() => {
+        // Any change to the choice retires the toast currently on screen — it
+        // describes a package/box combination the devotee has moved on from.
+        setNudge(null);
+
+        if (nudgeTick === 0 || nudgingOff.current) return;
+        if (nudgedPkgs.current.has(packageId)) return;
+
+        const timer = setTimeout(() => {
+            nudgedPkgs.current.add(packageId);
+            const freeTier = selectedPkg.freePrasadBox;
+            const next: PrasadNudge = freeTier
+                ? {
+                      kind: "free",
+                      boxName: PRASAD_BOXES[freeTier].name,
+                      packageName: selectedPkg.name,
+                  }
+                : prasadBoxAdded
+                  ? { kind: "added", boxName: PRASAD_BOXES.standard.name }
+                  : {
+                        kind: "add",
+                        boxName: PRASAD_BOXES.standard.name,
+                        price: PRASAD_BOX_PRICE,
+                    };
+            setNudge(next);
+            track("puja_prasad_box_nudge", { package: packageId, kind: next.kind }, true);
+        }, PRASAD_NUDGE_DELAY_MS);
+
+        return () => clearTimeout(timer);
+        // selectedPkg is getPackage(packageId) off a module-level array, so its
+        // identity is stable per id and it never re-fires this on its own.
+    }, [nudgeTick, packageId, prasadBoxAdded, selectedPkg]);
+
+    // Auto-retire. The offer gets longer than the reassurance because it has a
+    // button on it that a devotee may still be deciding about.
+    useEffect(() => {
+        if (!nudge) return;
+        const timer = setTimeout(
+            () => setNudge(null),
+            nudge.kind === "add" ? 8000 : 4500,
+        );
+        return () => clearTimeout(timer);
+    }, [nudge]);
+
     // ViewContent on load
     useEffect(() => {
         track("ViewContent", {
@@ -290,10 +391,25 @@ export default function BankeBihariPage() {
         });
     }, []);
 
-    // Banner / card artwork. The `&&` guards on the OG + preload tags below stay
-    // in place so that blanking this in the data file degrades gracefully rather
-    // than emitting an empty og:image.
-    const image = puja.poojaImages?.[0] || puja.poojaMainImage || puja.poojaCardImage;
+    // Every hero banner, in carousel order. The `&&` guards on the OG + preload
+    // tags below stay in place so that blanking the list in the data file
+    // degrades gracefully rather than emitting an empty og:image.
+    const bannerImages = (puja.poojaImages ?? []).filter(Boolean);
+
+    // Slide 0 — the LCP banner, and the only one worth a preload or an og:image.
+    const image = bannerImages[0] || puja.poojaMainImage || puja.poojaCardImage;
+
+    /**
+     * The URL slide 0 actually requests — the resizer's, not the origin's.
+     *
+     * The preload below MUST use this exact string. Pointing it at `image` while
+     * the <img> asked the resizer for a different URL meant the browser eagerly
+     * downloaded a full-size banner that nothing on the page ever used, then
+     * warned about it in the console: the preload cost LCP instead of helping it.
+     * `bannerImg` is the carousel's own transform, imported rather than repeated,
+     * so the two can never drift apart again.
+     */
+    const heroImage = bannerImg(image);
     const reviews = seededReviews(pujaId, 9);
     const mandirName = `${puja.templeName}, ${puja.templeLocation}`;
 
@@ -316,13 +432,16 @@ export default function BankeBihariPage() {
 
         const timeoutId = setTimeout(() => {
             if (interacted || window.scrollY > 40) return;
-            const el = document.getElementById("packages");
+            // The card list, not the "#packages" section — the glide should end
+            // on the first package card, past the heading and the shared-core
+            // strip. Falls back to the section if the anchor ever goes missing.
+            const el =
+                document.getElementById(PACKAGE_CARDS_ANCHOR_ID) ??
+                document.getElementById("packages");
             if (!el) return;
 
             const startY = window.scrollY;
-            // Offset for the sticky header so the "Choose your seva" title
-            // isn't tucked underneath it.
-            const targetY = Math.max(0, el.getBoundingClientRect().top + startY - 68);
+            const targetY = Math.max(0, el.getBoundingClientRect().top + startY - PACKAGES_SCROLL_OFFSET);
             const distance = targetY - startY;
             if (Math.abs(distance) < 4) return;
 
@@ -368,13 +487,18 @@ export default function BankeBihariPage() {
     // chosen package and comes straight from the package data, so this grid can
     // never quietly promise an offering the selected tier doesn't include.
     const OFFERING_META: Record<string, { icon: typeof Milk; sub: string }> = {
-        "Makhan Mishri": { icon: Milk, sub: "His dearest bhog" },
+        Makhan: { icon: Milk, sub: "His dearest bhog" },
+        Mishri: { icon: Candy, sub: "Offered with makhan" },
         "Mor Pankh": { icon: Feather, sub: "At his charan" },
-        Paan: { icon: Leaf, sub: "Offered after bhog" },
-        Bansuri: { icon: Music, sub: "Krishna's flute" },
+        "Dry Fruits": { icon: Grape, sub: "Bhog of dry fruits" },
+        "Tulsi Mala": { icon: Flower2, sub: "Tulsi mala offered" },
+        "Phool Mala": { icon: Flower, sub: "Floral shringar" },
+        Murli: { icon: Music, sub: "Krishna's flute" },
         Laddu: { icon: Cookie, sub: "Bhog of laddu" },
+        Paan: { icon: Leaf, sub: "Offered after bhog" },
         "Deepak Seva": { icon: Flame, sub: "Ghee deepak lit" },
-        "Bade Bhog Thali": { icon: UtensilsCrossed, sub: "Grand bhog thali" },
+        "Itra Seva": { icon: Droplet, sub: "Itra arpan" },
+        "Raj Bhog Thali": { icon: UtensilsCrossed, sub: "Grand raj bhog" },
     };
     const offerings = [
         { icon: Droplets, label: "Panchamrit", sub: "Abhishek of Kanha" },
@@ -468,7 +592,10 @@ export default function BankeBihariPage() {
               artwork exists — an empty og:image is worse than none. */}
           {image && <meta property="og:image" content={image} />}
           {image && <meta name="twitter:image" content={image} />}
-          {image && <link rel="preload" as="image" href={image} fetchPriority="high" />}
+          {/* Preloads the RESIZER url the <img> below actually requests — see
+              `heroImage`. og:image stays on the origin url above, because social
+              scrapers should fetch the original, not a proxied thumbnail. */}
+          {heroImage && <link rel="preload" as="image" href={heroImage} fetchPriority="high" />}
         </Helmet>
 
         <PujaEnquiryModal
@@ -509,33 +636,20 @@ export default function BankeBihariPage() {
           </button>
         </div>
 
-        {/* ── Hero banner ── artwork only, no overlaid copy. */}
-        <div
-          className="relative h-56 overflow-hidden border-b border-[#E7B63A]/40"
+        {/* ── Hero banner ── artwork only, no overlaid copy.
+            Auto-advances every few seconds and can be swiped by hand. With a
+            single banner in BANNER_IMAGES it renders as a plain still, so this
+            is the same hero it always was until more artwork is pasted in. */}
+        <HeroBannerCarousel
+          images={bannerImages}
+          alt={puja.poojaNameEng}
+          intervalMs={3000}
+          className="h-56 border-b border-[#E7B63A]/40"
           style={{ background: "linear-gradient(135deg,#FFF8F0 0%,#FFECCF 35%,#FFF3E4 100%)" }}
         >
-          {/* The banner is the artwork alone — no overlaid title, occasion or
-              temple line. `object-contain` (not cover) because the asset is a
-              3:2 cut-out on transparency: cover would fill the 16:9-ish band by
-              cropping the eye and the tail off. Contain shows the whole feather
-              and lets the theme gradient behind it read as the backdrop.
-              Trimmed via the resizer because the source canvas carries a wide
-              transparent margin — without it that margin shows as empty space
-              on both sides. */}
-          <img
-            src={optimizedImg(image, 900, 85, { trim: true })}
-            onError={(e) => { e.currentTarget.src = image; }}
-            width={432}
-            height={224}
-            alt={puja.poojaNameEng}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            className="w-full h-full object-fit"
-          />
           {/* Compact live countdown, tucked into the hero's bottom-right. */}
           <HeroCountdown target={targetTs} />
-        </div>
+        </HeroBannerCarousel>
 
         <div className="px-4 pt-3 pb-4 space-y-4">
           {/* ── Puja name + meta ── */}
@@ -574,8 +688,25 @@ export default function BankeBihariPage() {
             </div>
           </div>
 
-          {/* ── Choose your seva (comparison) ── */}
-          <div id="packages">
+          {/* ── Choose your seva (comparison) ──
+              `relative` + `overflow-visible` so the ornament can spill past the
+              block's top-right corner, the layered look it used to get on the
+              hero value-props card that stood below this one. */}
+          <div id="packages" className="relative overflow-visible">
+            {PACKAGES_ORNAMENT_IMAGE ? (
+              <img
+                src={PACKAGES_ORNAMENT_IMAGE}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+                className="pointer-events-none absolute -top-8 -right-4 w-32 h-32 object-contain drop-shadow-xl z-10"
+              />
+            ) : (
+              // Sits ABOVE the section title's baseline and to its right, where
+              // the row is empty, so the heading never reads through the eye.
+              <PeacockFeather className="pointer-events-none absolute -top-10 -right-2 w-24 drop-shadow-md z-10" flip />
+            )}
             <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               Choose your seva
             </SectionTitle>
@@ -591,7 +722,13 @@ export default function BankeBihariPage() {
                 picked. */}
             <PujaPackages
               selectedId={packageId}
-              onSelect={setPackageId}
+              onSelect={(id) => {
+                setPackageId(id);
+                // Arms the prasad-box toast. Bumped even when `id` is the
+                // package already selected — that tap changes no state, so it
+                // is the counter alone that tells the effect it happened.
+                setNudgeTick((t) => t + 1);
+              }}
               prasadBoxAdded={prasadBoxAdded}
               onTogglePrasadBox={(next) => {
                 setAddPrasadBox(next);
@@ -618,7 +755,7 @@ export default function BankeBihariPage() {
                   <Gift className="w-3.5 h-3.5 text-[#E7B63A]" />
                   {selectedPkg.freePrasadBox
                     ? PRASAD_BOXES[selectedPkg.freePrasadBox].name
-                    : "Prasad Box (optional)"}
+                    : "Prasad Box"}
                 </span>
                 {selectedPkg.freePrasadBox ? (
                   <span className="text-[11px] font-bold text-[#2E8B57]">FREE</span>
@@ -647,45 +784,13 @@ export default function BankeBihariPage() {
             </p>
           </div>
 
-          {/* ── Hero value props ──
-              `relative` + `overflow-visible` so the decorative image is free to
-              spill past the card's top/right edges for a layered, premium look.
-              When HERO_VALUE_IMAGE is empty a peacock feather takes its place. */}
-          <div
-            className="relative overflow-visible rounded-2xl border border-[#F4DFC2] p-3.5 shadow-[0_10px_30px_rgba(0,0,0,.07)]"
-            style={{ background: "linear-gradient(135deg,#FFF8F0 0%,#FFECCF 55%,#FFF3E4 100%)" }}
-          >
-            {HERO_VALUE_IMAGE ? (
-              <img
-                src={HERO_VALUE_IMAGE}
-                alt=""
-                aria-hidden="true"
-                loading="lazy"
-                decoding="async"
-                className="pointer-events-none absolute -top-5 -right-6 w-40 h-40 object-contain drop-shadow-xl z-10"
-              />
-            ) : (
-              // Sits mostly ABOVE the card's top-right corner: the dense eye
-              // clears the card entirely and only the thin gold filigree grazes
-              // the corner, so no text ever reads through the artwork.
-              <PeacockFeather className="pointer-events-none absolute -top-9 -right-3 w-28 drop-shadow-md" flip />
-            )}
-
-            
-            <div className={`space-y-1.5 ${HERO_VALUE_IMAGE ? "pr-24" : "pr-14"}`}>
-              {[
-                "Janmashtami seva at Banke Bihari Ji Mandir, Vrindavan",
-                "Personalised Sankalp in your name & gotra",
-                "Puja video shared on WhatsApp",
-                "Prasad box free in ₹5100 & ₹11000 — optional ₹501 otherwise",
-              ].map((t) => (
-                <div key={t} className="flex items-start gap-2 text-[12.5px] text-[#555555]">
-                  <Check className="w-3.5 h-3.5 text-[#2E8B57] shrink-0 mt-0.5" strokeWidth={3} />
-                  <span>{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* The hero value-props card stood here. Every line on it was already
+              said elsewhere on the page — the core seva by the "In every seva"
+              strip above the packages, the prasad-box line by every package card
+              — so it was a fourth telling of facts the devotee had just read.
+              Its peacock feather moved onto the packages strip, which is now the
+              block it decorated. HERO_VALUE_IMAGE is kept as the paste-slot for
+              that ornament. */}
 
           {/* ── Mid-page CTA banner ──
               The artwork carries its own bar, copy, button and trust line, so it
@@ -765,7 +870,7 @@ export default function BankeBihariPage() {
             </SectionTitle>
             <div className="space-y-2">
               {([
-                { tier: "standard", how: `Optional add-on · ₹${PRASAD_BOX_PRICE}`, free: false },
+                { tier: "standard", how: `Add for ₹${PRASAD_BOX_PRICE}`, free: false },
                 { tier: "premium", how: "FREE with ₹5,100 Shringar Seva", free: true },
                 { tier: "royal", how: "FREE with ₹11,000 Raj Bhog Seva", free: true },
               ] as const).map(({ tier, how, free }) => {
@@ -792,13 +897,19 @@ export default function BankeBihariPage() {
                     <div className="mt-1.5">
                       <ItemTileRow items={box.adds} tone={free ? "green" : "sand"} />
                     </div>
+                    {/* Without this, "Everything in the Premium box, plus 5
+                        dresses" reads as 3 dresses AND 5 dresses. */}
+                    {box.removes?.length ? (
+                      <p className="mt-1.5 text-[10px] text-[#8A8A8A] leading-snug">
+                        Upgraded — replaces {box.removes.join(", ")}
+                      </p>
+                    ) : null}
                   </div>
                 );
               })}
             </div>
             <p className="mt-2 text-[10.5px] text-[#8A8A8A] leading-snug text-center">
-              The ₹{PRASAD_BOX_PRICE} box is entirely optional — the ₹1,100 and ₹2,100
-              packages are complete sevas without it.
+              Every box is blessed at {puja.templeName} and couriered to your home.
             </p>
           </div>
 
@@ -971,6 +1082,27 @@ export default function BankeBihariPage() {
             </div>
           </footer>
         </div>
+
+        {/* ── Prasad-box toast ── drops in under the sticky header; all of the
+            "should this show at all" logic is in the effects near the top. */}
+        <PrasadBoxNudge
+          nudge={nudge}
+          onAdd={() => {
+            setAddPrasadBox(true);
+            setNudge(null);
+            track(
+              "puja_prasad_box_toggle",
+              { added: true, package: selectedPkg.id, value: PRASAD_BOX_PRICE, source: "nudge" },
+              true,
+            );
+          }}
+          onDismiss={() => {
+            // A dismissal is an answer, not a postponement — no further toasts
+            // this visit, on any package.
+            nudgingOff.current = true;
+            setNudge(null);
+          }}
+        />
 
         {/* ── Sticky bottom CTA (the theme's "payment bar") ── */}
         <div

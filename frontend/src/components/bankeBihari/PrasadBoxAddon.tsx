@@ -112,12 +112,11 @@ export default function PrasadBoxAddon({
                             Add {box.name}
                         </span>
                         <span className="rounded-full bg-[#FFF2E4] border border-[#E7B63A]/50 px-1.5 py-px text-[9.5px] font-bold uppercase tracking-wide text-[#8A5A12]">
-                            Optional
+                            Recommended
                         </span>
                     </span>
                     <span className="block text-[11px] text-[#7A3E55] mt-0.5 leading-snug">
-                        Blessed prasad couriered to your home. Skip it and you pay only the
-                        package price.
+                        Blessed prasad couriered to your home.
                     </span>
                 </span>
 

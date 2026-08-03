@@ -12,12 +12,25 @@ import {
     EXTRA_FAMILY_MEMBER_PRICE, PRASAD_BOX_PRICE, DEFAULT_PACKAGE_ID, getPackage,
     BANKE_BIHARI_PACKAGES, extraFamilyCount, packageTotal, packageNeedsDelivery,
     canAddPrasadBox, prasadBoxCost, shippedPrasadBox, prasadBoxContents,
-    packageOfferings, type PujaPackageId,
+    packageOfferings, PRASAD_BOXES, type PujaPackageId,
 } from "../data/bankeBihariPuja";
 import PrasadBoxAddon from "../components/bankeBihari/PrasadBoxAddon";
-import { ItemTileRow } from "../components/bankeBihari/ItemTiles";
+import PackageUpgradeNudge, { type UpgradeOffer } from "../components/bankeBihari/PackageUpgradeNudge";
 
 type Step = "details" | "success";
+
+/**
+ * When the upgrade toast appears after landing on the booking page, and how
+ * long it stays.
+ *
+ * The delay lets the devotee take in the order summary they arrived at first —
+ * an offer that lands the instant the page paints reads as a pop-up ad. The
+ * lifetime is generous because the toast carries three lines to read and a
+ * decision to make, but bounded, because it is positioned over the form and
+ * must never be what stands between someone and a field they want to type in.
+ */
+const UPGRADE_NUDGE_DELAY_MS = 2500;
+const UPGRADE_NUDGE_VISIBLE_MS = 11000;
 
 const INPUT =
     "w-full bg-[#FFF2E4] border border-[#F4DFC2] rounded-xl px-4 py-3 text-sm text-[#5C1A34] placeholder-[#8A8A8A] focus:outline-none focus:border-[#D63D72] focus:ring-2 focus:ring-[#F8B5CB] transition-all";
@@ -28,6 +41,12 @@ const LABEL = "text-[11px] font-bold text-[#7A3E55] uppercase tracking-wide mb-1
 function readCookie(name: string): string {
     const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
     return match ? match[2] : "";
+}
+
+/** "a", "a & b", "a, b & c" — for naming an upgrade's new items in one line. */
+function listify(items: string[]): string {
+    if (items.length <= 1) return items[0] ?? "";
+    return `${items.slice(0, -1).join(", ")} & ${items[items.length - 1]}`;
 }
 
 // Resolve the fixed puja date + a chosen HH:mm into an ISO timestamp.
@@ -175,6 +194,81 @@ export default function BankeBihariBookingPage() {
 
     // Everything offered to Bihari Ji at this tier, in the devotee's name.
     const offerings = packageOfferings(selectedPkg);
+
+    // ── One-step upgrade toast ────────────────────────────────────────────
+    //
+    // The devotee arrives here having already chosen a package on the detail
+    // page, so this is the last moment an upgrade is still a decision rather
+    // than a regret. It pitches the NEXT tier only and only ONCE per visit:
+    // re-offering after a dismissal, or laddering to the tier above after an
+    // upgrade, turns a helpful nudge into badgering someone mid-checkout.
+    const [upgradeOffer, setUpgradeOffer] = useState<UpgradeOffer | null>(null);
+    const upgradeNudged = useRef(false);
+
+    useEffect(() => {
+        if (upgradeNudged.current || step !== "details") return;
+
+        // ENTRY TIER ONLY. A devotee who picked ₹5100 or ₹11000 has already
+        // weighed the tiers and chosen to spend; interrupting their checkout to
+        // sell them the next one up is pestering a decided buyer. The ₹1100
+        // package is the one where an upgrade is genuinely likely to be news.
+        if (selectedPkg.id !== BANKE_BIHARI_PACKAGES[0].id) return;
+
+        // Packages are ordered cheapest-first, so the first one priced above
+        // the current package IS the next rung.
+        const next = BANKE_BIHARI_PACKAGES.find((p) => p.price > selectedPkg.price);
+        if (!next) return; // already on the top tier
+
+        const timer = setTimeout(() => {
+            upgradeNudged.current = true;
+            const extraFree = next.freeFamilyMembers - selectedPkg.freeFamilyMembers;
+            const newOfferings = packageOfferings(next).filter((o) => !offerings.includes(o));
+
+            // ONE headline, naming the single most tangible thing the upgrade
+            // unlocks. A free prasad box beats a longer offerings list every
+            // time: it is a parcel that arrives at their door, not an abstraction.
+            const nextBox = next.freePrasadBox;
+            const headline = nextBox
+                ? canAddPrasadBox(selectedPkg)
+                    ? `FREE ${PRASAD_BOXES[nextBox].name} at home`
+                    : `Free upgrade to the ${PRASAD_BOXES[nextBox].name}`
+                // Names the new items rather than counting them, so it reads
+                // against the gold-ringed tiles instead of contradicting them —
+                // the row shows five, only two of which are the gain.
+                : `Also get ${listify(newOfferings)}`;
+
+            setUpgradeOffer({
+                id: next.id,
+                name: next.name,
+                headline,
+                // The upgraded tier's FULL set of offerings, with the new ones
+                // ringed. Showing only the additions left the row mostly empty
+                // and undersold the package the devotee actually ends up with.
+                items: packageOfferings(next),
+                highlight: newOfferings,
+                // Only what the headline and the tiles don't already show.
+                subline:
+                    extraFree > 0
+                        ? `${extraFree} more family Sankalp${extraFree > 1 ? "s" : ""} free`
+                        : undefined,
+                diff: next.price - selectedPkg.price,
+            });
+            window.fbq?.("trackCustom", "PujaUpgradeNudge", {
+                from: selectedPkg.id,
+                to: next.id,
+            });
+        }, UPGRADE_NUDGE_DELAY_MS);
+
+        return () => clearTimeout(timer);
+    }, [selectedPkg, offerings, step]);
+
+    // Auto-retires so it can never sit on top of the form the devotee is
+    // filling in. Long enough to read three gain lines and decide.
+    useEffect(() => {
+        if (!upgradeOffer) return;
+        const timer = setTimeout(() => setUpgradeOffer(null), UPGRADE_NUDGE_VISIBLE_MS);
+        return () => clearTimeout(timer);
+    }, [upgradeOffer]);
 
     // What must physically be couriered — appended to the booking name so the
     // WhatsApp/admin/pandit notifications spell out exactly what to pack. The
@@ -529,6 +623,24 @@ export default function BankeBihariBookingPage() {
                 </div>
             </div>
 
+            {/* One-step upgrade toast. Swipe or ✕ to dismiss; upgrading swaps
+                the package and every price on the page follows from that. */}
+            <PackageUpgradeNudge
+                offer={upgradeOffer}
+                onUpgrade={() => {
+                    if (!upgradeOffer) return;
+                    setPackageId(upgradeOffer.id);
+                    setUpgradeOffer(null);
+                    window.fbq?.("trackCustom", "PujaPackageUpgrade", {
+                        to: upgradeOffer.id,
+                        value: getPackage(upgradeOffer.id).price,
+                        currency: "INR",
+                        source: "nudge",
+                    });
+                }}
+                onDismiss={() => setUpgradeOffer(null)}
+            />
+
             {/* Janmashtami occasion ribbon — peacock green & gold */}
             <div className="bg-gradient-to-r from-[#1F7A50] via-[#2E8B57] to-[#1F7A50] text-center py-2 px-4 border-y border-[#E7B63A]/40">
                 <p className="text-[10.5px] font-bold tracking-[0.16em] uppercase text-[#F6D36A]">
@@ -577,7 +689,7 @@ export default function BankeBihariBookingPage() {
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-[12px] text-[#555555] font-medium flex items-center gap-1.5 min-w-0">
                                         <Gift className="w-3.5 h-3.5 text-[#E7B63A] shrink-0" />
-                                        <span className="truncate">{shippedBox ? shippedBox.name : "Prasad Box (optional)"}</span>
+                                        <span className="truncate">{shippedBox ? shippedBox.name : "Prasad Box"}</span>
                                     </span>
                                     {selectedPkg.freePrasadBox ? (
                                         <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">Free</span>
@@ -615,71 +727,12 @@ export default function BankeBihariBookingPage() {
                             </div>
                         </div>
 
-                        {/* Upgrade offers — every package priced above the chosen
-                            one. Each is a strict superset, so the pitch is just
-                            what it ADDS: the extra offerings, the extra free
-                            Sankalps and the prasad box going free. */}
-                        {(() => {
-                            const upgrades = BANKE_BIHARI_PACKAGES.filter((p) => p.price > selectedPkg.price);
-                            if (upgrades.length === 0) return null;
-                            return (
-                                <div className="space-y-2.5">
-                                    <p className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-[#D63D72]">
-                                        <Sparkles className="w-3.5 h-3.5 text-[#E7B63A]" /> Upgrade &amp; get more
-                                    </p>
-                                    {upgrades.map((pkg) => {
-                                        const diff = pkg.price - selectedPkg.price;
-                                        const extraFree = pkg.freeFamilyMembers - selectedPkg.freeFamilyMembers;
-                                        const newOfferings = packageOfferings(pkg).filter((o) => !offerings.includes(o));
-                                        const gains = [
-                                            extraFree > 0 && `${extraFree} more family member${extraFree > 1 ? "s" : ""} free in the Sankalp`,
-                                            newOfferings.length > 0 && `${newOfferings.join(", ")} also offered to Bihari Ji in your name`,
-                                            pkg.freePrasadBox &&
-                                                `FREE ${shippedPrasadBox(pkg, false)!.name}${canAddPrasadBox(selectedPkg) ? ` — no ₹${PRASAD_BOX_PRICE} add-on needed` : ""}`,
-                                        ].filter(Boolean) as string[];
-                                        return (
-                                            <button
-                                                key={pkg.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    setPackageId(pkg.id);
-                                                    if ((window as any).fbq) {
-                                                        (window as any).fbq("trackCustom", "PujaPackageUpgrade", { to: pkg.id, value: pkg.price, currency: "INR" });
-                                                    }
-                                                }}
-                                                className="w-full text-left rounded-2xl border border-[#F4DFC2] bg-white shadow-sm p-3.5 transition-all active:scale-[0.99] hover:border-[#F8A9C4] cursor-pointer"
-                                            >
-                                                <div className="flex items-start justify-between gap-2">
-                                                    <div className="min-w-0">
-                                                        <p className="text-[14px] font-bold text-[#5C1A34] leading-tight">{pkg.name}</p>
-                                                        <p className="text-[11px] text-[#7A3E55] mt-0.5">{pkg.tagline}</p>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <p className="text-[17px] font-extrabold text-[#D63D72] leading-none">₹{pkg.price.toLocaleString("en-IN")}</p>
-                                                        <p className="text-[9.5px] font-bold text-[#E7B63A] mt-0.5">+₹{diff.toLocaleString("en-IN")}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="mt-2.5 pt-2.5 border-t border-[#F4DFC2] space-y-1.5">
-                                                    <p className="inline-flex items-center gap-1 rounded-full bg-[#FFF2E4] border border-[#E7B63A]/50 px-2 py-0.5 text-[10.5px] font-bold text-[#8A5A12]">
-                                                        <Check className="w-3 h-3 shrink-0" strokeWidth={3} />
-                                                        Everything in {selectedPkg.name}
-                                                    </p>
-                                                    {gains.map((g) => (
-                                                        <div key={g} className="flex items-start gap-2">
-                                                            <Check className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#2E8B57]" strokeWidth={3} />
-                                                            <span className="text-[12px] leading-snug text-[#555555]">{g}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <span className="mt-2.5 flex items-center justify-center gap-1 text-[11.5px] font-bold text-[#D63D72] bg-[#FFF1F5] border border-[#F8B5CB] rounded-lg py-2">
-                                                    Upgrade to {pkg.name} <ChevronRight className="w-3.5 h-3.5" />
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })()}
+                        {/* The stack of upgrade cards that stood here — one per
+                            package above the chosen one — is now a single toast
+                            for the NEXT tier only, rendered near the bottom of
+                            this file. Inline, it sat between the devotee and the
+                            form they came to fill in, and pitched every higher
+                            tier at once. */}
 
                         {/* Step 1: Devotee Details */}
                         <div className="space-y-3">
@@ -857,7 +910,7 @@ export default function BankeBihariBookingPage() {
                                     <p className="text-[11px] text-[#8A8A8A]">
                                         {selectedPkg.freePrasadBox
                                             ? `Included free with ${selectedPkg.name}`
-                                            : `Optional · ₹${PRASAD_BOX_PRICE} if you'd like prasad at home`}
+                                            : `₹${PRASAD_BOX_PRICE} · blessed prasad couriered to your home`}
                                     </p>
                                 </div>
                             </div>

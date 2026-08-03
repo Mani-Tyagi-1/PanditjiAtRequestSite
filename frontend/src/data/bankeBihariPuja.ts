@@ -98,25 +98,40 @@ export interface PrasadBox {
     inherits?: PrasadBoxTier;
     /** Items this tier ADDS on top of `inherits`. */
     adds: string[];
+    /**
+     * Inherited items this tier SUPERSEDES. Nesting is the rule, this is the
+     * rare exception: the premium box swaps the plain tulsi mala for the Radha
+     * naam one, and the royal box ships 5 Laddu Gopal ji dresses instead of the
+     * premium box's 3 — so the flattened list has to drop the superseded line
+     * rather than list both counts side by side.
+     */
+    removes?: string[];
 }
 
 export const PRASAD_BOXES: Record<PrasadBoxTier, PrasadBox> = {
     standard: {
         tier: "standard",
         name: "Prasad Box",
-        adds: ["Dry Prasad", "Bansuri", "Tulsi Mala", "Jaap Counter"],
+        adds: ["Dry Prasad", "Murli", "Tulsi Mala", "Jaap Counter"],
     },
     premium: {
         tier: "premium",
         name: "Premium Prasad Box",
         inherits: "standard",
-        adds: ["Radha Naam Tulsi Mala", "Mor Pankh", "Small Dahi Handi"],
+        removes: ["Tulsi Mala"],
+        adds: [
+            "Radha Naam Tulsi Mala",
+            "Mor Pankh",
+            "Small Dahi Handi",
+            "3 Laddu Gopal Ji Dress",
+        ],
     },
     royal: {
         tier: "royal",
         name: "Royal Prasad Box",
         inherits: "premium",
-        adds: ["Laddu Gopal Idol", "Laddu Gopal Dress"],
+        removes: ["3 Laddu Gopal Ji Dress"],
+        adds: ["Brass Laddu Gopal Idol", "5 Laddu Gopal Ji Dress"],
     },
 };
 
@@ -136,26 +151,34 @@ export const PRASAD_BOXES: Record<PrasadBoxTier, PrasadBox> = {
 export const ITEM_IMAGES: Record<string, string> = {
     // ── Prasad box contents ──
     "Dry Prasad": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Prasad.webp",
-    Bansuri: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/bansuri.webp",
+    Murli: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/bansuri.webp",
     "Tulsi Mala": "https://sanatanseva.com/cdn/shop/files/1_0cc0f933-8fad-4077-8587-e010226d80b8.jpg?v=1740658048&width=1946",
     "Jaap Counter": "https://rukminim2.flixcart.com/image/480/640/xif0q/tally-counter/q/w/d/99999-dg11pcs1-degno-original-imahfzeztnjd49f9.jpeg?q=90",
     "Radha Naam Tulsi Mala": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/RADHA_NAAM_MALA.png",
     "Mor Pankh": "https://png.pngtree.com/png-vector/20250310/ourmid/pngtree-3d-realistic-peacock-feather-png-image_15681047.png",
     "Small Dahi Handi": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DAHI_HANDI.png",
-    "Laddu Gopal Idol": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_IDOL.png",
-    "Laddu Gopal Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
-    // ── Offered to Bihari Ji in your name ──
-    "Makhan Mishri": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Makhan%20Mishri.webp",
+    "Brass Laddu Gopal Idol": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_IDOL.png",
+    "3 Laddu Gopal Ji Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
+    "5 Laddu Gopal Ji Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
+    Makhan: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Makhan%20Mishri.webp",
+    Mishri: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Mishri.png",
+    "Dry Fruits": "https://www.joyflorist.in/uploaded/product/IND16668.webp",
+    "Phool Mala": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/garland.png",
     Paan: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_4_1776952020655.jpg",
     Laddu: "https://vedic-vaibhav.blr1.digitaloceanspaces.com/vedic-vaibhav/chadhava-data-images/chadhavaSectionItemImage_0_3_1776952020653.jpg",
     "Deepak Seva": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DEEPAK_SEWA.png",
-    "Bade Bhog Thali": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/BADI_THALI_BHOG.png",
+    "Itra Seva": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/itra.png",
+    "Raj Bhog Thali": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/BADI_THALI_BHOG.png",
 };
 
-/** Every item inside a box, inherited tiers first. */
+/** Every item inside a box, inherited tiers first and superseded lines dropped. */
 export function prasadBoxContents(tier: PrasadBoxTier): string[] {
     const box = PRASAD_BOXES[tier];
-    return box.inherits ? [...prasadBoxContents(box.inherits), ...box.adds] : [...box.adds];
+    if (!box.inherits) return [...box.adds];
+    const inherited = prasadBoxContents(box.inherits).filter(
+        (item) => !box.removes?.includes(item),
+    );
+    return [...inherited, ...box.adds];
 }
 
 // ── Packages ──────────────────────────────────────────────────────────────
@@ -240,7 +263,27 @@ export const MAKHAN_MATKI_IMAGE =
 
  export const BANNER_IMG =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banke%20bihariji%20banner1.webp";
-    
+
+/**
+ * ▶ PASTE EXTRA HERO BANNERS HERE ◀
+ *
+ * The hero is an auto-advancing carousel over this list. Order matters:
+ *
+ *   • [0] is the LCP image — it is the one preloaded, the one in `og:image`,
+ *     and the only one loaded eagerly. Put the strongest banner first and do
+ *     not reorder casually; the rest load lazily as they come into play.
+ *   • ONE entry renders as a plain still image with no carousel chrome, no
+ *     timer and no dots, so the page is correct before any extra art lands.
+ *
+ * Same 2:1-ish crop as the first banner for all of them — the hero band is a
+ * fixed height, so a portrait image will be cropped to fit, not letterboxed.
+ */
+export const BANNER_IMAGES: string[] = [
+    BANNER_IMG,
+    // "https://…/banner2.webp",
+    // "https://…/banner3.webp",
+];
+
 
 /**
  * The four booking packages, cheapest first.
@@ -266,7 +309,7 @@ export const BANKE_BIHARI_PACKAGES: PujaPackage[] = [
             "Personalised Sankalp with your name & gotra",
             "Full puja video shared on WhatsApp",
         ],
-        addedOfferings: [],
+        addedOfferings: ["Makhan", "Mishri", "Mor Pankh"],
         freeFamilyMembers: 0,
         freePrasadBox: null,
     },
@@ -276,7 +319,7 @@ export const BANKE_BIHARI_PACKAGES: PujaPackage[] = [
         tagline: "Most-loved · offerings in your name",
         price: 2100,
         inherits: "makhan",
-        addedOfferings: ["Makhan Mishri", "Mor Pankh"],
+        addedOfferings: ["Dry Fruits", "Tulsi Mala"],
         freeFamilyMembers: 1,
         freePrasadBox: null,
         badge: "Most Popular",
@@ -288,7 +331,7 @@ export const BANKE_BIHARI_PACKAGES: PujaPackage[] = [
         tagline: "Free prasad box + fuller offerings",
         price: 5100,
         inherits: "kripa",
-        addedOfferings: ["Paan", "Bansuri", "Laddu"],
+        addedOfferings: ["Phool Mala", "Murli", "Laddu", "Paan"],
         freeFamilyMembers: 2,
         freePrasadBox: "premium",
         badge: "Best Value",
@@ -299,7 +342,7 @@ export const BANKE_BIHARI_PACKAGES: PujaPackage[] = [
         tagline: "The complete seva for the whole family",
         price: 11000,
         inherits: "shringar",
-        addedOfferings: ["Deepak Seva", "Bade Bhog Thali"],
+        addedOfferings: ["Deepak Seva", "Itra Seva", "Raj Bhog Thali"],
         freeFamilyMembers: 3,
         freePrasadBox: "royal",
     },
@@ -392,7 +435,8 @@ export const bankeBihariPuja = {
     // transparent margin). The hero renders it with `object-cover`.
     poojaCardImage: BANNER_IMG,
     poojaMainImage: BANNER_IMG,
-    poojaImages: [BANNER_IMG],
+    // The hero carousel reads this. [0] stays the LCP/og image.
+    poojaImages: BANNER_IMAGES,
     poojaVideoLink: "",
 
     // ── Presentation-only fields (used by the Banke Bihari themed page) ──
@@ -456,7 +500,7 @@ export const bankeBihariPuja = {
             headingId: "5",
             heading: "Offerings made on your behalf",
             description:
-                "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and bansuri offered at his charan</p><p> • <strong>Krishna mantra japa</strong> and the midnight Janmashtami aarti</p>",
+                "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and murli offered at his charan</p><p> • <strong>Krishna mantra japa</strong> and the midnight Janmashtami aarti</p>",
         },
         {
             headingId: "6",
@@ -496,11 +540,11 @@ export const bankeBihariPuja = {
         },
         {
             question: "Is the prasad box included?",
-            answer: "In the ₹5100 Shringar Seva and the ₹11000 Raj Bhog Seva the prasad box is FREE — Shringar ships the Premium box (dry prasad, bansuri, tulsi mala, jaap counter, Radha naam tulsi mala, mor pankh and a small dahi handi) and Raj Bhog ships the Royal box, which adds a brass Laddu Gopal ji idol and a Laddu Gopal ji dress. In the ₹1100 and ₹2100 packages the prasad box is optional: add it for ₹501 during booking and it is couriered to your home.",
+            answer: "In the ₹5100 Shringar Seva and the ₹11000 Raj Bhog Seva the prasad box is FREE — Shringar ships the Premium box (dry prasad, murli, jaap counter, Radha naam tulsi mala, mor pankh, a small handi for Laddu Gopal ji and 3 Laddu Gopal ji dresses) and Raj Bhog ships the Royal box, which has everything in the Premium box plus a brass Laddu Gopal ji idol and 5 Laddu Gopal ji dresses. In the ₹1100 and ₹2100 packages the prasad box is optional: add it for ₹501 during booking and it is couriered to your home.",
         },
         {
             question: "What is inside the ₹501 prasad box?",
-            answer: "Dry prasad from the mandir, a bansuri, a tulsi mala and a jaap counter — blessed at Shri Banke Bihari Ji Mandir and couriered to your home. It is completely optional; skip it and you pay only the package price.",
+            answer: "Dry prasad from the mandir, a murli, a tulsi mala and a jaap counter — blessed at Shri Banke Bihari Ji Mandir and couriered to your home. It is completely optional; skip it and you pay only the package price.",
         },
         {
             question: "Can I book from outside India?",

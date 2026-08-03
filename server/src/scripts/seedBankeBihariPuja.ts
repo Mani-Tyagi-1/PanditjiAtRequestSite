@@ -132,7 +132,7 @@ const BANKE_BIHARI_PUJA = {
     {
       question: "Is the prasad box included?",
       answer:
-        "The prasad box is FREE in the ₹5100 Shringar Seva (dry prasad, bansuri, tulsi mala, jaap counter, Radha naam tulsi mala, mor pankh, small dahi handi) and in the ₹11000 Raj Bhog Seva, which also adds a brass Laddu Gopal Ji idol and a Laddu Gopal Ji dress. In the ₹1100 and ₹2100 packages it is an optional ₹501 add-on chosen during booking.",
+        "The prasad box is FREE in the ₹5100 Shringar Seva (dry prasad, murli, jaap counter, Radha naam tulsi mala, mor pankh, a small handi for Laddu Gopal Ji and 3 Laddu Gopal Ji dresses) and in the ₹11000 Raj Bhog Seva, which also adds a brass Laddu Gopal Ji idol and carries 5 Laddu Gopal Ji dresses. In the ₹1100 and ₹2100 packages it is an optional ₹501 add-on chosen during booking.",
     },
   ],
   isActive: true,

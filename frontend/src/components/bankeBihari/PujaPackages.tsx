@@ -18,13 +18,12 @@ import { ItemTileRow } from "./ItemTiles";
  *
  * Each card is a SUMMARY plus an on-demand detail panel, and the two never say
  * the same thing twice — that duplication is what made an earlier version of
- * this card a wall of text. The split:
+ * this card a wall of text.
  *
- *   • base tier   — summary lists the core seva; the panel adds only the
- *                   Sankalp allowance and the prasad-box contents.
- *   • higher tiers — summary is an "Everything in <cheaper tier>" chip plus the
- *                   two or three lines this tier adds; the panel is where that
- *                   chip gets unpacked into the full inherited list.
+ * The same rule now applies ACROSS the cards: anything true of all four is
+ * stated once above them and never repeated inside one. A card therefore
+ * carries only what makes it different from the card below it — its offerings,
+ * its Sankalp allowance and its prasad box.
  *
  * Only one panel is open at a time (`openId` lives in the parent), so the four
  * cards stay scannable on a phone instead of unrolling into a long column.
@@ -35,6 +34,13 @@ import { ItemTileRow } from "./ItemTiles";
  * inner control's accessible name — so selection, the prasad toggle and the
  * detail disclosure are three sibling buttons sharing one bordered wrapper.
  */
+/**
+ * DOM id of the card list, so the page can scroll the first package card to the
+ * top. Exported rather than typed out in both files, because a scroll target
+ * that silently stops matching just quietly does nothing.
+ */
+export const PACKAGE_CARDS_ANCHOR_ID = "package-cards";
+
 export default function PujaPackages({
     selectedId,
     onSelect,
@@ -61,21 +67,44 @@ export default function PujaPackages({
         setOpenId((cur) => (cur === id ? null : id));
     };
 
+    // Identical in all four packages, so it is stated here instead of on every
+    // card: repeated per card it was twelve identical lines inside a four-card
+    // list — the largest block of text on the page — and it padded each card
+    // with promises that could never help anyone choose between them.
+    const sharedCore = packageCore(BANKE_BIHARI_PACKAGES[0]);
+
     return (
         <div className="space-y-2.5">
-            {BANKE_BIHARI_PACKAGES.map((pkg) => (
-                <PackageCard
-                    key={pkg.id}
-                    pkg={pkg}
-                    selected={pkg.id === selectedId}
-                    open={openId === pkg.id}
-                    onOpenChange={(next) => setOpenId(next ? pkg.id : null)}
-                    onChoose={choose}
-                    onSelect={onSelect}
-                    prasadBoxAdded={prasadBoxAdded}
-                    onTogglePrasadBox={onTogglePrasadBox}
-                />
-            ))}
+            <div className="rounded-2xl border border-[#F4DFC2] bg-[#FFF8F0] px-3 py-2.5">
+                <p className="mb-1.5 flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#D63D72]">
+                    <Sparkles className="w-3 h-3 text-[#E7B63A]" />
+                    In every seva
+                </p>
+                <div className="space-y-1">
+                    {sharedCore.map((c) => (
+                        <Line key={c}>{c}</Line>
+                    ))}
+                </div>
+            </div>
+
+            {/* Scroll anchor. The page's one-time autoscroll parks the FIRST
+                CARD under the header, not the section heading — so it needs a
+                handle on the cards alone, below the "In every seva" strip. */}
+            <div id={PACKAGE_CARDS_ANCHOR_ID} className="space-y-2.5">
+                {BANKE_BIHARI_PACKAGES.map((pkg) => (
+                    <PackageCard
+                        key={pkg.id}
+                        pkg={pkg}
+                        selected={pkg.id === selectedId}
+                        open={openId === pkg.id}
+                        onOpenChange={(next) => setOpenId(next ? pkg.id : null)}
+                        onChoose={choose}
+                        onSelect={onSelect}
+                        prasadBoxAdded={prasadBoxAdded}
+                        onTogglePrasadBox={onTogglePrasadBox}
+                    />
+                ))}
+            </div>
         </div>
     );
 }
@@ -102,7 +131,6 @@ function PackageCard({
     onTogglePrasadBox: (next: boolean) => void;
 }) {
     const freeBox = pkg.freePrasadBox ? PRASAD_BOXES[pkg.freePrasadBox] : null;
-    const core = packageCore(pkg);
     const allOfferings = packageOfferings(pkg);
 
     // The box add-on only ever reflects THIS card when it is the chosen one —
@@ -147,48 +175,40 @@ function PackageCard({
                             <p className="text-[10.5px] leading-tight mt-0.5 text-[#7A3E55]">{pkg.tagline}</p>
                         </div>
                     </div>
-                    <div className="text-right shrink-0">
-                        <p className="text-[18px] font-extrabold leading-none text-[#D63D72]">
-                            ₹{pkg.price.toLocaleString("en-IN")}
-                        </p>
-                        <p className="text-[8px] uppercase tracking-wide mt-0.5 text-[#8A8A8A]">one-time</p>
-                    </div>
+                    <p className="shrink-0 text-[18px] font-extrabold leading-none text-[#D63D72]">
+                        ₹{pkg.price.toLocaleString("en-IN")}
+                    </p>
                 </div>
 
-                {/* Every card spells out its own contents in full. An
-                    "Everything in <cheaper tier>" chip was shorter, but it made
-                    the reader hold the ₹1100 card in their head to understand
-                    the ₹11000 one — and it forced a second block lower down just
-                    to explain what the chip stood for. Offerings are therefore
-                    CUMULATIVE here, not just this tier's additions: with no chip
-                    implying inheritance, listing only the new ones would read as
-                    the higher tier dropping the cheaper tier's offerings. */}
-                <div className={`mt-2 pt-2 border-t space-y-1 ${selected ? "border-[#F8B5CB]" : "border-[#F4DFC2]"}`}>
-                    {core.map((c) => (
-                        <Line key={c}>{c}</Line>
-                    ))}
+                {/* What this tier adds over the one below it — the only reason
+                    to read a card at all, now that the core seva is stated once
+                    above the list.
+
+                    Offerings are CUMULATIVE, not just this tier's additions:
+                    there is no "Everything in <cheaper tier>" chip implying
+                    inheritance, so listing only the new ones would read as the
+                    higher tier dropping the cheaper tier's offerings. Pictures,
+                    not a comma list — seven item names in a row is exactly what
+                    made the ₹11000 card unreadable. */}
+                <div className={`mt-2 pt-2 border-t ${selected ? "border-[#F8B5CB]" : "border-[#F4DFC2]"}`}>
                     {pkg.freeFamilyMembers > 0 && (
                         <Line icon={<Users className="w-3.5 h-3.5 shrink-0 mt-px text-[#2E8B57]" />}>
                             <b className="text-[#5C1A34]">
                                 {pkg.freeFamilyMembers} family Sankalp
                                 {pkg.freeFamilyMembers > 1 ? "s" : ""} free
-                            </b>{" "}
-                            in total
+                            </b>
                         </Line>
                     )}
+                    {allOfferings.length > 0 && (
+                        <div className={pkg.freeFamilyMembers > 0 ? "mt-2" : ""}>
+                            <p className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#D63D72] mb-1.5">
+                                <Sparkles className="w-3 h-3 text-[#E7B63A]" />
+                                Offered in your name
+                            </p>
+                            <ItemTileRow items={allOfferings} tone="pink" />
+                        </div>
+                    )}
                 </div>
-
-                {/* Offerings as pictures, not a comma list — seven item names in
-                    a row is exactly what made the ₹11000 card unreadable. */}
-                {allOfferings.length > 0 && (
-                    <div className="mt-2">
-                        <p className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#D63D72] mb-1.5">
-                            <Sparkles className="w-3 h-3 text-[#E7B63A]" />
-                            Offered to Bihari Ji in your name
-                        </p>
-                        <ItemTileRow items={allOfferings} tone="pink" />
-                    </div>
-                )}
             </button>
 
             {/* ── Prasad box, decided right here ── */}
@@ -230,7 +250,10 @@ function PackageCard({
                         </span>
                         <span className="flex-1 min-w-0 text-[11px] font-semibold leading-snug text-[#5C1A34]">
                             {boxOn ? "Prasad Box added" : "Add Prasad Box"}
-                            <span className="font-normal text-[#8A8A8A]"> · optional</span>
+                            <span className="font-normal text-[#8A8A8A]">
+                                {" "}
+                                · couriered home
+                            </span>
                         </span>
                         <span className={`shrink-0 text-[11.5px] font-bold ${boxOn ? "text-[#D63D72]" : "text-[#8A5A12]"}`}>
                             +₹{PRASAD_BOX_PRICE}
@@ -268,7 +291,7 @@ function PackageCard({
                             either again here was pure repetition. */}
                         <div className="pt-2.5 border-t border-[#F8B5CB]">
                             <Block
-                                title={freeBox ? `${freeBox.name} — free` : `Prasad Box — optional, ₹${PRASAD_BOX_PRICE}`}
+                                title={freeBox ? `${freeBox.name} — free` : `Prasad Box — ₹${PRASAD_BOX_PRICE}`}
                             >
                                 <ItemTileRow
                                     items={prasadBoxContents(freeBox ? freeBox.tier : "standard")}

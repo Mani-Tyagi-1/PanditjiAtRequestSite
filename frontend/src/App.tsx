@@ -128,10 +128,10 @@ const DeleteUserAccount = React.lazy(() => import("./pages/DeleteUserAccount"));
 const TermsAndConditions = React.lazy(() => import("./pages/TermsAndConditions"));
 const CategoryPage = React.lazy(() => import("./components/booking/CategoryPage"));
 const PujaDetailPage = React.lazy(() => import("./components/booking/PujaPage"));
-// Savan 2026 campaign — stopped. Keep the imports commented so the pages stay
-// out of the bundle; uncomment together with the routes below to re-run it.
-// const SavanPujaPage = React.lazy(() => import("./pages/SavanPujaPage"));
-// const SavanPujaBookingPage = React.lazy(() => import("./pages/SavanPujaBookingPage"));
+// Savan 2026 campaign — live. Comment these out together with the routes below
+// to stop it and keep the pages out of the bundle.
+const SavanPujaPage = React.lazy(() => import("./pages/SavanPujaPage"));
+const SavanPujaBookingPage = React.lazy(() => import("./pages/SavanPujaBookingPage"));
 const KaalBhairavPage = React.lazy(() => import("./pages/KaalBhairav"));
 const KaalBhairavBookingPage = React.lazy(() => import("./pages/KaalBhairavBookingPage"));
 const BankeBihariPage = React.lazy(() => import("./pages/BankeBihari"));
@@ -281,19 +281,18 @@ function App() {
           <Route path="/maa-chintpurni-puja/booking" element={<Navigate to="/puja" replace />} />
           <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/puja" replace />} />
           <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/puja" replace />} />
-          {/* Savan 2026 — Mahadev Rudrabhishek at Kashi on the first Savan Somwar.
-              CAMPAIGN STOPPED: routes commented out, so all of these slugs now
-              fall through to the catch-all and land on the home page. Uncomment
-              this block (plus the lazy imports above, the HomePage banner and
-              the sitemap/route-shell entries) to run the campaign again. */}
-          {/* <Route path="/kashi-mahadev-savan-puja" element={<SavanPujaPage />} /> */}
-          {/* <Route path="/kashi-mahadev-savan-puja/booking" element={<SavanPujaBookingPage />} /> */}
+          {/* Savan 2026 — Mahadev Rudrabhishek at Kashi on the last Savan Somwar.
+              To stop the campaign, comment this block out again (plus the lazy
+              imports above) so all of these slugs fall through to the catch-all
+              and land on the home page. */}
+          <Route path="/kashi-mahadev-savan-puja" element={<SavanPujaPage />} />
+          <Route path="/kashi-mahadev-savan-puja/booking" element={<SavanPujaBookingPage />} />
           {/* Short alias — easier to type/share in ads & WhatsApp */}
-          {/* <Route path="/savan-puja" element={<Navigate to="/kashi-mahadev-savan-puja" replace />} /> */}
-          {/* <Route path="/savan-puja/booking" element={<Navigate to="/kashi-mahadev-savan-puja/booking" replace />} /> */}
+          <Route path="/savan-puja" element={<Navigate to="/kashi-mahadev-savan-puja" replace />} />
+          <Route path="/savan-puja/booking" element={<Navigate to="/kashi-mahadev-savan-puja/booking" replace />} />
           {/* Earlier Ujjain slug — redirect so any shared links keep working */}
-          {/* <Route path="/mahakaal-savan-somwar-puja" element={<Navigate to="/kashi-mahadev-savan-puja" replace />} /> */}
-          {/* <Route path="/mahakaal-savan-somwar-puja/booking" element={<Navigate to="/kashi-mahadev-savan-puja/booking" replace />} /> */}
+          <Route path="/mahakaal-savan-somwar-puja" element={<Navigate to="/kashi-mahadev-savan-puja" replace />} />
+          <Route path="/mahakaal-savan-somwar-puja/booking" element={<Navigate to="/kashi-mahadev-savan-puja/booking" replace />} />
           {/* Kaal Bhairav — Kalashtami puja at Shri Kaal Bhairav Mandir, Kashi */}
           <Route path="/kashi-kaal-bhairav-puja" element={<KaalBhairavPage />} />
           <Route path="/kashi-kaal-bhairav-puja/booking" element={<KaalBhairavBookingPage />} />

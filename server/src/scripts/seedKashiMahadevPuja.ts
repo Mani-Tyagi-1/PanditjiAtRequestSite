@@ -72,10 +72,13 @@ const KASHI_MAHADEV_PUJA = {
   panditDakshina: 251,
   samagriDetails: [] as any[],
   samagriPrice: 0,
-  // First Savan Somwar of Shravan 2026.
-  specialDate: new Date("2026-08-03T00:00:00.000Z"),
+  // Last Savan Somwar of Shravan 2026. Must match LAST_SAVAN_SOMWAR in
+  // frontend/src/data/kashiMahadevPuja.ts — the booking page sends the date it
+  // reads from there, so a drift here shows one date on the row and another on
+  // the booking.
+  specialDate: new Date("2026-08-24T00:00:00.000Z"),
   poojaBenefitsDescription:
-    "Verified pandits perform Rudrabhishek of Baba Vishwanath on your behalf at Kashi on the first Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Gangajal drawn from the Ganga at Varanasi, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
+    "Verified pandits perform Rudrabhishek of Baba Vishwanath on your behalf at Kashi on the last Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Gangajal drawn from the Ganga at Varanasi, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
   poojaDescription: [
     {
       headingId: "1",
@@ -87,7 +90,7 @@ const KASHI_MAHADEV_PUJA = {
       headingId: "2",
       heading: "Best Time to Perform",
       description:
-        "<p><strong>Day:</strong> Monday, 3 August 2026 — the first Savan Somwar</p><p>Shravan month runs from <strong>30 July to 28 August 2026</strong>. Mondays of this month are considered the single most auspicious time in the year to worship <strong>Mahadev</strong>, and the <em>first</em> Savan Somwar is held to be the most fruitful of them all.</p>",
+        "<p><strong>Day:</strong> Monday, 24 August 2026 — the last Savan Somwar</p><p>Shravan month runs from <strong>30 July to 28 August 2026</strong>. Mondays of this month are considered the single most auspicious time in the year to worship <strong>Mahadev</strong>, and the <em>last</em> Savan Somwar is the closing offering of Shiva's own month, believed to seal the merit of the entire Shravan.</p>",
     },
     {
       headingId: "3",
@@ -112,7 +115,7 @@ const KASHI_MAHADEV_PUJA = {
     {
       question: "When exactly is this puja performed?",
       answer:
-        "On Monday, 3 August 2026 — the first Savan Somwar of Shravan 2026. The exact timing is confirmed with you on WhatsApp before the puja begins.",
+        "On Monday, 24 August 2026 — the last Savan Somwar of Shravan 2026. The exact timing is confirmed with you on WhatsApp before the puja begins.",
     },
     {
       question: "Will I get the puja video?",

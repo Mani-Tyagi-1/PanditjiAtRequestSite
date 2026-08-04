@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Gift, Calendar, Sparkles,
     Star, Lock, ChevronDown, MessageCircle, Phone, Flame, BadgeCheck,
-    Video, Mountain, Share2, HelpCircle, Droplets, Leaf, Moon, Flower2,
+    Video, Mountain, Share2, HelpCircle, Users,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { useAuth } from "../context/AuthContext";
@@ -11,7 +11,13 @@ import PujaEnquiryModal from "../components/booking/PujaEnquiryModal";
 import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { optimizedImg } from "../utils/img";
-import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, RUDRAKSH_BRACELET_IMAGE } from "../data/kashiMahadevPuja";
+import {
+    kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG,
+    SAVAN_PACKAGES, DEFAULT_PACKAGE_ID, getPackage,
+    PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE,
+    type SavanPackageId,
+} from "../data/kashiMahadevPuja";
+import SavanPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/savanPuja/SavanPackages";
 import heroImages from "../data/savanHeroImages.json";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
@@ -70,6 +76,27 @@ const HERO_EXTRA_SLIDES = [
 
 /** Beat between banners. */
 const HERO_SLIDE_MS = 3000;
+
+/**
+ * How long the page waits before gliding down to the package cards.
+ *
+ * Long enough that a devotee gets to take in the hero, the puja name and the
+ * countdown first — a page that moves the instant it paints feels broken — and
+ * short enough that someone who is still deciding whether to read on is shown
+ * the thing they came to choose between.
+ */
+const PACKAGES_SCROLL_DELAY_MS = 2000;
+
+/**
+ * Where that glide parks the FIRST PACKAGE CARD — how far below the viewport
+ * top its top edge lands.
+ *
+ * It deliberately overshoots the "Choose your seva" heading and the "In every
+ * package" strip: both are read-once context, and ending on them leaves the
+ * cards a devotee has to actually choose from half off the bottom of the
+ * screen. 70 clears the ~56px sticky header with a small breathing gap.
+ */
+const PACKAGES_SCROLL_OFFSET = 70;
 
 /**
  * Savan rainfall across the whole page. Generated once at module load from a
@@ -227,95 +254,17 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
     );
 }
 
-type Offering = {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    sub: string;
-    img: string;
-};
-
-/**
- * The Rudrabhishek offerings, as one auto-scrolling row that drifts
- * left-to-right forever (same direction and technique as ReviewMarquee above:
- * the duplicated track animates from translateX(-50%) back to 0).
- *
- * Four tiles are visible at a time. That is what the width calc encodes — the
- * page column is `max-w-md` (28rem) with `px-4`, so the usable width is
- * min(100vw, 28rem) - 2rem, and four tiles plus the three gaps between them
- * fill it exactly. The list can grow past seven items without any of this
- * needing to change.
- *
- * The gap is a right margin on every tile rather than a flex `gap`, so the
- * track is exactly 2 x (tile + gap) x N wide and the -50% wrap lands on a tile
- * boundary — a flex gap leaves half a gap unaccounted for and the loop visibly
- * hitches once per cycle.
- */
-const OFFERING_TILE_W = "calc((min(100vw, 28rem) - 2rem - 1.5rem) / 4)";
-const OFFERING_GAP = "0.5rem";
-
-function OfferingsMarquee({ offerings }: { offerings: Offering[] }) {
-    const tiles = [...offerings, ...offerings]; // duplicated for a seamless loop
-
-    // Pause while off screen — same reasoning as ReviewMarquee: no animation
-    // work on the main thread for a row nobody is looking at.
-    const trackRef = useRef<HTMLDivElement | null>(null);
-    const [inView, setInView] = useState(false);
-    useEffect(() => {
-        const el = trackRef.current;
-        if (!el || typeof IntersectionObserver === "undefined") {
-            setInView(true);
-            return;
-        }
-        const io = new IntersectionObserver(
-            (entries) => setInView(entries.some((e) => e.isIntersecting)),
-            { rootMargin: "100px" }
-        );
-        io.observe(el);
-        return () => io.disconnect();
-    }, []);
-
-    return (
-        <div className="overflow-hidden">
-            <style>{`@keyframes offeringMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.offering-track{animation:offeringMarquee 28s linear infinite;width:max-content}.offering-track.is-paused{animation-play-state:paused}.offering-track:hover{animation-play-state:paused}@media (prefers-reduced-motion:reduce){.offering-track{animation:none}}`}</style>
-            <div ref={trackRef} className={`offering-track flex${inView ? "" : " is-paused"}`}>
-                {tiles.map(({ icon: Icon, label, sub, img }, i) => (
-                    <div
-                        key={`${label}-${i}`}
-                        style={{ width: OFFERING_TILE_W, marginRight: OFFERING_GAP }}
-                        className="shrink-0 bg-white border border-[#DDEBE6] rounded-xl p-1.5 text-center shadow-sm"
-                    >
-                        <div className="w-full aspect-square rounded-lg overflow-hidden mb-1 flex items-center justify-center bg-gradient-to-br from-[#DFF5EF] to-[#086B50]/20">
-                            {img ? (
-                                // Tile is 84–98 CSS px (phone width up to the
-                                // 28rem column cap), so 220 px covers retina and
-                                // nothing more. onError falls back to the origin
-                                // URL — the convention `optimizedImg` documents —
-                                // so a proxy hiccup can't leave a hole here.
-                                <img
-                                    src={optimizedImg(img, 220)}
-                                    onError={(e) => { e.currentTarget.src = img; }}
-                                    alt={label}
-                                    loading="lazy"
-                                    decoding="async"
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : (
-                                <Icon className="w-5 h-5 text-[#086B50]" />
-                            )}
-                        </div>
-                        <p className="text-[10.5px] font-bold text-[#17211D] leading-tight">{label}</p>
-                        <p className="text-[8.5px] text-[#66736E] leading-tight mt-0.5">{sub}</p>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
+// The auto-scrolling "What is offered in your name" row stood here, together
+// with its Offering type and tile-width constants. The section that rendered it
+// is switched off, and `tsc -b` fails the build on an unused component, so it
+// went with the section. The package cards still show every offering as picture
+// tiles (components/savanPuja/ItemTiles.tsx), which is where a devotee compares
+// them anyway; restore this from git if the standalone row is ever wanted back.
 
 // ── Page ───────────────────────────────────────────────────────
 // FRONTEND-ONLY Shree Kashi Rudrabhishek Mahapuja — an online Rudrabhishek
 // performed on the devotee's behalf at Shree Kashi Vishwanath Temple,
-// Varanasi on the first Savan Somwar. Renders entirely from frontend data
+// Varanasi on the last Savan Somwar. Renders entirely from frontend data
 // but carries a distinct Savan/Shiv theme (the emerald / light-aqua / temple-gold palette, abhishek
 // droplets, bel patra, the four-Somwar calendar).
 // All data comes from src/data/kashiMahadevPuja.ts.
@@ -330,6 +279,16 @@ export default function SavanPujaPage() {
     const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [shareCopied, setShareCopied] = useState(false);
+
+    // Chosen booking package — the ONLY choice this page makes. It drives the
+    // sticky-CTA price and the offerings row, and is handed to the booking page
+    // as navigation state so that page opens pre-selected.
+    //
+    // The prasad box is deliberately NOT decided here: it is an opt-in on the
+    // booking page at every tier (free on the top one), so this page never
+    // prices it and the cards only say what it will cost there.
+    const [packageId, setPackageId] = useState<SavanPackageId>(DEFAULT_PACKAGE_ID);
+    const selectedPkg = getPackage(packageId);
 
     /**
      * The rainfall is purely decorative, so it is mounted only after the page has
@@ -353,13 +312,14 @@ export default function SavanPujaPage() {
         return () => clearTimeout(t);
     }, []);
 
-    // ViewContent on load
+    // ViewContent on load — reports the package the page opens on, not the
+    // one the devotee may later switch to (that is AddToCart's job below).
     useEffect(() => {
         track("ViewContent", {
             content_name: puja.poojaNameEng,
             content_ids: [pujaId],
             content_type: "product",
-            value: puja.poojaPriceOnline,
+            value: getPackage(DEFAULT_PACKAGE_ID).price,
             currency: "INR",
         });
     }, []);
@@ -367,7 +327,11 @@ export default function SavanPujaPage() {
     // Origin CDN artwork — still used for og:image and as the hero's onError
     // fallback; HERO holds the self-hosted, display-sized variants actually shown.
     const image = puja.poojaImages?.[0] || puja.poojaMainImage || puja.poojaCardImage;
-    const price = puja.poojaPriceOnline;
+    // The sticky CTA quotes the package alone. The prasad box and extra family
+    // Sankalps are both chosen on the booking page, so neither can be priced in
+    // yet — and quoting a total the devotee hasn't agreed to would be worse
+    // than quoting the seva they just picked.
+    const price = selectedPkg.price;
     const reviews = seededReviews(pujaId, 9);
     const mandirName = `${puja.templeName}, ${puja.templeLocation}`;
     // City only ("Kashi, Varanasi") for the meta line — the state adds length
@@ -416,54 +380,99 @@ export default function SavanPujaPage() {
         sec: Math.floor((remaining % 60000) / 1000),
     } : null;
 
+    // ── One-time glide down to the packages ───────────────────────────────
+    //
+    // The hero, the title block and the countdown fill the first screen, so the
+    // choice this page is actually asking a devotee to make starts below the
+    // fold. A couple of seconds after landing — and ONLY if they haven't
+    // touched the page yet — we scroll the first package card up under the
+    // header so the comparison is on screen.
+    //
+    // Our own eased rAF tween rather than native smooth scroll, for a
+    // consistent glide across browsers, and it bails the instant they interact
+    // so it can never fight someone who is already reading.
+    useEffect(() => {
+        let interacted = false;
+        let rafId = 0;
+        const mark = () => { interacted = true; cancelAnimationFrame(rafId); };
+        window.addEventListener("wheel", mark, { passive: true });
+        window.addEventListener("touchmove", mark, { passive: true });
+        window.addEventListener("keydown", mark);
+
+        const timeoutId = setTimeout(() => {
+            // Already scrolling under their own steam — leave them alone.
+            if (interacted || window.scrollY > 40) return;
+            // The card list, not the "#packages" section: the glide should end
+            // on the first card, past the heading and the shared-core strip.
+            // Falls back to the section if the anchor ever goes missing.
+            const el =
+                document.getElementById(PACKAGE_CARDS_ANCHOR_ID) ??
+                document.getElementById("packages");
+            if (!el) return;
+
+            const startY = window.scrollY;
+            const targetY = Math.max(0, el.getBoundingClientRect().top + startY - PACKAGES_SCROLL_OFFSET);
+            const distance = targetY - startY;
+            if (Math.abs(distance) < 4) return;
+
+            // Respect reduced-motion: jump straight there, no animation.
+            if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+                window.scrollTo(0, targetY);
+                return;
+            }
+
+            const duration = 1400;
+            const startT = performance.now();
+            const easeInOutCubic = (t: number) =>
+                t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            const step = (now: number) => {
+                if (interacted) return;
+                const t = Math.min(1, (now - startT) / duration);
+                window.scrollTo(0, startY + distance * easeInOutCubic(t));
+                if (t < 1) rafId = requestAnimationFrame(step);
+            };
+            rafId = requestAnimationFrame(step);
+            track("puja_packages_autoscroll", {}, true);
+        }, PACKAGES_SCROLL_DELAY_MS);
+
+        return () => {
+            clearTimeout(timeoutId);
+            cancelAnimationFrame(rafId);
+            window.removeEventListener("wheel", mark);
+            window.removeEventListener("touchmove", mark);
+            window.removeEventListener("keydown", mark);
+        };
+    }, []);
+
     const whatYouGet = [
         { icon: BadgeCheck, title: "Personalized offering", sub: "Performed in your name & gotra" },
         { icon: Video, title: "Puja video on WhatsApp", sub: "Full recording delivered to you" },
-        { icon: Gift, title: "Prasad at your home", sub: "Sacred prasad couriered to you" },
+        { icon: Gift, title: "Prasad at your home", sub: `Free in ₹2100, else ₹${PRASAD_BOX_PRICE}` },
     ];
 
-    // The sacred offerings poured during the Rudrabhishek.
-    //
-    // `img` is the photo on the tile; the Lucide icon is what the tile falls
-    // back to while an item has no artwork yet, so photos can be dropped in one
-    // at a time without the row ever changing shape (same convention as the
-    // Banke Bihari ItemTile). 1008 Naam Jaap, Bhang and Dhatura have no CDN art
-    // yet — paste the URL in and they turn into photos with no other change.
-    //
-    // Order matters: this reads left-to-right in the marquee, so the two
-    // headline offerings (Gangajal, Bel Patra) lead and the icon-only tiles
-    // trail behind the photographed ones.
-    const offerings = [
-        { icon: Droplets, label: "Gangajal", sub: "Abhishek jal", img: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Ganga%20jal.webp" },
-        { icon: Leaf, label: "Bel Patra", sub: "Shiv's favourite", img: "https://png.pngtree.com/png-clipart/20230617/ourmid/pngtree-nature-green-leaf-transparent-image-png-image_7153754.png" },
-        { icon: Flame, label: "Rudri Path", sub: "Vedic chanting", img: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/book.jpeg" },
-        { icon: Moon, label: "Panchamrit", sub: "Five nectars", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2TtfsJKDJ_cYyNXsfDMr_ou7C-uBvft9x2BUD7zOcDL0Yux8nIZ2-LI_S&s=10" },
-        { icon: Sparkles, label: "1008 Jaap", sub: "Om Namah Shivay", img: "https://png.pngtree.com/png-vector/20220216/ourmid/pngtree-om-namah-shivaya-hindi-text-png-image_4377941.png" },
-        { icon: Leaf, label: "Bhang", sub: "Offered to Shiv", img: "https://www.planetayurveda.com/pa-wp-images/cannabis-sativa.jpg" },
-        { icon: Flower2, label: "Dhatura", sub: "Mahadev's flower", img: "https://m.media-amazon.com/images/I/515CXvq2YzL._AC_UF350,350_QL80_.jpg" },
-    ];
-
-    // Main CTA goes straight to the booking page. The optional prasad add-on
-    // lives inside the booking page only (no pre-booking upsell interruption).
+    // Main CTA goes straight to the booking page.
     // AddToCart marks intent at the CTA tap (same convention as PujaPage.tsx);
     // InitiateCheckout / Purchase then fire on the booking page itself, so the
     // three funnel steps stay distinct instead of collapsing onto one trigger.
     //
-    // ViewContent / AddToCart here necessarily report the ₹851 base seva: the
-    // prasad box and extra Sankalp names are chosen on the booking page, so no
-    // add-on exists yet at this point in the funnel. The booking's real value
-    // (base + add-ons) is reported by InitiateCheckout / Purchase from
+    // AddToCart here reports the package, the only choice this page makes; the
+    // prasad box and extra Sankalp names are both chosen on the booking page,
+    // so they cannot be priced in yet. The booking's real value (package +
+    // extras) is reported by InitiateCheckout / Purchase from
     // SavanPujaBookingPage and by the server CAPI Purchase — read those, not
     // these, when reconciling revenue in Events Manager.
     const openBooking = () => {
         track("AddToCart", {
-            content_name: puja.poojaNameEng,
+            content_name: `${puja.poojaNameEng} — ${selectedPkg.name}`,
             content_ids: [pujaId],
             content_type: "product",
             value: price,
             currency: "INR",
         });
-        navigate(`/${KASHI_MAHADEV_PUJA_SLUG}/booking`);
+        track("puja_cta_click", { package: selectedPkg.id, value: price }, true);
+        // Hand the chosen package to the booking page so it opens on the seva
+        // the devotee picked here.
+        navigate(`/${KASHI_MAHADEV_PUJA_SLUG}/booking`, { state: { packageId } });
     };
 
     const handleShare = async () => {
@@ -534,8 +543,25 @@ export default function SavanPujaPage() {
           <title>{`${puja.poojaNameEng} at ${puja.templeName}, Varanasi | Pandit Ji At Request`}</title>
           <meta
             name="description"
-            content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Rudrabhishek performed on your behalf at ${mandirName} on the first Savan Somwar, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
+            content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Rudrabhishek performed on your behalf at ${mandirName} on the last Savan Somwar, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
           />
+          <link rel="canonical" href={`https://panditjiatrequest.com/${KASHI_MAHADEV_PUJA_SLUG}`} />
+          {/* Social share preview (WhatsApp / Facebook / X). This page has a
+              Share button whose whole purpose is sending the link to family, so
+              without these every share renders as a bare URL with no card. */}
+          <meta property="og:type" content="product" />
+          <meta property="og:site_name" content="Pandit Ji At Request" />
+          <meta property="og:title" content={`${puja.poojaNameEng} — ${puja.occasion} at ${puja.templeName}, Varanasi`} />
+          <meta property="og:description" content={`Rudrabhishek performed on your behalf at ${mandirName} on ${puja.pujaDate}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}.`} />
+          <meta property="og:url" content={`https://panditjiatrequest.com/${KASHI_MAHADEV_PUJA_SLUG}`} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content={`${puja.poojaNameEng} — ${puja.occasion} at Kashi`} />
+          <meta name="twitter:description" content={`Rudrabhishek at ${mandirName} on ${puja.pujaDate}. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}, puja video on WhatsApp.`} />
+          {/* Only emitted once the banner artwork exists — an empty og:image is
+              worse than none. Deliberately the ORIGIN CDN url, not a resized
+              one: social scrapers should fetch the original. */}
+          {image && <meta property="og:image" content={image} />}
+          {image && <meta name="twitter:image" content={image} />}
           {/* No hero preload here on purpose. A React-rendered preload lands far
               too late to help LCP anyway (it waits on the entry bundle + this
               route's lazy chunk), and react-helmet-async does not reliably pass
@@ -694,11 +720,12 @@ export default function SavanPujaPage() {
                 name means a longer one wraps to a second line rather than
                 shoving the date off the row.
 
-                The date wears the page's temple-gold coupon treatment — the
-                same palette as the countdown card below, so the two read as
-                the same "this is the day" signal rather than two unrelated
-                styles. Type stays 10.5px to keep the chip inside that width
-                budget once the padding and border are added. */}
+                The date keeps the temple-gold chip. It is the page's one warm
+                accent against an otherwise emerald column, and it is a quiet
+                label — the countdown below now carries the same date in the
+                page's saturated green, which is the loud one. Type stays
+                10.5px to keep the chip inside that width budget once the
+                padding and border are added. */}
             <div className="flex items-center justify-between gap-2 mt-0.5">
               <p className="min-w-0 text-[12.5px] text-[#086B50] font-medium">
                 {puja.poojaNameHindi}
@@ -719,101 +746,166 @@ export default function SavanPujaPage() {
             </div>
           </div>
 
-          {/* ── Rudrabhishek offerings ── */}
-          <div>
-            <SectionTitle icon={<Droplets className="w-3.5 h-3.5 text-[#C89B3C]" />}>
-              What is offered in your name
-            </SectionTitle>
-            <OfferingsMarquee offerings={offerings} />
+          {/* ── Countdown to the puja date ───────────────────────────────────
+              The page's own emerald gradient — the same one the Savan ribbon
+              above and the sticky pay bar below wear — so the one time-
+              sensitive thing on the page lifts off the cream background as part
+              of the theme rather than as a gold coupon pasted onto it.
+
+              On a saturated fill the tiles have to be translucent white rather
+              than the page's #DFF5EF, which all but disappears against this
+              green, and the labels take the light aqua that stays legible on it.
+
+              The free-bracelet coupon that shared this strip is gone: the
+              bracelet ships inside the prasad box, and the box is now an opt-in
+              on the booking page, so an unconditional "FREE" here promised a
+              gift a devotee could finish checkout without ever claiming. It is
+              still offered where it can actually be taken — on the box itself.
+
+              With the rail gone the timer has the full 28rem column, so the
+              tiles can breathe instead of being squeezed to the ~145px the
+              coupon left them. */}
+          {/* Same treatment as the mantra strip further down the page: the
+              trishuls are absolutely positioned and vertically centred, so they
+              can be taller than the strip itself and SPILL over its top and
+              bottom edges without pushing it taller.
+
+              Two things make that work, and both are load-bearing:
+                • `relative` — without it they anchor to the page root, the
+                  nearest positioned ancestor, and end up pinned halfway down
+                  the whole page instead of inside this card.
+                • NO `overflow-hidden` — clipping is exactly what would flatten
+                  the spill back into two images parked in the corners.
+
+              `px-14` is the rail they stand in. Unlike the mantra strip's one
+              line of text, the content here is four countdown tiles, so the
+              tiles are sized to what is left: 4 × 40px + gaps fits inside the
+              rail down to a 320px phone. Widening the rail past px-14, or the
+              tiles past 40px, is what starts pushing them into each other. */}
+          <div className="relative rounded-xl bg-gradient-to-br from-[#086B50] via-[#008C68] to-[#086B50] px-14 py-3 shadow-md">
+            {/* The right one is the artwork as drawn; the left is mirrored with
+                -scale-x-100 so the pair faces outward. */}
+            {MANTRA_SIDE_IMAGE && (
+              <img
+                src={MANTRA_SIDE.src}
+                srcSet={MANTRA_SIDE.srcSet}
+                sizes={MANTRA_SIDE.sizes}
+                onError={(e) => { e.currentTarget.srcset = ""; e.currentTarget.src = MANTRA_SIDE_IMAGE; }}
+                width={MANTRA_SIDE.width}
+                height={MANTRA_SIDE.height}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+                className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-20 h-20 object-contain -scale-x-100 drop-shadow-lg"
+              />
+            )}
+
+            {/* z-10 keeps the countdown above the motif. Absolutely positioned
+                siblings paint over static ones, so without it the trishuls
+                would sit on top of the digits wherever the two meet on a
+                narrow screen. */}
+            <div className="relative z-10 flex flex-col items-center gap-1.5">
+              <span className="text-[11px] font-bold text-white leading-tight text-center">
+                Limited slots for {puja.pujaDate}
+              </span>
+              {cd ? (
+                <div className="flex items-center justify-center gap-1">
+                  {[
+                    { v: cd.days, l: "Days" },
+                    { v: cd.hrs, l: "Hrs" },
+                    { v: cd.min, l: "Min" },
+                    { v: cd.sec, l: "Sec" },
+                  ].map((u) => (
+                    <div
+                      key={u.l}
+                      className="min-w-[40px] bg-white/20 border border-white/30 rounded-lg px-1 py-1 text-center backdrop-blur-[2px]"
+                    >
+                      <div className="text-[16px] leading-none font-bold text-white tabular-nums">
+                        {pad2(u.v)}
+                      </div>
+                      <div className="text-[7.5px] uppercase tracking-wide text-[#DFF5EF] mt-0.5">
+                        {u.l}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-[12px] text-[#DFF5EF]">Booking open</span>
+              )}
+            </div>
+
+            {MANTRA_SIDE_IMAGE && (
+              <img
+                src={MANTRA_SIDE.src}
+                srcSet={MANTRA_SIDE.srcSet}
+                sizes={MANTRA_SIDE.sizes}
+                onError={(e) => { e.currentTarget.srcset = ""; e.currentTarget.src = MANTRA_SIDE_IMAGE; }}
+                width={MANTRA_SIDE.width}
+                height={MANTRA_SIDE.height}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+                className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 w-20 h-20 object-contain drop-shadow-lg"
+              />
+            )}
           </div>
 
+          {/* ── Choose your package (comparison) ──
+              The one decision that changes the price, so it sits directly under
+              the countdown that gives it urgency and above everything the page
+              says about the seva itself. */}
+          <div id="packages">
+            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+              Choose your seva
+            </SectionTitle>
+            <SavanPackages
+              selectedId={packageId}
+              onSelect={(id) => {
+                setPackageId(id);
+                track("puja_package_select", { package: id, value: getPackage(id).price }, true);
+              }}
+            />
 
-          {/* ── Countdown + free-gift offer ─────────────────────────────────
-              Highlighted in temple gold rather than the page's plain white
-              card: this row carries both the urgency and the gift, so it has
-              to lift off the sections above and below it.
-
-              The gift sits BESIDE the countdown at every width — no wrapping
-              onto its own line — which is what sets both sides' sizes. The
-              gift is a fixed 100px rail (`shrink-0`), so on the narrowest
-              phone the timer is left ~145px of the 28rem column: exactly the
-              four 34px tiles plus their gaps, which is why the tiles are that
-              size and why the ":" separators are gone. Widening the gift or
-              re-adding the separators overflows a 320px screen.
-
-              That budget is also why the gift copy is a product shot plus two
-              words — there is no room for a third line beside a live timer. */}
-          <div className="rounded-xl border border-[#E8CF9A] bg-gradient-to-br from-[#FFF8E7] via-[#FFFDF5] to-[#FFF3DC] px-2.5 py-2.5 shadow-sm">
-            <div className="flex items-center gap-2">
-              {/* Left — slots closing for the puja date */}
-              <div className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
-                <span className="text-[10.5px] font-bold text-[#086B50] leading-tight text-center">
-                  Limited slots for {puja.pujaDate}
+            {/* What still gets decided AFTER this page. Both lines are here so
+                the cards can stay about the sevas themselves: neither the box
+                nor the extra Sankalps change the price shown in the bar below,
+                and a devotee should know that before they tap it. */}
+            <div className="mt-2.5 rounded-2xl border border-[#DDEBE6] bg-white px-3 py-2.5 space-y-1.5">
+              <p className="flex items-start gap-1.5 text-[10.5px] text-[#66736E] leading-snug">
+                <Gift className="w-3.5 h-3.5 text-[#C89B3C] shrink-0 mt-px" />
+                <span>
+                  {selectedPkg.prasadBoxFree
+                    ? `Prasad box is FREE with this seva — add it on the next step to have it couriered home.`
+                    : `Prasad box can be added on the next step for ₹${PRASAD_BOX_PRICE}.`}
                 </span>
-                {cd ? (
-                  <div className="flex items-center justify-center gap-1">
-                    {[
-                      { v: cd.days, l: "Days" },
-                      { v: cd.hrs, l: "Hrs" },
-                      { v: cd.min, l: "Min" },
-                      { v: cd.sec, l: "Sec" },
-                    ].map((u) => (
-                      <div
-                        key={u.l}
-                        className="min-w-[34px] bg-[#DFF5EF] border border-[#DDEBE6] rounded-lg px-1 py-1 text-center"
-                      >
-                        <div className="text-[15px] leading-none font-bold text-[#17211D] tabular-nums">
-                          {pad2(u.v)}
-                        </div>
-                        <div className="text-[7.5px] uppercase tracking-wide text-[#66736E] mt-0.5">
-                          {u.l}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-[12px] text-[#66736E]">Booking open</span>
-                )}
-              </div>
-
-              {/* Right — free Rudraksh bracelet with the booking. Dashed gold
-                  border so it reads as a coupon, not another info card. */}
-              <div className="relative overflow-hidden shrink-0 w-[100px] flex flex-col items-center gap-1 bg-white border border-dashed border-[#C89B3C] rounded-lg py-1">
-                {/* Corner offer strip: a rotated band clipped by the card's own
-                    overflow-hidden, so "FREE" reads as a sticker slapped across
-                    the corner rather than one more label under the photo — and
-                    the space it frees goes to the bracelet. Geometry is tuned
-                    to this 100px card: the band's centre sits just inside the
-                    corner and both ends are cut off by the rounded edge. */}
-                <span className="absolute top-[6px] -right-[20px] w-[70px] rotate-45 bg-[#C89B3C] text-white text-center text-[7.5px] font-extrabold uppercase tracking-[0.12em] py-[2px] shadow-sm z-10">
-                  Free
+              </p>
+              <p className="flex items-start gap-1.5 text-[10.5px] text-[#66736E] leading-snug">
+                <Users className="w-3.5 h-3.5 text-[#086B50] shrink-0 mt-px" />
+                <span>
+                  {selectedPkg.freeFamilyMembers > 0
+                    ? `${selectedPkg.freeFamilyMembers} family Sankalp${selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free in this seva · extra names ₹${FAMILY_MEMBER_PRICE} each on the next step.`
+                    : `Family members can be added at ₹${FAMILY_MEMBER_PRICE} each on the next step.`}
                 </span>
-                {/* Drawn at 64 px; 180 px covers ~2.8x density. onError falls
-                    back to the origin URL, the convention `optimizedImg`
-                    documents, so a proxy hiccup can't blank the gift. */}
-                <img
-                  src={optimizedImg(RUDRAKSH_BRACELET_IMAGE, 180)}
-                  onError={(e) => { e.currentTarget.src = RUDRAKSH_BRACELET_IMAGE; }}
-                  alt="Free 5 Mukhi Rudraksh bracelet"
-                  loading="lazy"
-                  decoding="async"
-                  className="w-20 h-20 shrink-0 rounded-lg object-cover border border-[#F0E2C2]"
-                />
-                <p className="text-[9px] font-bold text-[#17211D] leading-tight text-center">
-                  Rudraksh Bracelet
-                </p>
-              </div>
+              </p>
             </div>
           </div>
 
+          {/* The standalone "What is offered in your name" row stood here. It
+              is off, and its marquee component went with it — see the note
+              where that component used to live, near the top of this file. */}
+
           {/* ── Hero value props ── */}
-          <div className="rounded-2xl border border-[#DDEBE6] bg-gradient-to-br from-[#FFFDF8] via-[#F0FAF7] to-[#DFF5EF]/70 p-3.5 shadow-sm">
+          {/* <div className="rounded-2xl border border-[#DDEBE6] bg-gradient-to-br from-[#FFFDF8] via-[#F0FAF7] to-[#DFF5EF]/70 p-3.5 shadow-sm">
             <div className="space-y-1.5">
               {[
-                "Rudrabhishek on the first Savan Somwar",
+                "Rudrabhishek on the last Savan Somwar",
                 "Personalized Sankalp in your name & gotra",
                 "Puja video shared on WhatsApp",
-                "Optional prasad delivered at home",
+                selectedPkg.prasadBoxFree
+                  ? "Free prasad box, if you add it while booking"
+                  : "Optional prasad box delivered at home",
               ].map((t) => (
                 <div key={t} className="flex items-start gap-2 text-[12.5px] text-[#17211D]">
                   <Check className="w-3.5 h-3.5 text-[#008C68] shrink-0 mt-0.5" strokeWidth={3} />
@@ -821,7 +913,7 @@ export default function SavanPujaPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* ── Mantra strip ── */}
           {/*
@@ -900,7 +992,7 @@ export default function SavanPujaPage() {
                 `Pandit ji performs the Rudrabhishek at ${puja.templeName}`,
                 "Sankalp is taken in your name & gotra",
                 "Puja video is shared with you on WhatsApp",
-                "Optional prasad is delivered to your home",
+                "Add the prasad box while booking to have blessed prasad couriered home",
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-2.5">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center text-[11px] font-bold mt-0.5">
@@ -1048,9 +1140,11 @@ export default function SavanPujaPage() {
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-[#DDEBE6] max-w-md mx-auto shadow-lg">
           <div className="px-4 pt-2 pb-2.5">
             <div className="flex items-center gap-3">
-              <div className="shrink-0">
-                <span className="text-[9.5px] text-[#66736E] font-semibold uppercase block leading-none">
-                  Total
+              {/* Names the chosen package rather than a bare "Total", so the
+                  bar always says WHICH seva the price belongs to. */}
+              <div className="shrink-0 max-w-[38%]">
+                <span className="text-[9.5px] text-[#66736E] font-semibold uppercase block leading-none truncate">
+                  {selectedPkg.name}
                 </span>
                 <span className="text-[19px] font-extrabold text-[#086B50]">
                   ₹{price.toLocaleString("en-IN")}
@@ -1060,7 +1154,7 @@ export default function SavanPujaPage() {
                 onClick={openBooking}
                 className="flex-1 bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#008C68] outline-none"
               >
-                Book Savan Puja for ₹{price.toLocaleString("en-IN")}
+                Book for ₹{price.toLocaleString("en-IN")}
               </button>
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-[#66736E]">

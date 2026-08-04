@@ -3,7 +3,7 @@
 //
 //  This is an ONLINE puja: the puja is performed on the devotee's behalf by
 //  verified pandits at Shree Kashi Vishwanath Temple (Varanasi, Uttar
-//  Pradesh) on the FIRST SAVAN SOMWAR — Monday, 3 August 2026. The devotee
+//  Pradesh) on the LAST SAVAN SOMWAR — Monday, 24 August 2026. The devotee
 //  receives the puja video (with their name & gotra) on WhatsApp and can
 //  optionally have blessed prasad couriered home. Nobody visits the
 //  devotee's home.
@@ -73,8 +73,301 @@ export const RUDRAKSH_BRACELET_IMAGE =
  */
 export const FAMILY_MEMBER_PRICE = 101;
 
-/** First Savan Somwar of Shravan 2026 (Sawan runs 30 Jul – 28 Aug 2026). */
-export const FIRST_SAVAN_SOMWAR = "August 3, 2026";
+/**
+ * LAST Savan Somwar of Shravan 2026 — Monday, 24 August 2026.
+ *
+ * Shravan runs 30 Jul – 28 Aug 2026, so its Mondays are 3, 10, 17 and 24
+ * August; the 24th is the final one and the day this puja is performed.
+ *
+ * The landing page's countdown ticks off `pujaDate`, and the booking stamps it
+ * as the booking date, so this string is the single source for both. It is
+ * parsed with `new Date(...)` — keep the "Month D, YYYY" shape.
+ */
+export const LAST_SAVAN_SOMWAR = "August 24, 2026";
+
+// ── Prasad box ────────────────────────────────────────────────────────────
+//
+// Two nested boxes. The higher tier contains EVERYTHING in the one below it
+// plus its own `adds` — so the contents are declared once and never repeated,
+// and the UI can render either "what this box adds" or the full flattened list
+// (`prasadBoxContents`) without the two drifting apart.
+//
+//   standard — what ₹851 may add for PRASAD_BOX_PRICE
+//   chalisa  — the same box plus the Shiv Chalisa; the ₹1500 add-on, and the
+//              box that rides FREE with ₹2100
+//
+// Which tier applies is a property of the chosen package (`prasadBoxTier`),
+// and whether it is free is `prasadBoxFree` — see SAVAN_PACKAGES below.
+
+export type PrasadBoxTier = "standard" | "chalisa";
+
+export interface PrasadBox {
+    tier: PrasadBoxTier;
+    /** Name shown on the card / booking summary. */
+    name: string;
+    /** The lower box whose full contents this one also contains. */
+    inherits?: PrasadBoxTier;
+    /** Items this tier ADDS on top of `inherits`. */
+    adds: string[];
+}
+
+export const PRASAD_BOXES: Record<PrasadBoxTier, PrasadBox> = {
+    standard: {
+        tier: "standard",
+        name: "Prasad Box",
+        // The Rudraksh bracelet has always ridden inside the box rather than
+        // carrying a price of its own — see RUDRAKSH_BRACELET_IMAGE above — so
+        // it is listed as box contents, not as a separate line on the bill.
+        adds: ["Dry Prasad", "Rudraksh Bracelet"],
+    },
+    chalisa: {
+        tier: "chalisa",
+        name: "Prasad Box + Shiv Chalisa",
+        inherits: "standard",
+        adds: ["Shiv Chalisa"],
+    },
+};
+
+/** Every item inside a box, inherited tiers first. */
+export function prasadBoxContents(tier: PrasadBoxTier): string[] {
+    const box = PRASAD_BOXES[tier];
+    return box.inherits ? [...prasadBoxContents(box.inherits), ...box.adds] : [...box.adds];
+}
+
+/**
+ * ▶ PASTE PRODUCT PHOTOS HERE ◀
+ *
+ * Artwork for every physical item named in this file — the prasad-box contents
+ * above and the `addedOfferings` on the packages below. Keys must match those
+ * strings EXACTLY; a missing or empty entry is not a bug, the tile renders a
+ * tinted icon instead, so the page ships fine before the photos land and
+ * improves item by item as they arrive.
+ *
+ * Square crops look best — they are drawn at ~56 px and served through the
+ * resizer, so anything above ~200 px wide is wasted bytes.
+ */
+export const ITEM_IMAGES: Record<string, string> = {
+    // ── Offered to Mahadev during the Rudrabhishek ──
+    Milk: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/milk.png",
+    Gangajal:
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DevshayaniEkadashi/Ganga%20jal.webp",
+    "Bel Patra":
+        "https://png.pngtree.com/png-clipart/20230617/ourmid/pngtree-nature-green-leaf-transparent-image-png-image_7153754.png",
+    Panchamrit: "https://www.funfoodfrolic.com/wp-content/uploads/2023/09/Panchamrit-Blog.jpg",
+    Flowers: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/flowers.png",
+    Bhang: "https://www.planetayurveda.com/pa-wp-images/cannabis-sativa.jpg",
+    Dhatura: "https://m.media-amazon.com/images/I/515CXvq2YzL._AC_UF350,350_QL80_.jpg",
+    // Same itra shot the Banke Bihari packages use (data/bankeBihariPuja.ts),
+    // so the two pujas can never drift to different bottles.
+    "Itra Seva":
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/itra.png",
+    "1008 Naam Jaap":
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/naam.png",
+    "Rudri Path":
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/book.jpeg",
+    // ── Prasad box contents ──
+    "Dry Prasad":
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Prasad.webp",
+    "Rudraksh Bracelet": RUDRAKSH_BRACELET_IMAGE,
+    "Shiv Chalisa": "https://vedicshop.store/cdn/shop/files/201.png?v=1774530024&width=1200",
+};
+
+// ── Packages ──────────────────────────────────────────────────────────────
+
+export type SavanPackageId = "rudrabhishek" | "somwar" | "rudri";
+
+export interface SavanPackage {
+    id: SavanPackageId;
+    /** Package name shown on the card. */
+    name: string;
+    /** One-line positioning under the name. */
+    tagline: string;
+    /** Package price in ₹ (the booking's base amount). */
+    price: number;
+    /**
+     * The cheaper package this one fully contains. Drives the cumulative
+     * offerings list, so each package only ever declares what it ADDS.
+     */
+    inherits?: SavanPackageId;
+    /** The core seva every package includes — declared on the base package only. */
+    core?: string[];
+    /** Offerings this tier ADDS to the Rudrabhishek, in your name. */
+    addedOfferings: string[];
+    /** How many family-member Sankalps are included free in this package. */
+    freeFamilyMembers: number;
+    /** Which prasad box this package offers. */
+    prasadBoxTier: PrasadBoxTier;
+    /**
+     * True when that box costs ₹0 at this tier; false when adding it costs
+     * PRASAD_BOX_PRICE.
+     *
+     * Free does NOT mean automatic. The box is ALWAYS an opt-in on the booking
+     * page — a devotee on the top tier who never ticks it is not shipped one,
+     * because a parcel nobody asked for still needs an address and still gets
+     * packed and couriered.
+     */
+    prasadBoxFree: boolean;
+    /**
+     * The one prasad line this package's CARD is allowed to say, or undefined
+     * for a card that says nothing about the box at all.
+     *
+     * The box is chosen on the booking page, so the cards only carry what makes
+     * the tiers different — a control here would be a second place to decide the
+     * same thing, and the entry tier has nothing to advertise.
+     */
+    prasadNote?: string;
+    /** Optional corner badge, e.g. "Most Popular". */
+    badge?: string;
+}
+
+/**
+ * The three booking packages, cheapest first.
+ *
+ * Each tier is strictly a superset of the one below it (`inherits`), so it only
+ * declares what it ADDS — the UI renders the cumulative list. That keeps the
+ * three cards honest by construction: an offering can never appear on ₹1500 and
+ * go missing on ₹2100.
+ *
+ * Two things are billed on top of the package price, and BOTH are chosen on the
+ * booking page rather than here:
+ *   • family Sankalps beyond `freeFamilyMembers` — FAMILY_MEMBER_PRICE each
+ *   • the prasad box — PRASAD_BOX_PRICE, or ₹0 where `prasadBoxFree`
+ */
+export const SAVAN_PACKAGES: SavanPackage[] = [
+    {
+        id: "rudrabhishek",
+        name: "Rudrabhishek Seva",
+        tagline: "The essential Savan Somwar abhishek",
+        price: 851,
+        core: [
+            "Rudrabhishek performed in your name at Kashi",
+            "Personalised Sankalp with your name & gotra",
+            "Full puja video shared on WhatsApp",
+        ],
+        // Declared on the BASE package, so every tier inherits them — this is
+        // the list "offered in all packages". Abhishek liquids first, then what
+        // is laid on the Shivling after.
+        addedOfferings: ["Milk", "Gangajal", "Panchamrit", "Bel Patra", "Flowers"],
+        freeFamilyMembers: 0,
+        prasadBoxTier: "standard",
+        prasadBoxFree: false,
+        // Names what is IN the box rather than what it costs — the price is
+        // stated once under the card list, and the bracelet is the thing worth
+        // knowing about here. Matches the "standard" tier's contents above.
+        prasadNote: "Prasad box includes a Rudraksh bracelet",
+    },
+    {
+        id: "somwar",
+        name: "Savan Somwar Seva",
+        tagline: "Most-loved · 2 family Sankalps free",
+        price: 1500,
+        inherits: "rudrabhishek",
+        // Itra Seva is declared here rather than on ₹2100 as well: the top tier
+        // inherits this package, so naming it once is what makes it appear in
+        // both without any chance of the two lists disagreeing.
+        addedOfferings: ["Bhang", "Dhatura", "Itra Seva", "1008 Naam Jaap"],
+        freeFamilyMembers: 2,
+        // Same ₹298 box as the base package, but the Shiv Chalisa is packed
+        // inside it free at this tier and above.
+        prasadBoxTier: "chalisa",
+        prasadBoxFree: false,
+        // The Shiv Chalisa is what this tier's box adds over the one below —
+        // see the "chalisa" box above — so it is named alongside the bracelet.
+        prasadNote: "FREE Rudraksh bracelet & Shiv Chalisa inside your prasad box",
+        badge: "Most Popular",
+    },
+    {
+        id: "rudri",
+        name: "Rudri Path Mahaseva",
+        tagline: "The complete seva · free prasad box",
+        price: 2100,
+        inherits: "somwar",
+        addedOfferings: ["Rudri Path"],
+        freeFamilyMembers: 3,
+        prasadBoxTier: "chalisa",
+        prasadBoxFree: true,
+        prasadNote: `FREE prasad box — no ₹${PRASAD_BOX_PRICE} charge`,
+        badge: "Best Value",
+    },
+];
+
+/**
+ * The package pre-selected on first load — the recommended middle tier, the
+ * one wearing the "Most Popular" badge.
+ *
+ * ⚠️  This is what the sticky pay bar quotes the moment the page paints, and
+ *     what ViewContent reports. Any ad creative promising a price has to name
+ *     THIS one, or the devotee lands on a button that contradicts the ad they
+ *     tapped. Set it back to "rudrabhishek" if the campaign goes out on ₹851.
+ */
+export const DEFAULT_PACKAGE_ID: SavanPackageId = "somwar";
+
+/** Resolve a package by id, falling back to the first (cheapest) package. */
+export function getPackage(id: SavanPackageId | undefined): SavanPackage {
+    return SAVAN_PACKAGES.find((p) => p.id === id) || SAVAN_PACKAGES[0];
+}
+
+/** The core seva shared by every package (declared on the base package). */
+export function packageCore(pkg: SavanPackage): string[] {
+    return pkg.core ?? (pkg.inherits ? packageCore(getPackage(pkg.inherits)) : []);
+}
+
+/** Everything offered to Mahadev in your name at this tier, cheapest tier first. */
+export function packageOfferings(pkg: SavanPackage): string[] {
+    return pkg.inherits
+        ? [...packageOfferings(getPackage(pkg.inherits)), ...pkg.addedOfferings]
+        : [...pkg.addedOfferings];
+}
+
+/** The box this package offers, whether free or paid. */
+export function packagePrasadBox(pkg: SavanPackage): PrasadBox {
+    return PRASAD_BOXES[pkg.prasadBoxTier];
+}
+
+/** Family members that fall OUTSIDE the package's free allowance (charged). */
+export function extraFamilyCount(pkg: SavanPackage, familyCount: number): number {
+    return Math.max(0, familyCount - pkg.freeFamilyMembers);
+}
+
+/**
+ * The prasad-box line on the bill — ₹0 unless a PAID box was added. The top
+ * tier's box is free, so ticking it there changes what ships, not the total.
+ */
+export function prasadBoxCost(pkg: SavanPackage, prasadBoxAdded: boolean): number {
+    return prasadBoxAdded && !pkg.prasadBoxFree ? PRASAD_BOX_PRICE : 0;
+}
+
+/** Booking total = package price + chargeable extra Sankalps + optional prasad box. */
+export function packageTotal(
+    pkg: SavanPackage,
+    familyCount: number,
+    prasadBoxAdded = false,
+): number {
+    return (
+        pkg.price +
+        extraFamilyCount(pkg, familyCount) * FAMILY_MEMBER_PRICE +
+        prasadBoxCost(pkg, prasadBoxAdded)
+    );
+}
+
+/**
+ * The box actually being shipped for this booking, if any.
+ *
+ * Opt-in at EVERY tier, free ones included: a devotee who never ticks the box
+ * is not shipped one and is never asked for a delivery address. That is why the
+ * top tier's free box is worded as "no ₹298 charge" rather than "included".
+ */
+export function shippedPrasadBox(
+    pkg: SavanPackage,
+    prasadBoxAdded: boolean,
+): PrasadBox | null {
+    return prasadBoxAdded ? packagePrasadBox(pkg) : null;
+}
+
+/** Whether this booking ships something and therefore needs a delivery address. */
+export function packageNeedsDelivery(pkg: SavanPackage, prasadBoxAdded = false): boolean {
+    return shippedPrasadBox(pkg, prasadBoxAdded) !== null;
+}
 
 /**
  * The puja shaped exactly like a backend pooja document so it can be handed
@@ -98,8 +391,11 @@ export const kashiMahadevPuja = {
         "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
     poojaMainImage:
         "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
+    // [0] is the og:image and the hero's onError fallback. The hero carousel
+    // itself renders the self-hosted set in data/savanHeroImages.json, not this
+    // list, so a second entry here bought nothing — it was the same banner
+    // twice.
     poojaImages: [
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
         "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
     ],
     poojaVideoLink: "",
@@ -111,11 +407,11 @@ export const kashiMahadevPuja = {
     templeLocation: "Varanasi, Uttar Pradesh",
     rating: 4.9,
     devoteesLabel: "75K+",
-    /** Scheduled date of this puja — the first Savan Somwar. */
-    pujaDate: FIRST_SAVAN_SOMWAR,
+    /** Scheduled date of this puja — the last Savan Somwar. */
+    pujaDate: LAST_SAVAN_SOMWAR,
     /** Savan-specific framing shown in the hero. */
-    occasion: "First Savan Somwar",
-    occasionHindi: "प्रथम सावन सोमवार",
+    occasion: "Last Savan Somwar",
+    occasionHindi: "अंतिम सावन सोमवार",
     /** Short outcome bullets shown in the "Why perform this puja" card. */
     benefits: [
         "Rudrabhishek at Kashi — Mahadev's own eternal city",
@@ -135,19 +431,19 @@ export const kashiMahadevPuja = {
     samagriDetails: [] as any[],
     samagriPrice: 0,
     poojaBenefitsDescription:
-        "Verified pandits perform Rudrabhishek of Baba Vishwanath on your behalf at Kashi on the first Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Gangajal drawn from the Ganga at Varanasi, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
+        "Verified pandits perform Rudrabhishek of Baba Vishwanath on your behalf at Kashi on the last Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Gangajal drawn from the Ganga at Varanasi, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
     poojaDescription: [
         {
             headingId: "1",
             heading: "Purpose of Puja",
             description:
-                "<p>To seek the blessings of <strong>Baba Vishwanath</strong> — <strong>Mahadev</strong> as the Lord of the Universe, worshipped at <strong>Kashi Vishwanath</strong>, among the most revered of the twelve Jyotirlingas.</p><p><strong>Kashi (Varanasi)</strong> is held to be Shiva's own city, said to rest upon his trishul and to stand untouched even at the dissolution of the world. The month of <strong>Shravan (Savan)</strong> is his most beloved month, and <strong>Savan Somwar</strong> is its most powerful day. This online puja is performed on your behalf in <strong>Kashi (Mahadev's city) </strong> on the <strong>first Savan Somwar</strong> to remove fear, illness and suffering, and to invite peace, courage and prosperity.</p>",
+                "<p>To seek the blessings of <strong>Baba Vishwanath</strong> — <strong>Mahadev</strong> as the Lord of the Universe, worshipped at <strong>Kashi Vishwanath</strong>, among the most revered of the twelve Jyotirlingas.</p><p><strong>Kashi (Varanasi)</strong> is held to be Shiva's own city, said to rest upon his trishul and to stand untouched even at the dissolution of the world. The month of <strong>Shravan (Savan)</strong> is his most beloved month, and <strong>Savan Somwar</strong> is its most powerful day. This online puja is performed on your behalf in <strong>Kashi (Mahadev's city) </strong> on the <strong>last Savan Somwar</strong> to remove fear, illness and suffering, and to invite peace, courage and prosperity.</p>",
         },
         {
             headingId: "2",
             heading: "Best Time to Perform",
             description:
-                "<p><strong>Day:</strong> Monday, 3 August 2026 — the first Savan Somwar</p><p>Shravan month runs from <strong>30 July to 28 August 2026</strong>. Mondays of this month are considered the single most auspicious time in the year to worship <strong>Mahadev</strong>, and the <em>first</em> Savan Somwar is held to be the most fruitful of them all. In Savan, lakhs of kanwariyas carry Gangajal from Kashi to offer at Shiva temples across India.</p>",
+                "<p><strong>Day:</strong> Monday, 24 August 2026 — the last Savan Somwar</p><p>Shravan month runs from <strong>30 July to 28 August 2026</strong>. Mondays of this month are considered the single most auspicious time in the year to worship <strong>Mahadev</strong>, and the <em>last</em> Savan Somwar is the final and most sought-after of them — the closing offering of Shiva's own month, believed to seal the merit of the entire Shravan. In Savan, lakhs of kanwariyas carry Gangajal from Kashi to offer at Shiva temples across India.</p>",
         },
         {
             headingId: "3",
@@ -171,7 +467,7 @@ export const kashiMahadevPuja = {
             headingId: "6",
             heading: "What you will receive",
             description:
-                "<p>• Personalised <strong>Sankalp</strong> performed in your name &amp; gotra</p><p> • Full <strong>puja video</strong> shared on WhatsApp</p><p> • Photos of the offerings made in your name</p><p> • Blessed <strong>prasad couriered to your home</strong> (optional)</p><p> • Post-puja guidance from our team</p>",
+                "<p>• Personalised <strong>Sankalp</strong> performed in your name &amp; gotra</p><p> • Full <strong>puja video</strong> shared on WhatsApp</p><p> • Photos of the offerings made in your name</p><p> • Blessed <strong>prasad couriered to your home</strong> if you add the prasad box while booking — <strong>free</strong> in the ₹2100 package, ₹298 in the ₹851 &amp; ₹1500 packages</p><p> • Post-puja guidance from our team</p>",
         },
         {
             headingId: "7",
@@ -189,7 +485,7 @@ export const kashiMahadevPuja = {
     faqs: [
         {
             question: "When exactly is this puja performed?",
-            answer: "On Monday, 3 August 2026 — the first Savan Somwar of Shravan 2026. The exact timing is confirmed with you on WhatsApp before the puja begins.",
+            answer: "On Monday, 24 August 2026 — the last Savan Somwar of Shravan 2026. The exact timing is confirmed with you on WhatsApp before the puja begins.",
         },
         {
             question: "Will I get the puja video?",
@@ -205,7 +501,11 @@ export const kashiMahadevPuja = {
         },
         {
             question: "Is prasad included?",
-            answer: "Prasad is optional. You can add a blessed prasad box for ₹298 during booking and it will be couriered to your home after the puja.",
+            answer: "The prasad box is always your choice — add it during booking and it is couriered to your home after the puja. It costs ₹298 in the ₹851 and ₹1500 packages and is FREE in the ₹2100 Rudri Path Mahaseva, but it is only sent if you add it at booking. The box carries dry prasad and a Rudraksh bracelet, plus the Shiv Chalisa from the ₹1500 package upwards.",
+        },
+        {
+            question: "Can I add my family members to the Sankalp?",
+            answer: "Yes. Savan Somwar Seva (₹1500) includes 2 family Sankalps free and Rudri Path Mahaseva (₹2100) includes 3. Any name beyond your package's free allowance can be added for ₹101 each during booking, and every name is taken by the pandit during the Sankalp.",
         },
         {
             question: "Can I book from outside India?",

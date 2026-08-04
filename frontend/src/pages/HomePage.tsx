@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
-// import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG } from "../data/kashiMahadevPuja";
+import {
+    kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, getPackage, DEFAULT_PACKAGE_ID,
+} from "../data/kashiMahadevPuja";
 // import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG } from "../data/kaalBhairavPuja";
 // import { hanumanPuja, HANUMAN_PUJA_SLUG } from "../data/hanumanPuja";
 import {
@@ -37,21 +39,21 @@ const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
 
 // ── Featured puja banner (Home, between "Book Puja" and "Our Services") ──
+// LIVE: Savan 2026 / Kashi Rudrabhishek on the last Savan Somwar.
 // 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kashi banner so the slot is
 //    never broken; swap the string for your own artwork when it's ready.
-// CAMPAIGN STOPPED (Savan 2026 / Kashi Rudrabhishek) — the banner section below
-// is commented out along with these constants and the route in App.tsx.
-// const FEATURED_PUJA_BANNER =
-//     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner1.png";
+const FEATURED_PUJA_BANNER =
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner1.png";
 
 // Where the banner sends the devotee. Kept next to the image so the creative and
 // its destination can never drift apart.
-// const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
+const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
 
 // Intrinsic size of the creative, used only to reserve the right amount of
-// vertical space while it loads so the sections below don't jump (CLS).
-// const FEATURED_PUJA_BANNER_W = 1080;
-// const FEATURED_PUJA_BANNER_H = 566;
+// vertical space while it loads so the sections below don't jump (CLS). Read
+// off the actual file — change these together with the URL above.
+const FEATURED_PUJA_BANNER_W = 1080;
+const FEATURED_PUJA_BANNER_H = 566;
 
 // ── Second featured puja banner: Kaal Bhairav Kalashtami campaign ──
 // 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kaal Bhairav banner so the
@@ -100,14 +102,20 @@ type Pooja = {
 /**
  * Where a catalog card should go.
  *
- * Poojas normally open the generic `/puja/:id` page, but Banke Bihari Ji has its
- * own themed page with its own packages and prasad boxes. Without this the card
- * in "Book Puja" would quietly route around all of that to a page that knows
- * nothing about them. Falls back to the generic route, so an older API response
- * without `poojaID` behaves exactly as before.
+ * Poojas normally open the generic `/puja/:id` page, but a few have their own
+ * themed page with their own packages and prasad boxes. Without this the card in
+ * "Book Puja" would quietly route around all of that to a page that knows
+ * nothing about them — the Savan card would show one ₹851 price with no tiers at
+ * all. Falls back to the generic route, so a pooja without its own page, or an
+ * older API response with no `poojaID`, behaves exactly as before.
  */
+const THEMED_PUJA_PAGES: Record<string, string> = {
+    [BANKE_BIHARI_POOJA_ID]: `/${BANKE_BIHARI_PUJA_SLUG}`,
+    [KASHI_MAHADEV_POOJA_ID]: `/${KASHI_MAHADEV_PUJA_SLUG}`,
+};
+
 const poojaHref = (p: Pooja) =>
-    p.poojaID === BANKE_BIHARI_POOJA_ID ? `/${BANKE_BIHARI_PUJA_SLUG}` : `/puja/${p._id}`;
+    (p.poojaID && THEMED_PUJA_PAGES[p.poojaID]) || `/puja/${p._id}`;
 
 const CONSULTATIONS = [
     { icon: Phone, label: "Talk on Call", sub: "Speak Directly", path: "/paid-consultation?type=voice", tint: "bg-orange-100 text-orange-600" },
@@ -357,29 +365,35 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── Featured puja banner ── CAMPAIGN STOPPED (Savan 2026).
-                A single tappable creative promoting the Savan Rudrabhishek page.
-                Swap FEATURED_PUJA_BANNER at the top of this file to change the
-                artwork; the destination lives next to it.
+            {/* ── Featured puja banner ── Savan 2026 Kashi Rudrabhishek.
+                One tappable creative into the themed puja page. It leads the
+                Janmashtami banner below because its puja date lands first —
+                keep these two ordered by date, so the slot always opens with
+                the seva a devotee can still book soonest.
+
+                `value` reports the package the puja page opens on, NOT
+                poojaPriceOnline: the page pre-selects DEFAULT_PACKAGE_ID, so
+                quoting the ₹851 catalog price here would report a different
+                number than the ViewContent that fires one tap later. */}
             <section className="px-4">
                 <button
                     onClick={() => {
-                        if (window.fbq) {
-                            window.fbq("track", "ViewContent", {
-                                content_name: kashiMahadevPuja.poojaNameEng,
-                                content_ids: [kashiMahadevPuja._id],
-                                content_type: "product",
-                                value: kashiMahadevPuja.poojaPriceOnline,
-                                currency: "INR",
-                            });
-                        }
+                        window.fbq?.("track", "ViewContent", {
+                            content_name: kashiMahadevPuja.poojaNameEng,
+                            content_ids: [kashiMahadevPuja._id],
+                            content_type: "product",
+                            value: getPackage(DEFAULT_PACKAGE_ID).price,
+                            currency: "INR",
+                            source: "home_banner",
+                        });
                         navigate(FEATURED_PUJA_HREF);
                     }}
                     aria-label={`Book ${kashiMahadevPuja.poojaNameEng} at ${kashiMahadevPuja.templeName}`}
                     className="block w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm active:scale-[0.98] transition-transform"
                 >
                     <img
-                        src={FEATURED_PUJA_BANNER}
+                        src={optimizedImg(FEATURED_PUJA_BANNER, 900)}
+                        onError={(e) => { e.currentTarget.src = FEATURED_PUJA_BANNER; }}
                         width={FEATURED_PUJA_BANNER_W}
                         height={FEATURED_PUJA_BANNER_H}
                         alt={`${kashiMahadevPuja.poojaNameEng} — ${kashiMahadevPuja.occasion} at ${kashiMahadevPuja.templeName}`}
@@ -389,7 +403,6 @@ export default function HomePage() {
                     />
                 </button>
             </section>
-            */}
 
             {/* ── Featured puja banner ── Banke Bihari Ji Janmashtami.
                 One tappable creative into the themed puja page. ViewContent

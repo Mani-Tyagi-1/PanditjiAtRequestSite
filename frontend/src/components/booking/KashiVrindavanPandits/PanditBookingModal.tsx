@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import type { HolyPandit, PanditService } from "./kashiVrindavanData";
 import API_URL from "../../../utils/apiConfig";
+import { money } from "../../../utils/currency";
 
 interface Props {
     isOpen: boolean;
@@ -212,7 +213,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                                                     <Clock className="w-3 h-3" /> approx {svc.durationHours} hrs
                                                                 </p>
                                                             </div>
-                                                            <span className="font-bold text-stone-900 text-[16px] shrink-0">₹{svc.price.toLocaleString("en-IN")}</span>
+                                                            <span className="font-bold text-stone-900 text-[16px] shrink-0">{money(svc.price)}</span>
                                                         </div>
                                                     </button>
                                                 );
@@ -290,7 +291,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                         <div className="mt-3 bg-gradient-to-br from-indigo-50 to-violet-50 rounded-2xl border border-indigo-100 p-4">
                                             <div className="flex items-center justify-between text-[13px] text-stone-600">
                                                 <span>Dakshina (ritual)</span>
-                                                <span>₹{amount.toLocaleString("en-IN")}</span>
+                                                <span>{money(amount)}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-[13px] text-emerald-600 mt-1">
                                                 <span>Travel from {pandit.city}</span>
@@ -299,7 +300,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                             <div className="my-2.5 h-px bg-indigo-100" />
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-stone-800">Total Payable</span>
-                                                <span className="font-bold text-indigo-600 text-[20px]">₹{amount.toLocaleString("en-IN")}</span>
+                                                <span className="font-bold text-indigo-600 text-[20px]">{money(amount)}</span>
                                             </div>
                                         </div>
 
@@ -351,7 +352,7 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                                 <div className="flex-1 flex items-center justify-between">
                                     <div className="leading-none">
                                         <span className="text-[10px] text-stone-400 font-semibold uppercase">Total</span>
-                                        <p className="text-[18px] font-bold text-stone-900">₹{amount.toLocaleString("en-IN")}</p>
+                                        <p className="text-[18px] font-bold text-stone-900">{money(amount)}</p>
                                     </div>
                                     {step === "review" ? (
                                         <button onClick={handleConfirm} disabled={submitting} className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-indigo-200 active:scale-95 transition-transform disabled:opacity-60">

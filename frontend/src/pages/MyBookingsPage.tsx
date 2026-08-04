@@ -19,6 +19,7 @@ import {
     Info,
     Loader2,
 } from "lucide-react";
+import { paidMoney } from "../utils/currency";
 
 const MyBookingsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -596,7 +597,7 @@ const LiveBookingCard = ({ booking, index }: { booking: any; index: number }) =>
                 </div>
                 <div className="flex items-center gap-1 text-[#FF7000]">
                     <span className="text-[10px] font-bold text-gray-400">Paid:</span>
-                    <span className="text-sm font-black">₹{booking.amount}</span>
+                    <span className="text-sm font-black">{paidMoney(booking)}</span>
                 </div>
             </div>
 

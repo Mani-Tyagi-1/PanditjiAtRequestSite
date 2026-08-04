@@ -3,6 +3,7 @@ import { Check, ChevronLeft, Clock, CreditCard, Shield, Lock, CheckCircle, Phone
 import { useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
+import { money } from "../utils/currency";
 
 const TIME_SLOTS = [
   { value: "9-11", display: "9 AM - 11 AM", period: "Morning" },
@@ -116,7 +117,7 @@ export default function PaidConsultationPage() {
         amount: Number(orderData.amount) * 100,
         currency: orderData.currency || "INR",
         name: "PanditJiAtRequest",
-        description: `Personalised Consultation - ₹${orderData.amount || 101}`,
+        description: `Personalised Consultation - ${money(orderData.amount || 101)}`,
         order_id: orderData.razorpayOrderId,
         prefill: {
           name: form.fullName,
@@ -264,7 +265,7 @@ export default function PaidConsultationPage() {
                   <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-2xl">
                     🔥 SPECIAL INTRODUCTORY OFFER
                   </div>
-                  <p className="text-3xl font-bold text-stone-800 mt-3">Only ₹{amount}</p>
+                  <p className="text-3xl font-bold text-stone-800 mt-3">Only {money(amount)}</p>
                   <p className="text-stone-500 text-sm">for 30-minute personalised consultation</p>
                 </div>
                 <div className="text-4xl">🪔</div>
@@ -380,7 +381,7 @@ export default function PaidConsultationPage() {
             className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.97] text-white font-bold py-4 rounded-3xl shadow-xl shadow-orange-200 transition-all duration-200 text-base flex items-center justify-center gap-3 disabled:opacity-60"
           >
             <CreditCard className="w-5 h-5" />
-            {submitting ? "Processing..." : `Pay ₹${amount} Securely Now`}
+            {submitting ? "Processing..." : `Pay ${money(amount)} Securely Now`}
           </button>
 
           {/* Trust signals */}

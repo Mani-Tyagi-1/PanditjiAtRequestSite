@@ -164,10 +164,22 @@ export interface IPendingPoojaBooking extends Document {
   emailId?: string;
 
   // Payment / amounts
-  amount: number;              // total amount for the booking (charged)
+  amount: number;              // total amount for the booking, ALWAYS in INR
   panditDakshina?: number;     // optional: dakshina component of the total
   couponCode?: string;
   razorpayOrderId?: string;    // stored after order creation before user payment
+
+  // ── International checkout (presentment currency) ──
+  // `amount` above stays the INR source of truth for every downstream consumer
+  // (WhatsApp, admin, Meta CAPI, reporting). These three only describe what the
+  // devotee's card was actually billed when they paid from outside India, and
+  // are absent on a normal INR booking.
+  currency?: string;           // ISO-4217 the Razorpay order was created in
+  chargedAmount?: number;      // `amount` converted into `currency`
+  fxRate?: number;             // INR per 1 unit of `currency`, at booking time
+  country?: string;            // "United States" — readable, for ops and reports
+  countryCode?: string;        // "US" — the stable key to group/filter on
+  priceMultiplier?: number;    // foreign markup applied to reach `amount` (1 = none)
 
   // Lifecycle
   isConfirmed: boolean;        // becomes true when a pandit accepts
@@ -240,8 +252,15 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     poojaPrice: { type: Number, required: true },
     bookingDate: { type: Date, required: true },
 
-    // Amounts
+    // Amounts — `amount` is INR; the three currency fields describe the
+    // foreign charge when the devotee paid from outside India.
     amount: { type: Number, required: true },
+    currency: { type: String, default: 'INR' },
+    chargedAmount: { type: Number },
+    fxRate: { type: Number },
+    country: { type: String },
+    countryCode: { type: String, index: true },
+    priceMultiplier: { type: Number },
     panditDakshina: { type: Number, default: undefined },
     couponCode: { type: String, trim: true },
 

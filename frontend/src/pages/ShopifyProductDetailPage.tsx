@@ -17,6 +17,7 @@ import {
 import API_URL from "../utils/apiConfig";
 import { type ShopifyProduct } from "../components/booking/Shop/shopifyTypes";
 import { useShopifyCart } from "../context/ShopifyCartContext";
+import { money } from "../utils/currency";
 
 export default function ShopifyProductDetailPage() {
     // URL shape is /shop/<category>/<handle>; the legacy /shop/product/<handle>
@@ -206,12 +207,12 @@ export default function ShopifyProductDetailPage() {
                 <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-baseline gap-2.5">
                         <span className="text-3xl font-black text-orange-600">
-                            ₹{minPrice.toLocaleString("en-IN")}
+                            {money(minPrice)}
                         </span>
                         {hasDiscount && (
                             <>
                                 <span className="text-base text-stone-500 line-through">
-                                    ₹{maxPrice.toLocaleString("en-IN")}
+                                    {money(maxPrice)}
                                 </span>
                                 <span className="text-[13px] font-bold text-emerald-600">{discountPercent}% off</span>
                             </>
@@ -282,7 +283,7 @@ export default function ShopifyProductDetailPage() {
                     className="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-md hover:shadow-lg active:scale-95 transition-all text-center flex items-center justify-center gap-2 text-sm"
                 >
                     <ShoppingCart className="w-4 h-4" />
-                    Add to Cart · ₹{(minPrice * qty).toLocaleString("en-IN")}
+                    Add to Cart · {money((minPrice * qty))}
                 </button>
             </div>
         </main>

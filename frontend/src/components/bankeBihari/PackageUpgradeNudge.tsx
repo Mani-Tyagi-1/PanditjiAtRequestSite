@@ -2,6 +2,7 @@ import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { Sparkles, Users, X, ChevronRight } from "lucide-react";
 import type { PujaPackageId } from "../../data/bankeBihariPuja";
 import { ItemTileRow } from "./ItemTiles";
+import { useMoney } from "../../utils/currency";
 
 /**
  * The one-step package upgrade toast on the booking page.
@@ -61,6 +62,9 @@ export default function PackageUpgradeNudge({
     onUpgrade: () => void;
     onDismiss: () => void;
 }) {
+    // Prices stay INR in the data layer; only what is drawn changes.
+    const { money } = useMoney();
+
     const handleDragEnd = (_: unknown, info: PanInfo) => {
         if (
             Math.abs(info.offset.x) > SWIPE_DISTANCE ||
@@ -153,7 +157,7 @@ export default function PackageUpgradeNudge({
                             onClick={onUpgrade}
                             className="mt-2.5 w-full flex items-center justify-center gap-1 rounded-xl bg-[#F7C547] py-2.5 text-[13px] font-extrabold text-[#5A3600] shadow-md outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-[0.98] transition-transform"
                         >
-                            Upgrade for +₹{offer.diff.toLocaleString("en-IN")}
+                            Upgrade for +{money(offer.diff)}
                             <ChevronRight className="w-3.5 h-3.5" strokeWidth={3} />
                         </button>
                     </div>

@@ -4,6 +4,7 @@ import { Share2, ChevronRight } from "lucide-react";
 import axios from "axios";
 import { CHADHAVA_FALLBACK, Chadhava } from "./chadhavaFallback";
 import API_URL from "../../utils/apiConfig";
+import { money } from "../../utils/currency";
 
 const CHADHAVA_LIST_URL = `${API_URL}/config/get-all-new-chadhava-proxy`;
 
@@ -276,7 +277,7 @@ export default function SacredChadhavaSewa() {
                                     {/* Price and Action Row */}
                                     <div className="flex items-center justify-between">
                                         <span className="text-[25px] font-extrabold text-[#D85C0E]">
-                                            ₹{c.startingPrice.toLocaleString("en-IN")}
+                                            {money(c.startingPrice)}
                                         </span>
                                         <button
                                             onClick={(e) => {

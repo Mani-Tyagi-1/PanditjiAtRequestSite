@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Gift, X, Plus, Check } from "lucide-react";
+import { useMoney } from "../../utils/currency";
 
 /**
  * The prasad-box toast.
@@ -43,6 +44,9 @@ export default function PrasadBoxNudge({
     onAdd: () => void;
     onDismiss: () => void;
 }) {
+    // Prices stay INR in the data layer; only what is drawn changes.
+    const { money } = useMoney();
+
     // Only `add` is an upsell and gets the pink "do something" fill; the other
     // two are confirmations and get green.
     const isOffer = nudge?.kind === "add";
@@ -132,7 +136,7 @@ export default function PrasadBoxNudge({
                                 className="shrink-0 flex items-center gap-0.5 rounded-full bg-[#F7C547] px-3 py-1.5 text-[12px] font-extrabold text-[#5A3600] shadow-md outline-none focus-visible:ring-2 focus-visible:ring-white active:scale-95 transition-transform"
                             >
                                 <Plus className="w-3 h-3" strokeWidth={3.5} />
-                                ₹{nudge.price}
+                                {money(nudge.price)}
                             </button>
                         )}
 

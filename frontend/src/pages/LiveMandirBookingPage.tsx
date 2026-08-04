@@ -8,6 +8,9 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
+import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
+import CountryPicker from "../components/checkout/CountryPicker";
+import PhoneField from "../components/checkout/PhoneField";
 
 // Puja handed over from LiveMandirPujaDetailPage via navigate(..., { state }).
 // Carried in router state (not the URL) so a direct hit / refresh — which has no
@@ -34,6 +37,10 @@ const INPUT =
 const LABEL = "text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block";
 
 export default function LiveMandirBookingPage() {
+    // Where the devotee is paying from. `money` renders every price below in
+    // their currency; `toInr` converts a list price into the INR this sale is
+    // actually worth, which is what the booking records and the server bills.
+    const { country, currency, isIndia, money, inr: toInr } = useMoney();
     const { user, login } = useAuth();
     const navigate = useNavigate();
     const { slug } = useParams<{ slug: string }>();
@@ -86,9 +93,16 @@ export default function LiveMandirBookingPage() {
         }));
     }, [user]);
 
+    // Blessed prasad is couriered within India only — see `shipsPrasad`. Gated
+    // on the DERIVED value so one guard turns the whole feature off: no bill
+    // line, no delivery step, no courier instruction on the booking, and a
+    // devotee who switched country cannot be left paying for a parcel that will
+    // never be sent.
+    const prasadAdded = isIndia && form.prasadAdded;
+
     // Load saved addresses if logged in and Prasad is added
     useEffect(() => {
-        if (user && form.prasadAdded) {
+        if (user && prasadAdded) {
             fetch(`${API_URL}/addresses?userId=${user._id}`)
                 .then((res) => res.json())
                 .then((data) => {
@@ -104,7 +118,7 @@ export default function LiveMandirBookingPage() {
                 })
                 .catch((err) => console.error("Error fetching addresses:", err));
         }
-    }, [user, form.prasadAdded]);
+    }, [user, prasadAdded]);
 
     // Load Razorpay script
     useEffect(() => {
@@ -121,13 +135,13 @@ export default function LiveMandirBookingPage() {
     // running total.
     const basePrice = puja?.price ?? 0;
     const familyCost = form.familyMembers.length * 101;
-    const prasadCost = form.prasadAdded ? 501 : 0;
+    const prasadCost = prasadAdded ? 501 : 0;
     const totalPrice = basePrice + familyCost + prasadCost;
 
     // Whatever delivery address the devotee has settled on so far — a selected
     // saved address, or the new-address form once they start typing into it.
     // Kept out of the abandoned-cart draft while it is still blank.
-    const draftAddress = !form.prasadAdded
+    const draftAddress = !prasadAdded
         ? null
         : selectedAddressId
             ? addresses.find((a) => (a._id || a.id) === selectedAddressId) || null
@@ -139,7 +153,7 @@ export default function LiveMandirBookingPage() {
     // number is typed, then patched with every further detail, so a devotee who
     // drops off before paying is still reachable with full context.
     const { markCartConverted } = useAbandonedCart("live-mandir-booking", {
-        phone: form.phone,
+        phone: toStoredPhone(form.phone, country),
         name: form.name,
         gotra: form.gotra,
         wish: form.wish,
@@ -147,11 +161,11 @@ export default function LiveMandirBookingPage() {
         pujaSlug: slug,
         pujaName: puja?.pujaName,
         templeName: puja?.templeName,
-        amount: totalPrice,
+        amount: toInr(totalPrice),
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
-        extra: { members: form.members, prasadAdded: form.prasadAdded },
+        extra: { members: form.members, prasadAdded },
     }, String(puja?.id || slug || ""));
 
     if (!puja) return null;
@@ -182,14 +196,14 @@ export default function LiveMandirBookingPage() {
             return;
         }
 
-        const phoneDigits = form.phone.replace(/\D/g, "");
-        if (phoneDigits.length !== 10) {
-            setError("Please enter a valid 10-digit mobile number.");
+        if (!isValidPhone(form.phone, country)) {
+            setError(`Please enter a valid ${country.name} mobile number.`);
             return;
         }
+        const phoneDigits = toStoredPhone(form.phone, country);
 
         let addressPayload: any = null;
-        if (form.prasadAdded) {
+        if (prasadAdded) {
             if (user && !showNewAddressForm) {
                 if (!selectedAddressId) {
                     setError("Please select a delivery address.");
@@ -238,7 +252,13 @@ export default function LiveMandirBookingPage() {
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
                     phone: phoneDigits,
-                    amount: totalPrice,
+                    // Marked-up INR — the value of this sale, not the
+                    // India list price. See utils/currency `inrEquivalent`.
+                    amount: toInr(totalPrice),
+                    currency,
+                    dialCode: country.dial,
+                    countryCode: country.iso2,
+                    country: country.name,
                     poojaMode: "online",
                     bookingDate: resolveScheduledDate(puja.scheduledDate),
                     familyMembers: form.familyMembers,
@@ -259,8 +279,10 @@ export default function LiveMandirBookingPage() {
             // 2. Open Razorpay checkout widget
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: totalPrice * 100,
-                currency: "INR",
+                // Straight from the order the server just created — deriving
+                // these again is the one place display and charge could drift.
+                amount: orderData.amountMinor ?? toInr(totalPrice) * 100,
+                currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
                 description: `${puja.pujaName} — ${puja.templeName}`,
                 order_id: orderData.razorpayOrderId,
@@ -282,7 +304,7 @@ export default function LiveMandirBookingPage() {
                                 razorpayOrderId: response.razorpay_order_id,
                                 razorpayPaymentId: response.razorpay_payment_id,
                                 razorpaySignature: response.razorpay_signature,
-                                amountPaid: totalPrice,
+                                amountPaid: toInr(totalPrice),
                             })),
                         });
                         const verifyData = await verifyRes.json();
@@ -379,6 +401,15 @@ export default function LiveMandirBookingPage() {
                 </div>
             </div>
 
+            {/* The currency every price below is quoted in. Detected
+                automatically; this row is the correction. Shown before any
+                price is read — a currency the devotee only meets at the card
+                screen is a cancelled payment. */}
+            <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#FFE3C2] bg-[#FFFAF3]">
+                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
+                <CountryPicker className="bg-white border border-[#FFE3C2] text-stone-700" accentClass="text-orange-600" />
+            </div>
+
             {/* Content */}
             <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
@@ -395,7 +426,7 @@ export default function LiveMandirBookingPage() {
                             {puja.pujaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5">{puja.pujaNameHindi}</p>}
                             <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
                                 <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
-                                <span className="text-xl font-bold text-stone-900">₹{basePrice.toLocaleString("en-IN")}</span>
+                                <span className="text-xl font-bold text-stone-900">{money(basePrice)}</span>
                             </div>
                         </div>
 
@@ -412,12 +443,12 @@ export default function LiveMandirBookingPage() {
                                 {/* Mobile Number input (required if user not logged in or edit allowed) */}
                                 <div>
                                     <label className={LABEL}>Mobile Number *</label>
-                                    <input
+                                    <PhoneField
+                                        country={country}
                                         value={form.phone}
-                                        onChange={(e) => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
-                                        placeholder="10-digit number for live link & updates"
-                                        inputMode="numeric"
-                                        className={INPUT}
+                                        onChange={(phone) => setForm((f) => ({ ...f, phone }))}
+                                        inputClass={INPUT}
+                                        prefixClass="text-orange-600"
                                     />
                                 </div>
                                 <div>
@@ -447,7 +478,7 @@ export default function LiveMandirBookingPage() {
                                 <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">02</span>
                                 <div>
                                     <h3 className="font-bold text-stone-800 text-[14px]">Family Sankalp</h3>
-                                    <p className="text-[11px] text-stone-400">Add members at ₹101 each</p>
+                                    <p className="text-[11px] text-stone-400">Add members at {money(101)} each</p>
                                 </div>
                             </div>
                             <div className="flex gap-2">
@@ -515,7 +546,7 @@ export default function LiveMandirBookingPage() {
                                 />
                                 <div>
                                     <p className="text-xs font-bold text-stone-800">Add Sacred Prasad</p>
-                                    <p className="text-[11px] text-stone-400 mt-0.5">Blessed at the Mandir · +₹501</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5">Blessed at the Mandir · +{money(501)}</p>
                                 </div>
                             </label>
 
@@ -660,7 +691,7 @@ export default function LiveMandirBookingPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D85C0E]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <span className="text-[20px] font-extrabold text-[#D85C0E]">{money(totalPrice)}</span>
                         </div>
                         <button
                             onClick={handleConfirm}

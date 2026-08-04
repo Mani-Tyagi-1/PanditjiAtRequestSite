@@ -7,6 +7,7 @@ import {
     type SavanPackageId,
 } from "../../data/kashiMahadevPuja";
 import { ItemTileRow } from "./ItemTiles";
+import { shipsPrasad, useMoney } from "../../utils/currency";
 
 /**
  * Selectable Savan package cards, shared by the detail page and the booking
@@ -83,6 +84,8 @@ function PackageCard({
     onSelect: (id: SavanPackageId) => void;
 }) {
     const allOfferings = packageOfferings(pkg);
+    // Prices stay INR everywhere in the data layer; only what is drawn changes.
+    const { country, money } = useMoney();
 
     return (
         <div
@@ -123,7 +126,7 @@ function PackageCard({
                         </div>
                     </div>
                     <p className="shrink-0 font-svn-head lining-nums text-[21px] font-bold leading-none text-[#7A1622]">
-                        ₹{pkg.price.toLocaleString("en-IN")}
+                        {money(pkg.price)}
                     </p>
                 </div>
 
@@ -159,7 +162,7 @@ function PackageCard({
                         note, not a control: the box is added on the booking
                         page. The entry tier has no note, so its card ends at
                         the offerings. */}
-                    {pkg.prasadNote && (
+                    {pkg.prasadNote && shipsPrasad(country) && (
                         <p className="mt-2 flex items-center gap-1.5 rounded-xl bg-[#F3E5BF] border border-[#D8B66A] px-2.5 py-1.5 text-[11px] font-medium leading-snug text-[#8E6A25]">
                             <Gift className="w-3.5 h-3.5 shrink-0 text-[#C79A2B]" />
                             <span>{pkg.prasadNote}</span>

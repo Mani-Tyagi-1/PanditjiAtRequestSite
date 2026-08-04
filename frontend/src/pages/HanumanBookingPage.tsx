@@ -12,6 +12,9 @@ import {
     EXTRA_FAMILY_MEMBER_PRICE, DEFAULT_PACKAGE_ID, getPackage, HANUMAN_PACKAGES,
     extraFamilyCount, packageTotal, packageNeedsDelivery, type PujaPackageId,
 } from "../data/hanumanPuja";
+import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
+import CountryPicker from "../components/checkout/CountryPicker";
+import PhoneField from "../components/checkout/PhoneField";
 
 type Step = "details" | "success";
 
@@ -44,6 +47,10 @@ function resolveBookingDate(dateLabel: string, time: string): string {
 }
 
 export default function HanumanBookingPage() {
+    // Where the devotee is paying from. `money` renders every price below in
+    // their currency; `toInr` converts a list price into the INR this sale is
+    // actually worth, which is what the booking records and the server bills.
+    const { country, currency, isIndia, money, inr: toInr } = useMoney();
     const { user, login } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -55,7 +62,12 @@ export default function HanumanBookingPage() {
         (location.state as { packageId?: PujaPackageId } | null)?.packageId ?? DEFAULT_PACKAGE_ID;
     const [packageId, setPackageId] = useState<PujaPackageId>(initialPackageId);
     const selectedPkg = getPackage(packageId);
-    const needsDelivery = packageNeedsDelivery(selectedPkg);
+    // Blessed prasad is couriered within India only — see `shipsPrasad`. Gated
+    // on the DERIVED value so one guard turns the whole feature off: no bill
+    // line, no delivery step, no courier instruction on the booking, and a
+    // devotee who switched country cannot be left paying for a parcel that will
+    // never be sent.
+    const needsDelivery = isIndia && packageNeedsDelivery(selectedPkg);
 
     // Static frontend puja data.
     const puja = hanumanPuja;
@@ -209,7 +221,7 @@ export default function HanumanBookingPage() {
     // number is typed, then patched with every further detail, so a devotee who
     // drops off before paying is still reachable with full context.
     const { markCartConverted } = useAbandonedCart("hanuman-booking", {
-        phone: form.phone,
+        phone: toStoredPhone(form.phone, country),
         name: form.name,
         gotra: form.gotra,
         email: form.email,
@@ -219,7 +231,7 @@ export default function HanumanBookingPage() {
         templeName: puja.templeName,
         packageId: selectedPkg.id,
         packageName: packageLabel,
-        amount: totalPrice,
+        amount: toInr(totalPrice),
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
@@ -233,13 +245,13 @@ export default function HanumanBookingPage() {
     const hasTrackedDetails = useRef(false);
     const trackCustomerDetails = () => {
         if (hasTrackedDetails.current) return;
-        if (form.name.trim().length < 3 || form.phone.replace(/\D/g, "").length < 10) return;
+        if (form.name.trim().length < 3 || !isValidPhone(form.phone, country)) return;
         hasTrackedDetails.current = true;
         if ((window as any).fbq) {
             (window as any).fbq("track", "CustomerDetailsFilled", {
                 content_name: puja.poojaNameEng,
                 bhaktName: form.name.trim(),
-                contactNumber: form.phone.replace(/\D/g, ""),
+                contactNumber: toStoredPhone(form.phone, country),
             });
         }
     };
@@ -260,11 +272,11 @@ export default function HanumanBookingPage() {
             return;
         }
 
-        const phoneDigits = form.phone.replace(/\D/g, "");
-        if (phoneDigits.length !== 10) {
-            setError("Please enter a valid 10-digit mobile number.");
+        if (!isValidPhone(form.phone, country)) {
+            setError(`Please enter a valid ${country.name} mobile number.`);
             return;
         }
+        const phoneDigits = toStoredPhone(form.phone, country);
 
         // Delivery address is only required when the package ships a physical
         // blessing (Chalisa / mala / gada / kavach).
@@ -339,7 +351,13 @@ export default function HanumanBookingPage() {
                     templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,
-                    amount: totalPrice,
+                    // Marked-up INR — the value of this sale, not the
+                    // India list price. See utils/currency `inrEquivalent`.
+                    amount: toInr(totalPrice),
+                    currency,
+                    dialCode: country.dial,
+                    countryCode: country.iso2,
+                    country: country.name,
                     panditDakshina: puja.panditDakshina,
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
@@ -383,8 +401,10 @@ export default function HanumanBookingPage() {
             // 2) Open Razorpay checkout.
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: totalPrice * 100,
-                currency: "INR",
+                // Straight from the order the server just created — deriving
+                // these again is the one place display and charge could drift.
+                amount: orderData.amountMinor ?? toInr(totalPrice) * 100,
+                currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
                 description: puja.poojaNameEng,
                 order_id: orderData.razorpayOrderId,
@@ -417,7 +437,7 @@ export default function HanumanBookingPage() {
                                 razorpayOrderId: response.razorpay_order_id,
                                 razorpayPaymentId: response.razorpay_payment_id,
                                 razorpaySignature: response.razorpay_signature,
-                                amountPaid: totalPrice,
+                                amountPaid: toInr(totalPrice),
                             })),
                         });
                         const verifyData = await verifyRes.json();
@@ -511,6 +531,15 @@ export default function HanumanBookingPage() {
                 </p>
             </div>
 
+            {/* The currency every price below is quoted in. Detected
+                automatically; this row is the correction. Shown before any
+                price is read — a currency the devotee only meets at the card
+                screen is a cancelled payment. */}
+            <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#EAD9B5] bg-[#FFF8ED]">
+                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
+                <CountryPicker className="bg-white border border-[#EAD9B5] text-stone-700" accentClass="text-orange-600" />
+            </div>
+
             {/* Content */}
             <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
@@ -530,7 +559,7 @@ export default function HanumanBookingPage() {
                             <div className="mt-2.5 pt-2.5 border-t border-[#EAD9B5] space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[12.5px] text-[#7A5A3A] font-medium">{selectedPkg.name}</span>
-                                    <span className="text-[13px] font-bold text-[#4E342E]">₹{basePrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-[13px] font-bold text-[#4E342E]">{money(basePrice)}</span>
                                 </div>
 
                                 {/* Laddoo bhog — offered at the temple, shown as ₹0 value */}
@@ -573,13 +602,13 @@ export default function HanumanBookingPage() {
                                             <Users className="w-3.5 h-3.5 text-[#C63D00]" />
                                             Extra Sankalp × {chargedMembers}
                                         </span>
-                                        <span className="text-[13px] font-bold text-[#4E342E]">+₹{familyCost.toLocaleString("en-IN")}</span>
+                                        <span className="text-[13px] font-bold text-[#4E342E]">+{money(familyCost)}</span>
                                     </div>
                                 )}
 
                                 <div className="flex items-baseline justify-between pt-2 border-t border-[#EAD9B5]">
                                     <span className="text-[10px] font-bold uppercase tracking-wide text-[#7A5A3A]">Total</span>
-                                    <span className="text-xl font-extrabold text-[#C63D00]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-xl font-extrabold text-[#C63D00]">{money(totalPrice)}</span>
                                 </div>
                             </div>
                         </div>
@@ -611,8 +640,8 @@ export default function HanumanBookingPage() {
                                                     <p className="text-[11px] text-[#7A5A3A] mt-0.5">{pkg.tagline}</p>
                                                 </div>
                                                 <div className="text-right shrink-0">
-                                                    <p className="text-[17px] font-extrabold text-[#C63D00] leading-none">₹{pkg.price.toLocaleString("en-IN")}</p>
-                                                    <p className="text-[9.5px] font-bold text-[#D4A017] mt-0.5">+₹{diff.toLocaleString("en-IN")}</p>
+                                                    <p className="text-[17px] font-extrabold text-[#C63D00] leading-none">{money(pkg.price)}</p>
+                                                    <p className="text-[9.5px] font-bold text-[#D4A017] mt-0.5">+{money(diff)}</p>
                                                 </div>
                                             </div>
                                             <div className="mt-2.5 pt-2.5 border-t border-[#EAD9B5] space-y-1.5">
@@ -644,13 +673,13 @@ export default function HanumanBookingPage() {
                             <div className="space-y-3">
                                 <div>
                                     <label className={LABEL}>Mobile Number *</label>
-                                    <input
+                                    <PhoneField
+                                        country={country}
                                         value={form.phone}
-                                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                                        onChange={(phone) => setForm((f) => ({ ...f, phone }))}
                                         onBlur={trackCustomerDetails}
-                                        placeholder="10-digit number for updates"
-                                        inputMode="numeric"
-                                        className={INPUT}
+                                        inputClass={INPUT}
+                                        prefixClass="text-orange-600"
                                     />
                                 </div>
                                 <div>
@@ -683,8 +712,8 @@ export default function HanumanBookingPage() {
                                     <h3 className="font-bold text-[#4E342E] text-[14px]">Family Sankalp</h3>
                                     <p className="text-[11px] text-[#7A5A3A]">
                                         {selectedPkg.freeFamilyMembers > 0
-                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ₹${EXTRA_FAMILY_MEMBER_PRICE} each after`
-                                            : `Optional · add members at ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ${money(EXTRA_FAMILY_MEMBER_PRICE)} each after`
+                                            : `Optional · add members at ${money(EXTRA_FAMILY_MEMBER_PRICE)} each`}
                                     </p>
                                 </div>
                             </div>
@@ -696,7 +725,7 @@ export default function HanumanBookingPage() {
                                     <Sparkles className="w-3.5 h-3.5 text-[#D4A017] shrink-0" />
                                     {Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 0
                                         ? `${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length)} free family Sankalp${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 1 ? "s" : ""} left in your package`
-                                        : `Free members used — extra names add ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                        : `Free members used — extra names add ${money(EXTRA_FAMILY_MEMBER_PRICE)} each`}
                                 </div>
                             )}
 
@@ -740,7 +769,7 @@ export default function HanumanBookingPage() {
                                 >
                                     <Plus className="w-4 h-4" />
                                     {pendingFamilyName
-                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+₹${EXTRA_FAMILY_MEMBER_PRICE}`}`
+                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+${money(EXTRA_FAMILY_MEMBER_PRICE)}`}`
                                         : "Add member"}
                                 </button>
 
@@ -771,7 +800,7 @@ export default function HanumanBookingPage() {
                                             {idx < selectedPkg.freeFamilyMembers ? (
                                                 <span className="text-[11px] font-bold text-[#2E7D32] shrink-0">FREE</span>
                                             ) : (
-                                                <span className="text-[11px] font-bold text-[#C63D00] shrink-0">+₹{EXTRA_FAMILY_MEMBER_PRICE}</span>
+                                                <span className="text-[11px] font-bold text-[#C63D00] shrink-0">+{money(EXTRA_FAMILY_MEMBER_PRICE)}</span>
                                             )}
                                             <button
                                                 type="button"
@@ -790,7 +819,7 @@ export default function HanumanBookingPage() {
                                 <p className="flex items-center gap-1.5 text-[11px] text-[#7A5A3A]">
                                     <Users className="w-3.5 h-3.5 text-[#C63D00] shrink-0" />
                                     {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added
-                                    {chargedMembers > 0 ? ` · +₹${familyCost.toLocaleString("en-IN")}` : " · all free"}
+                                    {chargedMembers > 0 ? ` · +${money(familyCost)}` : " · all free"}
                                 </p>
                             )}
                         </div>
@@ -960,7 +989,7 @@ export default function HanumanBookingPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[10px] text-[#7A5A3A] font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#C63D00]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <span className="text-[20px] font-extrabold text-[#C63D00]">{money(totalPrice)}</span>
                         </div>
                         <button
                             onClick={handleConfirm}

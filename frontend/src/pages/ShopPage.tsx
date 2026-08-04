@@ -20,6 +20,7 @@ import {
     getCategory,
     slugToCategory,
 } from "../utils/shopCategories";
+import { money } from "../utils/currency";
 
 const DEFAULT_CATEGORY = "Rudraksh";
 
@@ -228,11 +229,11 @@ export default function ShopPage() {
                                             </h3>
                                             <div className="flex items-baseline gap-1.5 mt-1.5">
                                                 <span className="text-[14.5px] font-black text-orange-600">
-                                                    ₹{minPrice.toLocaleString("en-IN")}
+                                                    {money(minPrice)}
                                                 </span>
                                                 {hasDiscount && (
                                                     <span className="text-[11px] text-stone-400 line-through">
-                                                        ₹{maxPrice.toLocaleString("en-IN")}
+                                                        {money(maxPrice)}
                                                     </span>
                                                 )}
                                             </div>

@@ -34,6 +34,8 @@ import Testimonials from "../components/booking/Testimonials";
 import FAQSection from "../components/home/FAQSection";
 import TrustSanatanSection from "../components/home/TrustSanatanSection";
 import CTASection from "../components/home/CTASection";
+import { money } from "../utils/currency";
+import CountryPicker from "../components/checkout/CountryPicker";
 
 const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
@@ -214,6 +216,16 @@ export default function HomePage() {
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <img src={LOGO} alt="Pandit Ji At Request" className="h-11 w-auto object-contain" />
+                        {/* The site's main currency switch. It sits in the home
+                            header because that is the one surface every visitor
+                            passes through, and the choice is global: the store
+                            behind it is module-level, so changing it here
+                            re-prices every puja, chadhava, shop and vivah page
+                            at once rather than page by page. */}
+                        <CountryPicker
+                            className="bg-white border border-orange-200 text-stone-700 hover:border-orange-400"
+                            accentClass="text-orange-500"
+                        />
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -292,7 +304,7 @@ export default function HomePage() {
                                             )}
                                         </div>
                                         <span className="text-[13.5px] font-bold text-orange-600 shrink-0">
-                                            ₹{priceOf(p)}
+                                            {money(priceOf(p))}
                                         </span>
                                     </button>
                                 ))}
@@ -359,7 +371,7 @@ export default function HomePage() {
                                         {p.poojaNameEng}
                                     </h3>
                                     <p className="mt-1 text-[14px] font-bold text-orange-600">
-                                        ₹{priceOf(p).toLocaleString("en-IN")}
+                                        {money(priceOf(p))}
                                     </p>
                                 </div>
                             </button>

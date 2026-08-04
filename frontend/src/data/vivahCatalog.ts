@@ -25,6 +25,7 @@ import {
   DEFAULT_VIVAH_TEMPLES,
   DEFAULT_VIVAH_KASHI,
 } from "./vivahContent";
+import { money } from "../utils/currency";
 
 export type { CatalogMuhurat, VivahTemple, VivahKashi, MantraBlock, SaptapadiStep };
 
@@ -431,7 +432,7 @@ export const buildRitualsFromCatalog = (catalog: { rituals?: any[] }): Ritual[] 
 
 /** ₹ with Indian digit grouping and no decimals — e.g. ₹1,11,000. */
 export const fmtINR = (n: number | null | undefined) =>
-  `₹${Number(n || 0).toLocaleString("en-IN")}`;
+  `${money(Number(n || 0))}`;
 
 /** Effective advance % for a package: tier override → catalog default. */
 export const effectiveAdvancePercent = (

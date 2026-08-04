@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { MapPin, Star, Users, ChevronRight, Flower2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Chadhava } from "./chadhavaData";
+import { money } from "../../../utils/currency";
 
 interface Props {
     chadhava: Chadhava;
@@ -94,11 +95,11 @@ export default function ChadhavaCard({ chadhava }: Props) {
                         </span>
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[19px] font-bold text-stone-900">
-                                ₹{chadhava.startingPrice.toLocaleString("en-IN")}
+                                {money(chadhava.startingPrice)}
                             </span>
                             {chadhava.originalPrice && (
                                 <span className="text-[12px] text-stone-400 line-through">
-                                    ₹{chadhava.originalPrice.toLocaleString("en-IN")}
+                                    {money(chadhava.originalPrice)}
                                 </span>
                             )}
                         </div>

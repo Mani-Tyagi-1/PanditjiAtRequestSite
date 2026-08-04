@@ -1,4 +1,5 @@
 import { Truck, MapPin, Phone, Loader2, X, AlertCircle, ShoppingBag } from "lucide-react";
+import { money } from "../../../utils/currency";
 
 interface CodAddress {
     name: string;
@@ -80,9 +81,9 @@ export default function CodConfirmModal({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[12px] font-bold text-stone-850 leading-snug line-clamp-2">{it.title}</p>
-                                    <p className="text-[10.5px] text-stone-400 mt-0.5">Qty: {it.qty} · ₹{it.price.toLocaleString("en-IN")}</p>
+                                    <p className="text-[10.5px] text-stone-400 mt-0.5">Qty: {it.qty} · {money(it.price)}</p>
                                 </div>
-                                <span className="text-[12.5px] font-black text-orange-600 shrink-0">₹{(it.price * it.qty).toLocaleString("en-IN")}</span>
+                                <span className="text-[12.5px] font-black text-orange-600 shrink-0">{money((it.price * it.qty))}</span>
                             </div>
                         ))}
                     </div>
@@ -108,7 +109,7 @@ export default function CodConfirmModal({
                     <span className="text-[13px] font-semibold text-stone-600">
                         Amount due on delivery ({itemCount} {itemCount === 1 ? "item" : "items"})
                     </span>
-                    <span className="text-lg font-black text-orange-600">₹{total.toLocaleString("en-IN")}</span>
+                    <span className="text-lg font-black text-orange-600">{money(total)}</span>
                 </div>
 
                 {errorMsg && (

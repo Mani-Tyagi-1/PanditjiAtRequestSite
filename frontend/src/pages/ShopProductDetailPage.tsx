@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { type ShopProduct, type CartLine } from "../components/booking/Shop/shopData";
 import ShopCartModal from "../components/booking/Shop/ShopCartModal";
+import { money } from "../utils/currency";
 
 export default function ShopProductDetailPage() {
     const { slug } = useParams<{ slug: string }>();
@@ -210,10 +211,10 @@ export default function ShopProductDetailPage() {
                 {/* Price block */}
                 <div className="bg-white border border-amber-100 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
+                        <span className="text-3xl font-bold text-stone-900">{money(product.price)}</span>
                         {product.originalPrice && (
                             <>
-                                <span className="text-[16px] text-stone-400 line-through">₹{product.originalPrice.toLocaleString("en-IN")}</span>
+                                <span className="text-[16px] text-stone-400 line-through">{money(product.originalPrice)}</span>
                                 <span className="text-[13px] font-bold text-emerald-600">{discount}% off</span>
                             </>
                         )}
@@ -298,7 +299,7 @@ export default function ShopProductDetailPage() {
                             className="flex-1 flex flex-col items-center justify-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2 rounded-xl shadow-md active:scale-95 transition-transform leading-none"
                         >
                             <span className="text-[14px]">Buy Now</span>
-                            <span className="text-[10px] font-semibold text-amber-50/90 mt-0.5">₹{lineTotal.toLocaleString("en-IN")}</span>
+                            <span className="text-[10px] font-semibold text-amber-50/90 mt-0.5">{money(lineTotal)}</span>
                         </button>
                     </div>
                 )}

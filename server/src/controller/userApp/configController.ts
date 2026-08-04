@@ -1,6 +1,49 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
 import { panditJiAtRequestMongooose } from '../../config/connectDB';
+import { currencyConfig } from '../../config/currency';
+import { clientIp, countryFromRequest } from '../../utils/geoip';
+
+/**
+ * GET /api/config/currency — the live FX table plus the caller's country.
+ *
+ * Two jobs, one request, on purpose: the browser needs both before it can price
+ * the page, and a second round trip in front of a checkout buys nothing.
+ *
+ *   • rates    — the browser ships a bootstrap copy so the first paint never
+ *                waits on this; pulling the live one is what lets a rate change
+ *                (FX_RATES, see config/currency.ts) reach every visitor with no
+ *                frontend deploy, and keeps the displayed price equal to the
+ *                billed one.
+ *   • country  — resolved from the IP, which is the only signal that survives a
+ *                VPN. The browser's timezone guess paints first; this corrects
+ *                it. Null when it cannot be determined, which the browser reads
+ *                as "keep your guess".
+ *
+ * `no-store` is load-bearing. The old `public, max-age=300` was correct for a
+ * rates-only response and would be a privacy bug now: a shared or CDN cache
+ * would hand one visitor's country to the next. The payload is a few hundred
+ * bytes, so not caching it costs nothing measurable — and it makes a rate
+ * change take effect on the very next page load.
+ */
+export const getCurrencyConfig = async (req: Request, res: Response): Promise<void> => {
+  // Never allowed to fail the response: without a country the browser keeps its
+  // own detection, which is exactly the behaviour before geo-IP existed.
+  const country = await countryFromRequest(req).catch(() => null);
+
+  res.set('Cache-Control', 'private, no-store');
+  res.status(200).json({
+    ...currencyConfig(),
+    country,
+    // `?debug=1` echoes the IP this request was resolved from — the one thing
+    // you cannot otherwise see, and the first thing to check when detection
+    // "doesn't work". If it comes back as the server's own address or null,
+    // the proxy in front is not passing X-Forwarded-For and no geo lookup can
+    // succeed. It is only the caller's own IP, so echoing it tells them
+    // nothing they could not already read off any what-is-my-ip page.
+    ...(req.query.debug === '1' && { debugIp: clientIp(req) }),
+  });
+};
 
 export const getGoogleMapsConfig = (req: Request, res: Response): void => {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;

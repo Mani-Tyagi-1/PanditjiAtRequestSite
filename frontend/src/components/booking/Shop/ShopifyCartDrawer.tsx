@@ -24,6 +24,7 @@ import { useShopifyCart } from "../../../context/ShopifyCartContext";
 import { productPrice } from "./shopifyTypes";
 import CodConfirmModal from "./CodConfirmModal";
 import OrderSuccessModal from "./OrderSuccessModal";
+import { money } from "../../../utils/currency";
 
 const GIFT_WRAP_CHARGE = 49;
 const FIRST_ORDER_DISCOUNT_PERCENT = 10;
@@ -411,7 +412,7 @@ export default function ShopifyCartDrawer() {
                                                             </button>
                                                         </div>
                                                         <div className="flex items-center justify-between mt-1">
-                                                            <span className="text-sm font-black text-orange-600">₹{(price * l.qty).toLocaleString("en-IN")}</span>
+                                                            <span className="text-sm font-black text-orange-600">{money((price * l.qty))}</span>
                                                             <div className="flex items-center gap-2 border border-orange-100 rounded-xl px-2 py-1 bg-orange-50/20">
                                                                 <button type="button" onClick={() => updateQty(l.product._id, l.qty - 1)} className="p-0.5 text-stone-500 active:scale-90"><Minus className="w-3.5 h-3.5" /></button>
                                                                 <span className="text-xs font-bold text-stone-800 min-w-[12px] text-center">{l.qty}</span>
@@ -515,7 +516,7 @@ export default function ShopifyCartDrawer() {
                                                         </span>
                                                         <span className="flex flex-col">
                                                             <span className="text-[13px] font-bold text-stone-800">Add Gift Wrapping</span>
-                                                            <span className="text-[10.5px] text-stone-400">Premium wrap + personal note · ₹{GIFT_WRAP_CHARGE}</span>
+                                                            <span className="text-[10.5px] text-stone-400">Premium wrap + personal note · {money(GIFT_WRAP_CHARGE)}</span>
                                                         </span>
                                                     </span>
                                                     <span className="relative shrink-0">
@@ -555,36 +556,36 @@ export default function ShopifyCartDrawer() {
                                             <div className="bg-white border border-orange-100 rounded-2xl p-3.5 shadow-xs space-y-2 text-[12.5px]">
                                                 <div className="flex items-center justify-between text-stone-600">
                                                     <span>Subtotal ({count} {count === 1 ? "item" : "items"})</span>
-                                                    <span className="font-semibold">₹{subtotal.toLocaleString("en-IN")}</span>
+                                                    <span className="font-semibold">{money(subtotal)}</span>
                                                 </div>
                                                 {firstOrderDiscount > 0 && (
                                                     <div className="flex items-center justify-between text-emerald-600">
                                                         <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5" /> First order ({FIRST_ORDER_DISCOUNT_PERCENT}% off)</span>
-                                                        <span className="font-semibold">−₹{firstOrderDiscount.toLocaleString("en-IN")}</span>
+                                                        <span className="font-semibold">−{money(firstOrderDiscount)}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex items-center justify-between text-emerald-600">
                                                     <span className="flex items-center gap-1"><Tag className="w-3.5 h-3.5" /> Pay online & save {PREPAID_DISCOUNT_PERCENT}%</span>
-                                                    <span className="font-semibold">−₹{prepaidDiscount.toLocaleString("en-IN")}</span>
+                                                    <span className="font-semibold">−{money(prepaidDiscount)}</span>
                                                 </div>
                                                 {giftWrapCharge > 0 && (
                                                     <div className="flex items-center justify-between text-stone-600">
                                                         <span className="flex items-center gap-1"><Gift className="w-3.5 h-3.5" /> Gift wrapping</span>
-                                                        <span className="font-semibold">+₹{giftWrapCharge.toLocaleString("en-IN")}</span>
+                                                        <span className="font-semibold">+{money(giftWrapCharge)}</span>
                                                     </div>
                                                 )}
                                                 <div className="flex items-center justify-between pt-2 border-t border-orange-50 text-stone-850">
                                                     <span className="font-bold flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-orange-500" /> Online Prepaid Total</span>
-                                                    <span className="text-base font-black text-orange-600">₹{total.toLocaleString("en-IN")}</span>
+                                                    <span className="text-base font-black text-orange-600">{money(total)}</span>
                                                 </div>
                                                 {codAvailable && (
                                                     <div className="flex items-center justify-between text-stone-500">
                                                         <span className="font-semibold flex items-center gap-1"><Truck className="w-3.5 h-3.5" /> Cash on Delivery Total</span>
-                                                        <span className="font-bold">₹{codTotal.toLocaleString("en-IN")}</span>
+                                                        <span className="font-bold">{money(codTotal)}</span>
                                                     </div>
                                                 )}
                                                 {firstOrderDiscount > 0 && (
-                                                    <p className="text-[10.5px] text-emerald-600 font-semibold">🎉 You saved ₹{firstOrderDiscount.toLocaleString("en-IN")} on your first order!</p>
+                                                    <p className="text-[10.5px] text-emerald-600 font-semibold">🎉 You saved {money(firstOrderDiscount)} on your first order!</p>
                                                 )}
                                             </div>
 
@@ -614,7 +615,7 @@ export default function ShopifyCartDrawer() {
                                 <div className="p-4 border-t border-orange-100 bg-white shrink-0 space-y-3">
                                     <div className="flex items-center justify-between text-sm">
                                         <span className="text-stone-500">{user ? "Total" : "Subtotal"}</span>
-                                        <span className="font-black text-stone-850">₹{(user ? total : subtotal).toLocaleString("en-IN")}</span>
+                                        <span className="font-black text-stone-850">{money((user ? total : subtotal))}</span>
                                     </div>
                                     {!user ? (
                                         <button
@@ -635,7 +636,7 @@ export default function ShopifyCartDrawer() {
                                                 {isSubmitting ? (
                                                     <><Loader2 className="w-4 h-4 animate-spin" /><span>Processing Secure Payment...</span></>
                                                 ) : (
-                                                    <><CreditCard className="w-4 h-4" /><span>Pay ₹{total.toLocaleString("en-IN")} Securely</span></>
+                                                    <><CreditCard className="w-4 h-4" /><span>Pay {money(total)} Securely</span></>
                                                 )}
                                             </button>
                                             {codAvailable && (
@@ -645,7 +646,7 @@ export default function ShopifyCartDrawer() {
                                                     disabled={isSubmitting}
                                                     className="w-full bg-white border-2 border-orange-200 text-orange-600 font-bold py-3 rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60"
                                                 >
-                                                    <Truck className="w-4 h-4" /><span>Cash on Delivery · ₹{codTotal.toLocaleString("en-IN")}</span>
+                                                    <Truck className="w-4 h-4" /><span>Cash on Delivery · {money(codTotal)}</span>
                                                 </button>
                                             )}
                                         </>

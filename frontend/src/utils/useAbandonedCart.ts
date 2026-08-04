@@ -4,8 +4,8 @@ import API_URL from "./apiConfig";
 /**
  * Abandoned-cart capture for the booking pages.
  *
- * The devotee's mobile number is the first thing worth keeping: as soon as
- * 10 digits are typed, a row is created in Mongo (`abandonedCarts`) carrying
+ * The devotee's mobile number is the first thing worth keeping: as soon as it
+ * is long enough to dial, a row is created in Mongo (`abandonedCarts`) carrying
  * the puja they were booking. Everything they fill afterwards — name, gotra,
  * email, package, family Sankalp names, delivery address, amount — patches
  * that same row, so a drop-off at any step still leaves the team a complete
@@ -62,9 +62,20 @@ function getSessionId(source: string): string {
   }
 }
 
-function tenDigits(value: unknown): string {
-  return String(value ?? "").replace(/\D/g, "").slice(-10);
+/**
+ * The number as the lead should be stored.
+ *
+ * A bare 10-digit Indian number is kept as-is (that is what every lead in the
+ * table already looks like, and what the team dials). Anything longer arrives
+ * from the international checkout already carrying its country code and is kept
+ * whole — trimming it to the last 10 would leave a number nobody can call back.
+ */
+function leadPhone(value: unknown): string {
+  return String(value ?? "").replace(/\D/g, "");
 }
+
+/** Enough digits to be a real number in any country we take bookings from. */
+const MIN_LEAD_DIGITS = 8;
 
 // Drop empty strings / empty arrays so a half-filled form never overwrites a
 // value the server already has.
@@ -136,7 +147,7 @@ export function useAbandonedCart(source: string, draft: CartDraft, scopeKey?: st
         source,
         pageUrl: typeof window !== "undefined" ? window.location.href : undefined,
         ...compact(draft),
-        phone: tenDigits(draft.phone),
+        phone: leadPhone(draft.phone),
         ...(extraFields || {}),
       }),
     // draft is a fresh object literal each render; its serialization is the
@@ -148,7 +159,7 @@ export function useAbandonedCart(source: string, draft: CartDraft, scopeKey?: st
   // Save on every meaningful change, once the number is complete.
   useEffect(() => {
     if (convertedRef.current) return;
-    if (tenDigits(draft.phone).length !== 10) return;
+    if (leadPhone(draft.phone).length < MIN_LEAD_DIGITS) return;
 
     const body = buildBody();
     if (body === sentRef.current) return;
@@ -194,7 +205,7 @@ export function useAbandonedCart(source: string, draft: CartDraft, scopeKey?: st
   const markCartConverted = useCallback(
     (bookingId?: string) => {
       if (convertedRef.current) return;
-      if (tenDigits(draft.phone).length !== 10) return;
+      if (leadPhone(draft.phone).length < MIN_LEAD_DIGITS) return;
       convertedRef.current = true;
       if (timerRef.current) clearTimeout(timerRef.current);
       post(buildBody({ status: "converted", bookingId }), false);

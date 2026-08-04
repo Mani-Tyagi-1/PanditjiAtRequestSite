@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { encryptPayload, decryptData } from "../../../utils/encryption";
 import API_URL from "../../../utils/apiConfig";
 import { useAbandonedCart } from "../../../utils/useAbandonedCart";
+import { money } from "../../../utils/currency";
 
 // The contact number must stay a number: strip anything non-numeric and keep
 // the last 10 digits, so a pasted "+91 98765 43210" lands as "9876543210"
@@ -454,7 +455,7 @@ export default function BookingModal({
     }
 
     if (coupon.minOrderAmount && currentPoojaPrice < coupon.minOrderAmount) {
-      triggerAlert("Minimum Amount Required", `This coupon requires a minimum booking amount of ₹${coupon.minOrderAmount.toLocaleString('en-IN')}`, "info");
+      triggerAlert("Minimum Amount Required", `This coupon requires a minimum booking amount of ${money(coupon.minOrderAmount)}`, "info");
       return;
     }
 
@@ -471,7 +472,7 @@ export default function BookingModal({
     setCouponCode(coupon.code || "");
     setCouponDiscountVal(discount);
     setIsCouponsModalOpen(false);
-    triggerAlert("Coupon Applied", `Coupon ${coupon.code} applied. You save ₹${discount}. Discount will be confirmed on payment.`, "success");
+    triggerAlert("Coupon Applied", `Coupon ${coupon.code} applied. You save ${money(discount)}. Discount will be confirmed on payment.`, "success");
   };
 
   // const [googleMapsApiKey, setGoogleMapsApiKey] = useState<string | null>(null);
@@ -1596,7 +1597,7 @@ export default function BookingModal({
                         }
                         className="mt-3 text-orange-600 text-sm font-bold"
                       >
-                        + Add Another Deceased Person (₹1,100)
+                        + Add Another Deceased Person ({money(1100)})
                       </button>
                     </div>
 
@@ -1888,36 +1889,36 @@ export default function BookingModal({
               <div className="bg-orange-50/60 border border-orange-100 rounded-2xl p-3 space-y-1.5 text-sm">
                 <div className="flex justify-between text-stone-500">
                   <span>Base Puja</span>
-                  <span className="font-medium text-stone-700">₹{basePoojaPrice}</span>
+                  <span className="font-medium text-stone-700">{money(basePoojaPrice)}</span>
                 </div>
                 {isDeathRitual && deceasedPersons.length > 1 && (
                   <div className="flex justify-between text-stone-500">
                     <span>Additional Persons ({deceasedPersons.length - 1})</span>
-                    <span className="font-medium text-stone-700">₹{deathRitualExtraPrice}</span>
+                    <span className="font-medium text-stone-700">{money(deathRitualExtraPrice)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-stone-400">
                   <span className="line-through">Samagri</span>
-                  <span className="line-through">₹{samagriCharge}</span>
+                  <span className="line-through">{money(samagriCharge)}</span>
                 </div>
                 <div className="flex justify-between text-stone-400">
                   <span className="line-through">Panditji Dakshina</span>
-                  <span className="line-through">₹{panditDakshina}</span>
+                  <span className="line-through">{money(panditDakshina)}</span>
                 </div>
                 {appliedCoupon && (
                   <div className="flex justify-between text-orange-600 font-medium">
                     <span>Coupon ({appliedCoupon.code || appliedCoupon.promoCode || appliedCoupon.promoName})</span>
-                    <span>-₹{Math.floor(couponDiscount)}</span>
+                    <span>-{money(Math.floor(couponDiscount))}</span>
                   </div>
                 )}
                 <div className="h-px bg-orange-200 my-1" />
                 <div className="flex justify-between text-green-700 font-semibold">
                   <span>You Save</span>
-                  <span>₹{Math.floor(totalDiscount + couponDiscount)} ({discountPercent}% OFF)</span>
+                  <span>{money(Math.floor(totalDiscount + couponDiscount))} ({discountPercent}% OFF)</span>
                 </div>
                 <div className="flex justify-between font-bold text-stone-800 pt-1">
                   <span>Total Payable</span>
-                  <span className="text-orange-600">₹{discountedPrice}</span>
+                  <span className="text-orange-600">{money(discountedPrice)}</span>
                 </div>
               </div>
             </div> */}
@@ -2195,7 +2196,7 @@ export default function BookingModal({
                           <span className={`${isUsed ? "text-stone-500" : "text-stone-800"} font-bold text-lg`}>
                             {coupon.discountType === 'PERCENT'
                               ? `${coupon.discountValue}% OFF`
-                              : `₹${coupon.discountValue} OFF`}
+                              : `${money(coupon.discountValue)} OFF`}
                           </span>
                         </div>
 
@@ -2207,7 +2208,7 @@ export default function BookingModal({
                           </p>
                           {coupon.minOrderAmount > 0 && !isUsed && (
                             <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">
-                              Min. Order: ₹{coupon.minOrderAmount.toLocaleString('en-IN')}
+                              Min. Order: {money(coupon.minOrderAmount)}
                             </p>
                           )}
                         </div>

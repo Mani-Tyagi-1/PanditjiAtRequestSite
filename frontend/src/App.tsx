@@ -120,6 +120,7 @@ import LoginModal from "./components/auth/LoginModal";
 import ShopifyCartDrawer from "./components/booking/Shop/ShopifyCartDrawer";
 import AppDownloadModal from "./components/AppDownloadModal";
 import AppLayout from "./components/layout/AppLayout";
+import { useCurrencyRoot } from "./utils/currency";
 
 // Lazy load all other pages
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
@@ -241,6 +242,12 @@ function VivahPackageRedirect() {
 }
 
 function App() {
+  // The site's ONE currency subscription. Every price on every page is rendered
+  // by a plain `money()` call rather than a hook, so this is what makes them all
+  // repaint when the country changes — nothing here is React.memo'd, so the
+  // re-render reaches the whole tree.
+  useCurrencyRoot();
+
   return (
     <AuthProvider>
       <ShopifyCartProvider>

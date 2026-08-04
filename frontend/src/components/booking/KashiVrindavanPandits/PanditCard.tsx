@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { MapPin, Star, BadgeCheck, ChevronRight, Languages } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { HolyPandit } from "./kashiVrindavanData";
+import { money } from "../../../utils/currency";
 
 interface Props {
     pandit: HolyPandit;
@@ -77,7 +78,7 @@ export default function PanditCard({ pandit }: Props) {
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col leading-none">
                         <span className="text-[10px] font-semibold text-stone-400 uppercase tracking-wide mb-0.5">Starting at</span>
-                        <span className="text-[18px] font-bold text-stone-900">₹{pandit.startingPrice.toLocaleString("en-IN")}</span>
+                        <span className="text-[18px] font-bold text-stone-900">{money(pandit.startingPrice)}</span>
                     </div>
 
                     <button

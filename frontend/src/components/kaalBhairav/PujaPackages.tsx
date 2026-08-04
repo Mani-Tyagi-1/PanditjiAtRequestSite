@@ -3,6 +3,7 @@ import {
     KAAL_BHAIRAV_PACKAGES,
     type PujaPackageId,
 } from "../../data/kaalBhairavPuja";
+import { money } from "../../utils/currency";
 
 /**
  * Selectable Kaal Bhairav package cards, shared by the detail page and the
@@ -66,7 +67,7 @@ export default function PujaPackages({
                                 </div>
                                 <div className="text-right shrink-0">
                                     <p className="text-[19px] font-extrabold leading-none text-[#8B0000]">
-                                        ₹{pkg.price.toLocaleString("en-IN")}
+                                        {money(pkg.price)}
                                     </p>
                                     <p className="text-[8.5px] uppercase tracking-wide mt-0.5 text-[#B7AE9C]">one-time</p>
                                 </div>

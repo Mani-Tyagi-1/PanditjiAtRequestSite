@@ -11,7 +11,12 @@
  * server re-derives the foreign charge from it. A tampered client can only ever
  * ask to be billed in a different currency, never for a different amount.
  *
- * ── Updating rates and foreign pricing without a code change ────────────────
+ * ── TO CHANGE PRICING, EDIT `config/pricing.ts` ─────────────────────────────
+ * That file holds the tier ladder, per-currency overrides, exchange rates and
+ * the FX buffer, with the reasoning next to each. This module only resolves
+ * them (applying any env override) and exposes the result.
+ *
+ * ── Env overrides, for a hotfix without a deploy ────────────────────────────
  *   FX_RATES="USD:90,GBP:118,EUR:99"   # INR per 1 unit; only the listed
  *                                      # currencies change, rest keep defaults
  *   FX_BUFFER="1.04"                   # margin over the raw rate (1.03 = 3%)
@@ -23,7 +28,19 @@
  * checkout down.
  */
 
+import {
+  CURRENCY_MULTIPLIER_OVERRIDES,
+  EXCHANGE_RATES,
+  FOREIGN_PRICE_TIERS,
+  FX_BUFFER as CONFIGURED_BUFFER,
+} from './pricing';
+
 export const BASE_CURRENCY = 'INR';
+
+/** The committed tables from `config/pricing.ts`, before any env override. */
+const DEFAULT_RATES: Record<string, CurrencyDef> = EXCHANGE_RATES;
+const DEFAULT_TIERS: Array<[under: number, multiplier: number]> =
+  FOREIGN_PRICE_TIERS.map((t) => [t.under, t.multiplier]);
 
 type CurrencyDef = {
   /** Minor-unit exponent — Razorpay bills in the smallest unit (×100, ×1 for JPY). */
@@ -39,32 +56,6 @@ type CurrencyDef = {
  * someone and their payment. Review these a few times a year, or override them
  * via FX_RATES when they drift faster than that.
  */
-const DEFAULT_RATES: Record<string, CurrencyDef> = {
-  INR: { exp: 2, inr: 1 },
-  USD: { exp: 2, inr: 88 },
-  EUR: { exp: 2, inr: 96 },
-  GBP: { exp: 2, inr: 113 },
-  AUD: { exp: 2, inr: 57 },
-  CAD: { exp: 2, inr: 63 },
-  SGD: { exp: 2, inr: 66 },
-  AED: { exp: 2, inr: 24 },
-  NZD: { exp: 2, inr: 52 },
-  CHF: { exp: 2, inr: 105 },
-  MYR: { exp: 2, inr: 20 },
-  HKD: { exp: 2, inr: 11.3 },
-  ZAR: { exp: 2, inr: 4.8 },
-  SAR: { exp: 2, inr: 23.5 },
-  QAR: { exp: 2, inr: 24.2 },
-  THB: { exp: 2, inr: 2.6 },
-  MUR: { exp: 2, inr: 1.9 },
-  FJD: { exp: 2, inr: 39 },
-  TTD: { exp: 2, inr: 13 },
-  SEK: { exp: 2, inr: 8.6 },
-  NOK: { exp: 2, inr: 8.3 },
-  DKK: { exp: 2, inr: 12.9 },
-  NPR: { exp: 2, inr: 0.63 },
-  JPY: { exp: 0, inr: 0.58 },
-};
 
 /**
  * `FX_RATES="USD:90,GBP:118"` → the listed currencies only.
@@ -109,7 +100,7 @@ function resolveBuffer(): number {
   if (process.env.FX_BUFFER) {
     console.warn(`[FX] Ignoring FX_BUFFER="${process.env.FX_BUFFER}": expected a number between 1 and 1.25.`);
   }
-  return 1.03;
+  return CONFIGURED_BUFFER;
 }
 
 /**
@@ -126,8 +117,51 @@ function resolveBuffer(): number {
  *
  * INR is never multiplied: the home market always pays the list price.
  */
+/**
+ * Default markup by how strong the currency is against the rupee.
+ *
+ * Read as "1 unit of their money is worth less than N rupees → charge M×".
+ * The weaker a unit is against INR, the larger the number on their price tag
+ * for the same seva, and the more headroom there is before it reads as
+ * expensive locally.
+ *
+ * Override the whole ladder with FX_TIERS="100:4,150:3,*:2", a single currency
+ * with FX_MULTIPLIERS="NPR:1", or drop back to one flat number for everyone
+ * with FX_MULTIPLIER.
+ */
+
+function resolveTiers(): Array<[number, number]> {
+  const raw = process.env.FX_TIERS;
+  if (!raw) return DEFAULT_TIERS;
+
+  const out: Array<[number, number]> = [];
+  for (const pair of raw.split(',')) {
+    const [boundRaw, multRaw] = pair.split(':');
+    const bound = boundRaw?.trim() === '*' ? Infinity : Number(boundRaw);
+    const mult = Number(multRaw);
+    if (!Number.isFinite(mult) || mult <= 0 || mult > 20 || (!Number.isFinite(bound) && boundRaw?.trim() !== '*')) {
+      console.warn(`[FX] Ignoring FX_TIERS entry "${pair.trim()}": expected "<inr>:<multiplier>" or "*:<multiplier>".`);
+      continue;
+    }
+    out.push([bound, mult]);
+  }
+  if (!out.length) return DEFAULT_TIERS;
+  // Ascending, so the first bound a rate falls under is the narrowest match.
+  return out.sort((a, b) => a[0] - b[0]);
+}
+
+const FX_TIERS = resolveTiers();
+
+/** The tier a currency lands in, from what one unit of it is worth in rupees. */
+function tierMultiplier(inrPerUnit: number): number {
+  for (const [under, mult] of FX_TIERS) {
+    if (inrPerUnit < under) return mult;
+  }
+  return 1;
+}
+
 function resolveMultipliers(known: Record<string, CurrencyDef>): {
-  multiplier: number;
+  multiplier: number | null;
   multipliers: Record<string, number>;
 } {
   const parse = (raw: string | undefined, label: string): number | null => {
@@ -140,9 +174,11 @@ function resolveMultipliers(known: Record<string, CurrencyDef>): {
     return null;
   };
 
-  const multiplier = parse(process.env.FX_MULTIPLIER, 'FX_MULTIPLIER') ?? 1;
+  // null, not 1: absent means "fall through to the tier ladder".
+  const multiplier = parse(process.env.FX_MULTIPLIER, 'FX_MULTIPLIER');
 
-  const multipliers: Record<string, number> = {};
+  // Seeded from config/pricing.ts; FX_MULTIPLIERS can still override per code.
+  const multipliers: Record<string, number> = { ...CURRENCY_MULTIPLIER_OVERRIDES };
   for (const pair of String(process.env.FX_MULTIPLIERS || '').split(',')) {
     if (!pair.trim()) continue;
     const [codeRaw, valueRaw] = pair.split(':');
@@ -180,10 +216,34 @@ export function markUpInr(listInr: number, currency: string): number {
   return Math.round(Number(listInr) * multiplierFor(currency));
 }
 
-/** What this currency's buyers pay relative to the India list price. */
+/**
+ * What this currency's buyers pay relative to the India list price.
+ *
+ * Most specific wins:
+ *   1. FX_MULTIPLIERS — this exact currency, set by hand.
+ *   2. FX_MULTIPLIER  — one flat number for everyone, which turns the ladder off.
+ *   3. the tier ladder, from how strong the currency is against the rupee.
+ * The home market is never marked up.
+ */
 export function multiplierFor(currency: string): number {
   if (currency === BASE_CURRENCY) return 1;
-  return FX_MULTIPLIERS[currency] ?? FX_MULTIPLIER;
+  const explicit = FX_MULTIPLIERS[currency];
+  if (explicit !== undefined) return explicit;
+  if (FX_MULTIPLIER !== null) return FX_MULTIPLIER;
+  return tierMultiplier(CURRENCIES[currency]?.inr ?? 1);
+}
+
+/**
+ * The multiplier for every currency, already resolved.
+ *
+ * Sent to the browser so the tier rule exists in exactly ONE place. The client
+ * looks the answer up rather than re-deriving it, which is what stops the two
+ * from ever disagreeing about a price.
+ */
+function resolvedMultipliers(): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const code of Object.keys(CURRENCIES)) out[code] = multiplierFor(code);
+  return out;
 }
 
 /**
@@ -196,8 +256,9 @@ export function currencyConfig() {
   return {
     buffer: FX_BUFFER,
     rates: CURRENCIES,
-    multiplier: FX_MULTIPLIER,
-    multipliers: FX_MULTIPLIERS,
+    // Every currency's final multiplier, tiers already applied — the browser
+    // never re-derives the rule.
+    multipliers: resolvedMultipliers(),
   };
 }
 

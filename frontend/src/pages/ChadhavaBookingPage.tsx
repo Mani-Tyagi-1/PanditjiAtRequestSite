@@ -10,7 +10,7 @@ import { useAbandonedCart } from "../utils/useAbandonedCart";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 import { useMoney } from "../utils/currency";
-import CountryPicker from "../components/checkout/CountryPicker";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
 // State handed over from ChadhavaDetailPage via navigate(..., { state }). Carried
 // in router state (not the URL) so the cart selections survive the page change;
@@ -447,14 +447,15 @@ export default function ChadhavaBookingPage() {
                 <h1 className="text-[17px] font-bold text-stone-800">Complete your Seva</h1>
             </div>
 
-            {/* The currency every price below is quoted in. Detected
-                automatically; this row is the correction. Shown before any price
-                is read — a currency the devotee only meets at the card screen is
-                a cancelled payment. */}
-            <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-[#FFEFE2] bg-[#FFFAF5]">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
-                <CountryPicker className="bg-white border border-[#FFEFE2] text-stone-700" accentClass="text-[#E05A10]" />
-            </div>
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-[#FFEFE2] bg-[#FFFAF5]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
+                    <CountryPicker className="bg-white border border-[#FFEFE2] text-stone-700" accentClass="text-[#E05A10]" />
+                </div>
+*/}
 
             <div className="px-4 py-4 space-y-4">
                 {done ? (

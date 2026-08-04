@@ -25,7 +25,7 @@ import { ItemTileRow } from "../components/bankeBihari/ItemTiles";
 import PrasadBoxNudge, { type PrasadNudge } from "../components/bankeBihari/PrasadBoxNudge";
 import HeroBannerCarousel, { bannerImg } from "../components/bankeBihari/HeroBannerCarousel";
 import { useMoney, shipsPrasad } from "../utils/currency";
-import CountryPicker from "../components/checkout/CountryPicker";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -736,19 +736,20 @@ export default function BankeBihariPage() {
               Choose your seva
             </SectionTitle>
 
-            {/* Currency switcher, immediately above the cards. This is where the
-                prices are first compared, so it is the one place the devotee
-                needs to be able to say "not that currency" — detection is right
-                almost always, and one tap fixes the rest. */}
-            <div className="mb-2.5 flex items-center justify-between gap-2">
-              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8A8A8A]">
-                Prices in
-              </span>
-              <CountryPicker
-                className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
-                accentClass="text-[#D63D72]"
-              />
-            </div>
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="mb-2.5 flex items-center justify-between gap-2">
+                  <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8A8A8A]">
+                    Prices in
+                  </span>
+                  <CountryPicker
+                    className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
+                    accentClass="text-[#D63D72]"
+                  />
+                </div>
+*/}
             {/* One line only — every card already carries its own "Tap to see
                 everything included" prompt, so spelling that out here twice was
                 the bulk of the copy in this block. */}

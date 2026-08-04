@@ -65,26 +65,43 @@ type CurrencyDef = {
 let FX_BUFFER = 1.03;
 
 /**
- * How much more a foreign buyer pays than the India list price — 1 = same,
- * 2 = double, 0.5 = half. Set on the server (`FX_MULTIPLIER` /
- * `FX_MULTIPLIERS`) and synced down with the rates, so there is one place to
- * change it and no deploy needed.
+ * The markup is applied HERE rather than on the server, and that is
+ * load-bearing: the INR total the browser sends becomes the booking's `amount`,
+ * which every downstream system treats as the value of the sale. Marking up
+ * here keeps that figure equal to what the card was actually charged; marking
+ * up on the server instead would leave every booking recording the India price
+ * for a sale made at four times it.
  *
- * Applied HERE rather than on the server, and that is load-bearing: the INR
- * total the browser sends becomes the booking's `amount`, which is the number
- * every downstream system treats as the sale's value. Marking up here keeps
- * that figure equal to what the card was actually charged. Marking up on the
- * server instead would leave every booking recording the India price for a sale
- * made at twice it.
+ * (Flows where the SERVER owns the price — chadhava, vivah — mark up there
+ * instead, via `markUpInr`. Same config, applied once either way.)
  *
- * The home market is never multiplied.
+ * Default markup ladder, keyed on how strong a currency is against the rupee:
+ * a unit worth under ₹100 is charged 3×, under ₹150 2.5×, otherwise 2×.
+ *
+ * This is a BOOTSTRAP copy, used for the first paint only. The real ladder
+ * lives in `server/src/config/pricing.ts` — the server resolves it for every
+ * currency and sends the finished map, which replaces these the moment it
+ * lands. So EDIT IT THERE: changing these numbers only moves the fraction of a
+ * second before the sync arrives, and leaving them behind is how the two ever
+ * disagree about a price.
  */
-let FX_MULTIPLIER = 1;
+const BOOTSTRAP_TIERS: Array<[under: number, multiplier: number]> = [
+    [100, 3],
+    [150, 2.5],
+    [Infinity, 2],
+];
+
+/** Resolved per-currency multipliers, replaced wholesale by the server's map. */
 let FX_MULTIPLIERS: Record<string, number> = {};
 
 function multiplierFor(currencyCode: string): number {
     if (currencyCode === "INR") return 1;
-    return FX_MULTIPLIERS[currencyCode] ?? FX_MULTIPLIER;
+    const resolved = FX_MULTIPLIERS[currencyCode];
+    if (resolved !== undefined) return resolved;
+    const inr = CURRENCIES[currencyCode]?.inr;
+    if (inr === undefined) return 1;
+    for (const [under, mult] of BOOTSTRAP_TIERS) if (inr < under) return mult;
+    return 1;
 }
 
 /**
@@ -322,15 +339,21 @@ function initial(): string {
         pinned = true;
         return forced;
     }
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved && BY_ISO2[saved]) {
-            pinned = true;
-            return saved;
-        }
-    } catch {
-        /* storage blocked (private mode) — detection still works. */
-    }
+    // A saved manual pick is DELIBERATELY ignored while the country picker is
+    // hidden (see any page's "Currency switcher — HIDDEN" block).
+    //
+    // The pin exists so a chosen country outranks the IP. With no control on
+    // screen nothing can set one any more — but a value left in storage from
+    // when the picker WAS visible would still win, silently and permanently,
+    // and no amount of travelling or switching VPN would ever move it. Reading
+    // it only makes sense when there is also a way to change it.
+    //
+    // Restore this block together with the picker.
+    //
+    // try {
+    //     const saved = localStorage.getItem(STORAGE_KEY);
+    //     if (saved && BY_ISO2[saved]) { pinned = true; return saved; }
+    // } catch { /* storage blocked (private mode) — detection still works. */ }
     try {
         const geo = localStorage.getItem(GEO_KEY);
         if (geo && BY_ISO2[geo]) return geo;
@@ -429,13 +452,12 @@ function applyGeoCountry(iso2: unknown) {
     }
     if (iso2 === country) return;
     if (pinned) {
-        // Correct — a chosen country outranks the IP — but indistinguishable
-        // from broken detection unless it says so. This is the single most
-        // confusing state the picker can leave you in: one tap, months ago,
-        // and the site never follows you anywhere again.
+        // With the picker hidden, `?country=` is the only thing that can pin —
+        // so this is always a deliberate test override, and saying so beats
+        // looking like broken detection.
         console.info(
-            `[currency] IP resolved to ${iso2}, keeping ${country} — you picked it. ` +
-            `Choose "Detect automatically" in the country picker to undo.`,
+            `[currency] IP resolved to ${iso2}, keeping ${country} — pinned by ` +
+            `the ?country= parameter. Drop it from the URL to follow the IP.`,
         );
         return;
     }
@@ -453,8 +475,7 @@ const RATES_KEY = "pjar_fx";
 type RatesPayload = {
     buffer: number;
     rates: Record<string, { exp: 0 | 2; inr: number }>;
-    /** Foreign price multiplier — global, and per-currency overrides. */
-    multiplier?: number;
+    /** Per-currency foreign multipliers, tiers already resolved by the server. */
     multipliers?: Record<string, number>;
 };
 
@@ -475,12 +496,9 @@ function applyRates(payload: unknown): boolean {
         FX_BUFFER = p.buffer;
         changed = true;
     }
-    // Foreign pricing. Bounds mirror the server's, so a value it would have
-    // rejected cannot slip in through a stale cached payload either.
-    if (typeof p.multiplier === "number" && p.multiplier > 0 && p.multiplier <= 20 && p.multiplier !== FX_MULTIPLIER) {
-        FX_MULTIPLIER = p.multiplier;
-        changed = true;
-    }
+    // Foreign pricing: the server's already-resolved per-currency map. Bounds
+    // mirror the server's, so a value it would have rejected cannot slip in
+    // through a stale cached payload either.
     if (p.multipliers && typeof p.multipliers === "object") {
         const next: Record<string, number> = {};
         for (const [code, value] of Object.entries(p.multipliers)) {
@@ -548,7 +566,6 @@ function syncConfig() {
                     JSON.stringify({
                         buffer: payload.buffer,
                         rates: payload.rates,
-                        multiplier: payload.multiplier,
                         multipliers: payload.multipliers,
                     }),
                 );

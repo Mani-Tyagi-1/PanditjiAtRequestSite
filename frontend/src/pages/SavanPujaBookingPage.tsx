@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
 import { optimizedImg } from "../utils/img";
 import { useMoney, isValidPhone, shipsPrasad, toStoredPhone } from "../utils/currency";
-import CountryPicker from "../components/checkout/CountryPicker";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
 import {
     kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID,
@@ -690,19 +690,20 @@ export default function SavanPujaBookingPage() {
                 </p>
             </div>
 
-            {/* Where the devotee is paying from. Shown before any price is read,
-                because that is what the prices below are quoted in — a currency
-                the devotee only discovers at the card screen is a cancelled
-                payment. Detected automatically; this row is the correction. */}
-            <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#DDEBE6] bg-[#F0FAF7]">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#66736E]">
-                    Paying from
-                </span>
-                <CountryPicker
-                    className="bg-white border border-[#DDEBE6] text-[#17211D] hover:border-[#008C68]"
-                    accentClass="text-[#086B50]"
-                />
-            </div>
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#DDEBE6] bg-[#F0FAF7]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#66736E]">
+                        Paying from
+                    </span>
+                    <CountryPicker
+                        className="bg-white border border-[#DDEBE6] text-[#17211D] hover:border-[#008C68]"
+                        accentClass="text-[#086B50]"
+                    />
+                </div>
+*/}
 
             {/* Content */}
             <div className="px-5 pt-4 space-y-6">
@@ -1287,7 +1288,7 @@ export default function SavanPujaBookingPage() {
                                             className={`${INPUT} opacity-70 cursor-not-allowed`}
                                         />
                                         <p id="savan-country-hint" className="text-[10.5px] text-[#66736E] mt-1">
-                                            Change it from “Paying from” at the top of this page.
+                                            Detected from your location. Tell us on WhatsApp if this is wrong.
                                         </p>
                                     </div>
                                 </div>

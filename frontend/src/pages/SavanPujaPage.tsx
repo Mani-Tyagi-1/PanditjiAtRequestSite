@@ -19,7 +19,7 @@ import {
 } from "../data/kashiMahadevPuja";
 import SavanPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/savanPuja/SavanPackages";
 import { useMoney, shipsPrasad } from "../utils/currency";
-import CountryPicker from "../components/checkout/CountryPicker";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import heroImages from "../data/savanHeroImages.json";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
@@ -965,19 +965,20 @@ export default function SavanPujaPage() {
               Choose your seva
             </SectionTitle>
 
-            {/* Currency switcher, immediately above the cards. This is where the
-                prices are first compared, so it is the one place the devotee
-                needs to be able to say "not that currency" — detection is right
-                almost always, and one tap fixes the rest. */}
-            <div className="mb-2.5 flex items-center justify-between gap-2">
-              <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#66736E]">
-                Prices in
-              </span>
-              <CountryPicker
-                className="bg-white border border-[#DDEBE6] text-[#17211D] hover:border-[#008C68]"
-                accentClass="text-[#086B50]"
-              />
-            </div>
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="mb-2.5 flex items-center justify-between gap-2">
+                  <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#66736E]">
+                    Prices in
+                  </span>
+                  <CountryPicker
+                    className="bg-white border border-[#DDEBE6] text-[#17211D] hover:border-[#008C68]"
+                    accentClass="text-[#086B50]"
+                  />
+                </div>
+*/}
             <SavanPackages
               selectedId={packageId}
               onSelect={(id) => {

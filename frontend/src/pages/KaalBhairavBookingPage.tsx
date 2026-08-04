@@ -13,7 +13,7 @@ import {
     extraFamilyCount, packageTotal, packageNeedsDelivery, type PujaPackageId,
 } from "../data/kaalBhairavPuja";
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
-import CountryPicker from "../components/checkout/CountryPicker";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
 
 type Step = "details" | "success";
@@ -522,14 +522,15 @@ export default function KaalBhairavBookingPage() {
                 </p>
             </div>
 
-            {/* The currency every price below is quoted in. Detected
-                automatically; this row is the correction. Shown before any
-                price is read — a currency the devotee only meets at the card
-                screen is a cancelled payment. */}
-            <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#E7DAC0] bg-[#F8F4EC]">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
-                <CountryPicker className="bg-white border border-[#E7DAC0] text-stone-700" accentClass="text-indigo-600" />
-            </div>
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#E7DAC0] bg-[#F8F4EC]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
+                    <CountryPicker className="bg-white border border-[#E7DAC0] text-stone-700" accentClass="text-indigo-600" />
+                </div>
+*/}
 
             {/* Content */}
             <div className="px-5 pt-4 space-y-6">

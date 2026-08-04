@@ -8,7 +8,7 @@ import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
 import { useMoney, isValidPhone, shipsPrasad, toStoredPhone } from "../utils/currency";
-import CountryPicker from "../components/checkout/CountryPicker";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
 import {
     bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, BANKE_BIHARI_POOJA_ID,
@@ -733,19 +733,20 @@ export default function BankeBihariBookingPage() {
                 </p>
             </div>
 
-            {/* Where the devotee is paying from. Shown before any price is read,
-                because that is what the prices below are quoted in — a currency
-                the devotee only discovers at the card screen is a cancelled
-                payment. Detected automatically; this row is the correction. */}
-            <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#F4DFC2] bg-[#FFF2E4]">
-                <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#7A3E55]">
-                    Paying from
-                </span>
-                <CountryPicker
-                    className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
-                    accentClass="text-[#D63D72]"
-                />
-            </div>
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#F4DFC2] bg-[#FFF2E4]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#7A3E55]">
+                        Paying from
+                    </span>
+                    <CountryPicker
+                        className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
+                        accentClass="text-[#D63D72]"
+                    />
+                </div>
+*/}
 
             {/* Content */}
             <div className="px-5 pt-4 space-y-6">
@@ -1209,7 +1210,7 @@ export default function BankeBihariBookingPage() {
                                             className={`${INPUT} opacity-70 cursor-not-allowed`}
                                         />
                                         <p id="bihari-country-hint" className="text-[10.5px] text-[#8A8A8A] mt-1">
-                                            Change it from “Paying from” at the top of this page.
+                                            Detected from your location. Tell us on WhatsApp if this is wrong.
                                         </p>
                                     </div>
                                 </div>

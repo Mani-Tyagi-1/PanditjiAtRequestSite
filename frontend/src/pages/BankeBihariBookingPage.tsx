@@ -12,7 +12,7 @@ import {
     EXTRA_FAMILY_MEMBER_PRICE, PRASAD_BOX_PRICE, DEFAULT_PACKAGE_ID, getPackage,
     BANKE_BIHARI_PACKAGES, extraFamilyCount, packageTotal, packageNeedsDelivery,
     canAddPrasadBox, prasadBoxCost, shippedPrasadBox, prasadBoxContents,
-    packageOfferings, PRASAD_BOXES, type PujaPackageId,
+    packageCore, packageOfferings, PRASAD_BOXES, type PujaPackageId,
 } from "../data/bankeBihariPuja";
 import PrasadBoxAddon from "../components/bankeBihari/PrasadBoxAddon";
 import PackageUpgradeNudge, { type UpgradeOffer } from "../components/bankeBihari/PackageUpgradeNudge";
@@ -454,6 +454,27 @@ export default function BankeBihariBookingPage() {
                     // label every booking "RF_BIHARI_01". Carries the chosen
                     // package + perks so the team knows what to courier.
                     packageName: packageLabel,
+                    packageId: selectedPkg.id,
+                    packageDetails: {
+                        id: selectedPkg.id,
+                        name: selectedPkg.name,
+                        tagline: selectedPkg.tagline,
+                        basePrice,
+                        core: packageCore(selectedPkg),
+                        offerings,
+                        freeFamilyMembers: selectedPkg.freeFamilyMembers,
+                        selectedFamilyMembers: form.familyMembers.length,
+                        extraFamilyMembers: chargedMembers,
+                        extraFamilyMemberPrice: EXTRA_FAMILY_MEMBER_PRICE,
+                        prasadBox: shippedBox ? {
+                            added: true,
+                            free: Boolean(selectedPkg.freePrasadBox),
+                            name: shippedBox.name,
+                            contents: shipList,
+                            price: prasadCost,
+                        } : { added: false, free: false, price: 0 },
+                        totalPrice,
+                    },
                     templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,

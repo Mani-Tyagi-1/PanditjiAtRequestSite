@@ -425,6 +425,7 @@ export const kashiMahadevPuja = {
     isActive: true,
     isFeatured: true,
     isExclusive: true,
+    packageIncluded: true,
     // Dakshina must stay ≤ the price: the backend derives the stored pooja
     // price as (amount − panditDakshina). ₹851 − ₹251 dakshina → ₹600 pooja price.
     panditDakshina: 251,

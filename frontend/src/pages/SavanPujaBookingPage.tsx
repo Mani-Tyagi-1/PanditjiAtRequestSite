@@ -12,7 +12,7 @@ import {
     kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID,
     PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE, RUDRAKSH_BRACELET_IMAGE,
     SAVAN_PACKAGES, DEFAULT_PACKAGE_ID, getPackage,
-    extraFamilyCount, packageOfferings, packagePrasadBox, packageTotal,
+    extraFamilyCount, packageCore, packageOfferings, packagePrasadBox, packageTotal,
     packageNeedsDelivery, prasadBoxCost, prasadBoxContents, shippedPrasadBox,
     type SavanPackageId,
 } from "../data/kashiMahadevPuja";
@@ -428,6 +428,27 @@ export default function SavanPujaBookingPage() {
                     // label every booking "RF_SAVAN_01". Carries the chosen
                     // package + what ships so the team knows what to courier.
                     packageName: packageLabel,
+                    packageId: selectedPkg.id,
+                    packageDetails: {
+                        id: selectedPkg.id,
+                        name: selectedPkg.name,
+                        tagline: selectedPkg.tagline,
+                        basePrice,
+                        core: packageCore(selectedPkg),
+                        offerings,
+                        freeFamilyMembers: selectedPkg.freeFamilyMembers,
+                        selectedFamilyMembers: form.familyMembers.length,
+                        extraFamilyMembers: chargedMembers,
+                        extraFamilyMemberPrice: FAMILY_MEMBER_PRICE,
+                        prasadBox: shippedBox ? {
+                            added: true,
+                            free: selectedPkg.prasadBoxFree,
+                            name: shippedBox.name,
+                            contents: shipList,
+                            price: prasadCost,
+                        } : { added: false, free: false, price: 0 },
+                        totalPrice,
+                    },
                     templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,

@@ -58,6 +58,9 @@ const PoojaSchema = new mongoose.Schema(
     isExclusive: { type: Boolean, default: false },
     exclusiveRank: { type: Number, default: null },
     isUpcoming: { type: Boolean, default: false },
+    // Package catalogs for dedicated landing pages live in frontend data.
+    // When enabled, bookings persist the selected package as a snapshot.
+    packageIncluded: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

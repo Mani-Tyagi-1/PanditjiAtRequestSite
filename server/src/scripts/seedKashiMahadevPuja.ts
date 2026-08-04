@@ -136,6 +136,7 @@ const KASHI_MAHADEV_PUJA = {
   isActive: true,
   isFeatured: false,
   isExclusive: false,
+  packageIncluded: true,
 };
 
 async function main() {

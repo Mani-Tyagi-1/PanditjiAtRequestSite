@@ -464,6 +464,7 @@ export const bankeBihariPuja = {
     isActive: true,
     isFeatured: true,
     isExclusive: true,
+    packageIncluded: true,
     // Dakshina must stay ≤ the price: the backend derives the stored pooja
     // price as (amount − panditDakshina). ₹1100 − ₹251 dakshina → ₹849 pooja price.
     panditDakshina: 251,

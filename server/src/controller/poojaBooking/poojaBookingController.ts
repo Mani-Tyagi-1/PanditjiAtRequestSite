@@ -505,6 +505,7 @@ type CreatePendingBookingBody = {
   templeName?: string;
   packageId?: string;
   packageName?: string;
+  packageDetails?: Record<string, any>;
   members?: string;
   wish?: string;
   concern?: string;
@@ -952,6 +953,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       templeName,
       packageId,
       packageName,
+      packageDetails,
       members,
       wish,
       concern,
@@ -1056,6 +1058,9 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
     // For live mandir, use a friendly label if no poojaNameEng
     const resolvedPoojaId = (poojaExists as any)._id;
     const resolvedUserId = (userExists as any)._id;
+    // Read this from the trusted catalog row, not the request. A normal puja
+    // keeps the original simple booking shape even if package data is sent.
+    const packageIncluded = (poojaExists as any).packageIncluded === true;
 
     const newBooking = await pendingPoojaBookingModel.create({
       userId: resolvedUserId,
@@ -1092,13 +1097,20 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       ...(ritualPlace && { ritualPlace }),
       ...(referralCode && { referralCode }),
       isFromApp: isFromApp === true,
+      packageIncluded,
+      ...(packageIncluded && {
+        packageId,
+        packageName,
+        ...(packageDetails && typeof packageDetails === 'object' && { packageDetails }),
+      }),
       // ── Live Mandir specific fields ──
       ...(isLiveMandir && {
         isLiveMandir: true,
         pujaSlug,
         templeName,
-        packageId,
-        packageName,
+        // Generic Live Mandir bookings use packageName as their friendly puja
+        // label. Full package snapshots are restricted by packageIncluded.
+        ...(!packageIncluded && { packageName }),
         members,
         wish,
         concern,

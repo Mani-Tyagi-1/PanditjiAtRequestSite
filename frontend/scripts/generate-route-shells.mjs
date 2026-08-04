@@ -49,7 +49,11 @@ const ROUTES = [
   // no longer a React.lazy chunk and routeChunkLinks() throws here, failing the
   // build.
   {
-    path: "/kashi-mahadev-savan-puja",
+    // Must match KASHI_MAHADEV_PUJA_SLUG in src/data/kashiMahadevPuja.ts and
+    // the route in App.tsx: the shell is written to dist/<path>/index.html, so
+    // a stale path here pre-renders a preload nobody ever requests and leaves
+    // the live url shell-less.
+    path: "/mahakaal-savan-somwar-puja",
     page: "pages/SavanPujaPage.tsx",
     // Shared image manifest — same file the page imports, so the preload and the
     // <img> can never disagree about candidates. Read as data, not regexed.

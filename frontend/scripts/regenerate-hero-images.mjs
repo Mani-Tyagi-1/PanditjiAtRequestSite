@@ -29,9 +29,9 @@ const CDN = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%2
 
 /** origin artwork -> the variants to emit. Quality tuned per image by eye. */
 const SOURCES = [
-  { origin: `${CDN}/Kashi%20puja%20banner.png`, variants: [
-      { file: "kashi-rudrabhishek-448.webp", w: 448, q: 76 },
-      { file: "kashi-rudrabhishek-896.webp", w: 896, q: 75 },
+  { origin: `${CDN}/Ujjain%20banner.webp`, variants: [
+      { file: "ujjain-rudrabhishek-448.webp", w: 448, q: 76 },
+      { file: "ujjain-rudrabhishek-896.webp", w: 896, q: 75 },
   ]},
   { origin: `${CDN}/trishul%20(1).png`, variants: [
       { file: "trishul-88.webp",  w: 88,  q: 78 },

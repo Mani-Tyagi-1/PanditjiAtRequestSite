@@ -281,18 +281,25 @@ function App() {
           <Route path="/maa-chintpurni-puja/booking" element={<Navigate to="/puja" replace />} />
           <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/puja" replace />} />
           <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/puja" replace />} />
-          {/* Savan 2026 — Mahadev Rudrabhishek at Kashi on the last Savan Somwar.
-              To stop the campaign, comment this block out again (plus the lazy
-              imports above) so all of these slugs fall through to the catch-all
-              and land on the home page. */}
-          <Route path="/kashi-mahadev-savan-puja" element={<SavanPujaPage />} />
-          <Route path="/kashi-mahadev-savan-puja/booking" element={<SavanPujaBookingPage />} />
+          {/* Savan 2026 — Mahadev Rudrabhishek at Shri Mahakaleshwar, Ujjain on
+              the last Savan Somwar. To stop the campaign, comment this block out
+              again (plus the lazy imports above) so all of these slugs fall
+              through to the catch-all and land on the home page.
+
+              The canonical slug is KASHI_MAHADEV_PUJA_SLUG in
+              data/kashiMahadevPuja.ts — keep the path below and that constant
+              the same string, or the page renders at one url and links to,
+              canonicalises to and preloads another. */}
+          <Route path="/mahakaal-savan-somwar-puja" element={<SavanPujaPage />} />
+          <Route path="/mahakaal-savan-somwar-puja/booking" element={<SavanPujaBookingPage />} />
           {/* Short alias — easier to type/share in ads & WhatsApp */}
-          <Route path="/savan-puja" element={<Navigate to="/kashi-mahadev-savan-puja" replace />} />
-          <Route path="/savan-puja/booking" element={<Navigate to="/kashi-mahadev-savan-puja/booking" replace />} />
-          {/* Earlier Ujjain slug — redirect so any shared links keep working */}
-          <Route path="/mahakaal-savan-somwar-puja" element={<Navigate to="/kashi-mahadev-savan-puja" replace />} />
-          <Route path="/mahakaal-savan-somwar-puja/booking" element={<Navigate to="/kashi-mahadev-savan-puja/booking" replace />} />
+          <Route path="/savan-puja" element={<Navigate to="/mahakaal-savan-somwar-puja" replace />} />
+          <Route path="/savan-puja/booking" element={<Navigate to="/mahakaal-savan-somwar-puja/booking" replace />} />
+          {/* Earlier Kashi slug — the campaign ran here while the puja was at
+              Kashi Vishwanath, so live ad links and WhatsApp shares still point
+              at it. Redirect, never delete. */}
+          <Route path="/kashi-mahadev-savan-puja" element={<Navigate to="/mahakaal-savan-somwar-puja" replace />} />
+          <Route path="/kashi-mahadev-savan-puja/booking" element={<Navigate to="/mahakaal-savan-somwar-puja/booking" replace />} />
           {/* Kaal Bhairav — Kalashtami puja at Shri Kaal Bhairav Mandir, Kashi */}
           <Route path="/kashi-kaal-bhairav-puja" element={<KaalBhairavPage />} />
           <Route path="/kashi-kaal-bhairav-puja/booking" element={<KaalBhairavBookingPage />} />

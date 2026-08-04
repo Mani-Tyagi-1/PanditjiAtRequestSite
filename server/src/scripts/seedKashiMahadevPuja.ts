@@ -1,5 +1,11 @@
 /**
- * Seeds the "Shree Kashi Rudrabhishek Mahapuja" (Kashi Vishwanath) catalog entry.
+ * Seeds the "Shree Mahakaleshwar Rudrabhishek Mahapuja" (Shri Mahakaleshwar
+ * Jyotirlinga Temple, Ujjain) catalog entry.
+ *
+ * ⚠️  FILE NAME. Still seedKashiMahadevPuja.ts: the puja moved from Kashi
+ *     Vishwanath to Mahakaleshwar and only the CONTENT was rewritten, so that
+ *     `poojaID` — and therefore every booking already pointing at this row —
+ *     stayed put. Read the name as "the Savan Mahadev puja".
  *
  * WHY THIS EXISTS
  * ───────────────
@@ -8,8 +14,12 @@
  * the server reads `poojaNameEng` off that document and stamps it onto the
  * booking, the WhatsApp/email confirmation, the pandit notification, the
  * admin record and the referral entry. Without its own catalog row the puja
- * has to borrow another puja's `_id`, and every Kashi booking is reported
+ * has to borrow another puja's `_id`, and every Savan booking is reported
  * under that other puja's name.
+ *
+ * That is also why this file has to be re-run whenever the puja's NAME changes
+ * on the frontend: until it is, the landing page says one puja and the
+ * confirmation the devotee receives says another.
  *
  * The document is keyed on `poojaID: "RF_SAVAN_01"` — a stable string, not a
  * Mongo `_id`. The booking controller resolves a puja by that field when the
@@ -41,7 +51,7 @@ import Pooja from "../model/userApp/poojaModel";
 const POOJA_ID = "RF_SAVAN_01";
 
 const BANNER =
-  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner%20(2).png";
+  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp";
 
 /**
  * Mirrors frontend/src/data/kashiMahadevPuja.ts. The page renders from the
@@ -50,19 +60,19 @@ const BANNER =
  */
 const KASHI_MAHADEV_PUJA = {
   poojaID: POOJA_ID,
-  poojaNameEng: "Shree Kashi Rudrabhishek Mahapuja",
-  poojaNameHindi: "श्री काशी रुद्राभिषेक महापूजा",
+  poojaNameEng: "Shree Mahakaleshwar Rudrabhishek Mahapuja",
+  poojaNameHindi: "श्री महाकालेश्वर रुद्राभिषेक महापूजा",
   poojaMode: "online" as const,
   poojaPriceOnline: 851,
   poojaPriceOffline: 851,
   poojaCardImage: BANNER,
   poojaMainImage: [BANNER],
-  poojaGods: ["Lord Shiva", "Mahadev", "Baba Vishwanath"],
+  poojaGods: ["Lord Shiva", "Mahadev", "Baba Mahakal"],
   benefits: [
-    "Rudrabhishek at Kashi — Mahadev's own eternal city",
-    "Gangajal drawn from the Ganga at Varanasi offered in your name",
+    "Rudrabhishek at Mahakal — the only south-facing Jyotirlinga on earth",
+    "Shipra jal from Ujjain's sacred river offered in your name",
     "Removes fear, ill health, and untimely misfortune (Mahamrityunjaya blessings)",
-    "Kashi is the foremost kshetra for pacifying Pitra, Kaal Sarp and Shani doshas",
+    "Ujjain is the foremost kshetra for pacifying Kaal Sarp, Pitra and Shani doshas",
     "Brings marital harmony and blessings for an early, suitable match",
     "Grants inner peace, courage, and progress toward moksha",
   ],
@@ -78,13 +88,13 @@ const KASHI_MAHADEV_PUJA = {
   // the booking.
   specialDate: new Date("2026-08-24T00:00:00.000Z"),
   poojaBenefitsDescription:
-    "Verified pandits perform Rudrabhishek of Baba Vishwanath on your behalf at Kashi on the last Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Gangajal drawn from the Ganga at Varanasi, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
+    "Verified pandits perform Rudrabhishek of Baba Mahakal on your behalf at Ujjain on the last Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Shipra jal from Ujjain's sacred river, Gangajal, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
   poojaDescription: [
     {
       headingId: "1",
       heading: "Purpose of Puja",
       description:
-        "<p>To seek the blessings of <strong>Baba Vishwanath</strong> — <strong>Mahadev</strong> as the Lord of the Universe, worshipped at <strong>Kashi Vishwanath</strong>, among the most revered of the twelve Jyotirlingas.</p><p><strong>Kashi (Varanasi)</strong> is held to be Shiva's own city, said to rest upon his trishul and to stand untouched even at the dissolution of the world. The month of <strong>Shravan (Savan)</strong> is his most beloved month, and <strong>Savan Somwar</strong> is its most powerful day.</p>",
+        "<p>To seek the blessings of <strong>Baba Mahakal</strong> — <strong>Mahadev</strong> as the Lord of Time itself, worshipped at <strong>Shri Mahakaleshwar</strong>, among the most revered of the twelve Jyotirlingas and the only one that faces <strong>south</strong> (dakshinamukhi), the direction of Kaal.</p><p><strong>Ujjain</strong> is <strong>Mahakal Nagri</strong> — the city where Mahakal himself is held to be the king, and one of the seven <em>moksha-puris</em>. The month of <strong>Shravan (Savan)</strong> is his most beloved month, and <strong>Savan Somwar</strong> is its most powerful day.</p>",
     },
     {
       headingId: "2",
@@ -96,13 +106,13 @@ const KASHI_MAHADEV_PUJA = {
       headingId: "3",
       heading: "What is performed",
       description:
-        "<p>Verified pandits perform the complete Vedic vidhi at <strong>MAHADEV Temple in Kashi</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p>",
+        "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Mahakaleshwar Jyotirlinga Temple, Ujjain</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Shipra jal, Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p>",
     },
     {
       headingId: "4",
       heading: "Offerings made on your behalf",
       description:
-        "<p>• <strong>Gangajal</strong> drawn from the Ganga at Varanasi, and raw milk abhishek</p><p> • <strong>Bel patra</strong>, dhatura, bhang and white aak flowers</p><p> • Panchamrit — milk, curd, ghee, honey and sugar</p><p> • Chandan, bhasma, akshata and white flowers</p><p> • <strong>Rudri path</strong> and Mahamrityunjaya mantra chanting</p>",
+        "<p>• <strong>Shipra jal</strong> from Ujjain's sacred river and <strong>Gangajal</strong>, with raw milk abhishek</p><p> • <strong>Bel patra</strong>, dhatura, bhang and white aak flowers</p><p> • Panchamrit — milk, curd, ghee, honey and sugar</p><p> • Chandan, bhasma, akshata and white flowers</p><p> • <strong>Rudri path</strong> and Mahamrityunjaya mantra chanting</p>",
     },
     {
       headingId: "5",
@@ -125,7 +135,7 @@ const KASHI_MAHADEV_PUJA = {
     {
       question: "What is Rudrabhishek?",
       answer:
-        "Rudrabhishek is the ceremonial bathing of the Shivling with Gangajal, milk, panchamrit and sacred offerings while Rudri path and Shiv mantras are chanted.",
+        "Rudrabhishek is the ceremonial bathing of the Shivling with sacred jal, milk, panchamrit and sacred offerings while Rudri path and Shiv mantras are chanted.",
     },
     {
       question: "Is prasad included?",

@@ -54,15 +54,16 @@ export function itemIcon(label: string): LucideIcon {
     return ITEM_ICONS[label] ?? Sparkles;
 }
 
-type Tone = "emerald" | "gold";
+type Tone = "emerald" | "gold" | "parchment";
 
-type ToneSpec = { frame: string; icon: string; label: string };
+type ToneSpec = { frame: string; icon: string; label: string; fallback: string };
 
 const TONES: Record<Tone, ToneSpec> = {
     emerald: {
         frame: "border-[#DDEBE6] bg-white",
         icon: "text-[#086B50]",
         label: "text-[#17211D]",
+        fallback: "bg-gradient-to-br from-[#DFF5EF] to-[#086B50]/20",
     },
     // For anything the devotee gets free — the gold coupon language the rest of
     // the page uses for the bracelet and the countdown card.
@@ -70,6 +71,17 @@ const TONES: Record<Tone, ToneSpec> = {
         frame: "border-[#E8CF9A] bg-[#FFFDF5]",
         icon: "text-[#C89B3C]",
         label: "text-[#8A6A1F]",
+        fallback: "bg-gradient-to-br from-[#FFFDF5] to-[#E8CF9A]/45",
+    },
+    // The parchment/aged-gold theme worn by the Savan detail page. Added as a
+    // THIRD tone rather than by retinting `emerald`, because that tone is still
+    // what SavanPujaBookingPage renders — repainting it here would silently
+    // restyle a page nobody asked to change.
+    parchment: {
+        frame: "border-[#D8B66A]/60 bg-[#FCF8F0]",
+        icon: "text-[#8E6A25]",
+        label: "text-[#23201B]",
+        fallback: "bg-gradient-to-br from-[#F3E5BF] to-[#D8B66A]/50",
     },
 };
 
@@ -97,7 +109,7 @@ export function ItemTile({ label, tone = "emerald" }: { label: string; tone?: To
                         className="w-full h-full object-cover"
                     />
                 ) : (
-                    <span className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#DFF5EF] to-[#086B50]/20">
+                    <span className={`w-full h-full flex items-center justify-center ${t.fallback}`}>
                         <Icon className={`w-5 h-5 ${t.icon}`} />
                     </span>
                 )}

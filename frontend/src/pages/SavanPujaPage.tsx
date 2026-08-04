@@ -51,6 +51,17 @@ const MANTRA_SIDE = heroImages.mantraSide;
 const MANTRA_SIDE_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/trishul%20(1).png";
 
 /**
+ * The hero's own CDN original, for the same reason: if a self-hosted variant
+ * 404s the banner falls back to the artwork it was cut from.
+ *
+ * It must be THIS url and not `puja.poojaImages[0]` (which the fallback used
+ * to be): that field is the product's card/social artwork, a different
+ * picture, so a missing hero file would have silently swapped in unrelated
+ * art rather than a lower-fidelity copy of the same banner.
+ */
+const HERO_ORIGIN_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp";
+
+/**
  * Banners that auto-advance after the hero above.
  *
  * Slide 0 is deliberately NOT in this list: it is `HERO`, the self-hosted,
@@ -65,13 +76,13 @@ const MANTRA_SIDE_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com
  */
 const HERO_EXTRA_SLIDES = [
     {
-        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/w2.png.webp",
-        alt: "Rudrabhishek at the ghats of Kashi on Savan Somwar",
+        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
+        alt: "Rudrabhishek at Shri Mahakaleshwar, Ujjain on the last Savan Somwar",
     },
-    {
-        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/w3.png.webp",
-        alt: "Rudrabhishek at the ghats of Kashi on Savan Somwar",
-    },
+    // {
+    //     src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/w3.png.webp",
+    //     alt: "Rudrabhishek at Shri Mahakaleshwar, Ujjain on the last Savan Somwar",
+    // },
 ];
 
 /** Beat between banners. */
@@ -121,23 +132,28 @@ const SAVAN_RAINDROPS = (() => {
             delay: +(rand() * 4).toFixed(2),           // staggered over 4s
             dur: +(4.2 - depth * 1.9).toFixed(2),      // 2.30s – 4.20s
             h: Math.round(12 + depth * 16),            // 12px – 28px
-            w: +(1.1 + depth * 0.9).toFixed(1),        // 1.1px – 2.0px
-            opacity: +(0.35 + depth * 0.45).toFixed(2), // 0.35 – 0.80
+            w: +(0.9 + depth * 0.7).toFixed(1),        // 0.9px – 1.6px
+            // Far fainter than the old emerald-on-cream rain. Struck in gold
+            // on parchment the drops sit at almost the paper's own value, so
+            // anything near the previous 0.35–0.80 stopped reading as rainfall
+            // and started reading as scratches ruled down the sheet — right
+            // through the body copy they fall over.
+            opacity: +(0.14 + depth * 0.22).toFixed(2), // 0.14 – 0.36
         };
     });
 })();
 
-// Kashi Mahadev Savan online-puja devotee reviews (auto-scrolling marquee).
+// Mahakal Savan online-puja devotee reviews (auto-scrolling marquee).
 type Review = { name: string; rating: number; date: string; text: string; verified: boolean };
 const PLACEHOLDER_REVIEWS: Review[] = [
     { name: "Sunita Devi", rating: 5, date: "1 week ago", text: "Rudrabhishek ka video WhatsApp pe mil gaya, pandit ji ne mera naam aur gotra se sankalp kiya. 🙏", verified: true },
-    { name: "Rakesh Kumar", rating: 5, date: "3 weeks ago", text: "₹851 mein Kashi Vishwanath se puja karwana bahut easy tha. Sab update WhatsApp pe mila.", verified: true },
+    { name: "Rakesh Kumar", rating: 5, date: "3 weeks ago", text: "₹851 mein Mahakaleshwar se puja karwana bahut easy tha. Sab update WhatsApp pe mila.", verified: true },
     { name: "Pooja Sharma", rating: 5, date: "2 weeks ago", text: "Prasad 5 din mein ghar aa gaya, bhasma aur bel patra bhi tha. Thank you team. 🙏", verified: true },
     { name: "Amit Verma", rating: 4, date: "1 month ago", text: "Puja theek se hui, video bhi mil gaya. Video thoda lamba hota to aur acha tha, par satisfied hoon.", verified: true },
     { name: "Deepak Yadav", rating: 5, date: "5 days ago", text: "Savan Somwar pe parents ke naam se book kiya. Pandit ji ne aarti mein naam liya. Family khush ho gayi.", verified: true },
-    { name: "Anjali Nair", rating: 5, date: "2 months ago", text: "Booked from Dubai. Kashi nahi ja paayi par connected feel hua. Simple process.", verified: false },
+    { name: "Anjali Nair", rating: 5, date: "2 months ago", text: "Booked from Dubai. Ujjain nahi ja paayi par connected feel hua. Simple process.", verified: false },
     { name: "Manoj Tiwari", rating: 4, date: "3 weeks ago", text: "Sankalp naam aur gotra se hua. Booking aasan thi. Overall accha experience raha.", verified: true },
-    { name: "Kavita Singh", rating: 5, date: "1 month ago", text: "Baba Vishwanath ke darbar se abhishek karwa ke mann ko shanti mili. Har Har Mahadev! 🙏", verified: true },
+    { name: "Kavita Singh", rating: 5, date: "1 month ago", text: "Baba Mahakal ke darbar se abhishek karwa ke mann ko shanti mili. Jai Mahakal! 🙏", verified: true },
     { name: "Ramesh Patel", rating: 5, date: "2 weeks ago", text: "Genuine service. Koi extra paisa nahi maanga. Video proof bhi diya jaisa bola tha.", verified: true },
     { name: "Neha Joshi", rating: 4, date: "6 days ago", text: "Achhi service. Puja ki timing WhatsApp pe confirm kar di thi. Recommend karungi.", verified: false },
     { name: "Suresh Gupta", rating: 5, date: "1 month ago", text: "Parivaar ki sukh-shanti ke liye Rudrabhishek karwaya. Sab time pe aur proper hua. 🙏", verified: true },
@@ -156,13 +172,20 @@ function seededReviews(seed: string, count: number): Review[] {
     return a.slice(0, Math.min(count, a.length));
 }
 
-// ── Small UI pieces (Savan palette: emerald, light aqua, temple gold) ────
+// ── Small UI pieces ──────────────────────────────────────────────────────
+// Palette: antique parchment + aged gold + deep crimson (the theme tokens and
+// the decorative `svn-*` classes live in src/index.css). Colours are written
+// as literal hexes here rather than theme utilities because that is how every
+// hue on this page has always been written — one convention beats two.
 function Stars({ value, className = "w-3.5 h-3.5" }: { value: number; className?: string }) {
     const full = Math.round(value);
     return (
         <span className="inline-flex items-center gap-0.5" role="img" aria-label={`Rated ${value} out of 5`}>
             {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className={`${className} ${i <= full ? "text-[#C89B3C] fill-[#C89B3C]" : "text-[#DDEBE6]"}`} />
+                // Unlit stars take the border gold at low alpha, not a grey:
+                // on parchment a neutral grey reads as dirt, while a faded
+                // gold reads as an unstruck star.
+                <Star key={i} className={`${className} ${i <= full ? "text-[#C79A2B] fill-[#C79A2B]" : "text-[#D8B66A]/45"}`} />
             ))}
         </span>
     );
@@ -174,7 +197,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
     const [open, setOpen] = useState(defaultOpen);
     const panelId = useId();
     return (
-        <div className={`bg-white border rounded-2xl overflow-hidden transition-colors ${open ? "border-[#086B50]/45" : "border-[#DDEBE6]"}`}>
+        <div className={`bg-[#FCF8F0] border rounded-2xl overflow-hidden transition-colors ${open ? "border-[#C79A2B] shadow-[0_2px_10px_-6px_rgba(40,25,10,0.5)]" : "border-[#D8B66A]/60"}`}>
             <button
                 type="button"
                 aria-expanded={open}
@@ -184,25 +207,43 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
                     setOpen(next);
                     if (next) track("puja_accordion_open", { section: title }, true);
                 }}
-                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-[#008C68] outline-none"
+                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none"
             >
-                <span className="flex items-center gap-2 text-[14px] font-bold text-[#17211D]">
+                <span className="flex items-center gap-2 font-svn-sub text-[13px] font-semibold text-[#23201B]">
                     {icon}{title}
                 </span>
-                <ChevronDown className={`w-4 h-4 text-[#086B50] shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-[#C79A2B] shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
-            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-[#66736E] leading-relaxed border-t border-[#DDEBE6]">
+            {/* The panel is divided from its own heading by the theme's engraved
+                gold hairline rather than a solid border, so an open accordion
+                reads as a ruled manuscript entry. */}
+            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-2.5 text-[12.5px] text-[#665C50] leading-relaxed border-t border-[#D8B66A]/45">
                 {children}
             </div>
         </div>
     );
 }
 
+/**
+ * Section heading — Cinzel small caps in crimson, with the theme's engraved
+ * gold rule running out to the right margin (`svn-rule`). The rule is what
+ * makes a bare heading read as a manuscript section head; it fills whatever
+ * width the title leaves, so headings of any length still line up.
+ */
 function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
-        <h3 className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-[#086B50] mb-2.5">
+        <h3 className="svn-rule flex items-center gap-1.5 font-svn-sub text-[11.5px] font-bold uppercase tracking-[0.14em] text-[#7A1622] mb-2.5">
             {icon}{children}
         </h3>
+    );
+}
+
+/** Centred lozenge-and-hairline separator — the manuscript section break. */
+function Ornament() {
+    return (
+        <div className="svn-orn py-0.5" aria-hidden="true">
+            <span className="w-1.5 h-1.5 rotate-45 bg-[#C79A2B]" />
+        </div>
     );
 }
 
@@ -239,14 +280,14 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
             <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track.is-paused{animation-play-state:paused}.review-track:hover{animation-play-state:paused}`}</style>
             <div ref={trackRef} className={`review-track flex gap-2.5${inView ? "" : " is-paused"}`}>
                 {items.map((r, i) => (
-                    <div key={i} className="shrink-0 w-56 bg-white border border-[#DDEBE6] rounded-xl p-3 shadow-sm">
+                    <div key={i} className="shrink-0 w-56 bg-[#FCF8F0] border border-[#D8B66A]/60 rounded-xl p-3 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)]">
                         <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-[#17211D] text-[12px]">{r.name}</span>
-                            {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-[#008C68] shrink-0" />}
-                            <span className="ml-auto text-[9px] text-[#66736E]">{r.date}</span>
+                            <span className="font-svn-sub font-semibold text-[#23201B] text-[11.5px]">{r.name}</span>
+                            {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-[#7A1622] shrink-0" />}
+                            <span className="ml-auto text-[9px] text-[#8C8274]">{r.date}</span>
                         </div>
                         <Stars value={r.rating} className="w-3 h-3" />
-                        <p className="text-[11.5px] text-[#66736E] mt-1 leading-snug line-clamp-3">{r.text}</p>
+                        <p className="text-[11.5px] text-[#665C50] mt-1 leading-snug line-clamp-3">{r.text}</p>
                     </div>
                 ))}
             </div>
@@ -262,9 +303,9 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
 // them anyway; restore this from git if the standalone row is ever wanted back.
 
 // ── Page ───────────────────────────────────────────────────────
-// FRONTEND-ONLY Shree Kashi Rudrabhishek Mahapuja — an online Rudrabhishek
-// performed on the devotee's behalf at Shree Kashi Vishwanath Temple,
-// Varanasi on the last Savan Somwar. Renders entirely from frontend data
+// FRONTEND-ONLY Shree Mahakaleshwar Rudrabhishek Mahapuja — an online
+// Rudrabhishek performed on the devotee's behalf at Shri Mahakaleshwar
+// Jyotirlinga Temple, Ujjain on the last Savan Somwar. Renders entirely from frontend data
 // but carries a distinct Savan/Shiv theme (the emerald / light-aqua / temple-gold palette, abhishek
 // droplets, bel patra, the four-Somwar calendar).
 // All data comes from src/data/kashiMahadevPuja.ts.
@@ -324,8 +365,11 @@ export default function SavanPujaPage() {
         });
     }, []);
 
-    // Origin CDN artwork — still used for og:image and as the hero's onError
-    // fallback; HERO holds the self-hosted, display-sized variants actually shown.
+    // The product's own CDN artwork — now used for og:image ONLY. The hero's
+    // onError fallback used to point here too; it points at HERO_ORIGIN_IMAGE
+    // instead, so a missing hero variant degrades to the same banner rather
+    // than to a different picture. HERO holds the self-hosted, display-sized
+    // variants actually shown.
     const image = puja.poojaImages?.[0] || puja.poojaMainImage || puja.poojaCardImage;
     // The sticky CTA quotes the package alone. The prasad box and extra family
     // Sankalps are both chosen on the booking page, so neither can be priced in
@@ -334,11 +378,14 @@ export default function SavanPujaPage() {
     const price = selectedPkg.price;
     const reviews = seededReviews(pujaId, 9);
     const mandirName = `${puja.templeName}, ${puja.templeLocation}`;
-    // City only ("Kashi, Varanasi") for the meta line — the state adds length
+    // The city on its own ("Ujjain"). `templeLocation` is written city-first
+    // for exactly this reason — see the note on that field.
+    const templeCity = puja.templeLocation.split(",")[0].trim();
+    // City only ("Mahakal, Ujjain") for the meta line — the state adds length
     // without telling a devotee anything they don't already know. The full
     // name still goes to the SEO description, where the extra words earn their
     // place.
-    const mandirShort = `${puja.templeName}, ${puja.templeLocation.split(",")[0]}`;
+    const mandirShort = `${puja.templeName}, ${templeCity}`;
 
     // ── Hero carousel ─────────────────────────────────────────────────────
     // The extra banners mount only after the LCP image has painted, so a
@@ -503,15 +550,24 @@ export default function SavanPujaPage() {
         finally { setIsSharing(false); }
     };
 
+    // No bottom padding on the root any more: the wood footer now owns the
+    // clearance for the fixed pay bar (its own `pb-28`), so the wood runs all
+    // the way to the foot of the page instead of stopping short and leaving a
+    // strip of parchment under it.
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#FFFDF8] via-[#F0FAF7] to-[#FFFDF8] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-[#DDEBE6]">
-        {/* Savan rain — falls across the entire page, not just the hero. Drops
-            are tinted Primary Emerald rather than white, since the page sits on
-            Main Background / Alternate Section, where white would vanish. */}
+      <div className="svn svn-parchment min-h-screen font-svn-body w-full max-w-md mx-auto shadow-xl relative border-x border-[#D8B66A]">
+        {/* Savan rain — falls across the entire page, not just the hero.
+            Drops are struck in Royal Gold rather than white or a cool blue:
+            the page is parchment, so white vanishes into it and a cool hue is
+            the one thing that would not belong on an aged sheet. Gold reads as
+            both rainfall and the theme's sparkle particles at once, which is
+            why it is one effect here and not two — a second always-animating
+            layer would double the cost documented on `showRain` below for no
+            visual gain. */}
         <style>{`
           @keyframes savanDrop{0%{transform:translateY(-6vh);opacity:0}10%{opacity:var(--drop-opacity,.7)}88%{opacity:var(--drop-opacity,.7)}100%{transform:translateY(106vh);opacity:0}}
           .savan-rain{position:fixed;top:0;bottom:0;width:100%;max-width:28rem;overflow:hidden;pointer-events:none;z-index:30}
-          .savan-drop{position:absolute;top:0;width:var(--drop-w,1.5px);height:var(--drop-h,14px);border-radius:9999px;background:linear-gradient(to bottom,rgba(8,107,80,0),rgba(8,107,80,.55));animation:savanDrop var(--drop-dur,3s) linear infinite;will-change:transform}
+          .savan-drop{position:absolute;top:0;width:var(--drop-w,1.5px);height:var(--drop-h,14px);border-radius:9999px;background:linear-gradient(to bottom,rgba(199,154,43,0),rgba(199,154,43,.62));animation:savanDrop var(--drop-dur,3s) linear infinite;will-change:transform}
           @media (prefers-reduced-motion: reduce){.savan-rain{display:none}.review-track{animation:none}}
         `}</style>
 
@@ -540,7 +596,10 @@ export default function SavanPujaPage() {
         )}
 
         <Helmet>
-          <title>{`${puja.poojaNameEng} at ${puja.templeName}, Varanasi | Pandit Ji At Request`}</title>
+          {/* City, not `mandirShort` — the puja name already carries the
+              temple ("Mahakaleshwar"), so the pair would repeat it. Every
+              other tag below is free to name both. */}
+          <title>{`${puja.poojaNameEng} at ${templeCity} | Pandit Ji At Request`}</title>
           <meta
             name="description"
             content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Rudrabhishek performed on your behalf at ${mandirName} on the last Savan Somwar, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
@@ -551,11 +610,11 @@ export default function SavanPujaPage() {
               without these every share renders as a bare URL with no card. */}
           <meta property="og:type" content="product" />
           <meta property="og:site_name" content="Pandit Ji At Request" />
-          <meta property="og:title" content={`${puja.poojaNameEng} — ${puja.occasion} at ${puja.templeName}, Varanasi`} />
+          <meta property="og:title" content={`${puja.poojaNameEng} — ${puja.occasion} at ${mandirShort}`} />
           <meta property="og:description" content={`Rudrabhishek performed on your behalf at ${mandirName} on ${puja.pujaDate}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}.`} />
           <meta property="og:url" content={`https://panditjiatrequest.com/${KASHI_MAHADEV_PUJA_SLUG}`} />
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content={`${puja.poojaNameEng} — ${puja.occasion} at Kashi`} />
+          <meta name="twitter:title" content={`${puja.poojaNameEng} — ${puja.occasion} at ${puja.templeName}`} />
           <meta name="twitter:description" content={`Rudrabhishek at ${mandirName} on ${puja.pujaDate}. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}, puja video on WhatsApp.`} />
           {/* Only emitted once the banner artwork exists — an empty og:image is
               worse than none. Deliberately the ORIGIN CDN url, not a resized
@@ -581,38 +640,47 @@ export default function SavanPujaPage() {
           prefillCity={(user as any)?.city || ""}
         />
 
-        {/* ── Sticky header ── */}
-        <div className="sticky top-0 z-50 bg-[#FFFDF8]/90 backdrop-blur-md border-b border-[#DDEBE6] px-4 py-3 flex items-center gap-3">
+        {/* ── Sticky header ──
+            Parchment rather than white, with the theme's gold rule along its
+            bottom edge, so the bar reads as the head of the sheet rather than
+            chrome laid over it. */}
+        <div className="sticky top-0 z-50 bg-[#F6F0E3]/92 backdrop-blur-md border-b border-[#D8B66A] px-4 py-3 flex items-center gap-3">
           <button
             onClick={() =>
               location.key !== "default" ? navigate(-1) : navigate("/")
             }
             aria-label="Go back"
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#DDEBE6] shadow-sm active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-full bg-[#FFFDF8] flex items-center justify-center border border-[#C79A2B] shadow-sm active:scale-90 transition-transform"
           >
-            <ArrowLeft className="w-4 h-4 text-[#17211D]" />
+            <ArrowLeft className="w-4 h-4 text-[#7A1622]" />
           </button>
-          <h1 className="text-sm font-bold text-[#17211D] truncate flex-1">
+          <h1 className="font-svn-head text-[17px] font-semibold text-[#23201B] truncate flex-1">
             {puja.poojaNameEng}
           </h1>
           <button
             onClick={handleShare}
             disabled={isSharing}
             aria-label="Share"
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#DDEBE6] shadow-sm active:scale-90 transition-transform disabled:opacity-60"
+            className="w-8 h-8 rounded-full bg-[#FFFDF8] flex items-center justify-center border border-[#C79A2B] shadow-sm active:scale-90 transition-transform disabled:opacity-60"
           >
+            {/* Forest Green is the theme's only success hue — the copied tick
+                is the page's one confirmation, so it is the one place it is
+                allowed to appear. */}
             {shareCopied ? (
-              <Check className="w-4 h-4 text-[#008C68]" />
+              <Check className="w-4 h-4 text-[#3E6B4A]" />
             ) : (
-              <Share2 className="w-4 h-4 text-[#17211D]" />
+              <Share2 className="w-4 h-4 text-[#7A1622]" />
             )}
           </button>
         </div>
 
-        {/* ── Savan occasion ribbon ── */}
-        <div className="bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] text-center py-1.5 px-4">
-          <p className="text-[10.5px] font-bold tracking-[0.14em] uppercase text-white">
-            सावन 2026 · {puja.occasion} · हर हर महादेव
+        {/* ── Savan occasion ribbon ──
+            Deep crimson, gold-ruled top and bottom, occasion set in Cinzel
+            caps. This is the one saturated band above the fold, which is why
+            the hero below it carries no overlaid type at all. */}
+        <div className="svn-crimson border-y border-[#C79A2B]/70 text-center py-1.5 px-4">
+          <p className="font-svn-sub text-[10px] font-semibold tracking-[0.18em] uppercase text-[#E2BF62]">
+            सावन 2026 · {puja.occasion} · जय श्री महाकाल
           </p>
         </div>
 
@@ -623,8 +691,14 @@ export default function SavanPujaPage() {
             thing overlaid on the artwork — it already carries the puja name,
             location and value props, and repeating those just covered its own
             icons. */}
+        {/* The frame is dark wood and gold-ruled along its foot: the artwork is
+            cropped to a 208px band, so where it does not quite fill the box the
+            devotee sees the panel the picture is mounted on rather than a bare
+            letterbox bar. `svn-wood` is set on the CONTAINER, not an inset
+            child — an absolutely positioned sibling paints over static ones, so
+            a child would cover the hero image itself. */}
         <div
-          className="relative h-52 overflow-hidden bg-[#086B50]"
+          className="svn-wood relative h-52 overflow-hidden border-b border-[#C79A2B]/70"
           aria-roledescription="carousel"
           aria-label={`${puja.poojaNameEng} banners`}
         >
@@ -639,7 +713,7 @@ export default function SavanPujaPage() {
             srcSet={HERO.srcSet}
             sizes={HERO.sizes}
             onLoad={() => setHeroPainted(true)}
-            onError={(e) => { e.currentTarget.srcset = ""; e.currentTarget.src = image; setHeroPainted(true); }}
+            onError={(e) => { e.currentTarget.srcset = ""; e.currentTarget.src = HERO_ORIGIN_IMAGE; setHeroPainted(true); }}
             width={HERO.width}
             height={HERO.height}
             alt={puja.poojaNameEng}
@@ -673,12 +747,12 @@ export default function SavanPujaPage() {
               stays legible over all of them without punching a hole in the
               art. This is the page's only rating — it was lifted out of the
               meta line below, which now carries deity + place. */}
-          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm border border-white/70 px-2 py-1 shadow-sm">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-[#FCF8F0]/92 backdrop-blur-sm border border-[#C79A2B]/80 px-2 py-1 shadow-[0_2px_8px_-3px_rgba(40,25,10,0.6)]">
             <Stars value={puja.rating} className="w-3 h-3" />
-            <span className="text-[11px] font-bold text-[#17211D] leading-none">
+            <span className="font-svn-sub text-[11px] font-bold text-[#23201B] leading-none">
               {puja.rating}
             </span>
-            <span className="text-[10px] text-[#66736E] leading-none">
+            <span className="text-[10px] text-[#665C50] leading-none">
               ({puja.devoteesLabel})
             </span>
           </div>
@@ -694,25 +768,31 @@ export default function SavanPujaPage() {
                   onClick={() => setSlide(i)}
                   aria-label={`Show banner ${i + 1} of ${slideCount}`}
                   aria-current={i === slide}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${i === slide ? "w-4 bg-white" : "w-1.5 bg-white/55"}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${i === slide ? "w-4 bg-[#E2BF62]" : "w-1.5 bg-[#F3E5BF]/50"}`}
                 />
               ))}
             </div>
           )}
         </div>
 
-        <div className="px-4 pt-3 pb-4 space-y-4">
+        {/* `svn-sheet-head` burns the parchment where it meets the hero above
+            — see the note on that class for why the shading lives here and not
+            on the page root. */}
+        <div className="svn-sheet-head px-4 pt-3 pb-4 space-y-4">
           {/* ── Puja name + meta ─────────────────────────────────────────────
               Three lines: name, then the Hindi name with the date riding the
               empty right half of that line, then deity + place. The rating
               lives on the hero above instead of here.
 
               Everything cut from here is still on screen within a thumb's
-              reach: the ribbon directly above carries the occasion ("First
+              reach: the ribbon directly above carries the occasion ("Last
               Savan Somwar"), and the highlighted countdown below repeats the
               date. */}
           <div>
-            <h2 className="text-xl font-bold font-serif text-[#17211D] leading-tight">
+            {/* Cormorant Garamond at 24px — the display face, and the largest
+                type on the page. It carries the whole heading weight for this
+                block, which is why the two lines under it stay small. */}
+            <h2 className="font-svn-head text-[24px] font-semibold text-[#23201B] leading-[1.15]">
               {puja.poojaNameEng}
             </h2>
             {/* The Hindi name is ~170px at this size and the date chip ~105px,
@@ -720,41 +800,43 @@ export default function SavanPujaPage() {
                 name means a longer one wraps to a second line rather than
                 shoving the date off the row.
 
-                The date keeps the temple-gold chip. It is the page's one warm
-                accent against an otherwise emerald column, and it is a quiet
-                label — the countdown below now carries the same date in the
-                page's saturated green, which is the loud one. Type stays
+                The date keeps its gold chip, now on the theme's Warm Beige
+                with an Aged Gold rim — a quiet engraved label. The lacquered
+                countdown plate directly below carries the same date, and that
+                is the loud one, so this must not compete with it. Type stays
                 10.5px to keep the chip inside that width budget once the
                 padding and border are added. */}
-            <div className="flex items-center justify-between gap-2 mt-0.5">
-              <p className="min-w-0 text-[12.5px] text-[#086B50] font-medium">
+            <div className="flex items-center justify-between gap-2 mt-1">
+              <p className="min-w-0 font-svn-head text-[14px] text-[#7A1622] font-medium">
                 {puja.poojaNameHindi}
               </p>
-              <span className="shrink-0 flex items-center gap-1 text-[10.5px] font-bold text-[#17211D] bg-gradient-to-br from-[#FFF8E7] to-[#FFF3DC] border border-[#E8CF9A] rounded-full px-1.5 py-0.5">
-                <Calendar className="w-3 h-3 text-[#C89B3C] shrink-0" />
+              <span className="shrink-0 flex items-center gap-1 text-[10.5px] font-semibold text-[#23201B] bg-gradient-to-br from-[#F3E5BF] to-[#EFE3CC] border border-[#D8B66A] rounded-full px-1.5 py-0.5">
+                <Calendar className="w-3 h-3 text-[#8E6A25] shrink-0" />
                 {puja.pujaDate}
               </span>
             </div>
-            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-1.5 text-[11.5px]">
-              <span className="bg-[#DFF5EF] text-[#086B50] font-semibold px-2 py-0.5 rounded-full">
+            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-2 text-[11.5px]">
+              <span className="font-svn-sub text-[10px] uppercase tracking-[0.1em] bg-[#F3E5BF] border border-[#D8B66A]/70 text-[#7A1622] font-semibold px-2 py-0.5 rounded-full">
                 {puja.deity}
               </span>
-              <span className="flex items-center gap-1 text-[#66736E]">
-                <Mountain className="w-3.5 h-3.5 text-[#086B50] shrink-0" />
+              <span className="flex items-center gap-1 text-[#665C50]">
+                <Mountain className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
                 {mandirShort}
               </span>
             </div>
           </div>
 
           {/* ── Countdown to the puja date ───────────────────────────────────
-              The page's own emerald gradient — the same one the Savan ribbon
-              above and the sticky pay bar below wear — so the one time-
-              sensitive thing on the page lifts off the cream background as part
-              of the theme rather than as a gold coupon pasted onto it.
+              The theme's lacquered dark plate (`svn-plate`: Midnight ink on a
+              Royal Gold rim with an engraved inner hairline) — the same surface
+              the palette reserves for pricing. The one time-sensitive thing on
+              the page therefore lifts off the parchment as the darkest object
+              in the column, which no amount of gold on gold could achieve.
 
-              On a saturated fill the tiles have to be translucent white rather
-              than the page's #DFF5EF, which all but disappears against this
-              green, and the labels take the light aqua that stays legible on it.
+              On that plate the tiles are translucent gold rather than the
+              page's #F3E5BF fill, which would go muddy against near-black, and
+              the numerals take Bright Gold (#F2C94C) — the palette's price
+              colour, and the only place it appears above the fold.
 
               The free-bracelet coupon that shared this strip is gone: the
               bracelet ships inside the prasad box, and the box is now an opt-in
@@ -782,7 +864,7 @@ export default function SavanPujaPage() {
               tiles are sized to what is left: 4 × 40px + gaps fits inside the
               rail down to a 320px phone. Widening the rail past px-14, or the
               tiles past 40px, is what starts pushing them into each other. */}
-          <div className="relative rounded-xl bg-gradient-to-br from-[#086B50] via-[#008C68] to-[#086B50] px-14 py-3 shadow-md">
+          <div className="svn-plate relative rounded-xl px-14 py-3">
             {/* The right one is the artwork as drawn; the left is mirrored with
                 -scale-x-100 so the pair faces outward. */}
             {MANTRA_SIDE_IMAGE && (
@@ -806,7 +888,7 @@ export default function SavanPujaPage() {
                 would sit on top of the digits wherever the two meet on a
                 narrow screen. */}
             <div className="relative z-10 flex flex-col items-center gap-1.5">
-              <span className="text-[11px] font-bold text-white leading-tight text-center">
+              <span className="font-svn-sub text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#E2BF62] leading-tight text-center">
                 Limited slots for {puja.pujaDate}
               </span>
               {cd ? (
@@ -819,19 +901,19 @@ export default function SavanPujaPage() {
                   ].map((u) => (
                     <div
                       key={u.l}
-                      className="min-w-[40px] bg-white/20 border border-white/30 rounded-lg px-1 py-1 text-center backdrop-blur-[2px]"
+                      className="min-w-[40px] bg-[#C79A2B]/12 border border-[#C79A2B]/45 rounded-lg px-1 py-1 text-center"
                     >
-                      <div className="text-[16px] leading-none font-bold text-white tabular-nums">
+                      <div className="text-[16px] leading-none font-bold text-[#F2C94C] tabular-nums">
                         {pad2(u.v)}
                       </div>
-                      <div className="text-[7.5px] uppercase tracking-wide text-[#DFF5EF] mt-0.5">
+                      <div className="font-svn-sub text-[7px] uppercase tracking-[0.12em] text-[#D8B66A] mt-0.5">
                         {u.l}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <span className="text-[12px] text-[#DFF5EF]">Booking open</span>
+                <span className="text-[12px] text-[#F3E5BF]">Booking open</span>
               )}
             </div>
 
@@ -857,7 +939,7 @@ export default function SavanPujaPage() {
               the countdown that gives it urgency and above everything the page
               says about the seva itself. */}
           <div id="packages">
-            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C79A2B]" />}>
               Choose your seva
             </SectionTitle>
             <SavanPackages
@@ -872,17 +954,17 @@ export default function SavanPujaPage() {
                 the cards can stay about the sevas themselves: neither the box
                 nor the extra Sankalps change the price shown in the bar below,
                 and a devotee should know that before they tap it. */}
-            <div className="mt-2.5 rounded-2xl border border-[#DDEBE6] bg-white px-3 py-2.5 space-y-1.5">
-              <p className="flex items-start gap-1.5 text-[10.5px] text-[#66736E] leading-snug">
-                <Gift className="w-3.5 h-3.5 text-[#C89B3C] shrink-0 mt-px" />
+            <div className="mt-2.5 rounded-2xl border border-[#D8B66A]/70 bg-[#FCF8F0] px-3 py-2.5 space-y-1.5">
+              <p className="flex items-start gap-1.5 text-[10.5px] text-[#665C50] leading-snug">
+                <Gift className="w-3.5 h-3.5 text-[#C79A2B] shrink-0 mt-px" />
                 <span>
                   {selectedPkg.prasadBoxFree
                     ? `Prasad box is FREE with this seva — add it on the next step to have it couriered home.`
                     : `Prasad box can be added on the next step for ₹${PRASAD_BOX_PRICE}.`}
                 </span>
               </p>
-              <p className="flex items-start gap-1.5 text-[10.5px] text-[#66736E] leading-snug">
-                <Users className="w-3.5 h-3.5 text-[#086B50] shrink-0 mt-px" />
+              <p className="flex items-start gap-1.5 text-[10.5px] text-[#665C50] leading-snug">
+                <Users className="w-3.5 h-3.5 text-[#8E6A25] shrink-0 mt-px" />
                 <span>
                   {selectedPkg.freeFamilyMembers > 0
                     ? `${selectedPkg.freeFamilyMembers} family Sankalp${selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free in this seva · extra names ₹${FAMILY_MEMBER_PRICE} each on the next step.`
@@ -897,7 +979,7 @@ export default function SavanPujaPage() {
               where that component used to live, near the top of this file. */}
 
           {/* ── Hero value props ── */}
-          {/* <div className="rounded-2xl border border-[#DDEBE6] bg-gradient-to-br from-[#FFFDF8] via-[#F0FAF7] to-[#DFF5EF]/70 p-3.5 shadow-sm">
+          {/* <div className="rounded-2xl border border-[#D8B66A]/70 bg-gradient-to-br from-[#FCF8F0] via-[#FCF8F0] to-[#EFE3CC] p-3.5 shadow-[0_3px_14px_-8px_rgba(40,25,10,0.35)]">
             <div className="space-y-1.5">
               {[
                 "Rudrabhishek on the last Savan Somwar",
@@ -907,8 +989,8 @@ export default function SavanPujaPage() {
                   ? "Free prasad box, if you add it while booking"
                   : "Optional prasad box delivered at home",
               ].map((t) => (
-                <div key={t} className="flex items-start gap-2 text-[12.5px] text-[#17211D]">
-                  <Check className="w-3.5 h-3.5 text-[#008C68] shrink-0 mt-0.5" strokeWidth={3} />
+                <div key={t} className="flex items-start gap-2 text-[12.5px] text-[#23201B]">
+                  <Check className="w-3.5 h-3.5 text-[#3E6B4A] shrink-0 mt-0.5" strokeWidth={3} />
                   <span>{t}</span>
                 </div>
               ))}
@@ -921,7 +1003,7 @@ export default function SavanPujaPage() {
             centred, so they can be scaled past the strip's own height and
             spill over its top/bottom edges without pushing it taller.
           */}
-          <div className="relative rounded-2xl bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] px-16 py-3 text-center shadow-md">
+          <div className="svn-crimson relative rounded-2xl border border-[#C79A2B]/75 px-16 py-3 text-center shadow-[0_10px_24px_-16px_rgba(40,25,10,0.9)]">
             {MANTRA_SIDE_IMAGE && (
               <img
                 src={MANTRA_SIDE.src}
@@ -937,11 +1019,15 @@ export default function SavanPujaPage() {
                 className="pointer-events-none absolute left-1 top-1/2 -translate-y-1/2 w-22 h-22 object-contain -scale-x-100 drop-shadow-lg"
               />
             )}
-            <p className="text-[15px] font-serif font-bold text-white tracking-wide">
+            {/* Gold leaf on the mantra — the page's one use of `svn-foil`.
+                Reserved for this line precisely because a sweep everywhere is
+                a sweep nowhere; here it is the sacred line the whole seva is
+                built on. */}
+            <p className="svn-foil font-svn-head text-[19px] font-semibold tracking-wide">
               ॐ नमः शिवाय
             </p>
-            <p className="text-[10.5px] text-[#DFF5EF] mt-0.5">
-              Chanted through your Rudrabhishek at Kashi
+            <p className="font-svn-sub text-[9px] uppercase tracking-[0.14em] text-[#E2BF62]/85 mt-1">
+              Chanted through your Rudrabhishek at {puja.templeName}
             </p>
             {MANTRA_SIDE_IMAGE && (
               <img
@@ -963,27 +1049,28 @@ export default function SavanPujaPage() {
           
 
           {/* ── Online-puja reassurance line ── */}
-          <div className="flex items-center justify-center gap-1.5 bg-[#DFF5EF] border border-[#DDEBE6] text-[#086B50] rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
-            <MessageCircle className="w-3.5 h-3.5 text-[#008C68] shrink-0" />
+          <div className="flex items-center justify-center gap-1.5 bg-[#F3E5BF] border border-[#D8B66A] text-[#7A1622] rounded-lg px-3 py-2 text-[11.5px] font-medium text-center">
+            <MessageCircle className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
             Puja performed at {puja.templeName} · receive the video with your
             name &amp; gotra on WhatsApp
           </div>
 
-          
-
-          
+          {/* The offer ends here and the proof begins. A manuscript break marks
+              the turn — the page's sections are otherwise only separated by
+              whitespace, which on a long scroll reads as one continuous column. */}
+          <Ornament />
 
           {/* ── Auto-scrolling devotee reviews ── */}
           <div>
-            <SectionTitle icon={<Star className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+            <SectionTitle icon={<Star className="w-3.5 h-3.5 text-[#C79A2B]" />}>
               Loved by devotees
             </SectionTitle>
             <ReviewMarquee reviews={reviews} />
           </div>
 
           {/* ── How it works ── */}
-          <div className="rounded-2xl border border-[#DDEBE6] bg-gradient-to-br from-[#FFFDF8] via-[#F0FAF7] to-[#DFF5EF]/70 p-3.5 shadow-sm">
-            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+          <div className="rounded-2xl border border-[#D8B66A]/70 bg-gradient-to-br from-[#FCF8F0] via-[#FCF8F0] to-[#EFE3CC] p-3.5 shadow-[0_3px_14px_-8px_rgba(40,25,10,0.35)]">
+            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C79A2B]" />}>
               How your puja will happen
             </SectionTitle>
             <div className="space-y-2.5">
@@ -995,24 +1082,24 @@ export default function SavanPujaPage() {
                 "Add the prasad box while booking to have blessed prasad couriered home",
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-2.5">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center text-[11px] font-bold mt-0.5">
+                  <span className="svn-seal shrink-0 w-5 h-5 rounded-full flex items-center justify-center font-svn-sub text-[10px] font-bold mt-0.5">
                     {i + 1}
                   </span>
-                  <span className="text-[12.5px] text-[#17211D] leading-snug">{step}</span>
+                  <span className="text-[12.5px] text-[#23201B] leading-snug">{step}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* ── Why perform this puja ── */}
-          <div className="rounded-2xl border border-[#DDEBE6] bg-gradient-to-br from-[#FFFDF8] via-[#F0FAF7] to-[#DFF5EF]/70 p-3 shadow-sm">
-            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+          <div className="rounded-2xl border border-[#D8B66A]/70 bg-gradient-to-br from-[#FCF8F0] via-[#FCF8F0] to-[#EFE3CC] p-3 shadow-[0_3px_14px_-8px_rgba(40,25,10,0.35)]">
+            <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C79A2B]" />}>
               Why perform this puja
             </SectionTitle>
             <div className="grid grid-cols-1 gap-1.5">
               {puja.benefits.slice(0, 4).map((b, i) => (
-                <div key={i} className="flex items-start gap-2 text-[12.5px] text-[#17211D]">
-                  <Check className="w-3.5 h-3.5 text-[#008C68] shrink-0 mt-0.5" strokeWidth={3} />
+                <div key={i} className="flex items-start gap-2 text-[12.5px] text-[#23201B]">
+                  <Check className="w-3.5 h-3.5 text-[#3E6B4A] shrink-0 mt-0.5" strokeWidth={3} />
                   <span>{b}</span>
                 </div>
               ))}
@@ -1028,7 +1115,7 @@ export default function SavanPujaPage() {
               });
               setIsEnquiryOpen(true);
             }}
-            className="w-full flex items-center justify-center gap-1.5 text-[#66736E] hover:text-[#086B50] font-semibold text-[12.5px] py-1"
+            className="w-full font-svn-ui flex items-center justify-center gap-1.5 rounded-xl border border-[#C79A2B] bg-transparent hover:bg-[#F3E5BF] text-[#7A1622] font-semibold text-[12.5px] py-2 transition-colors"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Need help? Chat on WhatsApp
@@ -1036,7 +1123,7 @@ export default function SavanPujaPage() {
 
           {/* ── Puja details (accordions from poojaDescription) ── */}
           <div>
-            <SectionTitle icon={<Flame className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+            <SectionTitle icon={<Flame className="w-3.5 h-3.5 text-[#C79A2B]" />}>
               Puja details
             </SectionTitle>
             <div className="space-y-2">
@@ -1054,20 +1141,20 @@ export default function SavanPujaPage() {
 
           {/* ── What you'll get ── */}
           <div>
-            <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+            <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-[#C79A2B]" />}>
               What you'll get
             </SectionTitle>
             <div className="grid grid-cols-3 gap-2">
               {whatYouGet.map(({ icon: Icon, title, sub }) => (
                 <div
                   key={title}
-                  className="bg-white border border-[#DDEBE6] rounded-xl p-2.5 text-center shadow-sm"
+                  className="bg-[#FCF8F0] border border-[#D8B66A]/70 rounded-xl p-2.5 text-center shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)]"
                 >
-                  <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#DFF5EF] to-[#086B50]/20 flex items-center justify-center mb-1.5">
-                    <Icon className="w-4 h-4 text-[#086B50]" />
+                  <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#F3E5BF] to-[#D8B66A]/55 border border-[#D8B66A]/60 flex items-center justify-center mb-1.5">
+                    <Icon className="w-4 h-4 text-[#8E6A25]" />
                   </div>
-                  <p className="text-[11px] font-bold text-[#17211D] leading-tight">{title}</p>
-                  <p className="text-[9.5px] text-[#66736E] leading-tight mt-0.5">{sub}</p>
+                  <p className="font-svn-sub text-[10.5px] font-semibold text-[#23201B] leading-tight">{title}</p>
+                  <p className="text-[9.5px] text-[#665C50] leading-tight mt-0.5">{sub}</p>
                 </div>
               ))}
             </div>
@@ -1076,7 +1163,7 @@ export default function SavanPujaPage() {
           {/* ── FAQ ── */}
           {puja.faqs.length > 0 && (
             <div>
-              <SectionTitle icon={<HelpCircle className="w-3.5 h-3.5 text-[#C89B3C]" />}>
+              <SectionTitle icon={<HelpCircle className="w-3.5 h-3.5 text-[#C79A2B]" />}>
                 Frequently asked questions
               </SectionTitle>
               <div className="space-y-2">
@@ -1098,25 +1185,34 @@ export default function SavanPujaPage() {
             ].map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="bg-white border border-[#DDEBE6] rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm"
+                className="bg-[#FCF8F0] border border-[#D8B66A]/70 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)]"
               >
-                <Icon className="w-4 h-4 text-[#008C68]" />
-                <span className="text-[9.5px] font-semibold text-[#66736E] leading-tight">
+                <Icon className="w-4 h-4 text-[#8E6A25]" />
+                <span className="font-svn-sub text-[9px] font-semibold uppercase tracking-wide text-[#665C50] leading-tight">
                   {label}
                 </span>
               </div>
             ))}
           </div>
 
-          {/* ── Footer / ecosystem ── */}
-          <footer className="pt-3 mt-2 border-t border-[#DDEBE6] text-[11px] text-[#66736E] space-y-2">
-            <p className="font-bold text-[#17211D]">PanditJiAtRequest</p>
+          <Ornament />
+
+          {/* ── Footer / ecosystem ──
+              Dark wood, bookending the wood frame the hero sits in at the top
+              of the page. Full-bleed via the negative margins, because a wood
+              panel inset inside parchment reads as a plank lying on the sheet
+              rather than the board the sheet is pinned to. The `pb` clears the
+              sticky pay bar so the last link is never trapped under it. */}
+          <footer className="svn-wood -mx-4 -mb-4 mt-1 px-4 pt-4 pb-28 border-t border-[#C79A2B]/70 text-[11px] text-[#C6B49A] space-y-2">
+            <p className="font-svn-sub text-[13px] font-semibold tracking-[0.08em] text-[#E2BF62]">
+              PanditJiAtRequest
+            </p>
             <p>1031, Tricity Trade Tower, Zirakpur, Punjab 140603, India</p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
-              <button onClick={() => navigate("/privacypolicy")} className="underline">
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-[#D8B66A]">
+              <button onClick={() => navigate("/privacypolicy")} className="underline underline-offset-2">
                 Privacy Policy
               </button>
-              <button onClick={() => navigate("/termsandconditions")} className="underline">
+              <button onClick={() => navigate("/termsandconditions")} className="underline underline-offset-2">
                 Terms
               </button>
               <a href="tel:+919056955311" className="inline-flex items-center gap-1">
@@ -1136,29 +1232,40 @@ export default function SavanPujaPage() {
           </footer>
         </div>
 
-        {/* ── Sticky bottom CTA ── */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-[#DDEBE6] max-w-md mx-auto shadow-lg">
+        {/* ── Sticky bottom CTA ──
+            Ivory rather than white, gold-ruled along its top edge, and the
+            button is the palette's flat Primary (#A41F2E, hover #87121E) —
+            NOT a gradient. The one thing a devotee must be able to find
+            without looking should be the single most solid block of colour on
+            the page; the two crimson gradients above it (ribbon, mantra) are
+            decoration, and a third would make this read as more of the same. */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#FCF8F0]/96 backdrop-blur-md border-t border-[#C79A2B] max-w-md mx-auto shadow-[0_-6px_20px_-10px_rgba(40,25,10,0.5)]">
           <div className="px-4 pt-2 pb-2.5">
             <div className="flex items-center gap-3">
               {/* Names the chosen package rather than a bare "Total", so the
                   bar always says WHICH seva the price belongs to. */}
               <div className="shrink-0 max-w-[38%]">
-                <span className="text-[9.5px] text-[#66736E] font-semibold uppercase block leading-none truncate">
+                <span className="font-svn-sub text-[8.5px] text-[#8E6A25] font-semibold uppercase tracking-[0.1em] block leading-none truncate">
                   {selectedPkg.name}
                 </span>
-                <span className="text-[19px] font-extrabold text-[#086B50]">
+                {/* `lining-nums` because Cormorant Garamond defaults to
+                    oldstyle figures, which drop the 1, 4, 7 and 9 below the
+                    baseline. Charming in a heading, wrong in a price — a
+                    devotee should not have to re-read what they are paying.
+                    The package cards' prices carry the same override. */}
+                <span className="font-svn-head lining-nums text-[22px] font-bold text-[#7A1622] leading-tight">
                   ₹{price.toLocaleString("en-IN")}
                 </span>
               </div>
               <button
                 onClick={openBooking}
-                className="flex-1 bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#008C68] outline-none"
+                className="flex-1 font-svn-ui bg-[#A41F2E] hover:bg-[#87121E] text-[#FFF8F0] font-bold text-[15px] py-3 rounded-xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.9)] active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none"
               >
                 Book for ₹{price.toLocaleString("en-IN")}
               </button>
             </div>
-            <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-[#66736E]">
-              <Lock className="w-3 h-3 text-[#008C68]" />
+            <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-[#665C50]">
+              <Lock className="w-3 h-3 text-[#8E6A25]" />
               100% secure payment
             </div>
           </div>

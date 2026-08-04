@@ -45,6 +45,209 @@
 }
 
 /* ==========================================================================
+   KASHI SAVAN — antique parchment, aged gold, deep crimson
+   --------------------------------------------------------------------------
+   The Savan Rudrabhishek page wears an old-manuscript look: parchment paper,
+   engraved gold rules, wax-seal badges and a dark wood band top and bottom.
+   Everything here is namespaced `svn-` and the page-wide rules are scoped to
+   `.svn` (the page root), for the same reason `.viv` is scoped below — a body
+   face or a paper texture set globally would restyle the whole site.
+
+   The four faces are assigned by ROLE, not by taste-per-element:
+     heading    Cormorant Garamond — the puja names
+     subheading Cinzel             — section titles, seal badges, small caps
+     body       DM Sans            — every paragraph and list line
+     buttons    Inter              — CTAs and controls only
+   ========================================================================== */
+@theme {
+  --font-svn-head: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-svn-sub: "Cinzel", "Cormorant Garamond", Georgia, serif;
+  --font-svn-body: "DM Sans", system-ui, -apple-system, sans-serif;
+  --font-svn-ui: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.svn {
+  font-family: var(--font-svn-body);
+  color: #23201b;
+}
+
+.svn h1,
+.svn h2 {
+  font-family: var(--font-svn-head);
+}
+
+/* --------------------------------------------------------------------------
+   Vintage parchment — a single long sheet, burnt at its edges and lighter
+   through the middle, the way a real aged page photographs.
+
+   Six layers, in paint order:
+     1  burnt rails      the two long edges, dark and falling off by ~19%
+     2–4 foxing          irregular stains, TILED down the page
+     5–6 tooth           two 3px cross-hatches at ~2.5% for the grain
+
+   The foxing tiles rather than stretching. Stretched over a ~4400px document
+   three blooms are invisible smears; tiled at 940 / 1180 / 1460px with
+   different offsets they land as distinct stains, and because those heights
+   share no useful factor the combined pattern does not visibly repeat within
+   the length of the page.
+
+   Everything is a gradient, deliberately — NOT an feTurbulence SVG and not a
+   texture bitmap. This paints under the entire scrolling column, so either of
+   those would be raster work on every repaint, paid for by the hero, which is
+   the one thing on this page that must not be slowed down. And no
+   `background-attachment: fixed` for a per-screen vignette: that re-rasterises
+   the layer on every scroll frame, which is the same bill by another route —
+   besides which a vignette that follows the viewport reads as a stack of
+   separate sheets rather than one continuous page.
+   -------------------------------------------------------------------------- */
+.svn-parchment {
+  background-color: #f6f0e3;
+  background-image:
+    linear-gradient(90deg,
+      rgba(118, 84, 34, 0.34) 0%,
+      rgba(118, 84, 34, 0.13) 5%,
+      rgba(118, 84, 34, 0.035) 11%,
+      rgba(118, 84, 34, 0) 19%,
+      rgba(118, 84, 34, 0) 81%,
+      rgba(118, 84, 34, 0.035) 89%,
+      rgba(118, 84, 34, 0.13) 95%,
+      rgba(118, 84, 34, 0.34) 100%),
+    radial-gradient(40% 24% at 14% 16%, rgba(146, 106, 42, 0.11), transparent 70%),
+    radial-gradient(32% 19% at 87% 44%, rgba(122, 22, 34, 0.055), transparent 72%),
+    radial-gradient(48% 27% at 33% 76%, rgba(150, 112, 44, 0.095), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(122, 90, 40, 0.03) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(-45deg, rgba(122, 90, 40, 0.024) 0 1px, transparent 1px 3px);
+  background-repeat: no-repeat, repeat-y, repeat-y, repeat-y, repeat, repeat;
+  background-size: 100% 100%, 100% 940px, 100% 1180px, 100% 1460px, auto, auto;
+  background-position: center, 0 0, 0 260px, 0 540px, 0 0, 0 0;
+}
+
+/* The sheet's burnt TOP edge, where the parchment meets the wood-framed hero
+   — the counterpart to the wood footer at its foot, so the page is shaded on
+   all four sides.
+
+   It goes on the CONTENT wrapper, not on `.svn-parchment`: the root's own top
+   ~300px sits under the sticky header, the occasion ribbon and the hero, all
+   of them opaque, so a top burn there would be painted and never once seen. */
+.svn-sheet-head {
+  background-image: linear-gradient(180deg,
+      rgba(118, 84, 34, 0.3) 0%,
+      rgba(118, 84, 34, 0.1) 34%,
+      rgba(118, 84, 34, 0) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 260px;
+  background-position: top;
+}
+
+/* Ancient-manuscript separator: an engraved gold hairline that fades out at
+   both ends, with a small lozenge at its centre. Used standalone between
+   sections. */
+.svn-orn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.svn-orn::before,
+.svn-orn::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, rgba(199, 154, 43, 0.85));
+}
+
+.svn-orn::after {
+  background: linear-gradient(90deg, rgba(199, 154, 43, 0.85), transparent);
+}
+
+/* The same rule, trailing a section heading rather than centred under one. */
+.svn-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  margin-left: 8px;
+  background: linear-gradient(90deg, rgba(199, 154, 43, 0.8), rgba(199, 154, 43, 0));
+}
+
+/* --------------------------------------------------------------------------
+   Wax seal. A struck-crimson disc with a gold rim, a lit top-left edge and a
+   pooled shadow at its foot — the badge language for "Most Popular" and the
+   verified marks. Built from shadows rather than artwork so it tints with the
+   palette and costs no request.
+   -------------------------------------------------------------------------- */
+.svn-seal {
+  background: radial-gradient(125% 125% at 30% 22%, #b8283a 0%, #a41f2e 45%, #7a1622 100%);
+  border: 1px solid rgba(216, 182, 106, 0.85);
+  color: #f3e5bf;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.38),
+    0 2px 7px rgba(40, 25, 10, 0.4);
+}
+
+/* Dark lacquered plate — the pricing/countdown surface from the palette
+   (#1E1A17 on a gold rim), with an inner gold hairline so the rim reads as
+   engraved rather than merely stroked. */
+.svn-plate {
+  background: linear-gradient(160deg, #241f1a 0%, #1e1a17 45%, #161311 100%);
+  border: 1px solid #c79a2b;
+  box-shadow:
+    inset 0 0 0 1px rgba(199, 154, 43, 0.22),
+    0 12px 26px -14px rgba(20, 10, 0, 0.85);
+}
+
+/* Deep crimson band, gold-rimmed — ribbons and the mantra strip. */
+.svn-crimson {
+  background: linear-gradient(135deg, #7a1622 0%, #a41f2e 48%, #7a1622 100%);
+}
+
+/* Dark wood, for the bands that top and tail the page. Grain is a repeating
+   gradient at four irregular intervals so it does not read as corduroy, over
+   a vertical stain and vignetted at both edges. */
+.svn-wood {
+  background-color: #1b1512;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0) 72%, rgba(0, 0, 0, 0.5)),
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.03) 0 2px,
+      rgba(0, 0, 0, 0.05) 2px 5px,
+      rgba(255, 255, 255, 0.014) 5px 9px,
+      rgba(0, 0, 0, 0.055) 9px 14px),
+    linear-gradient(180deg, #3a2a20 0%, #241a14 55%, #17100c 100%);
+}
+
+/* Gold leaf on text — the mantra and the plate's numerals. The sweep is the
+   only always-on animation the theme adds; it runs on background-position of
+   a clipped gradient, which is paint-only and confined to a few glyphs. */
+.svn-foil {
+  background: linear-gradient(100deg, #e2bf62 0%, #f7e2a4 22%, #c79a2b 48%, #f7e2a4 74%, #e2bf62 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: svn-foil-sweep 9s ease-in-out infinite;
+}
+
+@keyframes svn-foil-sweep {
+
+  0%,
+  100% {
+    background-position: 0 0;
+  }
+
+  50% {
+    background-position: 100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svn-foil {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
    Tailwind v4 dropped the v3 preflight rule that gave every <button> a
    `cursor: pointer` — v4 defers to the browser default, which is `default`.
    Every button across this site therefore lost its pointer unless someone

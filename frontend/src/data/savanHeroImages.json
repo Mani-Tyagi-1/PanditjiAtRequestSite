@@ -1,6 +1,6 @@
 {
   "_comment": [
-    "Responsive image sets for the Kashi Rudrabhishek Savan page, self-hosted from",
+    "Responsive image sets for the Mahakaleshwar (Ujjain) Rudrabhishek Savan page, self-hosted from",
     "public/hero/ and pre-encoded as WebP so nothing is resized at runtime.",
     "",
     "SINGLE SOURCE OF TRUTH. Read by two consumers that must agree exactly:",
@@ -15,8 +15,8 @@
     "Regenerate with: node scripts/regenerate-hero-images.mjs"
   ],
   "hero": {
-    "src": "/hero/kashi-rudrabhishek-448.webp",
-    "srcSet": "/hero/kashi-rudrabhishek-448.webp 448w, /hero/kashi-rudrabhishek-896.webp 896w",
+    "src": "/hero/ujjain-rudrabhishek-448.webp",
+    "srcSet": "/hero/ujjain-rudrabhishek-448.webp 448w, /hero/ujjain-rudrabhishek-896.webp 896w",
     "sizes": "(max-width: 448px) 100vw, 448px",
     "width": 448,
     "height": 252

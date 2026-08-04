@@ -58,7 +58,7 @@ const STATIC_ROUTES = [
   // campaign is stopped, comment this out together with the route in App.tsx:
   // once that route is gone the slug redirects to home, and listing it here
   // would advertise a soft-404 to Google.
-  { path: "/kashi-mahadev-savan-puja", priority: "0.9", changefreq: "daily" },
+  { path: "/mahakaal-savan-somwar-puja", priority: "0.9", changefreq: "daily" },
   // Kaal Bhairav Kalashtami 2026 campaign page — remove after 11 Aug 2026
   { path: "/kashi-kaal-bhairav-puja", priority: "0.9", changefreq: "daily" },
   // Banke Bihari Janmashtami 2026 campaign page — remove after 4 Sep 2026

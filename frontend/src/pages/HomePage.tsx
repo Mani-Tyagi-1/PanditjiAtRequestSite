@@ -39,11 +39,13 @@ const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
 
 // ── Featured puja banner (Home, between "Book Puja" and "Our Services") ──
-// LIVE: Savan 2026 / Kashi Rudrabhishek on the last Savan Somwar.
-// 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kashi banner so the slot is
-//    never broken; swap the string for your own artwork when it's ready.
+// LIVE: Savan 2026 / Mahakaleshwar Rudrabhishek at Ujjain on the last Savan Somwar.
+// 👉 PASTE THE CREATIVE URL HERE. Defaults to the Ujjain banner — the same
+//    artwork the puja page's hero is cut from, so the slot can never advertise
+//    a different temple than the page it opens. Swap the string for a
+//    home-specific creative when one is ready, and update the W/H below with it.
 const FEATURED_PUJA_BANNER =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20banner1.png";
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp";
 
 // Where the banner sends the devotee. Kept next to the image so the creative and
 // its destination can never drift apart.
@@ -52,8 +54,11 @@ const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
 // Intrinsic size of the creative, used only to reserve the right amount of
 // vertical space while it loads so the sections below don't jump (CLS). Read
 // off the actual file — change these together with the URL above.
-const FEATURED_PUJA_BANNER_W = 1080;
-const FEATURED_PUJA_BANNER_H = 566;
+// The Ujjain banner is 16:9 (the hero variants cut from it are 448x252). Only
+// the RATIO matters here — the <img> is w-full h-auto, so these two numbers
+// exist purely to reserve the right height while it loads.
+const FEATURED_PUJA_BANNER_W = 1920;
+const FEATURED_PUJA_BANNER_H = 1080;
 
 // ── Second featured puja banner: Kaal Bhairav Kalashtami campaign ──
 // 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kaal Bhairav banner so the
@@ -365,7 +370,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── Featured puja banner ── Savan 2026 Kashi Rudrabhishek.
+            {/* ── Featured puja banner ── Savan 2026 Mahakaleshwar Rudrabhishek.
                 One tappable creative into the themed puja page. It leads the
                 Janmashtami banner below because its puja date lands first —
                 keep these two ordered by date, so the slot always opens with

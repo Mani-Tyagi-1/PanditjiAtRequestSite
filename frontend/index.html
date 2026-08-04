@@ -27,12 +27,19 @@
          loaded — those headings had all been falling back to Times New Roman.
          Loading it here fixes every one of them. Inter is the body face for
          the Vedic Vivah pages.
+
+         Cinzel (engraved caps) and DM Sans join them for the Savan/Kashi
+         parchment theme — Cinzel carries its subheadings and seal badges, DM
+         Sans its body copy, while buttons stay on Inter. They ride the SAME
+         stylesheet request as the two above rather than a second <link>: the
+         browser is already blocked on this one, so extra families cost bytes
+         but no extra round trip. Weights are pruned to the ones actually used.
     ═══════════════════════════════════════════════ -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
   />
 
   <!-- Preconnect to image CDNs for faster LCP -->

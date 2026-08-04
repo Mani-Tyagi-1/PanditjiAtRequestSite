@@ -255,7 +255,7 @@ export default function SavanPujaBookingPage() {
     const boxLabel = shippedBox
         ? `${shippedBox.name}${selectedPkg.prasadBoxFree ? " (free)" : ` (paid add-on ₹${PRASAD_BOX_PRICE})`}: ${shipList.join(", ")}`
         : "";
-    // e.g. "Shree Kashi Rudrabhishek Mahapuja — Rudri Path Mahaseva [Prasad Box + Shiv Chalisa (free): Dry Prasad…]"
+    // e.g. "Shree Mahakaleshwar Rudrabhishek Mahapuja — Rudri Path Mahaseva [Prasad Box + Shiv Chalisa (free): Dry Prasad…]"
     const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${boxLabel ? ` [${boxLabel}]` : ""}`;
 
     // Line-item breakdown reported to Meta alongside `value`. The package price

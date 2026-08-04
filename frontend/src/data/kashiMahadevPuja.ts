@@ -1,12 +1,20 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  Shree Kashi Rudrabhishek Mahapuja — FRONTEND-ONLY puja detail data.
+//  Shree Mahakaleshwar Rudrabhishek Mahapuja — FRONTEND-ONLY puja detail data.
 //
 //  This is an ONLINE puja: the puja is performed on the devotee's behalf by
-//  verified pandits at Shree Kashi Vishwanath Temple (Varanasi, Uttar
+//  verified pandits at Shri Mahakaleshwar Jyotirlinga Temple (Ujjain, Madhya
 //  Pradesh) on the LAST SAVAN SOMWAR — Monday, 24 August 2026. The devotee
 //  receives the puja video (with their name & gotra) on WhatsApp and can
 //  optionally have blessed prasad couriered home. Nobody visits the
 //  devotee's home.
+//
+//  ⚠️  FILE NAME. This file is still called kashiMahadevPuja.ts and still
+//      exports KASHI_MAHADEV_*. The page it feeds moved from Kashi Vishwanath
+//      to Mahakaleshwar; the identifiers were left alone on purpose so the
+//      pivot stayed a content diff rather than a rename across eight import
+//      sites and the server seed script. Read them as "the Savan Mahadev
+//      puja", not as a claim about the temple — the temple is `templeName`
+//      below.
 //
 //  Shaped like a backend pooja document so it can be handed straight to the
 //  dedicated page — no fetch-by-id call is made for the CONTENT.
@@ -36,8 +44,17 @@
 //    • the SavanPujaPage routes + lazy imports in App.tsx
 // ─────────────────────────────────────────────────────────────────────────
 
-/** Route slug for the dedicated page (matches the route in App.tsx). */
-export const KASHI_MAHADEV_PUJA_SLUG = "kashi-mahadev-savan-puja";
+/**
+ * Route slug for the dedicated page (matches the route in App.tsx).
+ *
+ * This is the CANONICAL url — the sitemap entry, the pre-rendered route shell,
+ * `<link rel=canonical>` and `og:url` all read it from here. The page used to
+ * live at `/kashi-mahadev-savan-puja` and moved here when the puja moved to
+ * Ujjain; that older slug is still routed, as a redirect onto this one, so ad
+ * links and WhatsApp shares already in the wild keep landing. Never delete a
+ * slug this list has ever held — demote it to a redirect in App.tsx.
+ */
+export const KASHI_MAHADEV_PUJA_SLUG = "mahakaal-savan-somwar-puja";
 
 /**
  * Stable catalog key for this puja — the `poojaID` field on the backend Pooja
@@ -240,7 +257,7 @@ export const SAVAN_PACKAGES: SavanPackage[] = [
         tagline: "The essential Savan Somwar abhishek",
         price: 851,
         core: [
-            "Rudrabhishek performed in your name at Kashi",
+            "Rudrabhishek performed in your name at Mahakal, Ujjain",
             "Personalised Sankalp with your name & gotra",
             "Full puja video shared on WhatsApp",
         ],
@@ -380,31 +397,43 @@ export const kashiMahadevPuja = {
     // also carry the puja name, so a stable string is fine here.
     _id: KASHI_MAHADEV_POOJA_ID,
     poojaID: KASHI_MAHADEV_POOJA_ID,
-    poojaNameEng: "Shree Kashi Rudrabhishek Mahapuja",
-    poojaNameHindi: "श्री काशी रुद्राभिषेक महापूजा",
-    poojaMode: "online", // performed at Kashi Vishwanath Temple on your behalf
+    poojaNameEng: "Shree Mahakaleshwar Rudrabhishek Mahapuja",
+    poojaNameHindi: "श्री महाकालेश्वर रुद्राभिषेक महापूजा",
+    poojaMode: "online", // performed at Shri Mahakaleshwar Temple on your behalf
     poojaPriceOnline: 851,
     poojaPriceOffline: 851,
     poojaGods: [] as string[],
-    // Kashi banner artwork.
+    // Ujjain banner artwork — the same file the hero was cut from, so the
+    // social card and the banner a devotee lands on are the one picture.
     poojaCardImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
     poojaMainImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
     // [0] is the og:image and the hero's onError fallback. The hero carousel
     // itself renders the self-hosted set in data/savanHeroImages.json, not this
     // list, so a second entry here bought nothing — it was the same banner
     // twice.
     poojaImages: [
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Kashi%20puja%20banner.png",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
     ],
     poojaVideoLink: "",
 
     // ── Presentation-only fields (used by the Savan-themed detail page) ──
     deity: "Mahadev",
-    /** Temple where the online puja is performed on your behalf. */
-    templeName: "Kashi",
-    templeLocation: "Varanasi, Uttar Pradesh",
+    /**
+     * Temple where the online puja is performed on your behalf.
+     *
+     * "Mahakal" rather than the full "Shri Mahakaleshwar Jyotirlinga Temple":
+     * the page drops this straight into running sentences ("Puja performed at
+     * {templeName}", "Pandit ji performs the Rudrabhishek at {templeName}"),
+     * where the formal name reads as signage rather than speech. The full name
+     * is spelt out in the accordions, where there is room for it.
+     *
+     * `templeLocation` is split on the first comma for the meta line, so the
+     * CITY must come first here.
+     */
+    templeName: "Mahakal",
+    templeLocation: "Ujjain, Madhya Pradesh",
     rating: 4.9,
     devoteesLabel: "75K+",
     /** Scheduled date of this puja — the last Savan Somwar. */
@@ -414,10 +443,10 @@ export const kashiMahadevPuja = {
     occasionHindi: "अंतिम सावन सोमवार",
     /** Short outcome bullets shown in the "Why perform this puja" card. */
     benefits: [
-        "Rudrabhishek at Kashi — Mahadev's own eternal city",
-        "Gangajal drawn from the Ganga at Varanasi offered in your name",
+        "Rudrabhishek at Mahakal — the only south-facing Jyotirlinga on earth",
+        "Shipra jal from Ujjain's sacred river offered in your name",
         "Removes fear, ill health, and untimely misfortune (Mahamrityunjaya blessings)",
-        "Kashi is the foremost kshetra for pacifying Pitra, Kaal Sarp and Shani doshas",
+        "Ujjain is the foremost kshetra for pacifying Kaal Sarp, Pitra and Shani doshas",
         "Brings marital harmony and blessings for an early, suitable match",
         "Grants inner peace, courage, and progress toward moksha",
     ],
@@ -432,37 +461,37 @@ export const kashiMahadevPuja = {
     samagriDetails: [] as any[],
     samagriPrice: 0,
     poojaBenefitsDescription:
-        "Verified pandits perform Rudrabhishek of Baba Vishwanath on your behalf at Kashi on the last Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Gangajal drawn from the Ganga at Varanasi, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
+        "Verified pandits perform Rudrabhishek of Baba Mahakal on your behalf at Ujjain on the last Savan Somwar with traditional Vedic rituals.<br>\r\nA personalised Sankalp is done in your name and gotra so the puja is dedicated to you and your family.<br>\r\nOfferings include Shipra jal from Ujjain's sacred river, Gangajal, milk, bel patra, dhatura, bhang, white flowers and chandan, with Rudri path and Mahamrityunjaya mantra chanting.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and can have blessed prasad couriered to your home.<br>",
     poojaDescription: [
         {
             headingId: "1",
             heading: "Purpose of Puja",
             description:
-                "<p>To seek the blessings of <strong>Baba Vishwanath</strong> — <strong>Mahadev</strong> as the Lord of the Universe, worshipped at <strong>Kashi Vishwanath</strong>, among the most revered of the twelve Jyotirlingas.</p><p><strong>Kashi (Varanasi)</strong> is held to be Shiva's own city, said to rest upon his trishul and to stand untouched even at the dissolution of the world. The month of <strong>Shravan (Savan)</strong> is his most beloved month, and <strong>Savan Somwar</strong> is its most powerful day. This online puja is performed on your behalf in <strong>Kashi (Mahadev's city) </strong> on the <strong>last Savan Somwar</strong> to remove fear, illness and suffering, and to invite peace, courage and prosperity.</p>",
+                "<p>To seek the blessings of <strong>Baba Mahakal</strong> — <strong>Mahadev</strong> as the Lord of Time itself, worshipped at <strong>Shri Mahakaleshwar</strong>, among the most revered of the twelve Jyotirlingas and the only one that faces <strong>south</strong> (dakshinamukhi), the direction of Kaal.</p><p><strong>Ujjain</strong> is <strong>Mahakal Nagri</strong> — the city where Mahakal himself is held to be the king, and one of the seven <em>moksha-puris</em>. The month of <strong>Shravan (Savan)</strong> is Mahadev's most beloved month, and <strong>Savan Somwar</strong> is its most powerful day. This online puja is performed on your behalf at <strong>Mahakal's own darbar in Ujjain</strong> on the <strong>last Savan Somwar</strong> to remove fear, illness and suffering, and to invite peace, courage and prosperity.</p>",
         },
         {
             headingId: "2",
             heading: "Best Time to Perform",
             description:
-                "<p><strong>Day:</strong> Monday, 24 August 2026 — the last Savan Somwar</p><p>Shravan month runs from <strong>30 July to 28 August 2026</strong>. Mondays of this month are considered the single most auspicious time in the year to worship <strong>Mahadev</strong>, and the <em>last</em> Savan Somwar is the final and most sought-after of them — the closing offering of Shiva's own month, believed to seal the merit of the entire Shravan. In Savan, lakhs of kanwariyas carry Gangajal from Kashi to offer at Shiva temples across India.</p>",
+                "<p><strong>Day:</strong> Monday, 24 August 2026 — the last Savan Somwar</p><p>Shravan month runs from <strong>30 July to 28 August 2026</strong>. Mondays of this month are considered the single most auspicious time in the year to worship <strong>Mahadev</strong>, and the <em>last</em> Savan Somwar is the final and most sought-after of them — the closing offering of Shiva's own month, believed to seal the merit of the entire Shravan. In Savan, Ujjain sees Mahakal's grand <strong>sawari</strong> carried through the city and lakhs of devotees queue at the Jyotirlinga with jal.</p>",
         },
         {
             headingId: "3",
             heading: "Benefits of Puja",
             description:
-                "<p>• Rudrabhishek at <strong>Kashi</strong>, Mahadev's own eternal city.</p><p> • <strong>Gangajal</strong> drawn from the Ganga at Varanasi offered in your name.</p><p> • Removes fear, ill health, and untimely misfortune through <strong>Mahamrityunjaya</strong> blessings.</p><p> • Kashi is the foremost kshetra for pacifying <strong>Pitra Dosh</strong>, <strong>Kaal Sarp Dosh</strong> and <strong>Shani</strong> afflictions.</p><p> • Brings marital harmony, and blessings for an early and suitable match.</p><p> • Grants inner peace, courage, and progress toward <strong>moksha</strong>.</p>",
+                "<p>• Rudrabhishek at <strong>Mahakal</strong> — the only south-facing Jyotirlinga on earth.</p><p> • <strong>Shipra jal</strong> from Ujjain's sacred river offered in your name.</p><p> • Removes fear, ill health, and untimely misfortune through <strong>Mahamrityunjaya</strong> blessings — Mahakal is the lord of Kaal itself.</p><p> • Ujjain is the foremost kshetra for pacifying <strong>Kaal Sarp Dosh</strong>, <strong>Pitra Dosh</strong> and <strong>Shani</strong> afflictions.</p><p> • Brings marital harmony, and blessings for an early and suitable match.</p><p> • Grants inner peace, courage, and progress toward <strong>moksha</strong>.</p>",
         },
         {
             headingId: "4",
             heading: "What is performed",
             description:
-                "<p>Verified pandits perform the complete Vedic vidhi at <strong>MAHADEVTemple in Kashi</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p><p>The entire puja is dedicated specifically to you and your family, and is recorded for you.</p>",
+                "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Mahakaleshwar Jyotirlinga Temple, Ujjain</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Rudrabhishek</strong> of the Jyotirlinga with Shipra jal, Gangajal and panchamrit, <strong>Rudri path</strong>, <strong>Mahamrityunjaya mantra</strong> chanting, and Shiv aarti.</p><p>The entire puja is dedicated specifically to you and your family, and is recorded for you.</p>",
         },
         {
             headingId: "5",
             heading: "Offerings made on your behalf",
             description:
-                "<p>• <strong>Gangajal</strong> drawn from the Ganga at Varanasi, and raw milk abhishek</p><p> • <strong>Bel patra</strong>, dhatura, bhang and white aak flowers</p><p> • Panchamrit — milk, curd, ghee, honey and sugar</p><p> • Chandan, bhasma, akshata and white flowers</p><p> • Diya, dhoop and camphor for the Shiv aarti</p><p> • <strong>Rudri path</strong> and Mahamrityunjaya mantra chanting</p>",
+                "<p>• <strong>Shipra jal</strong> from Ujjain's sacred river and <strong>Gangajal</strong>, with raw milk abhishek</p><p> • <strong>Bel patra</strong>, dhatura, bhang and white aak flowers</p><p> • Panchamrit — milk, curd, ghee, honey and sugar</p><p> • Chandan, bhasma, akshata and white flowers</p><p> • Diya, dhoop and camphor for the Shiv aarti</p><p> • <strong>Rudri path</strong> and Mahamrityunjaya mantra chanting</p>",
         },
         {
             headingId: "6",
@@ -474,7 +503,7 @@ export const kashiMahadevPuja = {
             headingId: "7",
             heading: "Colours Preferred",
             description:
-                "<p><strong>White</strong> and <strong>Saffron</strong></p><p>White reflects the purity, bhasma and detachment of <strong>Mahadev</strong>, while saffron marks the devotion of the Savan kanwar tradition that flows out of Kashi — together the most auspicious colours for this puja.</p>",
+                "<p><strong>White</strong> and <strong>Saffron</strong></p><p>White reflects the purity, bhasma and detachment of <strong>Mahakal</strong>, while saffron marks the devotion of the Savan sawari that is carried through Ujjain in Shravan — together the most auspicious colours for this puja.</p>",
         },
         {
             headingId: "8",
@@ -494,11 +523,11 @@ export const kashiMahadevPuja = {
         },
         {
             question: "What is Rudrabhishek?",
-            answer: "Rudrabhishek is the ceremonial bathing of the Shivling with Gangajal, milk, panchamrit and sacred offerings while Rudri path and Shiv mantras are chanted. It is the most traditional way of worshipping Mahadev during Savan.",
+            answer: "Rudrabhishek is the ceremonial bathing of the Shivling with sacred jal, milk, panchamrit and sacred offerings while Rudri path and Shiv mantras are chanted. It is the most traditional way of worshipping Mahadev during Savan.",
         },
         {
-            question: "Why is Kashi special for Shiva puja?",
-            answer: "Kashi (Varanasi) is regarded as Mahadev's own city — said to rest on his trishul and to remain untouched even at the dissolution of the world. Kashi Vishwanath is among the most revered of the twelve Jyotirlingas, and Savan there is the most sacred time of the year.",
+            question: "Why is Ujjain special for Shiva puja?",
+            answer: "Ujjain is Mahakal Nagri — the city where Mahadev, as Mahakal, is held to be the king himself, and one of the seven moksha-puris. Shri Mahakaleshwar is among the most revered of the twelve Jyotirlingas and the only one that faces south, the direction of Kaal, which is why it is the foremost place to seek Mahamrityunjaya blessings and relief from Kaal Sarp and Shani afflictions.",
         },
         {
             question: "Is prasad included?",
@@ -510,7 +539,7 @@ export const kashiMahadevPuja = {
         },
         {
             question: "Can I book from outside India?",
-            answer: "Yes. You can book from anywhere in the world. The puja is performed at Kashi Vishwanath Temple, Varanasi on your behalf and the video is sent to you on WhatsApp.",
+            answer: "Yes. You can book from anywhere in the world. The puja is performed at Shri Mahakaleshwar Jyotirlinga Temple, Ujjain on your behalf and the video is sent to you on WhatsApp.",
         },
         {
             question: "What if I don't know my gotra?",

@@ -211,10 +211,14 @@ function PackageCard({
                 </div>
             </button>
 
-            {/* ── Prasad box, decided right here ── */}
-            <div className="px-3 pb-2">
+            {/* ── Prasad box, decided right here ── with the detail disclosure
+                sitting at its right edge, so the box and "what's in it" are one
+                row instead of two. They are SIBLINGS, never nested: the paid
+                variant is itself a <button>, and a button inside a button is
+                invalid HTML that swallows the inner control's accessible name. */}
+            <div className="px-3 pb-3 flex items-center gap-2">
                 {freeBox ? (
-                    <p className="flex items-center gap-1.5 rounded-xl bg-[#EDF9F0] border border-[#A7D8B6] px-2.5 py-1.5 text-[11px] font-semibold leading-snug text-[#1F7A50]">
+                    <p className="flex-1 min-w-0 flex items-center gap-1.5 rounded-xl bg-[#EDF9F0] border border-[#A7D8B6] px-2.5 py-1.5 text-[11px] font-semibold leading-snug text-[#1F7A50]">
                         <Gift className="w-3.5 h-3.5 shrink-0 text-[#2E8B57]" />
                         <span>
                             <b>FREE {freeBox.name}</b> couriered home
@@ -231,50 +235,82 @@ function PackageCard({
                             onTogglePrasadBox(!boxOn);
                         }}
                         aria-pressed={boxOn}
-                        className={`w-full flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] cursor-pointer transition-colors ${
+                        // Gold and solid when unticked, NOT the dashed sand
+                        // outline it used to wear. A dashed border on a cream
+                        // card is the visual language of a placeholder or a
+                        // disabled field — precisely the wrong signal for the
+                        // one optional thing on this page we want noticed.
+                        className={`relative flex-1 min-w-0 flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] cursor-pointer transition-colors ${
                             boxOn
                                 ? "border-[#D63D72] bg-white"
-                                : "border-dashed border-[#E0CDB4] bg-[#FFF8F0] hover:border-[#F8A9C4]"
+                                : "border-[#E7B63A] bg-gradient-to-r from-[#FFF6E3] to-[#FFEAD0] shadow-[0_2px_10px_rgba(231,182,58,.28)] hover:border-[#D63D72]"
                         }`}
                     >
+                        {/* A slow breathing ring, and ONLY on the selected card:
+                            every package without a free box would otherwise
+                            pulse at once, which reads as a page-wide error
+                            state rather than a suggestion. Stops for anyone who
+                            has asked for reduced motion. */}
+                        {selected && !boxOn && (
+                            <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute -inset-px rounded-xl ring-2 ring-[#E7B63A]/50 animate-pulse motion-reduce:animate-none"
+                            />
+                        )}
                         <span
                             className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                boxOn ? "border-[#D63D72] bg-[#D63D72]" : "border-[#E0CDB4] bg-white"
+                                boxOn ? "border-[#D63D72] bg-[#D63D72]" : "border-[#E7B63A] bg-[#F7C547]"
                             }`}
                         >
                             {boxOn ? (
                                 <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />
                             ) : (
-                                <Plus className="w-2.5 h-2.5 text-[#8A5A12]" strokeWidth={3} />
+                                <Plus className="w-2.5 h-2.5 text-[#5A3600]" strokeWidth={3.5} />
                             )}
                         </span>
-                        <span className="flex-1 min-w-0 text-[11px] font-semibold leading-snug text-[#5C1A34]">
+                        <span className="flex-1 min-w-0 text-[11px] font-bold leading-snug text-[#5C1A34]">
                             {boxOn ? "Prasad Box added" : "Add Prasad Box"}
-                            <span className="font-normal text-[#8A8A8A]">
+                            <span className={`font-normal ${boxOn ? "text-[#8A8A8A]" : "text-[#8A5A12]"}`}>
                                 {" "}
                                 · couriered home
                             </span>
                         </span>
-                        <span className={`shrink-0 text-[11.5px] font-bold ${boxOn ? "text-[#D63D72]" : "text-[#8A5A12]"}`}>
-                            +₹{PRASAD_BOX_PRICE}
-                        </span>
+                        {boxOn ? (
+                            <span className="shrink-0 text-[11.5px] font-bold text-[#D63D72]">
+                                +₹{PRASAD_BOX_PRICE}
+                            </span>
+                        ) : (
+                            // A filled chip, not loose text — it has to look like
+                            // the price OF something addable, not a surcharge.
+                            <span className="shrink-0 rounded-full bg-[#F7C547] px-2 py-0.5 text-[11px] font-extrabold text-[#5A3600]">
+                                +₹{PRASAD_BOX_PRICE}
+                            </span>
+                        )}
                     </button>
                 )}
-            </div>
 
-            {/* ── Detail disclosure ── independent of selection, so choosing a
-                package never dumps a long panel onto the page unasked. */}
-            <button
-                type="button"
-                onClick={() => onOpenChange(!open)}
-                aria-expanded={open}
-                className={`w-full flex items-center justify-center gap-1 pb-2.5 text-[10.5px] font-bold outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] rounded-b-2xl cursor-pointer ${
-                    open ? "text-[#D63D72]" : "text-[#8A8A8A] hover:text-[#D63D72]"
-                }`}
-            >
-                {open ? "Hide box contents" : "See what's in the box"}
-                <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
-            </button>
+                {/* Detail disclosure — independent of selection, so choosing a
+                    package never dumps a long panel onto the page unasked.
+
+                    A bare chevron: the label it used to carry ("See what's in
+                    the box" / "Hide box contents") was a line of copy on every
+                    one of the four cards saying what the arrow already says. The
+                    aria-label keeps it announced properly, since a screen reader
+                    cannot read a rotation. */}
+                <button
+                    type="button"
+                    onClick={() => onOpenChange(!open)}
+                    aria-expanded={open}
+                    aria-label={open ? "Hide box contents" : `See what's in the ${freeBox ? freeBox.name : "Prasad Box"}`}
+                    className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] cursor-pointer ${
+                        open
+                            ? "border-[#F8B5CB] bg-[#FFF1F5] text-[#D63D72]"
+                            : "border-[#F4DFC2] bg-white text-[#8A8A8A] hover:border-[#F8A9C4] hover:text-[#D63D72]"
+                    }`}
+                >
+                    <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                </button>
+            </div>
 
             {/* grid-rows 0fr→1fr animates the height without measuring; the inner
                 wrapper clips the overflow. */}

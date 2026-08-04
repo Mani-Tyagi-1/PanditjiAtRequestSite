@@ -20,6 +20,10 @@ import { useAuth } from "../context/AuthContext";
 // import { kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG } from "../data/kashiMahadevPuja";
 // import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG } from "../data/kaalBhairavPuja";
 // import { hanumanPuja, HANUMAN_PUJA_SLUG } from "../data/hanumanPuja";
+import {
+    bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, BANKE_BIHARI_POOJA_ID, BANNER_IMG,
+} from "../data/bankeBihariPuja";
+import { optimizedImg } from "../utils/img";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
 import VerifiedPanditJi from "../components/home/VerifiedPanditJi";
@@ -63,9 +67,27 @@ const LOGO =
 //     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Hanuman%20gari%20ji%20banner.webp";
 // const FEATURED_PUJA_3_HREF = `/${HANUMAN_PUJA_SLUG}`;
 
+// ── LIVE featured puja banner: Banke Bihari Ji Janmashtami campaign ──
+// 👉 PASTE A DEDICATED HOME CREATIVE HERE. It defaults to the puja page's own
+//    hero banner, so the slot is never broken.
+const JANMASHTAMI_BANNER = BANNER_IMG;
+
+// Where the banner sends the devotee. Kept next to the image so the creative and
+// its destination can never drift apart.
+const JANMASHTAMI_HREF = `/${BANKE_BIHARI_PUJA_SLUG}`;
+
+// Intrinsic size of the creative, used only to reserve the right amount of
+// vertical space while it loads so the sections below don't jump (CLS). Read off
+// the actual file — change these together with the URL above.
+const JANMASHTAMI_BANNER_W = 1672;
+const JANMASHTAMI_BANNER_H = 941;
+
 
 type Pooja = {
     _id: string;
+    /** Stable catalog key. Present in the list projection; used to route the
+     *  handful of poojas that have their own themed page. */
+    poojaID?: string;
     poojaNameEng: string;
     poojaNameHindi?: string;
     poojaCardImage?: string;
@@ -74,6 +96,18 @@ type Pooja = {
     isFeatured?: boolean;
     featuredRank?: number;
 };
+
+/**
+ * Where a catalog card should go.
+ *
+ * Poojas normally open the generic `/puja/:id` page, but Banke Bihari Ji has its
+ * own themed page with its own packages and prasad boxes. Without this the card
+ * in "Book Puja" would quietly route around all of that to a page that knows
+ * nothing about them. Falls back to the generic route, so an older API response
+ * without `poojaID` behaves exactly as before.
+ */
+const poojaHref = (p: Pooja) =>
+    p.poojaID === BANKE_BIHARI_POOJA_ID ? `/${BANKE_BIHARI_PUJA_SLUG}` : `/puja/${p._id}`;
 
 const CONSULTATIONS = [
     { icon: Phone, label: "Talk on Call", sub: "Speak Directly", path: "/paid-consultation?type=voice", tint: "bg-orange-100 text-orange-600" },
@@ -227,7 +261,7 @@ export default function HomePage() {
                                         key={p._id}
                                         onClick={() => {
                                             setSearchQuery("");
-                                            navigate(`/puja/${p._id}`);
+                                            navigate(poojaHref(p));
                                         }}
                                         className="w-full flex items-center gap-3 p-2 hover:bg-orange-50/50 rounded-xl transition-colors text-left"
                                     >
@@ -294,7 +328,7 @@ export default function HomePage() {
                         : poojas.map((p) => (
                             <button
                                 key={p._id}
-                                onClick={() => navigate(`/puja/${p._id}`)}
+                                onClick={() => navigate(poojaHref(p))}
                                 className="shrink-0 w-[38%] bg-white rounded-3xl border border-orange-100 shadow-sm text-center active:scale-[0.98] transition-transform snap-start"
                             >
                                 <div className="relative h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-amber-300 via-orange-300 to-orange-400">
@@ -357,7 +391,38 @@ export default function HomePage() {
             </section>
             */}
 
-
+            {/* ── Featured puja banner ── Banke Bihari Ji Janmashtami.
+                One tappable creative into the themed puja page. ViewContent
+                fires here as well as on the puja page itself, so the home
+                banner's own contribution to the funnel is measurable. */}
+            <section className="px-4">
+                <button
+                    onClick={() => {
+                        window.fbq?.("track", "ViewContent", {
+                            content_name: bankeBihariPuja.poojaNameEng,
+                            content_ids: [bankeBihariPuja._id],
+                            content_type: "product",
+                            value: bankeBihariPuja.poojaPriceOnline,
+                            currency: "INR",
+                            source: "home_banner",
+                        });
+                        navigate(JANMASHTAMI_HREF);
+                    }}
+                    aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
+                    className="block w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm active:scale-[0.98] transition-transform"
+                >
+                    <img
+                        src={optimizedImg(JANMASHTAMI_BANNER, 900)}
+                        onError={(e) => { e.currentTarget.src = JANMASHTAMI_BANNER; }}
+                        width={JANMASHTAMI_BANNER_W}
+                        height={JANMASHTAMI_BANNER_H}
+                        alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-auto object-cover"
+                    />
+                </button>
+            </section>
 
              {/* ── Our Services ── */}
             <OurServices />

@@ -406,15 +406,15 @@ export const kashiMahadevPuja = {
     // Ujjain banner artwork — the same file the hero was cut from, so the
     // social card and the banner a devotee lands on are the one picture.
     poojaCardImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner.png.webp",
     poojaMainImage:
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner.png.webp",
     // [0] is the og:image and the hero's onError fallback. The hero carousel
     // itself renders the self-hosted set in data/savanHeroImages.json, not this
     // list, so a second entry here bought nothing — it was the same banner
     // twice.
     poojaImages: [
-        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
+        "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner.png.webp",
     ],
     poojaVideoLink: "",
 

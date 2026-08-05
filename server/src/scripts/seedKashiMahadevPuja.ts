@@ -51,7 +51,7 @@ import Pooja from "../model/userApp/poojaModel";
 const POOJA_ID = "RF_SAVAN_01";
 
 const BANNER =
-  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp";
+  "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner.png.webp";
 
 /**
  * Mirrors frontend/src/data/kashiMahadevPuja.ts. The page renders from the

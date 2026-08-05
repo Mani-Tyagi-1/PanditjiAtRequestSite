@@ -69,7 +69,7 @@ const MANTRA_SIDE_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com
  * picture, so a missing hero file would have silently swapped in unrelated
  * art rather than a lower-fidelity copy of the same banner.
  */
-const HERO_ORIGIN_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp";
+const HERO_ORIGIN_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner.png.webp";
 
 /**
  * Banners that auto-advance after the hero above.
@@ -81,18 +81,19 @@ const HERO_ORIGIN_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com
  * slides can never slow the hero down.
  *
  * Add more by appending — the dots, the timer and the crossfade all read
- * their count from this array. Keep them ~16:9; they are cropped to a 208px
- * tall band with object-cover, so a square banner loses its top and bottom.
+ * their count from this array. Cut them 16:9: the band is `aspect-[16/9]`, so
+ * a banner at that ratio is shown WHOLE and anything else loses its edges to
+ * object-cover.
  */
-const HERO_EXTRA_SLIDES = [
+const HERO_EXTRA_SLIDES: { src: string; alt: string }[] = [
     {
-        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp",
-        alt: "Rudrabhishek at Shri Mahakaleshwar, Ujjain on the last Savan Somwar",
+        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner1.png.webp",
+        alt: "Why Rudrabhishek in Ujjain? Ujjain is the sacred city of Mahakal and home to the revered Shri Mahakaleshwar Jyotirlinga. Performing Rudrabhishek here is believed to invite Lord Shiva's blessings for peace, protection, spiritual strength and removal of obstacles.",
     },
-    // {
-    //     src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/w3.png.webp",
-    //     alt: "Rudrabhishek at Shri Mahakaleshwar, Ujjain on the last Savan Somwar",
-    // },
+    {
+        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/ujjain-banner2.png.webp",
+        alt: "Puja process: 1. Choose the Rudrabhishek Puja. 2. Enter your name and gotra during booking. 3. Pandit ji performs your Sankalp and puja in Ujjain. 4. Receive the puja video on WhatsApp, and prasad if chosen.",
+    },
 ];
 
 /** Beat between banners. */
@@ -630,14 +631,32 @@ export default function SavanPujaPage() {
             thing overlaid on the artwork — it already carries the puja name,
             location and value props, and repeating those just covered its own
             icons. */}
-        {/* The frame is dark wood and gold-ruled along its foot: the artwork is
-            cropped to a 208px band, so where it does not quite fill the box the
-            devotee sees the panel the picture is mounted on rather than a bare
-            letterbox bar. `svn-wood` is set on the CONTAINER, not an inset
-            child — an absolutely positioned sibling paints over static ones, so
-            a child would cover the hero image itself. */}
+        {/* The frame is dark wood and gold-ruled along its foot: where the
+            artwork does not quite fill the box the devotee sees the panel the
+            picture is mounted on rather than a bare letterbox bar. `svn-wood`
+            is set on the CONTAINER, not an inset child — an absolutely
+            positioned sibling paints over static ones, so a child would cover
+            the hero image itself.
+
+            ── Why `aspect-[16/9]` and not the old fixed `h-52` ──
+            This band used to be a flat 208px, which in the 448px column is
+            2.15:1. The banners are 16:9 (1.78:1), so object-cover scaled them
+            to 252px and clipped 22px off the top AND bottom — 8.7% at each
+            end. That was survivable when the artwork was atmospheric.
+
+            It is not survivable now: all three banners are INFORMATION panels
+            with a title badge along the top edge and the "Mahakal Nagri Ujjain
+            · Shri Mahakaleshwar Dham" strip along the bottom. At 208px that
+            strip was sliced in half on every slide and slide 3 lost the trishul
+            above its "Puja Process" heading.
+
+            Matching the band to the artwork's own ratio shows all three whole.
+            It costs ~44px above the fold, which is the trade this deliberately
+            makes: a banner whose words are cut off is not worth the pixels it
+            saves. If the artwork ever goes back to atmospheric photography,
+            `h-52` is the tighter choice again. */}
         <div
-          className="svn-wood relative h-52 overflow-hidden border-b border-[#C79A2B]/70"
+          className="svn-wood relative aspect-[16/9] overflow-hidden border-b border-[#C79A2B]/70"
           aria-roledescription="carousel"
           aria-label={`${puja.poojaNameEng} banners`}
         >

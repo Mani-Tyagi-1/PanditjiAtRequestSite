@@ -47,7 +47,7 @@ const LOGO =
 //    a different temple than the page it opens. Swap the string for a
 //    home-specific creative when one is ready, and update the W/H below with it.
 const FEATURED_PUJA_BANNER =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain%20banner.webp";
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner.png.webp";
 
 // Where the banner sends the devotee. Kept next to the image so the creative and
 // its destination can never drift apart.
@@ -56,11 +56,11 @@ const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
 // Intrinsic size of the creative, used only to reserve the right amount of
 // vertical space while it loads so the sections below don't jump (CLS). Read
 // off the actual file — change these together with the URL above.
-// The Ujjain banner is 16:9 (the hero variants cut from it are 448x252). Only
-// the RATIO matters here — the <img> is w-full h-auto, so these two numbers
-// exist purely to reserve the right height while it loads.
-const FEATURED_PUJA_BANNER_W = 1920;
-const FEATURED_PUJA_BANNER_H = 1080;
+// Read off the file itself: Ujjain-banner.png.webp is 1672x941 (16:9). Only the
+// RATIO matters here — the <img> is w-full h-auto, so these two numbers exist
+// purely to reserve the right height while it loads.
+const FEATURED_PUJA_BANNER_W = 1672;
+const FEATURED_PUJA_BANNER_H = 941;
 
 // ── Second featured puja banner: Kaal Bhairav Kalashtami campaign ──
 // 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kaal Bhairav banner so the

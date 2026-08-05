@@ -19,7 +19,15 @@ export interface IChadhavaBooking {
   prasadBoxPrice: number;
   // Totals
   itemsTotal: number;
-  totalAmount: number;
+  totalAmount: number;          // INR value of the sale (foreign markup applied)
+  listAmount?: number;          // the India list price, before any markup
+  // What the card actually saw, and which market the sale came from.
+  currency?: string;
+  chargedAmount?: number;
+  fxRate?: number;
+  priceMultiplier?: number;
+  country?: string;
+  countryCode?: string;
   // Devotee
   devoteeName: string;
   gotra: string;
@@ -60,6 +68,13 @@ const chadhavaBookingSchema = new Schema<IChadhavaBooking>({
   prasadBoxPrice: { type: Number, default: 0 },
   itemsTotal: { type: Number, required: true },
   totalAmount: { type: Number, required: true },
+  listAmount: { type: Number },
+  currency: { type: String, default: 'INR' },
+  chargedAmount: { type: Number },
+  fxRate: { type: Number },
+  priceMultiplier: { type: Number },
+  country: { type: String },
+  countryCode: { type: String, index: true },
   devoteeName: { type: String, required: true, trim: true },
   gotra: { type: String, default: "" },
   phone: { type: String, required: true, trim: true },

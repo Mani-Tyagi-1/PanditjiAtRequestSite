@@ -4,6 +4,7 @@ import {
     X, Star, Plus, Minus, Check, ShieldCheck, Truck, RotateCcw,
 } from "lucide-react";
 import type { ShopProduct } from "./shopData";
+import { money } from "../../../utils/currency";
 
 interface Props {
     isOpen: boolean;
@@ -121,10 +122,10 @@ export default function ShopProductModal({
 
                                 {/* Price */}
                                 <div className="flex items-baseline gap-2 mt-3">
-                                    <span className="text-[26px] font-bold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
+                                    <span className="text-[26px] font-bold text-stone-900">{money(product.price)}</span>
                                     {product.originalPrice && (
                                         <>
-                                            <span className="text-[15px] text-stone-400 line-through">₹{product.originalPrice.toLocaleString("en-IN")}</span>
+                                            <span className="text-[15px] text-stone-400 line-through">{money(product.originalPrice)}</span>
                                             <span className="text-[13px] font-bold text-emerald-600">{discount}% off</span>
                                         </>
                                     )}
@@ -207,7 +208,7 @@ export default function ShopProductModal({
                                         className="flex-1 flex flex-col items-center justify-center bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-2.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform leading-none"
                                     >
                                         <span className="text-[14px]">Buy Now</span>
-                                        <span className="text-[10px] font-semibold text-amber-50/90 mt-0.5">₹{lineTotal.toLocaleString("en-IN")}</span>
+                                        <span className="text-[10px] font-semibold text-amber-50/90 mt-0.5">{money(lineTotal)}</span>
                                     </button>
                                 </div>
                             )}

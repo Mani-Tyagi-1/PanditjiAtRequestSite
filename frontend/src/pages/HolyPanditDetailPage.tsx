@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { type HolyPandit} from "../components/booking/KashiVrindavanPandits/kashiVrindavanData";
 import PanditBookingModal from "../components/booking/KashiVrindavanPandits/PanditBookingModal";
+import { money } from "../utils/currency";
 
 export default function HolyPanditDetailPage() {
     const { slug } = useParams<{ slug: string }>();
@@ -137,7 +138,7 @@ export default function HolyPanditDetailPage() {
                                         <h4 className="font-bold text-[14px] text-stone-850">{svc.name}</h4>
                                         <p className="text-[12px] text-stone-500 leading-snug">{svc.description}</p>
                                     </div>
-                                    <span className="font-bold text-[16px] text-stone-900 shrink-0">₹{svc.price.toLocaleString("en-IN")}</span>
+                                    <span className="font-bold text-[16px] text-stone-900 shrink-0">{money(svc.price)}</span>
                                 </div>
                                 <p className="text-[11px] text-stone-400 mt-2 flex items-center gap-1">
                                     <Clock className="w-3.5 h-3.5" /> approx {svc.durationHours} hours duration
@@ -160,7 +161,7 @@ export default function HolyPanditDetailPage() {
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-stone-100 px-4 py-3 flex items-center justify-between max-w-md mx-auto shadow-lg">
                 <div>
                     <span className="text-[10px] text-stone-400 font-semibold uppercase block">Starting at</span>
-                    <span className="text-[20px] font-bold text-indigo-600">₹{pandit.startingPrice.toLocaleString("en-IN")}</span>
+                    <span className="text-[20px] font-bold text-indigo-600">{money(pandit.startingPrice)}</span>
                 </div>
                 <button onClick={() => setIsModalOpen(true)} className="bg-gradient-to-r from-indigo-500 to-violet-600 text-white font-bold px-8 py-3 rounded-xl shadow-md active:scale-95 transition-all">
                     Request Pt. Ji

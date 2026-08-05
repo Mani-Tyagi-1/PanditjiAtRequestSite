@@ -8,6 +8,7 @@ import { optimizedImg } from "../utils/img";
 import { type Chadhava, type ChadhavaSelection } from "../components/booking/ChadhavaBooking/chadhavaData";
 // Devshayani Ekadashi combo (frontend-only offering — remove to disable)
 import { devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_TEMPLES, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
+import { money } from "../utils/currency";
 
 function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" | "goldbar" }) {
     const [timeLeft, setTimeLeft] = useState("");
@@ -601,7 +602,7 @@ export default function ChadhavaDetailPage() {
                                 )}
                             </div>
                             <h5 className="text-[11px] font-bold text-[#2E1F15] leading-tight line-clamp-2 text-center">{item.itemName}</h5>
-                            <span className="text-[12px] font-bold text-[#C1272D] text-center mt-0.5">₹{item.itemPrice}/-</span>
+                            <span className="text-[12px] font-bold text-[#C1272D] text-center mt-0.5">{money(item.itemPrice)}/-</span>
                             <div className="mt-1">
                                 {count === 0 ? (
                                     <button
@@ -679,9 +680,9 @@ export default function ChadhavaDetailPage() {
                                         {/* Price & Action */}
                                         <div className="flex items-center justify-between mt-1">
                                             <div className="flex items-baseline gap-2">
-                                                <span className="text-[18px] font-extrabold text-[#C1272D]">₹ {item.itemPrice}/-</span>
+                                                <span className="text-[18px] font-extrabold text-[#C1272D]">{money(item.itemPrice)}/-</span>
                                                 {item.originalPrice && (
-                                                    <span className="text-[13px] text-stone-400 line-through">₹{item.originalPrice}/-</span>
+                                                    <span className="text-[13px] text-stone-400 line-through">{money(item.originalPrice)}/-</span>
                                                 )}
                                             </div>
 
@@ -735,7 +736,7 @@ export default function ChadhavaDetailPage() {
                             <p className="text-[11px] text-stone-500 leading-snug">{chadhava.prasad.desc}</p>
                         </div>
                         <span className={`flex items-center gap-1 text-[12px] font-bold px-3 py-1.5 rounded-lg ${addPrasad ? "bg-emerald-500 text-white" : "bg-amber-500 text-white"}`}>
-                            {addPrasad ? <><Check className="w-3.5 h-3.5" strokeWidth={3} /> Added</> : `Add ₹${chadhava.prasad.price}`}
+                            {addPrasad ? <><Check className="w-3.5 h-3.5" strokeWidth={3} /> Added</> : `Add ${money(chadhava.prasad.price)}`}
                         </span>
                     </button>
                 </div>
@@ -915,7 +916,7 @@ export default function ChadhavaDetailPage() {
                 <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF7EC] border-t border-[#EAD3A0] px-4 py-3 flex items-center justify-between">
                     <div className="leading-tight text-left">
                         <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
-                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
+                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">{money(grandTotal)}/-</p>
                     </div>
                     <button
                         onClick={() => setPrasadUpsellOpen(true)}
@@ -929,7 +930,7 @@ export default function ChadhavaDetailPage() {
                 <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFF3E9] border-t border-[#FFE0CC] px-4 py-3 flex items-center justify-between">
                     <div className="leading-tight text-left">
                         <span className="text-[12px] text-stone-600 font-semibold">Your Chadhava</span>
-                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">₹{grandTotal.toLocaleString("en-IN")}/-</p>
+                        <p className="text-[19px] font-extrabold text-[#C1272D] mt-0.5">{money(grandTotal)}/-</p>
                     </div>
                     <button
                         onClick={() => setPrasadUpsellOpen(true)}
@@ -984,7 +985,7 @@ export default function ChadhavaDetailPage() {
                                     <p className="text-[11.5px] text-stone-500 mt-0.5 leading-snug">
                                         Assorted satvik prasad blessed directly at the temple during your Seva.
                                     </p>
-                                    <p className="text-[15.5px] font-extrabold text-[#E05A10] mt-1">₹298</p>
+                                    <p className="text-[15.5px] font-extrabold text-[#E05A10] mt-1">{money(298)}</p>
                                 </div>
                             </div>
 

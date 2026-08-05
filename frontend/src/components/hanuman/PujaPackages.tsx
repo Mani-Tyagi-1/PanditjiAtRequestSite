@@ -3,6 +3,7 @@ import {
     HANUMAN_PACKAGES,
     type PujaPackageId,
 } from "../../data/hanumanPuja";
+import { money } from "../../utils/currency";
 
 /**
  * Selectable Hanuman package cards, shared by the detail page and the booking
@@ -71,7 +72,7 @@ export default function PujaPackages({
                                 </div>
                                 <div className="text-right shrink-0">
                                     <p className="text-[19px] font-extrabold leading-none text-[#C63D00]">
-                                        ₹{pkg.price.toLocaleString("en-IN")}
+                                        {money(pkg.price)}
                                     </p>
                                     <p className="text-[8.5px] uppercase tracking-wide mt-0.5 text-[#A78A6B]">one-time</p>
                                 </div>

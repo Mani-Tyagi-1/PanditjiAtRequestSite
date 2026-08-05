@@ -19,6 +19,8 @@ export const sendBookingConfirmationEmail = async ({
   bookingDate,
   poojaMode,
   amount,
+  currency,
+  chargedAmount,
   contactNumber,
   bookingId,
 }: {
@@ -27,7 +29,12 @@ export const sendBookingConfirmationEmail = async ({
   poojaName: string;
   bookingDate: string;
   poojaMode: string;
+  /** Always INR — the booking's own price. */
   amount: number;
+  /** ISO-4217 the card was billed in; omit or "INR" for a domestic booking. */
+  currency?: string;
+  /** `amount` in `currency`. Required whenever `currency` is not INR. */
+  chargedAmount?: number;
   contactNumber: string;
   bookingId: string;
 }): Promise<void> => {
@@ -37,6 +44,15 @@ export const sendBookingConfirmationEmail = async ({
   if (!to || !to.includes("@")) {
     throw new Error(`Invalid recipient email: "${to}"`);
   }
+
+  // What the card statement will say. A devotee in New Jersey who paid $28.07
+  // must not be sent a receipt reading ₹2,398 — that reads as a different
+  // charge. The INR price rides along in brackets because every internal
+  // reference to this booking (WhatsApp, admin, support) is in rupees.
+  const isForeign = Boolean(currency) && currency !== "INR" && typeof chargedAmount === "number";
+  const amountPaidLabel = isForeign
+    ? `${currency} ${chargedAmount!.toFixed(2)} <span style="font-size:12px;font-weight:600;color:#a8a29e;">(₹${amount.toLocaleString("en-IN")})</span>`
+    : `₹${amount.toLocaleString("en-IN")}`;
 
   const date = new Date(bookingDate);
   const formattedDate = date.toLocaleDateString("en-IN", {
@@ -110,7 +126,7 @@ export const sendBookingConfirmationEmail = async ({
                   </tr>
                   <tr style="border-bottom:1px solid #fee2c8;">
                     <td style="font-size:13px;color:#78716c;padding:8px 0;">Amount Paid</td>
-                    <td style="font-size:18px;font-weight:800;color:#ea580c;text-align:right;padding:8px 0;">₹${amount.toLocaleString("en-IN")}</td>
+                    <td style="font-size:18px;font-weight:800;color:#ea580c;text-align:right;padding:8px 0;">${amountPaidLabel}</td>
                   </tr>
                   <tr>
                     <td style="font-size:12px;color:#a8a29e;padding:8px 0;">Booking ID</td>

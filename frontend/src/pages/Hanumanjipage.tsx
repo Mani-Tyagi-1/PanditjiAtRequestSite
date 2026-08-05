@@ -12,6 +12,7 @@ import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { hanumanPuja, HANUMAN_PUJA_SLUG, DEFAULT_PACKAGE_ID, getPackage, type PujaPackageId } from "../data/hanumanPuja";
 import PujaPackages from "../components/hanuman/PujaPackages";
+import { money } from "../utils/currency";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -349,11 +350,11 @@ export default function Hanumanjipage() {
           <meta property="og:type" content="product" />
           <meta property="og:site_name" content="Pandit Ji At Request" />
           <meta property="og:title" content={`${puja.poojaNameEng} — Savan Mangalwar Puja at ${puja.templeName}, Ayodhya`} />
-          <meta property="og:description" content={`Hanuman Savan Mangalwar puja performed on your behalf at ${mandirName}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹${getPackage("basic").price.toLocaleString("en-IN")}.`} />
+          <meta property="og:description" content={`Hanuman Savan Mangalwar puja performed on your behalf at ${mandirName}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ${money(getPackage("basic").price)}.`} />
           <meta property="og:image" content={image} />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={`${puja.poojaNameEng} — Savan Mangalwar Puja at Ayodhya`} />
-          <meta name="twitter:description" content={`Hanuman Savan Mangalwar puja at ${mandirName}. Packages from ₹${getPackage("basic").price.toLocaleString("en-IN")}, puja video on WhatsApp.`} />
+          <meta name="twitter:description" content={`Hanuman Savan Mangalwar puja at ${mandirName}. Packages from ${money(getPackage("basic").price)}, puja video on WhatsApp.`} />
           <meta name="twitter:image" content={image} />
           {/* Preload the LCP hero (direct CDN webp) at highest priority. */}
           <link rel="preload" as="image" href={image} fetchPriority="high" />
@@ -480,7 +481,7 @@ export default function Hanumanjipage() {
             </SectionTitle>
             <PujaPackages selectedId={packageId} onSelect={setPackageId} />
             <p className="mt-2 text-[10.5px] text-[#7A5A3A] leading-snug text-center">
-              Extra family members can be added at ₹151 each on the next step.
+              Extra family members can be added at {money(151)} each on the next step.
             </p>
           </div>
 
@@ -717,14 +718,14 @@ export default function Hanumanjipage() {
                   {selectedPkg.name}
                 </span>
                 <span className="text-[19px] font-extrabold text-[#C63D00]">
-                  ₹{price.toLocaleString("en-IN")}
+                  {money(price)}
                 </span>
               </div>
               <button
                 onClick={openBooking}
                 className="flex-1 bg-gradient-to-r from-[#E65A00] via-[#C63D00] to-[#E65A00] text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#E65A00] outline-none"
               >
-                Book for ₹{price.toLocaleString("en-IN")}
+                Book for {money(price)}
               </button>
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-[#7A5A3A]">

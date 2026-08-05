@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { MapPin, Star, Users, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { LiveMandirPuja } from "./liveMandirData";
+import { money } from "../../../utils/currency";
 
 const STATUS_META: Record<
     LiveMandirPuja["status"],
@@ -103,11 +104,11 @@ export default function LiveMandirPujaCard({ puja }: Props) {
                     <div className="flex flex-col leading-none">
                         <div className="flex items-baseline gap-1">
                             <span className="text-[17px] font-extrabold text-[#D85C0E]">
-                                ₹{puja.price.toLocaleString("en-IN")}
+                                {money(puja.price)}
                             </span>
                             {puja.originalPrice && (
                                 <span className="text-[11px] text-stone-400 line-through">
-                                    ₹{puja.originalPrice.toLocaleString("en-IN")}
+                                    {money(puja.originalPrice)}
                                 </span>
                             )}
                         </div>

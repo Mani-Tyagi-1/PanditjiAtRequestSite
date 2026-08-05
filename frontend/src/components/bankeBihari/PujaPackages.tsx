@@ -11,6 +11,7 @@ import {
     type PujaPackageId,
 } from "../../data/bankeBihariPuja";
 import { ItemTileRow } from "./ItemTiles";
+import { shipsPrasad, useMoney } from "../../utils/currency";
 
 /**
  * Selectable Banke Bihari package cards, shared by the detail page and the
@@ -132,6 +133,14 @@ function PackageCard({
 }) {
     const freeBox = pkg.freePrasadBox ? PRASAD_BOXES[pkg.freePrasadBox] : null;
     const allOfferings = packageOfferings(pkg);
+    // Prices stay INR in the data layer; only what is drawn changes.
+    const { country, money } = useMoney();
+    // Blessed prasad is couriered within India only — see `shipsPrasad`. Both
+    // the toggle and the "what's in the box" disclosure come off the card
+    // abroad: the disclosure has nothing left to disclose once the parcel is
+    // not on offer, and a card that still pictures it is selling a promise the
+    // checkout will not keep.
+    const prasadShippable = shipsPrasad(country);
 
     // The box add-on only ever reflects THIS card when it is the chosen one —
     // an unticked box on the other three is the honest state, since adding it
@@ -176,7 +185,7 @@ function PackageCard({
                         </div>
                     </div>
                     <p className="shrink-0 text-[18px] font-extrabold leading-none text-[#D63D72]">
-                        ₹{pkg.price.toLocaleString("en-IN")}
+                        {money(pkg.price)}
                     </p>
                 </div>
 
@@ -211,6 +220,7 @@ function PackageCard({
                 </div>
             </button>
 
+            {prasadShippable && (<>
             {/* ── Prasad box, decided right here ── with the detail disclosure
                 sitting at its right edge, so the box and "what's in it" are one
                 row instead of two. They are SIBLINGS, never nested: the paid
@@ -277,13 +287,13 @@ function PackageCard({
                         </span>
                         {boxOn ? (
                             <span className="shrink-0 text-[11.5px] font-bold text-[#D63D72]">
-                                +₹{PRASAD_BOX_PRICE}
+                                +{money(PRASAD_BOX_PRICE)}
                             </span>
                         ) : (
                             // A filled chip, not loose text — it has to look like
                             // the price OF something addable, not a surcharge.
                             <span className="shrink-0 rounded-full bg-[#F7C547] px-2 py-0.5 text-[11px] font-extrabold text-[#5A3600]">
-                                +₹{PRASAD_BOX_PRICE}
+                                +{money(PRASAD_BOX_PRICE)}
                             </span>
                         )}
                     </button>
@@ -327,7 +337,7 @@ function PackageCard({
                             either again here was pure repetition. */}
                         <div className="pt-2.5 border-t border-[#F8B5CB]">
                             <Block
-                                title={freeBox ? `${freeBox.name} — free` : `Prasad Box — ₹${PRASAD_BOX_PRICE}`}
+                                title={freeBox ? `${freeBox.name} — free` : `Prasad Box — ${money(PRASAD_BOX_PRICE)}`}
                             >
                                 <ItemTileRow
                                     items={prasadBoxContents(freeBox ? freeBox.tier : "standard")}
@@ -338,6 +348,7 @@ function PackageCard({
                     </div>
                 </div>
             </div>
+            </>)}
         </div>
     );
 }

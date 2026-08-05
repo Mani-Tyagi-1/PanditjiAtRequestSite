@@ -8,6 +8,7 @@ import axios from "axios";
 import AppDownloadTopBar from "./AppDownloadTopBar";
 import LoginModal from "../auth/LoginModal";
 import { useAuth } from "../../context/AuthContext";
+import { money } from "../../utils/currency";
 
 const navLinks = [
     { label: "Profile", href: "/profile", icon: "👤" },
@@ -151,7 +152,7 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                                         </p>
                                                     </div>
                                                     <div className="text-orange-600 font-bold text-xs">
-                                                        ₹{puja.poojaPriceOnline || puja.poojaPriceOffline}
+                                                        {money(puja.poojaPriceOnline || puja.poojaPriceOffline)}
                                                     </div>
                                                 </div>
                                             ))}
@@ -375,7 +376,7 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                         />
                                     </a>
                                     <p className="text-[11px] text-stone-500 text-center font-medium">
-                                        Get ₹100 off your first booking
+                                        Get {money(100)} off your first booking
                                     </p>
                                     <a
                                         href="https://play.google.com/store/apps/details?id=com.panditJiAtReqapp"

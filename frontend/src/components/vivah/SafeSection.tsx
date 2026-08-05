@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { Phone } from "lucide-react";
+import { money } from "../../utils/currency";
 
 /**
  * Per-section error boundary for the Vivah pages.
@@ -62,9 +63,9 @@ export default class SafeSection extends Component<
  */
 export function StaticPackagesBackup({ onBook }: { onBook?: () => void }) {
   const tiers = [
-    { name: "Shubh Vivah", price: "₹21,000", note: "1 Pandit Ji · every ritual included" },
-    { name: "Raj Vivah", price: "₹51,000", note: "2 Pandit Jis · shagun gifts · most popular" },
-    { name: "Maharaja Vivah", price: "₹1,11,000", note: "3 Pandit Jis · dedicated coordinator" },
+    { name: "Shubh Vivah", price: money(21000), note: "1 Pandit Ji · every ritual included" },
+    { name: "Raj Vivah", price: money(51000), note: "2 Pandit Jis · shagun gifts · most popular" },
+    { name: "Maharaja Vivah", price: money(111000), note: "3 Pandit Jis · dedicated coordinator" },
   ];
   return (
     <div className="max-w-[1180px] mx-auto px-4 sm:px-6">

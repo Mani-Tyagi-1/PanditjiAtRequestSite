@@ -16,6 +16,15 @@ import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
 import { tryConsumeAppReferralOrder } from '../../utils/partnerAffiliateReferralCap';
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from '../../utils/whatsapp';
 import { sendBookingConfirmationEmail } from '../../utils/emailService';
+import {
+  BASE_CURRENCY,
+  convertFromInr,
+  inrPerUnit,
+  multiplierFor,
+  normalizePhone,
+  resolveCurrency,
+  toMinorUnits,
+} from '../../config/currency';
 import type { Document } from "mongoose";
 
 // --- helpers ---
@@ -511,6 +520,15 @@ type CreatePendingBookingBody = {
   concern?: string;
   familyMembers?: any[];
   prasadAdded?: boolean;
+  // ── International checkout ──
+  /** ISO-4217 the devotee wants to be billed in. `amount` stays INR regardless. */
+  currency?: string;
+  /** Country calling code of `phone`, no "+". Absent or "91" ⇒ the India flow. */
+  dialCode?: string;
+  /** ISO-3166 alpha-2 the devotee is buying from, e.g. "US". */
+  countryCode?: string;
+  /** Readable country name, stored alongside the code for ops and reports. */
+  country?: string;
 };
 
 type CompleteBookingBody = {
@@ -787,6 +805,8 @@ export async function finalizePendingPoojaBooking(
         bookingDate: String(finalBooking.bookingDate),
         poojaMode: finalBooking.poojaMode || "online",
         amount: Number((finalBooking as any).amount || amountPaid || 0),
+        currency: (finalBooking as any).currency,
+        chargedAmount: (finalBooking as any).chargedAmount,
         contactNumber: String((finalBooking as any).userPhone || ""),
         bookingId: String((finalBooking as any)._id),
       });
@@ -897,11 +917,23 @@ export async function reconcilePoojaBookingPayment(opts: {
   }
 
   // Amount sanity check — never confirm a booking for less than it costs.
+  //
+  // Razorpay reports the amount in the ORDER's currency, in its smallest unit.
+  // For an international booking that is cents/fils of the presentment
+  // currency, not paise, so it has to be compared against `chargedAmount` —
+  // comparing dollars-in-cents against rupees-in-paise would reject every
+  // foreign payment as underpaid and strand a booking the devotee has paid for.
+  const currency = (pendingDoc as any).currency || BASE_CURRENCY;
+  const expectedMajor =
+    currency === BASE_CURRENCY
+      ? Number(pendingDoc.amount)
+      : Number((pendingDoc as any).chargedAmount ?? convertFromInr(Number(pendingDoc.amount), currency));
+
   if (typeof amountPaise === 'number' && Number.isFinite(amountPaise)) {
-    const expectedPaise = Math.round(Number(pendingDoc.amount) * 100);
-    if (amountPaise < expectedPaise) {
+    const expectedMinor = toMinorUnits(expectedMajor, currency);
+    if (amountPaise < expectedMinor) {
       console.error(
-        `[RazorpayWebhook][Puja] Amount mismatch for order=${orderId}: paid=${amountPaise} expected=${expectedPaise}. Not confirming.`,
+        `[RazorpayWebhook][Puja] Amount mismatch for order=${orderId}: paid=${amountPaise} expected=${expectedMinor} ${currency}. Not confirming.`,
       );
       return true;
     }
@@ -912,7 +944,10 @@ export async function reconcilePoojaBookingPayment(opts: {
     { razorpayPaymentId: paymentId, razorpayOrderId: orderId },
     {
       io,
-      amountPaid: typeof amountPaise === 'number' ? amountPaise / 100 : undefined,
+      // Downstream (Meta CAPI value, confirmation email) works in INR, so the
+      // booking's own INR total is the right number here — the foreign minor
+      // units Razorpay reported are not comparable to it.
+      amountPaid: Number(pendingDoc.amount),
       activePanditExternalIds,
     },
   );
@@ -959,6 +994,10 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       concern,
       familyMembers,
       prasadAdded,
+      currency: requestedCurrency,
+      dialCode,
+      countryCode,
+      country,
     } = req.body as CreatePendingBookingBody;
 
     // ── User resolution ──────────────────────────────────────────────────────
@@ -967,22 +1006,31 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       userExists = await User.findById(userId);
     }
     if (!userExists) {
-      // Fallback: resolve by phone (strips country code prefix)
-      const rawPhone = String(phone || contactNumber || '').replace(/\D/g, '');
-      const alias10 = rawPhone.length >= 10 ? rawPhone.slice(-10) : rawPhone;
-      if (alias10.length === 10) {
-        userExists = await User.findOne({
-          $or: [
-            { phone: alias10 },
-            { phone: `91${alias10}` },
-            { phone: { $regex: alias10 + '$' } },
-          ],
-        });
+      // Fallback: resolve by phone. India keeps the historic bare 10-digit
+      // alias (every OneSignal login, WhatsApp template and existing booking
+      // assumes it); an international number keeps its country code, without
+      // which the confirmation would be sent to a truncated number.
+      const isIndianNumber = !dialCode || String(dialCode).replace(/\D/g, '') === '91';
+      const storedPhone = normalizePhone(phone || contactNumber, dialCode);
+      const usable = isIndianNumber ? storedPhone.length === 10 : storedPhone.length >= 8;
+
+      if (usable) {
+        userExists = await User.findOne(
+          isIndianNumber
+            ? {
+                $or: [
+                  { phone: storedPhone },
+                  { phone: `91${storedPhone}` },
+                  { phone: { $regex: storedPhone + '$' } },
+                ],
+              }
+            : { phone: storedPhone },
+        );
 
         if (!userExists) {
           // Auto-register user
           userExists = new User({
-            phone: alias10,
+            phone: storedPhone,
             name: bhaktName || 'Guest User',
             isFromApp: false,
             isNotifyOkay: true,
@@ -995,7 +1043,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       }
     }
     if (!userExists) {
-      res.status(400).json({ message: 'A valid 10-digit phone number is required.' });
+      res.status(400).json({ message: 'A valid phone number is required.' });
       return;
     }
 
@@ -1031,9 +1079,13 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
         : amount;
 
     // --- Razorpay Order Creation ---
-    const orderOptions: any = {
-      amount: amount * 100, // paise
-      currency: 'INR',
+    // `amount` is INR and stays the booking's price. When the devotee is abroad
+    // the order is raised in THEIR currency instead, and the charge is derived
+    // here from the INR total using the server's own rate table — the browser
+    // sends the currency it wants, never the amount to bill.
+    const buildOrderOptions = (ccy: string, charged: number) => ({
+      amount: toMinorUnits(charged, ccy),
+      currency: ccy,
       receipt: receiptId,
       payment_capture: 1,
       notes: {
@@ -1041,12 +1093,30 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
         poojaId: String(poojaId ?? pujaSlug ?? ''),
         mode: poojaMode,
         amount,
+        ...(ccy !== BASE_CURRENCY && { currency: ccy, chargedAmount: String(charged) }),
         ...(panditDakshina != null && { panditDakshina: String(panditDakshina) }),
         ...(isLiveMandir && { isLiveMandir: 'true', pujaSlug, templeName }),
       },
-    };
+    });
 
-    const order = await razorpay.orders.create(orderOptions);
+    let currency = resolveCurrency(requestedCurrency);
+    let chargedAmount = convertFromInr(Number(amount), currency);
+    let order;
+    try {
+      order = await razorpay.orders.create(buildOrderOptions(currency, chargedAmount) as any);
+    } catch (orderErr: any) {
+      // A currency the Razorpay account is not enabled for is the one failure
+      // here that has a good answer: international cards can pay an INR order,
+      // so falling back bills the devotee correctly in rupees instead of
+      // showing them "could not start payment" and losing the booking.
+      if (currency === BASE_CURRENCY) throw orderErr;
+      console.error(
+        `[PujaBooking] Razorpay rejected a ${currency} order (${orderErr?.error?.description || orderErr?.message}); retrying in ${BASE_CURRENCY}.`,
+      );
+      currency = BASE_CURRENCY;
+      chargedAmount = Number(amount);
+      order = await razorpay.orders.create(buildOrderOptions(currency, chargedAmount) as any);
+    }
 
     // --- Create Pending Booking Record ---
     // For Live Mandir, the pujaSlug is NOT in the Pooja collection, so poojaExists
@@ -1076,9 +1146,23 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       // poojaType: live mandir vs normal
       poojaType: isLiveMandir ? 'live_puja_at_mandir' : 'normal_pooja',
 
-      // store both total + base (derived)
+      // store both total + base (derived), always in INR
       amount,
       poojaPrice,
+
+      // Where the sale was made and what the card was actually billed.
+      // Recorded even for INR so a booking always states its own market rather
+      // than leaving it to be inferred from a phone number.
+      //   amount        ₹4,200  <- INR value of the sale (already marked up)
+      //   chargedAmount  $47.73 <- what the card saw
+      //   currency       USD
+      //   country        United States  /  countryCode  US
+      currency,
+      chargedAmount,
+      fxRate: inrPerUnit(currency),
+      ...(countryCode && { countryCode: String(countryCode).toUpperCase().slice(0, 2) }),
+      ...(country && { country: String(country).slice(0, 64) }),
+      priceMultiplier: multiplierFor(currency),
 
       // store dakshina if present
       panditDakshina,
@@ -1149,6 +1233,12 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       bookingId: (newBooking as any).id,
       razorpayOrderId: order.id,
       razorpayKeyId: razorpayKeyId,
+      // The checkout must open on the SAME currency + amount the order carries;
+      // Razorpay rejects the payment otherwise. Echoing the server's own numbers
+      // means the browser never has to re-derive them and can never disagree.
+      currency,
+      chargedAmount,
+      amountMinor: toMinorUnits(chargedAmount, currency),
     });
   } catch (error) {
     next(error);
@@ -1216,7 +1306,9 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    // 4) Verify amount
+    // 4) Verify amount. Both sides are INR — the client reports the seva total
+    //    it displayed, not the foreign amount its card was billed, so this check
+    //    is identical for a devotee in Delhi and one in New Jersey.
     if (pendingDoc.amount !== amountPaid) {
       res.status(400).json({ message: 'Amount paid mismatch. Potential fraud or error.' });
       return;

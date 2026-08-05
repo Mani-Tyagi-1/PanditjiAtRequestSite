@@ -9,6 +9,7 @@ import {
     calcShipping, FREE_SHIPPING_THRESHOLD,
     type CartLine, type ShopProduct,
 } from "./shopData";
+import { money } from "../../../utils/currency";
 
 interface Props {
     isOpen: boolean;
@@ -167,9 +168,9 @@ export default function ShopCartModal({
                                                         <div className="flex-1 min-w-0">
                                                             <h4 className="font-bold text-stone-800 text-[13px] leading-tight line-clamp-2">{line.product.name}</h4>
                                                             <div className="flex items-center gap-1.5 mt-0.5">
-                                                                <span className="text-[14px] font-bold text-stone-900">₹{line.product.price.toLocaleString("en-IN")}</span>
+                                                                <span className="text-[14px] font-bold text-stone-900">{money(line.product.price)}</span>
                                                                 {line.product.originalPrice && (
-                                                                    <span className="text-[11px] text-stone-400 line-through">₹{line.product.originalPrice.toLocaleString("en-IN")}</span>
+                                                                    <span className="text-[11px] text-stone-400 line-through">{money(line.product.originalPrice)}</span>
                                                                 )}
                                                             </div>
                                                             <div className="flex items-center justify-between mt-1.5">
@@ -194,7 +195,7 @@ export default function ShopCartModal({
                                                 {shipping > 0 && (
                                                     <div className="flex items-center gap-2 text-[11.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
                                                         <Truck className="w-4 h-4 shrink-0" />
-                                                        Add ₹{(FREE_SHIPPING_THRESHOLD - subtotal).toLocaleString("en-IN")} more for FREE delivery
+                                                        Add {money((FREE_SHIPPING_THRESHOLD - subtotal))} more for FREE delivery
                                                     </div>
                                                 )}
                                             </div>
@@ -234,18 +235,18 @@ export default function ShopCartModal({
                                         <div className="mt-4 bg-white rounded-2xl border border-stone-100 p-4">
                                             <div className="flex items-center justify-between text-[13px] text-stone-600">
                                                 <span>Subtotal ({itemCount} items)</span>
-                                                <span>₹{subtotal.toLocaleString("en-IN")}</span>
+                                                <span>{money(subtotal)}</span>
                                             </div>
                                             <div className="flex items-center justify-between text-[13px] mt-1">
                                                 <span className="text-stone-600">Delivery</span>
                                                 <span className={shipping === 0 ? "text-emerald-600 font-semibold" : "text-stone-600"}>
-                                                    {shipping === 0 ? "FREE" : `₹${shipping}`}
+                                                    {shipping === 0 ? "FREE" : `${money(shipping)}`}
                                                 </span>
                                             </div>
                                             <div className="my-2.5 h-px bg-stone-100" />
                                             <div className="flex items-center justify-between">
                                                 <span className="font-bold text-stone-800">Total</span>
-                                                <span className="font-bold text-amber-600 text-[20px]">₹{total.toLocaleString("en-IN")}</span>
+                                                <span className="font-bold text-amber-600 text-[20px]">{money(total)}</span>
                                             </div>
                                         </div>
 
@@ -284,7 +285,7 @@ export default function ShopCartModal({
                             <div className="shrink-0 bg-white/90 backdrop-blur-sm border-t border-stone-100 px-5 py-3.5 flex items-center gap-3">
                                 <div className="leading-none">
                                     <span className="text-[10px] text-stone-400 font-semibold uppercase">Total</span>
-                                    <p className="text-[18px] font-bold text-stone-900">₹{total.toLocaleString("en-IN")}</p>
+                                    <p className="text-[18px] font-bold text-stone-900">{money(total)}</p>
                                 </div>
                                 {step === "cart" ? (
                                     <button onClick={goCheckout} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-amber-200 active:scale-95 transition-transform">

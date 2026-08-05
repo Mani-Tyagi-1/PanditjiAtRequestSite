@@ -12,6 +12,9 @@ import {
     EXTRA_FAMILY_MEMBER_PRICE, DEFAULT_PACKAGE_ID, getPackage, KAAL_BHAIRAV_PACKAGES,
     extraFamilyCount, packageTotal, packageNeedsDelivery, type PujaPackageId,
 } from "../data/kaalBhairavPuja";
+import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
+import PhoneField from "../components/checkout/PhoneField";
 
 type Step = "details" | "success";
 
@@ -36,6 +39,10 @@ function resolveBookingDate(dateLabel: string, time: string): string {
 }
 
 export default function KaalBhairavBookingPage() {
+    // Where the devotee is paying from. `money` renders every price below in
+    // their currency; `toInr` converts a list price into the INR this sale is
+    // actually worth, which is what the booking records and the server bills.
+    const { country, currency, isIndia, money, inr: toInr } = useMoney();
     const { user, login } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -47,7 +54,12 @@ export default function KaalBhairavBookingPage() {
         (location.state as { packageId?: PujaPackageId } | null)?.packageId ?? DEFAULT_PACKAGE_ID;
     const [packageId, setPackageId] = useState<PujaPackageId>(initialPackageId);
     const selectedPkg = getPackage(packageId);
-    const needsDelivery = packageNeedsDelivery(selectedPkg);
+    // Blessed prasad is couriered within India only — see `shipsPrasad`. Gated
+    // on the DERIVED value so one guard turns the whole feature off: no bill
+    // line, no delivery step, no courier instruction on the booking, and a
+    // devotee who switched country cannot be left paying for a parcel that will
+    // never be sent.
+    const needsDelivery = isIndia && packageNeedsDelivery(selectedPkg);
 
     // Static frontend puja data.
     const puja = kaalBhairavPuja;
@@ -200,7 +212,7 @@ export default function KaalBhairavBookingPage() {
     // number is typed, then patched with every further detail, so a devotee who
     // drops off before paying is still reachable with full context.
     const { markCartConverted } = useAbandonedCart("kaal-bhairav-booking", {
-        phone: form.phone,
+        phone: toStoredPhone(form.phone, country),
         name: form.name,
         gotra: form.gotra,
         email: form.email,
@@ -210,7 +222,7 @@ export default function KaalBhairavBookingPage() {
         templeName: puja.templeName,
         packageId: selectedPkg.id,
         packageName: packageLabel,
-        amount: totalPrice,
+        amount: toInr(totalPrice),
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
@@ -224,13 +236,13 @@ export default function KaalBhairavBookingPage() {
     const hasTrackedDetails = useRef(false);
     const trackCustomerDetails = () => {
         if (hasTrackedDetails.current) return;
-        if (form.name.trim().length < 3 || form.phone.replace(/\D/g, "").length < 10) return;
+        if (form.name.trim().length < 3 || !isValidPhone(form.phone, country)) return;
         hasTrackedDetails.current = true;
         if ((window as any).fbq) {
             (window as any).fbq("track", "CustomerDetailsFilled", {
                 content_name: puja.poojaNameEng,
                 bhaktName: form.name.trim(),
-                contactNumber: form.phone.replace(/\D/g, ""),
+                contactNumber: toStoredPhone(form.phone, country),
             });
         }
     };
@@ -251,11 +263,11 @@ export default function KaalBhairavBookingPage() {
             return;
         }
 
-        const phoneDigits = form.phone.replace(/\D/g, "");
-        if (phoneDigits.length !== 10) {
-            setError("Please enter a valid 10-digit mobile number.");
+        if (!isValidPhone(form.phone, country)) {
+            setError(`Please enter a valid ${country.name} mobile number.`);
             return;
         }
+        const phoneDigits = toStoredPhone(form.phone, country);
 
         // Delivery address is only required when the package ships a physical
         // item (prasad box / rudraksh).
@@ -330,7 +342,13 @@ export default function KaalBhairavBookingPage() {
                     templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,
-                    amount: totalPrice,
+                    // Marked-up INR — the value of this sale, not the
+                    // India list price. See utils/currency `inrEquivalent`.
+                    amount: toInr(totalPrice),
+                    currency,
+                    dialCode: country.dial,
+                    countryCode: country.iso2,
+                    country: country.name,
                     panditDakshina: puja.panditDakshina,
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
@@ -338,7 +356,7 @@ export default function KaalBhairavBookingPage() {
                     phone: phoneDigits,
                     emailId: form.email.trim(),
                     // True whenever the package bundles the blessed prasad box.
-                    prasadAdded: selectedPkg.prasadBox,
+                    prasadAdded: isIndia && selectedPkg.prasadBox,
                     // Stored on the booking by the isLiveMandir branch of
                     // create-pending, so the pandit knows every name to take
                     // during the Sankalp.
@@ -374,8 +392,10 @@ export default function KaalBhairavBookingPage() {
             // 2) Open Razorpay checkout.
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: totalPrice * 100,
-                currency: "INR",
+                // Straight from the order the server just created — deriving
+                // these again is the one place display and charge could drift.
+                amount: orderData.amountMinor ?? toInr(totalPrice) * 100,
+                currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
                 description: puja.poojaNameEng,
                 order_id: orderData.razorpayOrderId,
@@ -408,7 +428,7 @@ export default function KaalBhairavBookingPage() {
                                 razorpayOrderId: response.razorpay_order_id,
                                 razorpayPaymentId: response.razorpay_payment_id,
                                 razorpaySignature: response.razorpay_signature,
-                                amountPaid: totalPrice,
+                                amountPaid: toInr(totalPrice),
                             })),
                         });
                         const verifyData = await verifyRes.json();
@@ -502,6 +522,16 @@ export default function KaalBhairavBookingPage() {
                 </p>
             </div>
 
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#E7DAC0] bg-[#F8F4EC]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
+                    <CountryPicker className="bg-white border border-[#E7DAC0] text-stone-700" accentClass="text-indigo-600" />
+                </div>
+*/}
+
             {/* Content */}
             <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
@@ -521,7 +551,7 @@ export default function KaalBhairavBookingPage() {
                             <div className="mt-2.5 pt-2.5 border-t border-[#E7DAC0] space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[12.5px] text-[#6E6257] font-medium">{selectedPkg.name}</span>
-                                    <span className="text-[13px] font-bold text-[#1A1A1A]">₹{basePrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-[13px] font-bold text-[#1A1A1A]">{money(basePrice)}</span>
                                 </div>
 
                                 {/* Included physical blessings — shown as ₹0 so the value is visible */}
@@ -550,13 +580,13 @@ export default function KaalBhairavBookingPage() {
                                             <Users className="w-3.5 h-3.5 text-[#8B0000]" />
                                             Extra Sankalp × {chargedMembers}
                                         </span>
-                                        <span className="text-[13px] font-bold text-[#1A1A1A]">+₹{familyCost.toLocaleString("en-IN")}</span>
+                                        <span className="text-[13px] font-bold text-[#1A1A1A]">+{money(familyCost)}</span>
                                     </div>
                                 )}
 
                                 <div className="flex items-baseline justify-between pt-2 border-t border-[#E7DAC0]">
                                     <span className="text-[10px] font-bold uppercase tracking-wide text-[#6E6257]">Total</span>
-                                    <span className="text-xl font-extrabold text-[#8B0000]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-xl font-extrabold text-[#8B0000]">{money(totalPrice)}</span>
                                 </div>
                             </div>
                         </div>
@@ -589,8 +619,8 @@ export default function KaalBhairavBookingPage() {
                                                     <p className="text-[11px] text-[#6E6257] mt-0.5">{pkg.tagline}</p>
                                                 </div>
                                                 <div className="text-right shrink-0">
-                                                    <p className="text-[17px] font-extrabold text-[#8B0000] leading-none">₹{pkg.price.toLocaleString("en-IN")}</p>
-                                                    <p className="text-[9.5px] font-bold text-[#B8860B] mt-0.5">+₹{diff.toLocaleString("en-IN")}</p>
+                                                    <p className="text-[17px] font-extrabold text-[#8B0000] leading-none">{money(pkg.price)}</p>
+                                                    <p className="text-[9.5px] font-bold text-[#B8860B] mt-0.5">+{money(diff)}</p>
                                                 </div>
                                             </div>
                                             <div className="mt-2.5 pt-2.5 border-t border-[#E7DAC0] space-y-1.5">
@@ -622,13 +652,13 @@ export default function KaalBhairavBookingPage() {
                             <div className="space-y-3">
                                 <div>
                                     <label className={LABEL}>Mobile Number *</label>
-                                    <input
+                                    <PhoneField
+                                        country={country}
                                         value={form.phone}
-                                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                                        onChange={(phone) => setForm((f) => ({ ...f, phone }))}
                                         onBlur={trackCustomerDetails}
-                                        placeholder="10-digit number for updates"
-                                        inputMode="numeric"
-                                        className={INPUT}
+                                        inputClass={INPUT}
+                                        prefixClass="text-indigo-600"
                                     />
                                 </div>
                                 <div>
@@ -661,8 +691,8 @@ export default function KaalBhairavBookingPage() {
                                     <h3 className="font-bold text-[#1A1A1A] text-[14px]">Family Sankalp</h3>
                                     <p className="text-[11px] text-[#6E6257]">
                                         {selectedPkg.freeFamilyMembers > 0
-                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ₹${EXTRA_FAMILY_MEMBER_PRICE} each after`
-                                            : `Optional · add members at ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ${money(EXTRA_FAMILY_MEMBER_PRICE)} each after`
+                                            : `Optional · add members at ${money(EXTRA_FAMILY_MEMBER_PRICE)} each`}
                                     </p>
                                 </div>
                             </div>
@@ -674,7 +704,7 @@ export default function KaalBhairavBookingPage() {
                                     <Sparkles className="w-3.5 h-3.5 text-[#B8860B] shrink-0" />
                                     {Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 0
                                         ? `${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length)} free family Sankalp${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 1 ? "s" : ""} left in your package`
-                                        : `Free members used — extra names add ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                        : `Free members used — extra names add ${money(EXTRA_FAMILY_MEMBER_PRICE)} each`}
                                 </div>
                             )}
 
@@ -718,7 +748,7 @@ export default function KaalBhairavBookingPage() {
                                 >
                                     <Plus className="w-4 h-4" />
                                     {pendingFamilyName
-                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+₹${EXTRA_FAMILY_MEMBER_PRICE}`}`
+                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+${money(EXTRA_FAMILY_MEMBER_PRICE)}`}`
                                         : "Add member"}
                                 </button>
 
@@ -749,7 +779,7 @@ export default function KaalBhairavBookingPage() {
                                             {idx < selectedPkg.freeFamilyMembers ? (
                                                 <span className="text-[11px] font-bold text-[#B8860B] shrink-0">FREE</span>
                                             ) : (
-                                                <span className="text-[11px] font-bold text-[#8B0000] shrink-0">+₹{EXTRA_FAMILY_MEMBER_PRICE}</span>
+                                                <span className="text-[11px] font-bold text-[#8B0000] shrink-0">+{money(EXTRA_FAMILY_MEMBER_PRICE)}</span>
                                             )}
                                             <button
                                                 type="button"
@@ -768,7 +798,7 @@ export default function KaalBhairavBookingPage() {
                                 <p className="flex items-center gap-1.5 text-[11px] text-[#6E6257]">
                                     <Users className="w-3.5 h-3.5 text-[#8B0000] shrink-0" />
                                     {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added
-                                    {chargedMembers > 0 ? ` · +₹${familyCost.toLocaleString("en-IN")}` : " · all free"}
+                                    {chargedMembers > 0 ? ` · +${money(familyCost)}` : " · all free"}
                                 </p>
                             )}
                         </div>
@@ -934,7 +964,7 @@ export default function KaalBhairavBookingPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[10px] text-[#6E6257] font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#8B0000]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <span className="text-[20px] font-extrabold text-[#8B0000]">{money(totalPrice)}</span>
                         </div>
                         <button
                             onClick={handleConfirm}

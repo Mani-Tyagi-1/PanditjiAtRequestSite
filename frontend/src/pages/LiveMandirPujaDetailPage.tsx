@@ -8,6 +8,7 @@ import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
 import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
+import { money } from "../utils/currency";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -501,7 +502,7 @@ export default function LiveMandirPujaDetailPage() {
                     <div className="flex items-center gap-3">
                         <div className="shrink-0">
                             <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
-                            <span className="text-[19px] font-extrabold text-orange-600">₹{puja.price.toLocaleString("en-IN")}</span>
+                            <span className="text-[19px] font-extrabold text-orange-600">{money(puja.price)}</span>
                         </div>
                         <button
                             onClick={openBooking}

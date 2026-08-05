@@ -14,6 +14,7 @@ import {
     MessageCircle,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
+import { money } from "../utils/currency";
 
 // Click-to-chat support line (same number used across the site / schema).
 const WHATSAPP_URL =
@@ -350,9 +351,9 @@ function LiveMandirVerticalCard({ puja, onBook }: { puja: LivePuja; onBook: () =
                     <div>
                         <span className="text-[9.5px] text-stone-400 font-bold uppercase tracking-wider block">Starting at</span>
                         <div className="flex items-baseline gap-2 mt-0.5">
-                            <span className="text-2xl font-black text-[#D85C0E]">₹{puja.price.toLocaleString("en-IN")}</span>
+                            <span className="text-2xl font-black text-[#D85C0E]">{money(puja.price)}</span>
                             {puja.originalPrice && (
-                                <span className="text-[13px] text-stone-400 line-through">₹{puja.originalPrice.toLocaleString("en-IN")}</span>
+                                <span className="text-[13px] text-stone-400 line-through">{money(puja.originalPrice)}</span>
                             )}
                         </div>
                     </div>

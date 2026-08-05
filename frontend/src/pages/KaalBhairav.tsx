@@ -12,6 +12,7 @@ import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG, DEFAULT_PACKAGE_ID, getPackage, type PujaPackageId } from "../data/kaalBhairavPuja";
 import PujaPackages from "../components/kaalBhairav/PujaPackages";
+import { money } from "../utils/currency";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -727,14 +728,14 @@ export default function KaalBhairavPage() {
                   {selectedPkg.name}
                 </span>
                 <span className="text-[19px] font-extrabold text-[#8B0000]">
-                  ₹{price.toLocaleString("en-IN")}
+                  {money(price)}
                 </span>
               </div>
               <button
                 onClick={openBooking}
                 className="flex-1 bg-gradient-to-r from-[#1A1A1A] to-[#2A2A2A] text-[#D4AF37] font-bold text-[15px] py-3 rounded-xl shadow-md border border-[#B8860B]/40 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#B8860B] outline-none"
               >
-                Book for ₹{price.toLocaleString("en-IN")}
+                Book for {money(price)}
               </button>
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-[#6E6257]">

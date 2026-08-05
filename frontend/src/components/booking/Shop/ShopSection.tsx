@@ -9,6 +9,7 @@ import {
     type ShopProduct, type ShopCategory, type CartLine,
 } from "./shopData";
 import API_URL from "../../../utils/apiConfig";
+import { money } from "../../../utils/currency";
 
 // ─────────────────────────────────────────────────────────────
 //  Spiritual Shop — Section
@@ -209,7 +210,7 @@ export default function ShopSection() {
                                 items in cart
                             </span>
                             <span className="flex items-center gap-2 text-[14px] font-bold">
-                                ₹{total.toLocaleString("en-IN")}
+                                {money(total)}
                                 <span className="text-amber-300 text-[12px] font-bold">View Cart →</span>
                             </span>
                         </button>

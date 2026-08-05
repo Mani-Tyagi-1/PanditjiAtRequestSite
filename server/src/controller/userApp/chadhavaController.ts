@@ -10,6 +10,8 @@ import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 // Devshayani Ekadashi combo (frontend-only offering — remove to disable)
 import { resolveDevshayaniCombo } from "../../config/devshayaniCombo";
+import { markUpInr, resolveCurrency } from "../../config/currency";
+import { createOrderWithFallback, internationalFields } from "../../utils/internationalOrder";
 
 // Shape a DB doc to the frontend `Chadhava` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -510,9 +512,11 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       return;
     }
 
+    // The catalog owns this price, so the foreign markup is applied HERE — the
+    // browser only names the items. `amountInr` is what the booking records.
+    const orderCurrency = resolveCurrency((req.body as any).currency);
+    const amountInr = markUpInr(pricing.grandTotal, orderCurrency);
     const orderOptions: any = {
-      amount: pricing.grandTotal * 100,
-      currency: "INR",
       receipt: `chadhava_${Date.now()}`,
       payment_capture: 1,
       notes: {
@@ -523,7 +527,9 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       },
     };
 
-    const order: any = await razorpay.orders.create(orderOptions);
+    const { order, pricing: fx } = await createOrderWithFallback(
+      razorpay, amountInr, orderCurrency, orderOptions, "Chadhava",
+    );
 
     const booking = await ChadhavaBooking.create({
       chadhavaSlug,
@@ -533,7 +539,11 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       addPrasadBox: !!addPrasadBox,
       prasadBoxPrice: pricing.prasadBoxPrice,
       itemsTotal: pricing.itemsTotal,
-      totalAmount: pricing.grandTotal,
+      // INR value of the sale (marked up for this market), with the
+      // currency/country the card actually saw beside it.
+      totalAmount: amountInr,
+      listAmount: pricing.grandTotal,
+      ...internationalFields(fx, req.body as any),
       devoteeName,
       gotra,
       phone: cleanPhone,
@@ -556,8 +566,14 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       bookingId: booking._id,
       razorpayOrderId: order.id,
       razorpayKeyId,
-      amount: pricing.grandTotal,
-      currency: "INR",
+      // The checkout must open on the SAME currency + amount the order carries;
+      // Razorpay rejects the payment otherwise. `amount` stays the INR value of
+      // the sale for any caller that still reads it.
+      amount: amountInr,
+      listAmount: pricing.grandTotal,
+      currency: fx.currency,
+      chargedAmount: fx.chargedAmount,
+      amountMinor: fx.amountMinor,
     });
   } catch (error) {
     console.error("Failed to create chadhava order:", error);

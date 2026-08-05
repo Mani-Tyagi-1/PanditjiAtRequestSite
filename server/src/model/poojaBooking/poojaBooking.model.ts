@@ -52,7 +52,15 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     bookingDate: { type: Date, required: true },
     userAvailabilityVC: { type: Boolean, default: true },
 
+    // `amount` is INR; the currency fields carry over from the pending row and
+    // record what a foreign card was actually billed. See the pending model.
     amount: { type: Number, required: true },
+    currency: { type: String, default: 'INR' },
+    chargedAmount: { type: Number },
+    fxRate: { type: Number },
+    country: { type: String },
+    countryCode: { type: String, index: true },
+    priceMultiplier: { type: Number },
     panditDakshina: { type: Number, default: undefined },
     couponCode: { type: String, trim: true },
 

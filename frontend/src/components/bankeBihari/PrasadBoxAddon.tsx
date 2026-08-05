@@ -7,6 +7,7 @@ import {
     type PujaPackage,
 } from "../../data/bankeBihariPuja";
 import { ItemTileRow } from "./ItemTiles";
+import { useMoney } from "../../utils/currency";
 
 /**
  * The prasad-box row, shared by the detail page and the booking page so the
@@ -37,6 +38,8 @@ export default function PrasadBoxAddon({
     onToggle?: (next: boolean) => void;
 }) {
     const freeBox = pkg.freePrasadBox ? PRASAD_BOXES[pkg.freePrasadBox] : null;
+    // Prices stay INR in the data layer; only what is drawn changes.
+    const { money } = useMoney();
 
     // ── Included free with the package ──
     if (freeBox) {
@@ -55,7 +58,7 @@ export default function PrasadBoxAddon({
                         </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-[#2E8B57] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                        ₹0
+                        {money(0)}
                     </span>
                 </div>
 
@@ -122,7 +125,7 @@ export default function PrasadBoxAddon({
 
                 <span className="text-right shrink-0">
                     <span className="block text-[15px] font-extrabold leading-none text-[#D63D72]">
-                        +₹{PRASAD_BOX_PRICE}
+                        +{money(PRASAD_BOX_PRICE)}
                     </span>
                     <span className="block text-[9px] uppercase tracking-wide mt-0.5 text-[#8A8A8A]">
                         {added ? "added" : "one-time"}
@@ -139,7 +142,7 @@ export default function PrasadBoxAddon({
             {added && (
                 <p className="mt-2.5 flex items-center gap-1.5 text-[11px] font-semibold text-[#D63D72]">
                     <Truck className="w-3.5 h-3.5 shrink-0" />
-                    ₹{PRASAD_BOX_PRICE} added to your total · we'll ask for a delivery address
+                    {money(PRASAD_BOX_PRICE)} added to your total · we'll ask for a delivery address
                 </p>
             )}
         </div>

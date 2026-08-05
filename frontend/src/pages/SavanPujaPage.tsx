@@ -19,6 +19,8 @@ import {
 } from "../data/kashiMahadevPuja";
 import SavanPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/savanPuja/SavanPackages";
 import SavanRain from "../components/savanPuja/SavanRain";
+import { useMoney, shipsPrasad } from "../utils/currency";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import heroImages from "../data/savanHeroImages.json";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
@@ -29,6 +31,13 @@ function track(event: string, params?: Record<string, unknown>, custom = false) 
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/**
+ * Cheapest seva whose prasad box is free — read from the packages rather than
+ * written into the copy, so a repriced tier can never leave this line quoting a
+ * price that no longer exists.
+ */
+const FREE_BOX_FROM = SAVAN_PACKAGES.find((p) => p.prasadBoxFree)?.price ?? 0;
 
 /**
  * Responsive image sets for this page, self-hosted from public/hero/ as
@@ -284,6 +293,14 @@ export default function SavanPujaPage() {
     const location = useLocation();
     const { user } = useAuth();
 
+    // Every price on this page is written through `money()`. The package data
+    // stays in rupees — this only decides how those rupees are rendered, and
+    // the booking page picks up the same detected country.
+    const { country, money } = useMoney();
+    // Blessed prasad is couriered within India only, so nothing on this page may
+    // promise a parcel abroad — see `shipsPrasad`.
+    const prasadShippable = shipsPrasad(country);
+
     const puja = kashiMahadevPuja;
     const pujaId = kashiMahadevPuja._id;
 
@@ -445,7 +462,12 @@ export default function SavanPujaPage() {
     const whatYouGet = [
         { icon: BadgeCheck, title: "Personalized offering", sub: "Performed in your name & gotra" },
         { icon: Video, title: "Puja video on WhatsApp", sub: "Full recording delivered to you" },
-        { icon: Gift, title: "Prasad at your home", sub: `Free in ₹2100, else ₹${PRASAD_BOX_PRICE}` },
+        prasadShippable
+            ? { icon: Gift, title: "Prasad at your home", sub: `Free in ${money(FREE_BOX_FROM)}, else ${money(PRASAD_BOX_PRICE)}` }
+            // The seva reaches a devotee abroad exactly as it does at home; only
+            // the parcel cannot follow. Naming what they DO get keeps the strip
+            // at three tiles instead of leaving a gap where the box was.
+            : { icon: Mountain, title: "Kashi Sankalp for you", sub: "Wherever in the world you are" },
     ];
 
     // Main CTA goes straight to the booking page.
@@ -859,6 +881,21 @@ export default function SavanPujaPage() {
             <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#C79A2B]" />}>
               Choose your seva
             </SectionTitle>
+
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="mb-2.5 flex items-center justify-between gap-2">
+                  <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#66736E]">
+                    Prices in
+                  </span>
+                  <CountryPicker
+                    className="bg-white border border-[#DDEBE6] text-[#17211D] hover:border-[#008C68]"
+                    accentClass="text-[#086B50]"
+                  />
+                </div>
+*/}
             <SavanPackages
               selectedId={packageId}
               onSelect={(id) => {
@@ -875,17 +912,19 @@ export default function SavanPujaPage() {
               <p className="flex items-start gap-1.5 text-[10.5px] text-[#665C50] leading-snug">
                 <Gift className="w-3.5 h-3.5 text-[#C79A2B] shrink-0 mt-px" />
                 <span>
-                  {selectedPkg.prasadBoxFree
-                    ? `Prasad box is FREE with this seva — add it on the next step to have it couriered home.`
-                    : `Prasad box can be added on the next step for ₹${PRASAD_BOX_PRICE}.`}
+                  {!prasadShippable
+                    ? `Prasad box ships within India only, so it is not part of this price.`
+                    : selectedPkg.prasadBoxFree
+                      ? `Prasad box is FREE with this seva — add it on the next step to have it couriered home.`
+                      : `Prasad box can be added on the next step for ${money(PRASAD_BOX_PRICE)}.`}
                 </span>
               </p>
               <p className="flex items-start gap-1.5 text-[10.5px] text-[#665C50] leading-snug">
                 <Users className="w-3.5 h-3.5 text-[#8E6A25] shrink-0 mt-px" />
                 <span>
                   {selectedPkg.freeFamilyMembers > 0
-                    ? `${selectedPkg.freeFamilyMembers} family Sankalp${selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free in this seva · extra names ₹${FAMILY_MEMBER_PRICE} each on the next step.`
-                    : `Family members can be added at ₹${FAMILY_MEMBER_PRICE} each on the next step.`}
+                    ? `${selectedPkg.freeFamilyMembers} family Sankalp${selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free in this seva · extra names ${money(FAMILY_MEMBER_PRICE)} each on the next step.`
+                    : `Family members can be added at ${money(FAMILY_MEMBER_PRICE)} each on the next step.`}
                 </span>
               </p>
             </div>
@@ -1171,14 +1210,14 @@ export default function SavanPujaPage() {
                     devotee should not have to re-read what they are paying.
                     The package cards' prices carry the same override. */}
                 <span className="font-svn-head lining-nums text-[22px] font-bold text-[#7A1622] leading-tight">
-                  ₹{price.toLocaleString("en-IN")}
+                  {money(price)}
                 </span>
               </div>
               <button
                 onClick={openBooking}
                 className="flex-1 font-svn-ui bg-[#A41F2E] hover:bg-[#87121E] text-[#FFF8F0] font-bold text-[15px] py-3 rounded-xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.9)] active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none"
               >
-                Book for ₹{price.toLocaleString("en-IN")}
+                Book for {money(price)}
               </button>
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-[#665C50]">

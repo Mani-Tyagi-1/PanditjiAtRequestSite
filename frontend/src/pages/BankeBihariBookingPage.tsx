@@ -7,6 +7,9 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
+import { useMoney, isValidPhone, shipsPrasad, toStoredPhone } from "../utils/currency";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
+import PhoneField from "../components/checkout/PhoneField";
 import {
     bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, BANKE_BIHARI_POOJA_ID,
     EXTRA_FAMILY_MEMBER_PRICE, PRASAD_BOX_PRICE, DEFAULT_PACKAGE_ID, getPackage,
@@ -63,6 +66,12 @@ export default function BankeBihariBookingPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Where the devotee is paying from — detected on first render, no network
+    // call. Every price below goes through `money()`, so switching country
+    // re-prices the whole page (and re-shapes the phone + address fields) in a
+    // single re-render. Prices themselves never leave INR; see utils/currency.
+    const { country, currency, isIndia, money, inr: toInr } = useMoney();
+
     // Package + prasad-box choice made on the detail page (handed over as
     // navigation state); the devotee can still change both here. Defaults to the
     // recommended package and no box when the booking page is opened directly.
@@ -76,9 +85,21 @@ export default function BankeBihariBookingPage() {
     // Upgrading to a package that already includes a box free must drop the paid
     // add-on: its control disappears with the upgrade, so leaving the flag set
     // would charge ₹501 the devotee can no longer see or remove.
-    const prasadBoxAdded = canAddPrasadBox(selectedPkg) && addPrasadBox;
-    const shippedBox = shippedPrasadBox(selectedPkg, prasadBoxAdded);
-    const needsDelivery = packageNeedsDelivery(selectedPkg, prasadBoxAdded);
+    /**
+     * Blessed prasad is couriered within India only — see `shipsPrasad`.
+     *
+     * Both the paid add-on AND the shipped box are gated, and they have to be
+     * gated separately: the two top tiers bundle a box regardless of the
+     * checkbox, so `shippedPrasadBox` returns one for them whether or not
+     * anything was ticked. Without the first guard a devotee abroad could be
+     * charged ₹501 (the detail page can hand the flag over); without the
+     * second they would be shown a delivery step and a courier promise for a
+     * parcel that cannot leave the country.
+     */
+    const prasadShippable = shipsPrasad(country);
+    const prasadBoxAdded = prasadShippable && canAddPrasadBox(selectedPkg) && addPrasadBox;
+    const shippedBox = prasadShippable ? shippedPrasadBox(selectedPkg, prasadBoxAdded) : null;
+    const needsDelivery = prasadShippable && packageNeedsDelivery(selectedPkg, prasadBoxAdded);
 
     // Static frontend puja data.
     const puja = bankeBihariPuja;
@@ -227,7 +248,7 @@ export default function BankeBihariBookingPage() {
             // ONE headline, naming the single most tangible thing the upgrade
             // unlocks. A free prasad box beats a longer offerings list every
             // time: it is a parcel that arrives at their door, not an abstraction.
-            const nextBox = next.freePrasadBox;
+            const nextBox = prasadShippable ? next.freePrasadBox : null;
             const headline = nextBox
                 ? canAddPrasadBox(selectedPkg)
                     ? `FREE ${PRASAD_BOXES[nextBox].name} at home`
@@ -276,7 +297,7 @@ export default function BankeBihariBookingPage() {
     // ride along with it.
     const shipList = shippedBox ? prasadBoxContents(shippedBox.tier) : [];
     const boxLabel = shippedBox
-        ? `${shippedBox.name}${selectedPkg.freePrasadBox ? " (free)" : ` (paid add-on ₹${PRASAD_BOX_PRICE})`}: ${shipList.join(", ")}`
+        ? `${shippedBox.name}${selectedPkg.freePrasadBox ? " (free)" : ` (paid add-on ${money(PRASAD_BOX_PRICE)})`}: ${shipList.join(", ")}`
         : "";
     // e.g. "Shree Banke Bihari Ji Janmashtami Mahapuja — Shringar Seva [Premium Prasad Box (free): Dry prasad…]"
     const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${boxLabel ? ` [${boxLabel}]` : ""}`;
@@ -288,12 +309,12 @@ export default function BankeBihariBookingPage() {
     // Ids mirror the ones the server CAPI Purchase sends (built off the booking
     // name) so the deduplicated pair reports identically either way.
     const metaContents = () => [
-        { id: packageLabel, quantity: 1, item_price: basePrice },
+        { id: packageLabel, quantity: 1, item_price: toInr(basePrice) },
         ...(chargedMembers > 0
             ? [{
                 id: `${puja.poojaNameEng} — Extra Sankalp Name`,
                 quantity: chargedMembers,
-                item_price: EXTRA_FAMILY_MEMBER_PRICE,
+                item_price: toInr(EXTRA_FAMILY_MEMBER_PRICE),
             }]
             : []),
         // Only the PAID box is a line item; the free ones are part of the
@@ -322,7 +343,9 @@ export default function BankeBihariBookingPage() {
     // number is typed, then patched with every further detail, so a devotee who
     // drops off before paying is still reachable with full context.
     const { markCartConverted } = useAbandonedCart("banke-bihari-booking", {
-        phone: form.phone,
+        // Country code included, so a lead from abroad is a number the team can
+        // actually dial back rather than a stranded national fragment.
+        phone: toStoredPhone(form.phone, country),
         name: form.name,
         gotra: form.gotra,
         email: form.email,
@@ -332,7 +355,7 @@ export default function BankeBihariBookingPage() {
         templeName: puja.templeName,
         packageId: selectedPkg.id,
         packageName: packageLabel,
-        amount: totalPrice,
+        amount: toInr(totalPrice),
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
@@ -341,6 +364,11 @@ export default function BankeBihariBookingPage() {
             pujaDate: puja.pujaDate,
             prasadBox: shippedBox ? shippedBox.name : "none",
             prasadBoxPaid: prasadCost > 0,
+            // `amount` above stays INR; these say where the lead was and what
+            // they were being quoted, so a follow-up call opens with the right
+            // number in the right currency.
+            country: country.iso2,
+            currency,
         },
     });
 
@@ -351,13 +379,13 @@ export default function BankeBihariBookingPage() {
     const hasTrackedDetails = useRef(false);
     const trackCustomerDetails = () => {
         if (hasTrackedDetails.current) return;
-        if (form.name.trim().length < 3 || form.phone.replace(/\D/g, "").length < 10) return;
+        if (form.name.trim().length < 3 || !isValidPhone(form.phone, country)) return;
         hasTrackedDetails.current = true;
         if ((window as any).fbq) {
             (window as any).fbq("track", "CustomerDetailsFilled", {
                 content_name: puja.poojaNameEng,
                 bhaktName: form.name.trim(),
-                contactNumber: form.phone.replace(/\D/g, ""),
+                contactNumber: toStoredPhone(form.phone, country),
             });
         }
     };
@@ -378,9 +406,18 @@ export default function BankeBihariBookingPage() {
             return;
         }
 
-        const phoneDigits = form.phone.replace(/\D/g, "");
-        if (phoneDigits.length !== 10) {
-            setError("Please enter a valid 10-digit mobile number.");
+        // Length varies by country (10 in India, 8 in Singapore, 11 in Germany),
+        // so the rule comes from the selected country rather than a fixed 10.
+        if (!isValidPhone(form.phone, country)) {
+            setError(`Please enter a valid ${country.name} mobile number.`);
+            return;
+        }
+        // `phoneDigits` carries the country code for everyone outside India, so
+        // the WhatsApp confirmation and any callback reach the right number.
+        const phoneDigits = toStoredPhone(form.phone, country);
+
+        if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+            setError("Please enter a valid email for your booking confirmation.");
             return;
         }
 
@@ -402,6 +439,7 @@ export default function BankeBihariBookingPage() {
                         state: selected.state,
                         pincode: selected.pincode,
                         addressName: selected.addressName || selected.saveAs,
+                        country: selected.country || country.name,
                     };
                 }
             } else {
@@ -416,6 +454,9 @@ export default function BankeBihariBookingPage() {
                     state: newAddress.state.trim(),
                     pincode: newAddress.pincode.trim(),
                     addressName: newAddress.saveAs.trim() || "Home",
+                    // Stored on the booking so the courier desk can tell a
+                    // Zirakpur parcel from a New Jersey one at a glance.
+                    country: country.name,
                 };
             }
         }
@@ -478,7 +519,22 @@ export default function BankeBihariBookingPage() {
                     templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,
-                    amount: totalPrice,
+                    // ALWAYS the INR total. The server converts it into the
+                    // devotee's currency itself and bills that — the browser
+                    // never sends the amount to charge, only the currency to
+                    // charge it in, so a tampered page can't change the price.
+                    // The list price with the foreign multiplier applied —
+                    // the INR this sale is actually worth. Sending `totalPrice`
+                    // would record a 1x sale for a booking charged at 2x.
+                    amount: toInr(totalPrice),
+                    currency,
+                    // Tells the server this is (or isn't) an Indian number, so
+                    // it stores the country code instead of trimming to 10.
+                    dialCode: country.dial,
+                    // Stored on the booking so the team can see which market a
+                    // sale came from without decoding a currency or a phone.
+                    countryCode: country.iso2,
+                    country: country.name,
                     panditDakshina: puja.panditDakshina,
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
@@ -515,22 +571,30 @@ export default function BankeBihariBookingPage() {
                     content_type: "product",
                     contents,
                     num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                    value: totalPrice,
+                    value: toInr(totalPrice),
                     currency: "INR",
                 });
             }
 
             // 2) Open Razorpay checkout.
+            //    Amount and currency come straight from the order the server
+            //    just created — Razorpay rejects a checkout whose amount or
+            //    currency disagrees with its order, so re-deriving them here
+            //    would be the one place the two could drift apart. The `??`
+            //    fallbacks keep an older server build (which returned neither
+            //    field) working on the plain INR path.
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: totalPrice * 100,
-                currency: "INR",
+                amount: orderData.amountMinor ?? totalPrice * 100,
+                currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
                 description: puja.poojaNameEng,
                 order_id: orderData.razorpayOrderId,
                 prefill: {
                     name: form.name.trim(),
-                    contact: phoneDigits,
+                    // E.164 for international numbers — Razorpay expects the
+                    // "+" form and will not prefill a bare digit string.
+                    contact: isIndia ? phoneDigits : `+${phoneDigits}`,
                     email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
                 },
                 theme: { color: "#D63D72" },
@@ -557,7 +621,7 @@ export default function BankeBihariBookingPage() {
                                 razorpayOrderId: response.razorpay_order_id,
                                 razorpayPaymentId: response.razorpay_payment_id,
                                 razorpaySignature: response.razorpay_signature,
-                                amountPaid: totalPrice,
+                                amountPaid: toInr(totalPrice),
                             })),
                         });
                         const verifyData = await verifyRes.json();
@@ -573,7 +637,7 @@ export default function BankeBihariBookingPage() {
                                 content_type: "product",
                                 contents,
                                 num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                                value: totalPrice,
+                                value: toInr(totalPrice),
                                 currency: "INR",
                             }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
                         }
@@ -669,6 +733,21 @@ export default function BankeBihariBookingPage() {
                 </p>
             </div>
 
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#F4DFC2] bg-[#FFF2E4]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#7A3E55]">
+                        Paying from
+                    </span>
+                    <CountryPicker
+                        className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
+                        accentClass="text-[#D63D72]"
+                    />
+                </div>
+*/}
+
             {/* Content */}
             <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
@@ -688,7 +767,7 @@ export default function BankeBihariBookingPage() {
                             <div className="mt-2.5 pt-2.5 border-t border-[#F4DFC2] space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[12.5px] text-[#555555] font-medium">{selectedPkg.name}</span>
-                                    <span className="text-[13px] font-bold text-[#5C1A34]">₹{basePrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-[13px] font-bold text-[#5C1A34]">{money(basePrice)}</span>
                                 </div>
 
                                 {/* Offerings made in your name — shown as "Included"
@@ -706,7 +785,11 @@ export default function BankeBihariBookingPage() {
                                 {/* Prasad box — free with the tier, a priced line
                                     when it was opted into, and explicitly "Not
                                     added" otherwise so its absence is never a
-                                    silent surprise at delivery time. */}
+                                    silent surprise at delivery time. Outside
+                                    India there is no line at all: the parcel is
+                                    not sold there, and a greyed-out row would
+                                    only raise a question the bill cannot answer. */}
+                                {prasadShippable && (
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-[12px] text-[#555555] font-medium flex items-center gap-1.5 min-w-0">
                                         <Gift className="w-3.5 h-3.5 text-[#E7B63A] shrink-0" />
@@ -715,11 +798,12 @@ export default function BankeBihariBookingPage() {
                                     {selectedPkg.freePrasadBox ? (
                                         <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">Free</span>
                                     ) : prasadCost > 0 ? (
-                                        <span className="text-[13px] font-bold text-[#5C1A34] shrink-0">+₹{prasadCost.toLocaleString("en-IN")}</span>
+                                        <span className="text-[13px] font-bold text-[#5C1A34] shrink-0">+{money(prasadCost)}</span>
                                     ) : (
                                         <span className="text-[11px] font-semibold text-[#8A8A8A] shrink-0">Not added</span>
                                     )}
                                 </div>
+                                )}
 
                                 {selectedPkg.freeFamilyMembers > 0 && (
                                     <div className="flex items-center justify-between">
@@ -737,13 +821,13 @@ export default function BankeBihariBookingPage() {
                                             <Users className="w-3.5 h-3.5 text-[#D63D72]" />
                                             Extra Sankalp × {chargedMembers}
                                         </span>
-                                        <span className="text-[13px] font-bold text-[#5C1A34]">+₹{familyCost.toLocaleString("en-IN")}</span>
+                                        <span className="text-[13px] font-bold text-[#5C1A34]">+{money(familyCost)}</span>
                                     </div>
                                 )}
 
                                 <div className="flex items-baseline justify-between pt-2 border-t border-[#F4DFC2]">
                                     <span className="text-[10px] font-bold uppercase tracking-wide text-[#8A8A8A]">Total</span>
-                                    <span className="text-xl font-extrabold text-[#D63D72]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-xl font-extrabold text-[#D63D72]">{money(totalPrice)}</span>
                                 </div>
                             </div>
                         </div>
@@ -767,14 +851,17 @@ export default function BankeBihariBookingPage() {
                             <div className="space-y-3">
                                 <div>
                                     <label className={LABEL}>Mobile Number *</label>
-                                    <input
+                                    <PhoneField
+                                        country={country}
                                         value={form.phone}
-                                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                                        onChange={(phone) => setForm((f) => ({ ...f, phone }))}
                                         onBlur={trackCustomerDetails}
-                                        placeholder="10-digit number for updates"
-                                        inputMode="numeric"
-                                        className={INPUT}
+                                        inputClass={INPUT}
+                                        prefixClass="text-[#D63D72]"
                                     />
+                                    <p className="text-[10.5px] text-[#8A8A8A] mt-1">
+                                        We WhatsApp your puja video and updates here.
+                                    </p>
                                 </div>
                                 <div>
                                     <label className={LABEL}>Devotee's Name *</label>
@@ -795,6 +882,26 @@ export default function BankeBihariBookingPage() {
                                         className={INPUT}
                                     />
                                 </div>
+                                {/* Asked for only outside India, where it is the
+                                    reliable channel: an overseas devotee may not
+                                    use WhatsApp on this number, and the card
+                                    receipt has to reach them somewhere. Adding it
+                                    for everyone would put a new required field in
+                                    front of the home market for no gain. */}
+                                {!isIndia && (
+                                    <div>
+                                        <label className={LABEL}>Email *</label>
+                                        <input
+                                            value={form.email}
+                                            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                                            placeholder="For your booking confirmation"
+                                            type="email"
+                                            inputMode="email"
+                                            autoComplete="email"
+                                            className={INPUT}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -806,8 +913,8 @@ export default function BankeBihariBookingPage() {
                                     <h3 className="font-bold text-[#5C1A34] text-[14px]">Family Sankalp</h3>
                                     <p className="text-[11px] text-[#8A8A8A]">
                                         {selectedPkg.freeFamilyMembers > 0
-                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ₹${EXTRA_FAMILY_MEMBER_PRICE} each after`
-                                            : `Optional · add members at ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ${money(EXTRA_FAMILY_MEMBER_PRICE)} each after`
+                                            : `Optional · add members at ${money(EXTRA_FAMILY_MEMBER_PRICE)} each`}
                                     </p>
                                 </div>
                             </div>
@@ -819,7 +926,7 @@ export default function BankeBihariBookingPage() {
                                     <Sparkles className="w-3.5 h-3.5 text-[#2E8B57] shrink-0" />
                                     {Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 0
                                         ? `${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length)} free family Sankalp${Math.max(0, selectedPkg.freeFamilyMembers - form.familyMembers.length) > 1 ? "s" : ""} left in your package`
-                                        : `Free members used — extra names add ₹${EXTRA_FAMILY_MEMBER_PRICE} each`}
+                                        : `Free members used — extra names add ${money(EXTRA_FAMILY_MEMBER_PRICE)} each`}
                                 </div>
                             )}
 
@@ -863,7 +970,7 @@ export default function BankeBihariBookingPage() {
                                 >
                                     <Plus className="w-4 h-4" />
                                     {pendingFamilyName
-                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+₹${EXTRA_FAMILY_MEMBER_PRICE}`}`
+                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+${money(EXTRA_FAMILY_MEMBER_PRICE)}`}`
                                         : "Add member"}
                                 </button>
 
@@ -894,7 +1001,7 @@ export default function BankeBihariBookingPage() {
                                             {idx < selectedPkg.freeFamilyMembers ? (
                                                 <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">FREE</span>
                                             ) : (
-                                                <span className="text-[11px] font-bold text-[#D63D72] shrink-0">+₹{EXTRA_FAMILY_MEMBER_PRICE}</span>
+                                                <span className="text-[11px] font-bold text-[#D63D72] shrink-0">+{money(EXTRA_FAMILY_MEMBER_PRICE)}</span>
                                             )}
                                             <button
                                                 type="button"
@@ -913,7 +1020,7 @@ export default function BankeBihariBookingPage() {
                                 <p className="flex items-center gap-1.5 text-[11px] text-[#8A8A8A]">
                                     <Users className="w-3.5 h-3.5 text-[#D63D72] shrink-0" />
                                     {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added
-                                    {chargedMembers > 0 ? ` · +₹${familyCost.toLocaleString("en-IN")}` : " · all free"}
+                                    {chargedMembers > 0 ? ` · +${money(familyCost)}` : " · all free"}
                                 </p>
                             )}
                         </div>
@@ -922,7 +1029,24 @@ export default function BankeBihariBookingPage() {
                             packages, and a read-only "already free" confirmation on
                             the two higher ones. Rendered in both cases so the step
                             numbering is stable and nobody has to wonder whether
-                            they missed a prasad option. */}
+                            they missed a prasad option.
+
+                            Outside India the whole step is replaced by a single
+                            line saying so. Said once, plainly, up front — a
+                            devotee in Sydney who read "prasad couriered home" on
+                            the detail page must not have to wonder where the
+                            option went, and must never be charged for it. */}
+                        {!prasadShippable ? (
+                            <div className="flex items-start gap-2.5 rounded-2xl border border-[#F4DFC2] bg-[#FFF2E4] px-3.5 py-3">
+                                <Gift className="w-4 h-4 text-[#E7B63A] shrink-0 mt-px" />
+                                <p className="text-[11.5px] text-[#7A3E55] leading-snug">
+                                    <b className="text-[#5C1A34]">Prasad box ships within India only.</b>{" "}
+                                    It is not part of your total, and no delivery address is
+                                    needed. Your seva, Sankalp and video are unaffected —
+                                    the recording reaches you on WhatsApp as usual.
+                                </p>
+                            </div>
+                        ) : (
                         <div className="space-y-3">
                             <div className="flex items-center gap-2.5 pb-2 border-b border-[#F4DFC2]">
                                 <span className="w-7 h-7 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center font-bold text-sm">03</span>
@@ -931,7 +1055,7 @@ export default function BankeBihariBookingPage() {
                                     <p className="text-[11px] text-[#8A8A8A]">
                                         {selectedPkg.freePrasadBox
                                             ? `Included free with ${selectedPkg.name}`
-                                            : `₹${PRASAD_BOX_PRICE} · blessed prasad couriered to your home`}
+                                            : `${money(PRASAD_BOX_PRICE)} · blessed prasad couriered to your home`}
                                     </p>
                                 </div>
                             </div>
@@ -951,6 +1075,7 @@ export default function BankeBihariBookingPage() {
                                 }}
                             />
                         </div>
+                        )}
 
                         {/* Step 4: Delivery Address — only when a box actually ships
                             (bundled free, or the ₹501 add-on opted into). Without a
@@ -1055,15 +1180,38 @@ export default function BankeBihariBookingPage() {
                                             />
                                         </div>
                                     </div>
+                                    {/* Digits-only, 6-max is an Indian pincode rule.
+                                        A UK postcode has letters and a Canadian
+                                        one has both — outside India the field
+                                        takes the local format verbatim. */}
                                     <div>
-                                        <label className={LABEL}>Pincode *</label>
+                                        <label className={LABEL}>{country.postal} *</label>
                                         <input
                                             value={newAddress.pincode}
-                                            onChange={(e) => setNewAddress((a) => ({ ...a, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                                            placeholder="6-digit pincode"
-                                            inputMode="numeric"
+                                            onChange={(e) =>
+                                                setNewAddress((a) => ({
+                                                    ...a,
+                                                    pincode: isIndia
+                                                        ? e.target.value.replace(/\D/g, "").slice(0, 6)
+                                                        : e.target.value.slice(0, 12),
+                                                }))
+                                            }
+                                            placeholder={isIndia ? "6-digit pincode" : `Your ${country.postal.toLowerCase()}`}
+                                            inputMode={isIndia ? "numeric" : "text"}
                                             className={INPUT}
                                         />
+                                    </div>
+                                    <div>
+                                        <label className={LABEL}>Country</label>
+                                        <input
+                                            value={country.name}
+                                            readOnly
+                                            aria-describedby="bihari-country-hint"
+                                            className={`${INPUT} opacity-70 cursor-not-allowed`}
+                                        />
+                                        <p id="bihari-country-hint" className="text-[10.5px] text-[#8A8A8A] mt-1">
+                                            Detected from your location. Tell us on WhatsApp if this is wrong.
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -1108,7 +1256,7 @@ export default function BankeBihariBookingPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[10px] text-[#8A8A8A] font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D63D72]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                            <span className="text-[20px] font-extrabold text-[#D63D72]">{money(totalPrice)}</span>
                         </div>
                         <button
                             onClick={handleConfirm}

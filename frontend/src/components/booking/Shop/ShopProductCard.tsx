@@ -1,6 +1,7 @@
 import { Star, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { ShopProduct } from "./shopData";
+import { money } from "../../../utils/currency";
 
 interface Props {
     product: ShopProduct;
@@ -57,9 +58,9 @@ export default function ShopProductCard({ product }: Props) {
                 </h3>
 
                 <div className="flex items-baseline gap-1.5 mt-1.5">
-                    <span className="text-[16px] font-bold text-stone-900">₹{product.price.toLocaleString("en-IN")}</span>
+                    <span className="text-[16px] font-bold text-stone-900">{money(product.price)}</span>
                     {product.originalPrice && (
-                        <span className="text-[11px] text-stone-400 line-through">₹{product.originalPrice.toLocaleString("en-IN")}</span>
+                        <span className="text-[11px] text-stone-400 line-through">{money(product.originalPrice)}</span>
                     )}
                 </div>
 

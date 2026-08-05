@@ -9,6 +9,8 @@ import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
+import { useMoney } from "../utils/currency";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
 // State handed over from ChadhavaDetailPage via navigate(..., { state }). Carried
 // in router state (not the URL) so the cart selections survive the page change;
@@ -32,6 +34,9 @@ const normalizeIndianPhone = (value: string) => {
 };
 
 export default function ChadhavaBookingPage() {
+    // Where the devotee is paying from: `money` renders every price below in
+    // their currency, and the server bills in it.
+    const { country, currency, money } = useMoney();
     const navigate = useNavigate();
     const { slug } = useParams<{ slug: string }>();
     const location = useLocation();
@@ -326,6 +331,11 @@ export default function ChadhavaBookingPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    // The catalog owns chadhava pricing, so the server applies
+                    // the foreign markup itself; it only needs the market.
+                    currency,
+                    countryCode: country.iso2,
+                    country: country.name,
                     chadhavaSlug: chadhava.id,
                     items: selections.map((s) => ({ code: s.code, quantity: s.quantity })),
                     addPrasadBox: addPrasad,
@@ -345,7 +355,9 @@ export default function ChadhavaBookingPage() {
 
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: Number(orderData.amount) * 100,
+                // From the order the server just created — re-deriving these
+                // is the one place display and charge could drift apart.
+                amount: orderData.amountMinor ?? Number(orderData.amount) * 100,
                 currency: orderData.currency || "INR",
                 name: "Pandit Ji At Request",
                 description: `${chadhava.deity} Chadhava`,
@@ -435,6 +447,16 @@ export default function ChadhavaBookingPage() {
                 <h1 className="text-[17px] font-bold text-stone-800">Complete your Seva</h1>
             </div>
 
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-[#FFEFE2] bg-[#FFFAF5]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
+                    <CountryPicker className="bg-white border border-[#FFEFE2] text-stone-700" accentClass="text-[#E05A10]" />
+                </div>
+*/}
+
             <div className="px-4 py-4 space-y-4">
                 {done ? (
                     <div className="flex flex-col items-center text-center py-12">
@@ -471,19 +493,19 @@ export default function ChadhavaBookingPage() {
                                 {selections.map((s) => (
                                     <div key={s.code} className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px]">
                                         <span className="text-stone-700 font-medium text-left">{s.name} (x{s.quantity})</span>
-                                        <span className="font-bold text-stone-800">₹{(s.unitPrice * s.quantity).toLocaleString("en-IN")}</span>
+                                        <span className="font-bold text-stone-800">{money((s.unitPrice * s.quantity))}</span>
                                     </div>
                                 ))}
                                 {addPrasad && (
                                     <div className="flex items-center justify-between py-1 border-b border-stone-50 text-[13.5px]">
                                         <span className="text-stone-700 font-medium text-left">Mandir Prasad Box</span>
-                                        <span className="font-bold text-stone-800">₹298</span>
+                                        <span className="font-bold text-stone-800">{money(298)}</span>
                                     </div>
                                 )}
                                 {activeFamilyCount > 0 && (
                                     <div className="flex items-center justify-between py-2 border-b border-stone-50 text-[13.5px]">
                                         <span className="text-stone-700 font-medium text-left">Family Members ({activeFamilyCount})</span>
-                                        <span className="font-bold text-stone-800">₹{familyCost}</span>
+                                        <span className="font-bold text-stone-800">{money(familyCost)}</span>
                                     </div>
                                 )}
                             </div>
@@ -528,7 +550,7 @@ export default function ChadhavaBookingPage() {
 
                             <div className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-[#FFEFE2]">
                                 <span className="font-bold text-stone-800 text-[13px] uppercase tracking-wide">Total Amount</span>
-                                <span className="font-extrabold text-[#E05A10] text-[20px]">₹{total.toLocaleString("en-IN")}</span>
+                                <span className="font-extrabold text-[#E05A10] text-[20px]">{money(total)}</span>
                             </div>
                         </div>
 
@@ -614,7 +636,7 @@ export default function ChadhavaBookingPage() {
                                         <span className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center text-[11px] text-[#E05A10] font-bold">👥</span>
                                         Family Members
                                     </h3>
-                                    <p className="text-[11px] text-stone-400 mt-0.5">Include names in the Sankalp at ₹50 each</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5">Include names in the Sankalp at {money(50)} each</p>
                                 </div>
                                 <span className="text-[12.5px] font-extrabold text-[#E05A10]">03</span>
                             </div>
@@ -824,7 +846,7 @@ export default function ChadhavaBookingPage() {
                 <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#FFEFE2] px-5 py-4 flex items-center justify-between">
                     <div className="leading-none text-left">
                         <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wide">Total to Pay</span>
-                        <p className="text-[20px] font-extrabold text-[#E05A10] mt-0.5">₹{total.toLocaleString("en-IN")}</p>
+                        <p className="text-[20px] font-extrabold text-[#E05A10] mt-0.5">{money(total)}</p>
                     </div>
                     <button
                         onClick={handlePay}

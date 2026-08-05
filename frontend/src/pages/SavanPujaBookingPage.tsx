@@ -8,6 +8,9 @@ import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
 import { optimizedImg } from "../utils/img";
+import { useMoney, isValidPhone, shipsPrasad, toStoredPhone } from "../utils/currency";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
+import PhoneField from "../components/checkout/PhoneField";
 import {
     kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID,
     PRASAD_BOX_PRICE, FAMILY_MEMBER_PRICE, RUDRAKSH_BRACELET_IMAGE,
@@ -101,6 +104,12 @@ export default function SavanPujaBookingPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Where the devotee is paying from — detected on first render, no network
+    // call. Every price below goes through `money()`, so switching country
+    // re-prices the whole page (and re-shapes the phone + address fields) in a
+    // single re-render. Prices themselves never leave INR; see utils/currency.
+    const { country, currency, isIndia, money, inr: toInr } = useMoney();
+
     // Package chosen on the detail page (handed over as navigation state), or
     // the entry package when this page is opened directly. The `addPrasadBox` /
     // `prasadAdded` keys are the shapes earlier versions of the funnel sent;
@@ -120,9 +129,22 @@ export default function SavanPujaBookingPage() {
      * is also why upgrading doesn't tick this on its own — the upgrade changes
      * what the box COSTS (₹298 → free), not whether it was wanted.
      */
-    const [prasadBoxAdded, setPrasadBoxAdded] = useState(
+    const [prasadOptedIn, setPrasadOptedIn] = useState(
         Boolean(handover?.addPrasadBox ?? handover?.prasadAdded),
     );
+
+    /**
+     * Blessed prasad is couriered within India only — see `shipsPrasad`.
+     *
+     * The gate is applied HERE, once, on the derived value rather than on the
+     * checkbox: everything downstream (the bill line, the total, the delivery
+     * step, the shipping label sent to the team) is computed from
+     * `prasadBoxAdded`, so one guard turns the whole feature off cleanly and a
+     * devotee who ticked the box in India and then switched country cannot be
+     * left paying for a parcel that will never be sent.
+     */
+    const prasadShippable = shipsPrasad(country);
+    const prasadBoxAdded = prasadShippable && prasadOptedIn;
     const shippedBox = shippedPrasadBox(selectedPkg, prasadBoxAdded);
     const needsDelivery = packageNeedsDelivery(selectedPkg, prasadBoxAdded);
 
@@ -180,7 +202,7 @@ export default function SavanPujaBookingPage() {
     // Shown on every tier, because on every tier the box is opt-in — on the top
     // one it is a free parcel the devotee is about to walk away from, which is
     // the single most worth-interrupting case on this page.
-    const showPrasadNudge = nudgeDue && !nudgeDismissed && !prasadBoxAdded && step === "details";
+    const showPrasadNudge = prasadShippable && nudgeDue && !nudgeDismissed && !prasadBoxAdded && step === "details";
 
     useEffect(() => {
         const t = setTimeout(() => setNudgeDue(true), PRASAD_NUDGE_DELAY_MS);
@@ -197,7 +219,7 @@ export default function SavanPujaBookingPage() {
     // the devotee at Step 3 so the delivery address it just made mandatory is
     // on screen rather than somewhere below the fold.
     const acceptPrasadNudge = () => {
-        setPrasadBoxAdded(true);
+        setPrasadOptedIn(true);
         setNudgeDismissed(true);
         if ((window as any).fbq) {
             (window as any).fbq("trackCustom", "PrasadNudgeAccepted", {
@@ -299,7 +321,7 @@ export default function SavanPujaBookingPage() {
     // ride along with it.
     const shipList = shippedBox ? prasadBoxContents(shippedBox.tier) : [];
     const boxLabel = shippedBox
-        ? `${shippedBox.name}${selectedPkg.prasadBoxFree ? " (free)" : ` (paid add-on ₹${PRASAD_BOX_PRICE})`}: ${shipList.join(", ")}`
+        ? `${shippedBox.name}${selectedPkg.prasadBoxFree ? " (free)" : ` (paid add-on ${money(PRASAD_BOX_PRICE)})`}: ${shipList.join(", ")}`
         : "";
     // e.g. "Shree Mahakaleshwar Rudrabhishek Mahapuja — Rudri Path Mahaseva [Prasad Box + Shiv Chalisa (free): Dry Prasad…]"
     const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${boxLabel ? ` [${boxLabel}]` : ""}`;
@@ -312,17 +334,17 @@ export default function SavanPujaBookingPage() {
     // (built off the booking name) so the deduplicated pair reports identically
     // either way.
     const metaContents = () => [
-        { id: packageLabel, quantity: 1, item_price: basePrice },
+        { id: packageLabel, quantity: 1, item_price: toInr(basePrice) },
         // Only the PAID box is a line item; a free one is part of the package
         // price and would double-count the order value here.
         ...(prasadCost > 0
-            ? [{ id: `${puja.poojaNameEng} — Prasad Box`, quantity: 1, item_price: PRASAD_BOX_PRICE }]
+            ? [{ id: `${puja.poojaNameEng} — Prasad Box`, quantity: 1, item_price: toInr(PRASAD_BOX_PRICE) }]
             : []),
         ...(chargedMembers > 0
             ? [{
                 id: `${puja.poojaNameEng} — Extra Sankalp Name`,
                 quantity: chargedMembers,
-                item_price: FAMILY_MEMBER_PRICE,
+                item_price: toInr(FAMILY_MEMBER_PRICE),
             }]
             : []),
     ];
@@ -342,7 +364,9 @@ export default function SavanPujaBookingPage() {
     // number is typed, then patched with every further detail, so a devotee who
     // drops off before paying is still reachable with full context.
     const { markCartConverted } = useAbandonedCart("savan-puja-booking", {
-        phone: form.phone,
+        // Country code included, so a lead from abroad is a number the team can
+        // actually dial back rather than a stranded national fragment.
+        phone: toStoredPhone(form.phone, country),
         name: form.name,
         gotra: form.gotra,
         email: form.email,
@@ -352,7 +376,7 @@ export default function SavanPujaBookingPage() {
         templeName: puja.templeName,
         packageId: selectedPkg.id,
         packageName: packageLabel,
-        amount: totalPrice,
+        amount: toInr(totalPrice),
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
@@ -361,6 +385,11 @@ export default function SavanPujaBookingPage() {
             prasadAdded: shippedBox !== null,
             prasadBox: shippedBox ? shippedBox.name : "none",
             prasadBoxPaid: prasadCost > 0,
+            // `amount` above stays INR; these say where the lead was and what
+            // they were being quoted, so a follow-up call opens with the right
+            // number in the right currency.
+            country: country.iso2,
+            currency,
         },
     });
 
@@ -371,13 +400,13 @@ export default function SavanPujaBookingPage() {
     const hasTrackedDetails = useRef(false);
     const trackCustomerDetails = () => {
         if (hasTrackedDetails.current) return;
-        if (form.name.trim().length < 3 || form.phone.replace(/\D/g, "").length < 10) return;
+        if (form.name.trim().length < 3 || !isValidPhone(form.phone, country)) return;
         hasTrackedDetails.current = true;
         if ((window as any).fbq) {
             (window as any).fbq("track", "CustomerDetailsFilled", {
                 content_name: puja.poojaNameEng,
                 bhaktName: form.name.trim(),
-                contactNumber: form.phone.replace(/\D/g, ""),
+                contactNumber: toStoredPhone(form.phone, country),
             });
         }
     };
@@ -398,9 +427,18 @@ export default function SavanPujaBookingPage() {
             return;
         }
 
-        const phoneDigits = form.phone.replace(/\D/g, "");
-        if (phoneDigits.length !== 10) {
-            setError("Please enter a valid 10-digit mobile number.");
+        // Length varies by country (10 in India, 8 in Singapore, 11 in Germany),
+        // so the rule comes from the selected country rather than a fixed 10.
+        if (!isValidPhone(form.phone, country)) {
+            setError(`Please enter a valid ${country.name} mobile number.`);
+            return;
+        }
+        // `phoneDigits` carries the country code for everyone outside India, so
+        // the WhatsApp confirmation and any callback reach the right number.
+        const phoneDigits = toStoredPhone(form.phone, country);
+
+        if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+            setError("Please enter a valid email for your booking confirmation.");
             return;
         }
 
@@ -422,6 +460,7 @@ export default function SavanPujaBookingPage() {
                         state: selected.state,
                         pincode: selected.pincode,
                         addressName: selected.addressName || selected.saveAs,
+                        country: selected.country || country.name,
                     };
                 }
             } else {
@@ -436,6 +475,9 @@ export default function SavanPujaBookingPage() {
                     state: newAddress.state.trim(),
                     pincode: newAddress.pincode.trim(),
                     addressName: newAddress.saveAs.trim() || "Home",
+                    // Stored on the booking so the courier desk can tell a
+                    // Zirakpur parcel from a New Jersey one at a glance.
+                    country: country.name,
                 };
             }
         }
@@ -498,7 +540,22 @@ export default function SavanPujaBookingPage() {
                     templeName: puja.templeName,
                     poojaMode: "online",
                     bookingDate,
-                    amount: totalPrice,
+                    // ALWAYS the INR total. The server converts it into the
+                    // devotee's currency itself and bills that — the browser
+                    // never sends the amount to charge, only the currency to
+                    // charge it in, so a tampered page can't change the price.
+                    // The list price with the foreign multiplier applied —
+                    // the INR this sale is actually worth. Sending `totalPrice`
+                    // would record a 1x sale for a booking charged at 2x.
+                    amount: toInr(totalPrice),
+                    currency,
+                    // Tells the server this is (or isn't) an Indian number, so
+                    // it stores the country code instead of trimming to 10.
+                    dialCode: country.dial,
+                    // Stored on the booking so the team can see which market a
+                    // sale came from without decoding a currency or a phone.
+                    countryCode: country.iso2,
+                    country: country.name,
                     panditDakshina: puja.panditDakshina,
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
@@ -535,22 +592,30 @@ export default function SavanPujaBookingPage() {
                     content_type: "product",
                     contents,
                     num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                    value: totalPrice,
+                    value: toInr(totalPrice),
                     currency: "INR",
                 });
             }
 
             // 2) Open Razorpay checkout.
+            //    Amount and currency come straight from the order the server
+            //    just created — Razorpay rejects a checkout whose amount or
+            //    currency disagrees with its order, so re-deriving them here
+            //    would be the one place the two could drift apart. The `??`
+            //    fallbacks keep an older server build (which returned neither
+            //    field) working on the plain INR path.
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: totalPrice * 100,
-                currency: "INR",
+                amount: orderData.amountMinor ?? totalPrice * 100,
+                currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
                 description: puja.poojaNameEng,
                 order_id: orderData.razorpayOrderId,
                 prefill: {
                     name: form.name.trim(),
-                    contact: phoneDigits,
+                    // E.164 for international numbers — Razorpay expects the
+                    // "+" form and will not prefill a bare digit string.
+                    contact: isIndia ? phoneDigits : `+${phoneDigits}`,
                     email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
                 },
                 // Razorpay's own chrome, tinted to the theme's action colour so
@@ -580,7 +645,7 @@ export default function SavanPujaBookingPage() {
                                 razorpayOrderId: response.razorpay_order_id,
                                 razorpayPaymentId: response.razorpay_payment_id,
                                 razorpaySignature: response.razorpay_signature,
-                                amountPaid: totalPrice,
+                                amountPaid: toInr(totalPrice),
                             })),
                         });
                         const verifyData = await verifyRes.json();
@@ -596,7 +661,7 @@ export default function SavanPujaBookingPage() {
                                 content_type: "product",
                                 contents,
                                 num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                                value: totalPrice,
+                                value: toInr(totalPrice),
                                 currency: "INR",
                             }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
                         }
@@ -688,6 +753,26 @@ export default function SavanPujaBookingPage() {
                 </p>
             </div>
 
+            {/* Currency switcher — HIDDEN. The country is resolved automatically
+                from the visitor's IP on the server, so there is no manual
+                override on screen. Left here, commented, so bringing it back is
+                one uncomment (plus its import above).
+
+                Restyled to the parchment theme while it sat here: the block
+                arrived carrying the page's old teal palette, and a commented
+                block is exactly the kind of thing that gets uncommented a year
+                later without anyone re-reading its classes.
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#D8B66A] bg-[#F3E5BF]">
+                    <span className="font-svn-sub text-[10px] font-bold uppercase tracking-[0.12em] text-[#8E6A25]">
+                        Paying from
+                    </span>
+                    <CountryPicker
+                        className="bg-[#FFFDF8] border border-[#D8B66A] text-[#23201B] hover:border-[#C79A2B]"
+                        accentClass="text-[#7A1622]"
+                    />
+                </div>
+            */}
+
             {/* Content. `svn-sheet-head` burns the parchment where it meets the
                 ribbon above — see the note on that class for why the shading
                 lives on the content wrapper and not on the page root. */}
@@ -709,7 +794,7 @@ export default function SavanPujaBookingPage() {
                             <div className="mt-2.5 pt-2.5 border-t border-[#D8B66A]/45 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[12.5px] text-[#665C50] font-medium">{selectedPkg.name}</span>
-                                    <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B]">₹{basePrice.toLocaleString("en-IN")}</span>
+                                    <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B]">{money(basePrice)}</span>
                                 </div>
 
                                 {/* Offerings made in your name — shown as "Included"
@@ -740,14 +825,18 @@ export default function SavanPujaBookingPage() {
                                             <Users className="w-3.5 h-3.5 text-[#8E6A25]" />
                                             Extra Sankalp × {chargedMembers}
                                         </span>
-                                        <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B]">+₹{familyCost.toLocaleString("en-IN")}</span>
+                                        <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B]">+{money(familyCost)}</span>
                                     </div>
                                 )}
 
                                 {/* Prasad box — free with the tier, a priced line when
                                     it was opted into, and explicitly "Not added"
                                     otherwise so its absence is never a silent
-                                    surprise at delivery time. */}
+                                    surprise at delivery time. Outside India there is
+                                    no line at all: the parcel is not sold there, and
+                                    a greyed-out row would only raise a question the
+                                    bill cannot answer. */}
+                                {prasadShippable && (
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-[12.5px] text-[#665C50] font-medium flex items-center gap-1.5 min-w-0">
                                         <Gift className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
@@ -762,9 +851,10 @@ export default function SavanPujaBookingPage() {
                                     ) : selectedPkg.prasadBoxFree ? (
                                         <span className="text-[11px] font-bold text-[#3E6B4A] shrink-0">Free</span>
                                     ) : (
-                                        <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B] shrink-0">+₹{prasadCost.toLocaleString("en-IN")}</span>
+                                        <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B] shrink-0">+{money(prasadCost)}</span>
                                     )}
                                 </div>
+                                )}
 
                                 {/* The bracelet rides inside the box and adds nothing
                                     to the total — listed only when a box actually
@@ -786,7 +876,7 @@ export default function SavanPujaBookingPage() {
                                     one screen is two prices to reconcile. */}
                                 <div className="flex items-baseline justify-between pt-2 border-t border-[#D8B66A]/60">
                                     <span className="font-svn-sub text-[10px] font-bold uppercase tracking-[0.14em] text-[#8E6A25]">Total</span>
-                                    <span className="font-svn-head lining-nums text-xl font-bold text-[#7A1622]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                    <span className="font-svn-head lining-nums text-xl font-bold text-[#7A1622]">{money(totalPrice)}</span>
                                 </div>
                             </div>
                         </div>
@@ -823,7 +913,7 @@ export default function SavanPujaBookingPage() {
                                         Popular", which is what makes this read as
                                         part of that ladder rather than an ad. */}
                                     <span className="svn-seal shrink-0 flex items-center gap-0.5 rounded-full px-2 py-0.5 font-svn-sub text-[10.5px] font-bold lining-nums">
-                                        +₹{(nextPkg.price - selectedPkg.price).toLocaleString("en-IN")}
+                                        +{money(nextPkg.price - selectedPkg.price)}
                                         <ArrowUpRight className="w-3 h-3" />
                                     </span>
                                 </div>
@@ -832,8 +922,11 @@ export default function SavanPujaBookingPage() {
                                     then the extra Sankalps, then the new offerings. */}
                                 <p className="mt-1 text-[11px] text-[#665C50] leading-snug">
                                     {[
-                                        nextPkg.prasadBoxFree
-                                            ? `Prasad box free instead of ₹${PRASAD_BOX_PRICE}`
+                                        // Never pitched abroad — the upgrade's headline
+                                        // perk there is the offerings, not a parcel that
+                                        // cannot be couriered.
+                                        prasadShippable && nextPkg.prasadBoxFree
+                                            ? `Prasad box free instead of ${money(PRASAD_BOX_PRICE)}`
                                             : null,
                                         nextPkg.freeFamilyMembers > selectedPkg.freeFamilyMembers
                                             ? `${nextPkg.freeFamilyMembers - selectedPkg.freeFamilyMembers} more family Sankalp${nextPkg.freeFamilyMembers - selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free`
@@ -854,14 +947,17 @@ export default function SavanPujaBookingPage() {
                             <div className="space-y-3">
                                 <div>
                                     <label className={LABEL}>Mobile Number *</label>
-                                    <input
+                                    <PhoneField
+                                        country={country}
                                         value={form.phone}
-                                        onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
+                                        onChange={(phone) => setForm((f) => ({ ...f, phone }))}
                                         onBlur={trackCustomerDetails}
-                                        placeholder="10-digit number for updates"
-                                        inputMode="numeric"
-                                        className={INPUT}
+                                        inputClass={INPUT}
+                                        prefixClass="text-[#7A1622]"
                                     />
+                                    <p className="text-[10.5px] text-[#665C50] mt-1">
+                                        We WhatsApp your puja video and updates here.
+                                    </p>
                                 </div>
                                 <div>
                                     <label className={LABEL}>Devotee's Name *</label>
@@ -882,6 +978,26 @@ export default function SavanPujaBookingPage() {
                                         className={INPUT}
                                     />
                                 </div>
+                                {/* Asked for only outside India, where it is the
+                                    reliable channel: an overseas devotee may not
+                                    use WhatsApp on this number, and the card
+                                    receipt has to reach them somewhere. Adding it
+                                    for everyone would put a new required field in
+                                    front of the home market for no gain. */}
+                                {!isIndia && (
+                                    <div>
+                                        <label className={LABEL}>Email *</label>
+                                        <input
+                                            value={form.email}
+                                            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                                            placeholder="For your booking confirmation"
+                                            type="email"
+                                            inputMode="email"
+                                            autoComplete="email"
+                                            className={INPUT}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -893,8 +1009,8 @@ export default function SavanPujaBookingPage() {
                                 title="Family Sankalp"
                                 sub={
                                     selectedPkg.freeFamilyMembers > 0
-                                        ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ₹${FAMILY_MEMBER_PRICE} each after`
-                                        : `Optional · add members at ₹${FAMILY_MEMBER_PRICE} each`
+                                        ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ${money(FAMILY_MEMBER_PRICE)} each after`
+                                        : `Optional · add members at ${money(FAMILY_MEMBER_PRICE)} each`
                                 }
                             />
 
@@ -905,7 +1021,7 @@ export default function SavanPujaBookingPage() {
                                     <Sparkles className="w-3.5 h-3.5 text-[#C79A2B] shrink-0" />
                                     {selectedPkg.freeFamilyMembers - form.familyMembers.length > 0
                                         ? `${selectedPkg.freeFamilyMembers - form.familyMembers.length} free family Sankalp${selectedPkg.freeFamilyMembers - form.familyMembers.length > 1 ? "s" : ""} left in your package`
-                                        : `Free members used — extra names add ₹${FAMILY_MEMBER_PRICE} each`}
+                                        : `Free members used — extra names add ${money(FAMILY_MEMBER_PRICE)} each`}
                                 </div>
                             )}
 
@@ -949,7 +1065,7 @@ export default function SavanPujaBookingPage() {
                                 >
                                     <Plus className="w-4 h-4" />
                                     {pendingFamilyName
-                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+₹${FAMILY_MEMBER_PRICE}`}`
+                                        ? `Add ${pendingFamilyName} · ${form.familyMembers.length < selectedPkg.freeFamilyMembers ? "FREE" : `+${money(FAMILY_MEMBER_PRICE)}`}`
                                         : "Add member"}
                                 </button>
 
@@ -980,7 +1096,7 @@ export default function SavanPujaBookingPage() {
                                             {idx < selectedPkg.freeFamilyMembers ? (
                                                 <span className="text-[11px] font-bold text-[#3E6B4A] shrink-0">FREE</span>
                                             ) : (
-                                                <span className="lining-nums text-[11px] font-bold text-[#7A1622] shrink-0">+₹{FAMILY_MEMBER_PRICE}</span>
+                                                <span className="lining-nums text-[11px] font-bold text-[#7A1622] shrink-0">+{money(FAMILY_MEMBER_PRICE)}</span>
                                             )}
                                             <button
                                                 type="button"
@@ -999,7 +1115,7 @@ export default function SavanPujaBookingPage() {
                                 <p className="flex items-center gap-1.5 text-[11px] text-[#665C50]">
                                     <Users className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
                                     {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added
-                                    {chargedMembers > 0 ? ` · +₹${familyCost.toLocaleString("en-IN")}` : " · all free"}
+                                    {chargedMembers > 0 ? ` · +${money(familyCost)}` : " · all free"}
                                 </p>
                             )}
                         </div>
@@ -1007,7 +1123,24 @@ export default function SavanPujaBookingPage() {
                         {/* Step 3: Prasad Box — the one place it is decided, on
                             every package. The top tier makes it free, not
                             automatic: unticked means nothing is couriered, and
-                            no address is asked for. */}
+                            no address is asked for.
+
+                            Outside India the whole step is replaced by a single
+                            line saying so. Said once, plainly, up front — a
+                            devotee in Toronto who reads "prasad couriered home"
+                            on the detail page must not have to wonder where the
+                            option went, and must never be charged for it. */}
+                        {!prasadShippable ? (
+                            <div className="flex items-start gap-2.5 rounded-2xl border border-[#D8B66A]/70 bg-[#F3E5BF]/60 px-3.5 py-3">
+                                <Gift className="w-4 h-4 text-[#8E6A25] shrink-0 mt-px" />
+                                <p className="text-[11.5px] text-[#665C50] leading-snug">
+                                    <b className="text-[#23201B]">Prasad box ships within India only.</b>{" "}
+                                    It is not part of your total, and no delivery address is
+                                    needed. Your puja, Sankalp and video are unaffected —
+                                    the recording reaches you on WhatsApp as usual.
+                                </p>
+                            </div>
+                        ) : (
                         <div ref={prasadSectionRef} className="space-y-3">
                             <StepHead
                                 n="03"
@@ -1015,7 +1148,7 @@ export default function SavanPujaBookingPage() {
                                 sub={
                                     selectedPkg.prasadBoxFree
                                         ? `FREE with ${selectedPkg.name} · add it to have it couriered`
-                                        : `₹${PRASAD_BOX_PRICE} · blessed prasad couriered to your home`
+                                        : `${money(PRASAD_BOX_PRICE)} · blessed prasad couriered to your home`
                                 }
                             />
 
@@ -1034,7 +1167,7 @@ export default function SavanPujaBookingPage() {
                                     type="checkbox"
                                     checked={prasadBoxAdded}
                                     onChange={(e) => {
-                                        setPrasadBoxAdded(e.target.checked);
+                                        setPrasadOptedIn(e.target.checked);
                                         if ((window as any).fbq) {
                                             (window as any).fbq("trackCustom", "PujaPrasadBoxToggle", {
                                                 added: e.target.checked,
@@ -1053,7 +1186,7 @@ export default function SavanPujaBookingPage() {
                                         {selectedPkg.prasadBoxFree ? (
                                             <b className="text-[#8E6A25]">FREE with this seva</b>
                                         ) : (
-                                            <>+₹{PRASAD_BOX_PRICE}</>
+                                            <>+{money(PRASAD_BOX_PRICE)}</>
                                         )}
                                     </p>
                                     <p className="text-[11px] font-bold text-[#8E6A25] mt-1 leading-snug">
@@ -1101,6 +1234,7 @@ export default function SavanPujaBookingPage() {
                                 </div>
                             )}
                         </div>
+                        )}
 
                         {/* Step 4: Delivery Address — only once the box has been
                             added, free tier included. Without a box there is nothing
@@ -1195,15 +1329,38 @@ export default function SavanPujaBookingPage() {
                                             />
                                         </div>
                                     </div>
+                                    {/* Digits-only, 6-max is an Indian pincode rule.
+                                        A UK postcode has letters and a Canadian
+                                        one has both — outside India the field
+                                        takes the local format verbatim. */}
                                     <div>
-                                        <label className={LABEL}>Pincode *</label>
+                                        <label className={LABEL}>{country.postal} *</label>
                                         <input
                                             value={newAddress.pincode}
-                                            onChange={(e) => setNewAddress((a) => ({ ...a, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                                            placeholder="6-digit pincode"
-                                            inputMode="numeric"
+                                            onChange={(e) =>
+                                                setNewAddress((a) => ({
+                                                    ...a,
+                                                    pincode: isIndia
+                                                        ? e.target.value.replace(/\D/g, "").slice(0, 6)
+                                                        : e.target.value.slice(0, 12),
+                                                }))
+                                            }
+                                            placeholder={isIndia ? "6-digit pincode" : `Your ${country.postal.toLowerCase()}`}
+                                            inputMode={isIndia ? "numeric" : "text"}
                                             className={INPUT}
                                         />
+                                    </div>
+                                    <div>
+                                        <label className={LABEL}>Country</label>
+                                        <input
+                                            value={country.name}
+                                            readOnly
+                                            aria-describedby="savan-country-hint"
+                                            className={`${INPUT} opacity-70 cursor-not-allowed`}
+                                        />
+                                        <p id="savan-country-hint" className="text-[10.5px] text-[#665C50] mt-1">
+                                            Detected from your location. Tell us on WhatsApp if this is wrong.
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -1313,7 +1470,7 @@ export default function SavanPujaBookingPage() {
                                     </>
                                 ) : (
                                     <>
-                                        Add the {packagePrasadBox(selectedPkg).name} (+₹{PRASAD_BOX_PRICE}) and
+                                        Add the {packagePrasadBox(selectedPkg).name} (+{money(PRASAD_BOX_PRICE)}) and
                                         we'll send the bracelet with it.
                                     </>
                                 )}
@@ -1363,7 +1520,7 @@ export default function SavanPujaBookingPage() {
                                 below the baseline. Charming in a heading, wrong
                                 in a price. */}
                             <span className="font-svn-head lining-nums text-[22px] font-bold text-[#7A1622] leading-tight">
-                                ₹{totalPrice.toLocaleString("en-IN")}
+                                {money(totalPrice)}
                             </span>
                         </div>
                         <button

@@ -24,6 +24,8 @@ import PujaPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/bankeBihari
 import { ItemTileRow } from "../components/bankeBihari/ItemTiles";
 import PrasadBoxNudge, { type PrasadNudge } from "../components/bankeBihari/PrasadBoxNudge";
 import HeroBannerCarousel, { bannerImg } from "../components/bankeBihari/HeroBannerCarousel";
+import { useMoney, shipsPrasad } from "../utils/currency";
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -262,10 +264,25 @@ function HeroCountdown({ target }: { target: number }) {
 // distinct festive-temple theme (ivory / Krishna-pink / temple-gold palette,
 // peacock-feather and lotus motifs, Janmashtami offerings).
 // All data comes from src/data/bankeBihariPuja.ts.
+/**
+ * The sevas whose prasad box is free — read from the packages rather than
+ * written into the copy, so a repriced tier can never leave a line quoting a
+ * price that no longer exists.
+ */
+const FREE_BOX_TIERS = BANKE_BIHARI_PACKAGES.filter((p) => p.freePrasadBox);
+
 export default function BankeBihariPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useAuth();
+
+    // Every price on this page is written through `money()`. The package data
+    // stays in rupees — this only decides how those rupees are rendered, and
+    // the booking page picks up the same detected country.
+    const { country, money } = useMoney();
+    // Blessed prasad is couriered within India only, so nothing on this page may
+    // promise a parcel abroad — see `shipsPrasad`.
+    const prasadShippable = shipsPrasad(country);
 
     const puja = bankeBihariPuja;
     const pujaId = bankeBihariPuja._id;
@@ -288,7 +305,7 @@ export default function BankeBihariPage() {
     // offered there. Switching up to one must therefore also clear the flag —
     // otherwise a devotee who ticked it on ₹2100 would keep paying ₹501 for a
     // box that is now free, with no visible control left to untick.
-    const prasadBoxAdded = canAddPrasadBox(selectedPkg) && addPrasadBox;
+    const prasadBoxAdded = prasadShippable && canAddPrasadBox(selectedPkg) && addPrasadBox;
 
     // Nothing above this tier to upsell to (drives the "higher packages offer
     // more" hint), read off the list so adding a fifth package needs no edit.
@@ -296,7 +313,10 @@ export default function BankeBihariPage() {
 
     // The box this booking would actually ship (free tier, opted-in ₹501 box,
     // or none) — null when nothing is couriered at all.
-    const shippedBox = shippedPrasadBox(selectedPkg, prasadBoxAdded);
+    // Gated separately from the add-on: the two top tiers bundle a box free
+    // regardless of the toggle, so this would otherwise promise a courier
+    // delivery to a country the parcel cannot reach.
+    const shippedBox = prasadShippable ? shippedPrasadBox(selectedPkg, prasadBoxAdded) : null;
 
     // The sticky CTA quotes the package + prasad box. Extra family Sankalps are
     // chosen on the booking page, so they can't be priced in yet.
@@ -341,7 +361,7 @@ export default function BankeBihariPage() {
         // describes a package/box combination the devotee has moved on from.
         setNudge(null);
 
-        if (nudgeTick === 0 || nudgingOff.current) return;
+        if (nudgeTick === 0 || nudgingOff.current || !prasadShippable) return;
         if (nudgedPkgs.current.has(packageId)) return;
 
         const timer = setTimeout(() => {
@@ -367,7 +387,7 @@ export default function BankeBihariPage() {
         return () => clearTimeout(timer);
         // selectedPkg is getPackage(packageId) off a module-level array, so its
         // identity is stable per id and it never re-fires this on its own.
-    }, [nudgeTick, packageId, prasadBoxAdded, selectedPkg]);
+    }, [nudgeTick, packageId, prasadBoxAdded, prasadShippable, selectedPkg]);
 
     // Auto-retire. The offer gets longer than the reassurance because it has a
     // button on it that a devotee may still be deciding about.
@@ -477,7 +497,12 @@ export default function BankeBihariPage() {
     const whatYouGet = [
         { icon: BadgeCheck, title: "Personalized seva", sub: "Performed in your name & gotra" },
         { icon: Video, title: "Puja video on WhatsApp", sub: "Full recording delivered to you" },
-        { icon: Gift, title: "Prasad at your home", sub: "Free in ₹5100 & ₹11000, else ₹501" },
+        prasadShippable
+            ? { icon: Gift, title: "Prasad at your home", sub: `Free in ${FREE_BOX_TIERS.map((p) => money(p.price)).join(" & ")}, else ${money(PRASAD_BOX_PRICE)}` }
+            // The seva reaches a devotee abroad exactly as it does at home; only
+            // the parcel cannot follow. Naming what they DO get keeps the strip
+            // at three tiles instead of leaving a gap where the box was.
+            : { icon: Flower2, title: "Vrindavan Sankalp for you", sub: "Wherever in the world you are" },
     ];
 
     // The sacred offerings made during the Janmashtami seva.
@@ -710,6 +735,21 @@ export default function BankeBihariPage() {
             <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               Choose your seva
             </SectionTitle>
+
+{/* Currency switcher — HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="mb-2.5 flex items-center justify-between gap-2">
+                  <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#8A8A8A]">
+                    Prices in
+                  </span>
+                  <CountryPicker
+                    className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
+                    accentClass="text-[#D63D72]"
+                  />
+                </div>
+*/}
             {/* One line only — every card already carries its own "Tap to see
                 everything included" prompt, so spelling that out here twice was
                 the bulk of the copy in this block. */}
@@ -747,7 +787,7 @@ export default function BankeBihariPage() {
               <div className="flex items-center justify-between text-[12.5px] text-[#555555]">
                 <span>{selectedPkg.name}</span>
                 <span className="font-bold text-[#5C1A34]">
-                  ₹{selectedPkg.price.toLocaleString("en-IN")}
+                  {money(selectedPkg.price)}
                 </span>
               </div>
               <div className="mt-1.5 flex items-center justify-between text-[12.5px] text-[#555555]">
@@ -761,7 +801,7 @@ export default function BankeBihariPage() {
                   <span className="text-[11px] font-bold text-[#2E8B57]">FREE</span>
                 ) : prasadBoxAdded ? (
                   <span className="font-bold text-[#5C1A34]">
-                    +₹{prasadBoxCost(selectedPkg, true).toLocaleString("en-IN")}
+                    +{money(prasadBoxCost(selectedPkg, true))}
                   </span>
                 ) : (
                   <span className="text-[11px] font-semibold text-[#8A8A8A]">Not added</span>
@@ -772,15 +812,15 @@ export default function BankeBihariPage() {
                   Total today
                 </span>
                 <span className="text-[19px] font-extrabold text-[#D63D72]">
-                  ₹{price.toLocaleString("en-IN")}
+                  {money(price)}
                 </span>
               </div>
             </div>
 
             <p className="mt-2 text-[10.5px] text-[#8A8A8A] leading-snug text-center">
               {selectedPkg.freeFamilyMembers > 0
-                ? `${selectedPkg.freeFamilyMembers} family Sankalp${selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free in this package · extra names ₹${EXTRA_FAMILY_MEMBER_PRICE} each on the next step.`
-                : `Family members can be added at ₹${EXTRA_FAMILY_MEMBER_PRICE} each on the next step.`}
+                ? `${selectedPkg.freeFamilyMembers} family Sankalp${selectedPkg.freeFamilyMembers > 1 ? "s" : ""} free in this package · extra names ${money(EXTRA_FAMILY_MEMBER_PRICE)} each on the next step.`
+                : `Family members can be added at ${money(EXTRA_FAMILY_MEMBER_PRICE)} each on the next step.`}
             </p>
           </div>
 
@@ -863,16 +903,21 @@ export default function BankeBihariPage() {
               selection; this shows all three at once, so a devotee can see what
               upgrading actually buys before they commit. Each tier lists only
               what it adds, under an explicit "everything in the box above" line,
-              which is also how the data itself is modelled. */}
+              which is also how the data itself is modelled.
+
+              Dropped entirely outside India: a comparison of parcels that cannot
+              be sent is a page of things to want and not get. The one line in
+              "how it works" above says why, once. */}
+          {prasadShippable && (
           <div>
             <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               What's in each prasad box
             </SectionTitle>
             <div className="space-y-2">
               {([
-                { tier: "standard", how: `Add for ₹${PRASAD_BOX_PRICE}`, free: false },
-                { tier: "premium", how: "FREE with ₹5,100 Shringar Seva", free: true },
-                { tier: "royal", how: "FREE with ₹11,000 Raj Bhog Seva", free: true },
+                { tier: "standard", how: `Add for ${money(PRASAD_BOX_PRICE)}`, free: false },
+                { tier: "premium", how: `FREE with ${money(getPackage("shringar").price)} Shringar Seva`, free: true },
+                { tier: "royal", how: `FREE with ${money(getPackage("rajbhog").price)} Raj Bhog Seva`, free: true },
               ] as const).map(({ tier, how, free }) => {
                 const box = PRASAD_BOXES[tier];
                 const parent = box.inherits ? PRASAD_BOXES[box.inherits] : null;
@@ -912,6 +957,7 @@ export default function BankeBihariPage() {
               Every box is blessed at {puja.templeName} and couriered to your home.
             </p>
           </div>
+          )}
 
           <FluteDivider />
 
@@ -929,9 +975,11 @@ export default function BankeBihariPage() {
                 `Pandit ji performs the Janmashtami seva at ${puja.templeName}`,
                 "Sankalp is taken in your name & gotra",
                 "Puja video is shared with you on WhatsApp",
-                shippedBox
-                  ? `Your ${shippedBox.name} is couriered to your home`
-                  : "Add the prasad box if you'd like blessed prasad couriered home",
+                !prasadShippable
+                  ? "Prasad box ships within India only — your seva and video are unaffected"
+                  : shippedBox
+                    ? `Your ${shippedBox.name} is couriered to your home`
+                    : "Add the prasad box if you'd like blessed prasad couriered home",
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-2.5">
                   <span className="shrink-0 w-5 h-5 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center text-[11px] font-bold mt-0.5">
@@ -1116,14 +1164,14 @@ export default function BankeBihariPage() {
                   {selectedPkg.name}
                 </span>
                 <span className="text-[19px] font-extrabold text-white drop-shadow-sm">
-                  ₹{price.toLocaleString("en-IN")}
+                  {money(price)}
                 </span>
               </div>
               <button
                 onClick={() => openBooking("sticky_cta")}
                 className="flex-1 bg-[#F7C547] hover:bg-[#FFD86A] text-[#5A3600] font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-white outline-none"
               >
-                Book for ₹{price.toLocaleString("en-IN")}
+                Book for {money(price)}
               </button>
             </div>
             <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] font-medium text-white/90">

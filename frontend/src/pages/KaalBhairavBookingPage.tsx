@@ -269,6 +269,11 @@ export default function KaalBhairavBookingPage() {
         }
         const phoneDigits = toStoredPhone(form.phone, country);
 
+        if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+            setError("Please enter a valid email — it's how we send your booking confirmation.");
+            return;
+        }
+
         // Delivery address is only required when the package ships a physical
         // item (prasad box / rudraksh).
         let addressPayload: any = null;
@@ -677,6 +682,26 @@ export default function KaalBhairavBookingPage() {
                                         value={form.gotra}
                                         onChange={(e) => setForm((f) => ({ ...f, gotra: e.target.value }))}
                                         placeholder="e.g. Kashyap"
+                                        className={INPUT}
+                                    />
+                                </div>
+                                {/* Email — REQUIRED outside India, optional at
+                                    home. Abroad there is no OTP to log in with,
+                                    so the confirmation email is the devotee's
+                                    only record of the booking. In India WhatsApp
+                                    already covers that, so this stays optional
+                                    and only adds a second channel if filled. */}
+                                <div>
+                                    <label className={LABEL}>
+                                        Email {isIndia ? <span className="font-normal normal-case opacity-70">(optional)</span> : "*"}
+                                    </label>
+                                    <input
+                                        value={form.email}
+                                        onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                                        placeholder={isIndia ? "For a copy of your booking" : "For your booking confirmation"}
+                                        type="email"
+                                        inputMode="email"
+                                        autoComplete="email"
                                         className={INPUT}
                                     />
                                 </div>

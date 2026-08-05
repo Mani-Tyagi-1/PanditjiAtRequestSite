@@ -38,6 +38,16 @@ export interface IUser {
   isActive: boolean;            // (kept)
   isFromApp: boolean;           // (kept)
   isNotifyOkay: boolean;        // (kept)
+  // ── Where this devotee books from ──────────────────────────────────────
+  // Set when the account is created from outside India, so support and
+  // reporting can tell a New Jersey booking from a Delhi one without decoding
+  // a phone number. Absent on every account created before this existed, and
+  // on Indian ones, which is the same thing as "IN".
+  country?: string;             // "United States"
+  countryCode?: string;         // "US"
+  /** True when the account was created without a phone, keyed on email only. */
+  isEmailOnly?: boolean;
+
   otp?: string;                 // (kept)
   otpExpiry?: Date;             // (kept)
 
@@ -73,13 +83,24 @@ export interface IUser {
 }
 
 const userSchema = new Schema<IUser>({
-  email: { type: String, required: false, sparse: true },
+  // Indexed so a devotee can be matched by email — the only handle we have for
+  // someone abroad, where we cannot send an OTP.
+  //
+  // Deliberately NOT `unique`. Phone is the historic identity and email was
+  // never constrained, so this collection may already hold rows sharing one
+  // address (a family booking on a parent's email, a placeholder). Adding a
+  // unique index would fail to build against that data and take signup down
+  // with it. Duplicates are resolved in code instead — see utils/resolveUser.
+  email: { type: String, required: false, sparse: true, index: true },
   email_verified: { type: Boolean, default: false },
   family_name: { type: String },
   given_name: { type: String },
   name: { type: String, default: "Vedic Shop User" },
   // (kept) phone — added index: true (non-breaking addition)
   phone: { type: String, unique: true, sparse: true, index: true },
+  country: { type: String },
+  countryCode: { type: String, index: true },
+  isEmailOnly: { type: Boolean, default: false },
   gender: { type: String },
   picture: { type: String },
   addedOn: { type: Date, default: Date.now },

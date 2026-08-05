@@ -4,6 +4,7 @@ import crypto from "crypto";
 import PaidConsultation from "../../model/userApp/paidConsultationModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
+import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 
 const TIME_SLOTS = new Set(["9-11", "11-1", "3-5", "5-7"]);
 const TIME_SLOT_LABELS: Record<string, string> = {
@@ -47,6 +48,16 @@ const verifyPaymentSignature = (
 };
 
 const sendPaidConsultationConfirmationWhatsapp = async (consultation: any) => {
+  // Email confirmation rides alongside WhatsApp, not instead of it.
+  // Optional in India (WhatsApp is the primary channel); abroad it is the
+  // devotee's ONLY record, since there is no international OTP to log in with.
+  // Fire-and-forget: it must never delay or fail a paid booking.
+  void sendBookingEmailFor(consultation, {
+    serviceName: "Personalised Consultation with Pandit Ji",
+    mode: "online",
+    label: "PaidConsultation",
+  });
+
   try {
     const rawPhone = String(consultation?.mobileNumber || "");
     const cleanedPhone = rawPhone.replace(/\D/g, "");
@@ -95,7 +106,7 @@ const sendPaidConsultationConfirmationWhatsapp = async (consultation: any) => {
 
 export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
   try {
-    const { fullName, mobileNumber, city, concern, preferredTimeSlot, type } = req.body;
+    const { fullName, mobileNumber, city, concern, preferredTimeSlot, type, email} = req.body;
 
     if (!fullName || !mobileNumber || !city || !preferredTimeSlot) {
       res.status(400).json({
@@ -142,6 +153,9 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
     const consultation = await PaidConsultation.create({
       fullName,
       mobileNumber,
+      // Stored so the confirmation email has somewhere to go. Optional in
+      // India; required abroad, where it is the devotee's only record.
+      ...(email ? { email: String(email).trim().toLowerCase() } : {}),
       helpWith: "Personalised Consultation",
       city,
       concern,

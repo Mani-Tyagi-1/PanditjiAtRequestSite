@@ -1,18 +1,34 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import API_URL from '../../utils/apiConfig';
+import { currentCountry, isIndia } from '../../utils/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LoginModal() {
   const { isLoginModalOpen, closeLoginModal, login } = useAuth();
 
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  /**
+   * Which channel the code is sent over.
+   *
+   * Our OTP provider only delivers SMS to Indian numbers, so a devotee abroad
+   * would sit forever on a code that is never coming — and, having no login,
+   * could not see the booking they just paid for. Outside India the modal
+   * therefore OPENS on email. Both channels stay available everywhere via the
+   * toggle: an NRI with an Indian number should still be able to use it.
+   */
+  const [mode, setMode] = useState<'phone' | 'email'>(isIndia() ? 'phone' : 'email');
+  const [step, setStep] = useState<'entry' | 'otp'>('entry');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
   const apiUrl = API_URL;
+
+  /** Enough typed to be worth sending a code to. */
+  const canSubmitEntry =
+    mode === 'phone' ? phone.length === 10 : /^\S+@\S+\.\S+$/.test(email.trim());
 
   // Update this path according to your actual logo location
   const logoUrl =
@@ -22,21 +38,32 @@ export default function LoginModal() {
     e.preventDefault();
     setError('');
 
-    if (!phone || phone.length !== 10) {
+    if (mode === 'phone' && (!phone || phone.length !== 10)) {
       setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+    if (mode === 'email' && !/^\S+@\S+\.\S+$/.test(email.trim())) {
+      setError('Please enter a valid email address');
       return;
     }
 
     setIsProcessing(true);
     try {
-      const res = await fetch(`${apiUrl}/send-otp`, {
+      // Same handshake either way; only the channel differs.
+      const res = await fetch(`${apiUrl}${mode === 'email' ? '/email-otp/send' : '/send-otp'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, isNotifyOkay: true }),
+        body: JSON.stringify(
+          mode === 'email'
+            // Country travels with a first-time email signup so the account
+            // records which market it was opened from.
+            ? { email: email.trim(), countryCode: currentCountry().iso2, country: currentCountry().name }
+            : { phone, isNotifyOkay: true },
+        ),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to send OTP');
+      if (!res.ok) throw new Error(data.message || 'Failed to send the code');
 
       setStep('otp');
     } catch (err: any) {
@@ -57,19 +84,22 @@ export default function LoginModal() {
 
     setIsProcessing(true);
     try {
-      const res = await fetch(`${apiUrl}/verify-otp`, {
+      const res = await fetch(`${apiUrl}${mode === 'email' ? '/email-otp/verify' : '/verify-otp'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify(mode === 'email' ? { email: email.trim(), otp } : { phone, otp }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Invalid OTP');
+      if (!res.ok) throw new Error(data.message || 'Invalid code');
 
+      // Both endpoints return the same { token, user }, so nothing downstream
+      // needs to know which channel was used.
       login(data.token, data.user);
 
-      setStep('phone');
+      setStep('entry');
       setPhone('');
+      setEmail('');
       setOtp('');
       closeLoginModal();
     } catch (err: any) {
@@ -80,8 +110,9 @@ export default function LoginModal() {
   };
 
   const resetAndClose = () => {
-    setStep('phone');
+    setStep('entry');
     setPhone('');
+    setEmail('');
     setOtp('');
     setError('');
     closeLoginModal();
@@ -147,13 +178,15 @@ export default function LoginModal() {
               </p>
 
               <h2 className="text-2xl font-bold text-stone-900">
-                {step === 'phone' ? 'Secure Login' : 'Verify Your OTP'}
+                {step === 'entry' ? 'Secure Login' : 'Enter your code'}
               </h2>
 
               <p className="mt-1 max-w-[280px] text-sm text-stone-600">
-                {step === 'phone'
+                {step === 'entry'
                   ? 'Login or sign up to continue your spiritual booking journey.'
-                  : `We have sent an OTP to +91 ${phone}`}
+                  : mode === 'email'
+                    ? `We have emailed a 6-digit code to ${email}`
+                    : `We have sent an OTP to +91 ${phone}`}
               </p>
             </div>
           </div>
@@ -179,38 +212,77 @@ export default function LoginModal() {
               </div>
             )}
 
-            {step === 'phone' ? (
+            {step === 'entry' ? (
               <form onSubmit={handleSendOtp} className="space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-stone-700">
-                    Mobile Number
-                  </label>
+                {mode === 'phone' ? (
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-stone-700">
+                      Mobile Number
+                    </label>
 
-                  <div className="flex overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 shadow-sm transition focus-within:border-orange-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-100">
-                    <div className="flex items-center border-r border-stone-200 px-4 text-sm font-semibold text-stone-600">
-                      +91
+                    <div className="flex overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 shadow-sm transition focus-within:border-orange-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-100">
+                      <div className="flex items-center border-r border-stone-200 px-4 text-sm font-semibold text-stone-600">
+                        +91
+                      </div>
+                      <input
+                        type="tel"
+                        maxLength={10}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                        className="w-full bg-transparent px-4 py-4 text-sm font-medium text-stone-800 outline-none placeholder:text-stone-400"
+                        placeholder="Enter 10 digit mobile number"
+                        autoFocus
+                      />
                     </div>
-                    <input
-                      type="tel"
-                      maxLength={10}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-transparent px-4 py-4 text-sm font-medium text-stone-800 outline-none placeholder:text-stone-400"
-                      placeholder="Enter 10 digit mobile number"
-                      autoFocus
-                    />
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-stone-700">
+                      Email Address
+                    </label>
+                    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 shadow-sm transition focus-within:border-orange-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-100">
+                      <input
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full bg-transparent px-4 py-4 text-sm font-medium text-stone-800 outline-none placeholder:text-stone-400"
+                        placeholder="you@example.com"
+                        autoFocus
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-stone-500">
+                      We&apos;ll email you a 6-digit code — no password needed.
+                    </p>
+                  </div>
+                )}
+
+                {/* Switch channel. Shown everywhere, because the right one is
+                    not always the one the location suggests: an NRI may hold an
+                    Indian number, and someone in India may prefer email. */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode(mode === 'phone' ? 'email' : 'phone');
+                    setError('');
+                  }}
+                  className="w-full text-center text-xs font-semibold text-orange-600 transition hover:text-orange-700 hover:underline"
+                >
+                  {mode === 'phone'
+                    ? 'Outside India? Continue with email instead'
+                    : 'Have an Indian mobile number? Use SMS instead'}
+                </button>
 
                 <button
                   type="submit"
-                  disabled={isProcessing || phone.length !== 10}
-                  className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${isProcessing || phone.length !== 10
+                  disabled={isProcessing || !canSubmitEntry}
+                  className={`w-full rounded-2xl px-4 py-3.5 text-sm font-bold text-white shadow-lg transition-all ${isProcessing || !canSubmitEntry
                       ? 'cursor-not-allowed bg-orange-300'
                       : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99]'
                     }`}
                 >
-                  {isProcessing ? 'Sending OTP...' : 'Get OTP'}
+                  {isProcessing ? 'Sending code...' : mode === 'email' ? 'Email me a code' : 'Get OTP'}
                 </button>
               </form>
             ) : (
@@ -221,7 +293,7 @@ export default function LoginModal() {
                     <button
                       type="button"
                       onClick={() => {
-                        setStep('phone');
+                        setStep('entry');
                         setOtp('');
                         setError('');
                       }}

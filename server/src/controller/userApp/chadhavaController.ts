@@ -12,6 +12,7 @@ import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCom
 import { resolveDevshayaniCombo } from "../../config/devshayaniCombo";
 import { markUpInr, resolveCurrency } from "../../config/currency";
 import { createOrderWithFallback, internationalFields } from "../../utils/internationalOrder";
+import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 
 // Shape a DB doc to the frontend `Chadhava` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -145,6 +146,16 @@ const verifyPaymentSignature = (
 //   For further assistance, visit Pandit Ji At Request
 //   [ Check Now ] -> https://play.google.com/store/{{1}}
 const sendChadhavaConfirmationWhatsapp = async (booking: any) => {
+  // Email confirmation rides alongside WhatsApp, not instead of it.
+  // Optional in India (WhatsApp is the primary channel); abroad it is the
+  // devotee's ONLY record, since there is no international OTP to log in with.
+  // Fire-and-forget: it must never delay or fail a paid booking.
+  void sendBookingEmailFor(booking, {
+    serviceName: booking?.chadhavaName || `${booking?.deity || "Chadhava"} Chadhava`,
+    templeName: booking?.templeName,
+    label: "Chadhava",
+  });
+
   try {
     const rawPhone = String(booking?.phone || "");
     const cleanedPhone = rawPhone.replace(/\D/g, "");
@@ -459,7 +470,7 @@ export const getChadhavaQuote: RequestHandler = async (req, res) => {
 // POST /chadhava-bookings/create-order — pending booking + Razorpay order
 export const createChadhavaOrder: RequestHandler = async (req, res) => {
   try {
-    const { chadhavaSlug, items, addPrasadBox, devoteeName, gotra, phone, wish, familyMembers, deliveryAddress } = req.body;
+    const { chadhavaSlug, items, addPrasadBox, devoteeName, gotra, phone, wish, familyMembers, deliveryAddress, email, emailId } = req.body;
 
     if (!chadhavaSlug || !devoteeName || !phone) {
       res.status(400).json({
@@ -545,6 +556,8 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       listAmount: pricing.grandTotal,
       ...internationalFields(fx, req.body as any),
       devoteeName,
+      // Confirmation-email address. Optional in India, required abroad.
+      ...((email || emailId) ? { email: String(email || emailId).trim().toLowerCase() } : {}),
       gotra,
       phone: cleanPhone,
       wish,

@@ -5,6 +5,7 @@ import ShopifyOrder from "../../model/userApp/shopifyOrderModel";
 import ShopifyProduct from "../../model/userApp/shopifyProductModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
+import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 
 const isProduction = process.env.PAYMENT_MODE === "production";
 const razorpayKeyId = isProduction
@@ -46,6 +47,16 @@ const getCodMinimum = () => Math.max(0, Number(process.env.MINIMUM_COD_AMOUNT) |
 // Fire-and-forget WhatsApp confirmation for both prepaid & COD shop orders.
 // Mirrors the chadhava/pooja flow: `pjar_booking` template with a plain-text fallback.
 const sendShopifyOrderConfirmationWhatsapp = async (order: any) => {
+  // Email confirmation rides alongside WhatsApp, not instead of it.
+  // Optional in India (WhatsApp is the primary channel); abroad it is the
+  // devotee's ONLY record, since there is no international OTP to log in with.
+  // Fire-and-forget: it must never delay or fail a paid booking.
+  void sendBookingEmailFor(order, {
+    serviceName: "Your Vedic Shop order",
+    mode: "online",
+    label: "ShopOrder",
+  });
+
   try {
     const rawPhone = String(order?.phone || "");
     const cleanedPhone = rawPhone.replace(/\D/g, "");

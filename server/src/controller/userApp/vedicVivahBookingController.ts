@@ -46,6 +46,7 @@ import {
   ORDER_TEMPLATE_HEADER_IMAGE,
 } from "../../utils/whatsapp";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
+import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 
 /** Stamped on every document written by this (website) server. */
 const PLATFORM = "web" as const;
@@ -1047,6 +1048,19 @@ export const completeVedicVivahPayment: RequestHandler = async (req, res) => {
     const booking = claimed || (await VedicVivahBooking.findById(bookingId))!;
     const vivahWasUnpaid = !!claimed;
     const shouldSendWhatsapp = !!claimed && !booking.whatsappConfirmationSent;
+
+    // Email confirmation, exactly once. Gated on `claimed` for the same reason
+    // the WhatsApp is: the atomic update above matches at most one caller, so a
+    // replayed verify or a concurrent webhook cannot send a second receipt.
+    if (vivahWasUnpaid) {
+      void sendBookingEmailFor(booking, {
+        serviceName: (booking as any).packageName
+          ? `Vedic Vivah Sanskar — ${(booking as any).packageName}`
+          : "Vedic Vivah Sanskar",
+        mode: "offline",
+        label: "VedicVivah",
+      });
+    }
 
     // Partner-affiliate: credit the customer's referrer once, on the first
     // successful payment. Uses amountPaid — the money actually collected here.

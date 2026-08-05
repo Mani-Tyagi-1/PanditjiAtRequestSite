@@ -61,6 +61,7 @@ import {
 import { sessionToken } from "../data/vivahApi";
 import { PJAR, PjarLogo, VivahMark, VivahScope } from "../components/vivah/VivahLayout";
 import MuhuratPicker, { prettyTime } from "../components/vivah/MuhuratPicker";
+import { isIndia } from "../utils/currency";
 import RitualSchedule, {
   suggestPlan,
   expandPlan,
@@ -643,7 +644,12 @@ export default function VivahCheckoutPage() {
     else if (!/^[6-9]/.test(phone))
       flag("whatsapp", "Indian mobile numbers start with 6, 7, 8 or 9 — please re-check.", "sec-you");
 
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()))
+    // Required outside India: with no international OTP a devotee abroad cannot
+    // log in to see their booking, so the confirmation email is their only
+    // record of it. Optional at home, where WhatsApp already covers that.
+    if (!isIndia() && !email.trim())
+      flag("email", "Email is required so we can send your booking confirmation.", "sec-you");
+    else if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim()))
       flag("email", "That email doesn't look right — e.g. name@example.com.", "sec-you");
 
     // ── Vivah date(s) ──

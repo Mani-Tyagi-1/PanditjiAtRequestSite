@@ -30,6 +30,8 @@ export interface IChadhavaBooking {
   countryCode?: string;
   // Devotee
   devoteeName: string;
+  /** Confirmation-email address. Optional in India, required abroad. */
+  email?: string;
   gotra: string;
   phone: string;
   wish: string;
@@ -76,6 +78,9 @@ const chadhavaBookingSchema = new Schema<IChadhavaBooking>({
   country: { type: String },
   countryCode: { type: String, index: true },
   devoteeName: { type: String, required: true, trim: true },
+  // Confirmation-email address. Optional in India, required abroad — with no
+  // international OTP it is the devotee's only record of the booking.
+  email: { type: String, trim: true, lowercase: true },
   gotra: { type: String, default: "" },
   phone: { type: String, required: true, trim: true },
   wish: { type: String, default: "" },

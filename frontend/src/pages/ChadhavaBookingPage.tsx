@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
-import { useMoney } from "../utils/currency";
+import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
 // State handed over from ChadhavaDetailPage via navigate(..., { state }). Carried
@@ -36,7 +36,7 @@ const normalizeIndianPhone = (value: string) => {
 export default function ChadhavaBookingPage() {
     // Where the devotee is paying from: `money` renders every price below in
     // their currency, and the server bills in it.
-    const { country, currency, money } = useMoney();
+    const { country, currency, isIndia, money } = useMoney();
     const navigate = useNavigate();
     const { slug } = useParams<{ slug: string }>();
     const location = useLocation();
@@ -56,7 +56,7 @@ export default function ChadhavaBookingPage() {
     const [done, setDone] = useState(false);
 
     // Form inputs
-    const [form, setForm] = useState({ name: "", gotra: "", phone: "", wish: "" });
+    const [form, setForm] = useState({ name: "", gotra: "", phone: "", email: "", wish: "" });
     const [dontKnowGotra, setDontKnowGotra] = useState(false);
 
     // Validation errors state
@@ -232,9 +232,18 @@ export default function ChadhavaBookingPage() {
             errors.name = "Devotee's name is required";
         }
 
-        const phoneDigits = normalizeIndianPhone(form.phone);
-        if (phoneDigits.length !== 10) {
-            errors.phone = "Valid 10-digit number is required";
+        // Per-country length, not a hardcoded 10 — a Singapore number is 8
+        // digits and a German one 11. `toStoredPhone` keeps the country code on
+        // everything outside India so the confirmation can actually reach them.
+        if (!isValidPhone(form.phone, country)) {
+            errors.phone = `Valid ${country.name} mobile number is required`;
+        }
+        const phoneDigits = toStoredPhone(form.phone, country);
+
+        // Email is the only record a devotee abroad gets — there is no
+        // international OTP for them to log in with. Optional in India.
+        if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+            errors.email = "Email is required so we can send your booking confirmation";
         }
 
         if (!dontKnowGotra && !form.gotra.trim()) {
@@ -342,6 +351,8 @@ export default function ChadhavaBookingPage() {
                     devoteeName: form.name.trim(),
                     gotra: dontKnowGotra ? "Kashyap" : form.gotra.trim(),
                     phone: phoneDigits,
+                    emailId: form.email.trim(),
+                    email: form.email.trim(),
                     wish: form.wish.trim(),
                     familyMembers: finalFamilyMembers,
                     deliveryAddress: addressPayload
@@ -365,7 +376,7 @@ export default function ChadhavaBookingPage() {
                 prefill: {
                     name: form.name.trim(),
                     contact: phoneDigits,
-                    email: `user${phoneDigits}@panditjiatrequest.com`,
+                    email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
                 },
                 theme: { color: "#FF7000" },
                 handler: async (response: any) => {
@@ -613,6 +624,26 @@ export default function ChadhavaBookingPage() {
                                         />
                                     </div>
                                     {validationErrors.gotra && <p className="text-red-500 text-[11px] font-semibold mt-1">{validationErrors.gotra}</p>}
+                                </div>
+                                <div>
+                                    {/* Email — REQUIRED outside India, optional at home.
+                                        Abroad there is no OTP to log in with, so the
+                                        confirmation email is the devotee's only record
+                                        of the booking; in India WhatsApp covers that. */}
+                                    <label className="text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1 block">
+                                        Email {isIndia ? <span className="font-normal normal-case opacity-70">(optional)</span> : "*"}
+                                    </label>
+                                    <div className={INPUT_CONTAINER}>
+                                        <input
+                                            value={form.email}
+                                            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                                            placeholder={isIndia ? "For a copy of your booking" : "For your booking confirmation"}
+                                            type="email"
+                                            inputMode="email"
+                                            autoComplete="email"
+                                            className={INPUT_FIELD}
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Don't know Gotra checkbox */}

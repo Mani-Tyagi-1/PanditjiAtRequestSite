@@ -9,6 +9,8 @@ import poojaBookingModel from "../../model/poojaBooking/poojaBooking.model";
 import Pooja from "../../model/userApp/poojaModel";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
+import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
+import { resolveUser } from "../../utils/resolveUser";
 
 // ── Razorpay setup ──
 const isProduction = process.env.PAYMENT_MODE === "production";
@@ -99,22 +101,32 @@ export const createLiveBooking: RequestHandler = async (req, res) => {
     }
 
     const cleanPhone = String(phone).replace(/\D/g, "");
-    if (cleanPhone.length !== 10) {
-      res.status(400).json({ success: false, message: "A valid 10-digit phone number is required" });
-      return;
-    }
 
-    // Find User
-    const user = await User.findOne({
-      $or: [
-        { phone: cleanPhone },
-        { phone: { $regex: cleanPhone.slice(-10) + "$" } }
-      ]
+    // Find or create the devotee.
+    //
+    // Was: reject anything that is not exactly 10 digits, then 404 if no such
+    // user exists. Both failed a first-time devotee abroad — their number is
+    // not ten digits, and they have no account yet because there is no
+    // international OTP to have made one with. The shared resolver searches the
+    // whole collection by phone AND email before creating, so a returning
+    // devotee is matched rather than duplicated.
+    const resolved = await resolveUser({
+      phone: cleanPhone,
+      dialCode: (req.body as any).dialCode,
+      email: (req.body as any).emailId || (req.body as any).email,
+      name: devoteeName,
+      gotra: (req.body as any).gotra,
+      countryCode: (req.body as any).countryCode,
+      country: (req.body as any).country,
     });
-    if (!user) {
-      res.status(404).json({ success: false, message: "User not found with this phone number." });
+    if (!resolved) {
+      res.status(400).json({
+        success: false,
+        message: "A valid phone number or email address is required",
+      });
       return;
     }
+    const user = resolved.user;
 
     // Find Pooja
     let pooja = await Pooja.findOne({ poojaID: pujaSlug });
@@ -258,6 +270,19 @@ export const completeLiveBookingPayment: RequestHandler = async (req, res) => {
     booking.razorpayPaymentId = razorpayPaymentId;
     booking.razorpaySignature = razorpaySignature;
     await booking.save();
+
+    // Email confirmation, once, on the transition to paid — guarded by
+    // `liveWasUnpaid` so a replayed verify or a webhook arriving second cannot
+    // send a devotee the same receipt twice. Optional in India, and abroad the
+    // only record they get (no international OTP means no login).
+    if (liveWasUnpaid) {
+      void sendBookingEmailFor(booking, {
+        serviceName: (booking as any).pujaName || (booking as any).packageName || "Live Mandir Puja",
+        templeName: (booking as any).templeName,
+        mode: "online",
+        label: "LiveMandir",
+      });
+    }
 
     // Partner-affiliate: credit the customer's referrer once, on the first successful payment.
     if (liveWasUnpaid) {

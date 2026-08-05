@@ -9,6 +9,8 @@ export interface ILiveMandirBooking {
   packageName: string;
   amount: number;
   devoteeName: string;
+  /** Confirmation-email address. Optional in India, required abroad. */
+  email?: string;
   gotra: string;
   members: string;
   phone: string;
@@ -32,6 +34,9 @@ const liveMandirBookingSchema = new Schema<ILiveMandirBooking>({
   packageName: { type: String, default: "" },
   amount: { type: Number, required: true },
   devoteeName: { type: String, required: true, trim: true },
+  // Confirmation-email address. Optional in India, required abroad — with no
+  // international OTP it is the devotee's only record of the booking.
+  email: { type: String, trim: true, lowercase: true },
   gotra: { type: String, default: "" },
   members: { type: String, default: "" },
   phone: { type: String, required: true, trim: true },

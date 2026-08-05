@@ -57,6 +57,7 @@ export default function LiveMandirBookingPage() {
         name: "",
         gotra: "",
         phone: "",
+        email: "",
         members: "",
         wish: "",
         familyMembers: [] as string[],
@@ -202,6 +203,11 @@ export default function LiveMandirBookingPage() {
         }
         const phoneDigits = toStoredPhone(form.phone, country);
 
+        if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+            setError("Please enter a valid email — it's how we send your booking confirmation.");
+            return;
+        }
+
         let addressPayload: any = null;
         if (prasadAdded) {
             if (user && !showNewAddressForm) {
@@ -252,6 +258,7 @@ export default function LiveMandirBookingPage() {
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
                     phone: phoneDigits,
+                    emailId: form.email.trim(),
                     // Marked-up INR — the value of this sale, not the
                     // India list price. See utils/currency `inrEquivalent`.
                     amount: toInr(totalPrice),
@@ -289,7 +296,7 @@ export default function LiveMandirBookingPage() {
                 prefill: {
                     name: form.name.trim(),
                     contact: phoneDigits,
-                    email: `user${phoneDigits}@panditjiatrequest.com`,
+                    email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
                 },
                 theme: { color: "#FF7000" },
                 handler: async (response: any) => {
@@ -467,6 +474,24 @@ export default function LiveMandirBookingPage() {
                                         value={form.gotra}
                                         onChange={(e) => setForm(f => ({ ...f, gotra: e.target.value }))}
                                         placeholder="e.g. Kashyap"
+                                        className={INPUT}
+                                    />
+                                </div>
+                                <div>
+                                    {/* Email — REQUIRED outside India, optional at home. Abroad
+    there is no OTP to log in with, so the confirmation email
+    is the devotee's only record of the booking. In India
+    WhatsApp already covers that. */}
+                                    <label className={LABEL}>
+                                        Email {isIndia ? <span className="font-normal normal-case opacity-70">(optional)</span> : "*"}
+                                    </label>
+                                    <input
+                                        value={form.email}
+                                        onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                                        placeholder={isIndia ? "For a copy of your booking" : "For your booking confirmation"}
+                                        type="email"
+                                        inputMode="email"
+                                        autoComplete="email"
                                         className={INPUT}
                                     />
                                 </div>

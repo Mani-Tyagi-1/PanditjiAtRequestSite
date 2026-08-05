@@ -4,6 +4,8 @@ import { panditJiAtRequestMongooose } from "../../config/connectDB";
 export interface IConsultancyLead {
   fullName: string;
   mobileNumber: string;
+  /** Confirmation-email address. Optional in India, required abroad. */
+  email?: string;
   helpWith: string;
   concern: string;
   poojaType: string;
@@ -22,6 +24,9 @@ export interface IConsultancyLead {
 const consultancyLeadSchema = new Schema<IConsultancyLead>({
   fullName: { type: String, required: true, trim: true },
   mobileNumber: { type: String, required: true, trim: true },
+  // Confirmation-email address. Optional in India, required abroad — with no
+  // international OTP it is the devotee's only record of the booking.
+  email: { type: String, trim: true, lowercase: true },
   helpWith: { type: String, trim: true },
   concern: { type: String, trim: true },
   poojaType: { type: String, trim: true },

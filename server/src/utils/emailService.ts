@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { bookingEmailHtml, bookingEmailText, type BookingEmailData } from "./emailTemplate";
 
 const smtpPort = Number(process.env.SMTP_PORT) || 587;
 
@@ -12,157 +13,125 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendBookingConfirmationEmail = async ({
+/**
+ * Booking confirmation, sent worldwide.
+ *
+ * For a devotee outside India this is the ONLY record they get — there is no
+ * international OTP, so they cannot log in to look the booking up. That is why
+ * it carries the full receipt and the booking reference rather than a "view
+ * your booking" link behind a login.
+ *
+ * Never throws at the caller: confirmation mail is a side effect of a payment
+ * that has already succeeded, and a bounced SMTP connection must not fail a
+ * booking. Failures are logged and swallowed.
+ */
+export const sendBookingConfirmationEmail = async (
+  data: BookingEmailData & { to: string },
+): Promise<boolean> => {
+  const { to, ...booking } = data;
+
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.error("[email] SMTP credentials not configured (SMTP_USER / SMTP_PASS).");
+    return false;
+  }
+  if (!to || !/^\S+@\S+\.\S+$/.test(to)) {
+    console.warn(`[email] Skipped: invalid recipient "${to}".`);
+    return false;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"PanditJi At Request" <${process.env.SMTP_USER}>`,
+      to,
+      // Replies reach a human rather than the SMTP mailbox — the email invites
+      // one, so it has to go somewhere real.
+      replyTo: process.env.SUPPORT_EMAIL || process.env.SMTP_USER,
+      subject: `Booking confirmed: ${booking.poojaName} 🙏`,
+      // Both parts: a message with no plain-text alternative scores as spam
+      // almost everywhere, and this is mail that has to reach the inbox.
+      text: bookingEmailText(booking),
+      html: bookingEmailHtml(booking),
+    });
+    console.log(`[email] Booking confirmation sent to ${to}`);
+    return true;
+  } catch (err: any) {
+    console.error(`[email] Failed to send to ${to}:`, err?.message || err);
+    return false;
+  }
+};
+
+/**
+ * The sign-in code, for devotees the SMS gateway cannot reach.
+ *
+ * Deliberately spare: one number, big enough to read at a glance and to select
+ * on a phone, with nothing around it to distract from it. Security mail that
+ * looks like marketing gets filtered, and filtered mail means a devotee locked
+ * out of the booking they just paid for.
+ */
+export const sendOtpEmail = async ({
   to,
-  bhaktName,
-  poojaName,
-  bookingDate,
-  poojaMode,
-  amount,
-  currency,
-  chargedAmount,
-  contactNumber,
-  bookingId,
+  otp,
+  minutes,
 }: {
   to: string;
-  bhaktName: string;
-  poojaName: string;
-  bookingDate: string;
-  poojaMode: string;
-  /** Always INR — the booking's own price. */
-  amount: number;
-  /** ISO-4217 the card was billed in; omit or "INR" for a domestic booking. */
-  currency?: string;
-  /** `amount` in `currency`. Required whenever `currency` is not INR. */
-  chargedAmount?: number;
-  contactNumber: string;
-  bookingId: string;
-}): Promise<void> => {
+  otp: string;
+  minutes: number;
+}): Promise<boolean> => {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    throw new Error("SMTP credentials not configured (SMTP_USER / SMTP_PASS missing in .env)");
-  }
-  if (!to || !to.includes("@")) {
-    throw new Error(`Invalid recipient email: "${to}"`);
+    console.error("[email] SMTP credentials not configured (SMTP_USER / SMTP_PASS).");
+    return false;
   }
 
-  // What the card statement will say. A devotee in New Jersey who paid $28.07
-  // must not be sent a receipt reading ₹2,398 — that reads as a different
-  // charge. The INR price rides along in brackets because every internal
-  // reference to this booking (WhatsApp, admin, support) is in rupees.
-  const isForeign = Boolean(currency) && currency !== "INR" && typeof chargedAmount === "number";
-  const amountPaidLabel = isForeign
-    ? `${currency} ${chargedAmount!.toFixed(2)} <span style="font-size:12px;font-weight:600;color:#a8a29e;">(₹${amount.toLocaleString("en-IN")})</span>`
-    : `₹${amount.toLocaleString("en-IN")}`;
-
-  const date = new Date(bookingDate);
-  const formattedDate = date.toLocaleDateString("en-IN", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const formattedTime = date.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
-
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking Confirmed — PanditJi At Request</title>
-</head>
-<body style="margin:0;padding:0;background:#FFF9F0;font-family:Arial,Helvetica,sans-serif;color:#292524;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFF9F0;padding:32px 16px;">
-    <tr><td align="center">
-      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(251,146,60,0.12);">
-
-        <!-- Header -->
-        <tr>
-          <td style="background:linear-gradient(135deg,#fed7aa,#fb923c);padding:36px 32px;text-align:center;">
-            <div style="font-size:40px;margin-bottom:8px;">🙏</div>
-            <h1 style="margin:0;color:#7c2d12;font-size:26px;font-weight:800;">Booking Confirmed!</h1>
-            <p style="margin:8px 0 0;color:#9a3412;font-size:13px;">PanditJi At Request — Your Trusted Vedic Service</p>
-          </td>
-        </tr>
-
-        <!-- Body -->
-        <tr>
-          <td style="padding:32px 32px 24px;">
-            <p style="font-size:18px;font-weight:700;color:#292524;margin:0 0 12px;">Namaste, ${bhaktName}! 🙏</p>
-            <p style="color:#78716c;font-size:14px;line-height:1.7;margin:0 0 24px;">
-              Your puja booking has been confirmed. Our Pandit Ji will be in touch shortly to ensure everything is perfectly prepared for your sacred ceremony.
-            </p>
-
-            <!-- Booking Details Box -->
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFF7ED;border:1px solid #fed7aa;border-radius:14px;overflow:hidden;margin-bottom:24px;">
-              <tr><td style="padding:20px 20px 0;">
-                <p style="margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#f97316;">Booking Details</p>
-              </td></tr>
-
-              <tr><td style="padding:0 20px;">
-                <table width="100%" cellpadding="8" cellspacing="0">
-                  <tr style="border-bottom:1px solid #fee2c8;">
-                    <td style="font-size:13px;color:#78716c;padding:8px 0;">Puja</td>
-                    <td style="font-size:13px;font-weight:700;color:#292524;text-align:right;padding:8px 0;">${poojaName}</td>
-                  </tr>
-                  <tr style="border-bottom:1px solid #fee2c8;">
-                    <td style="font-size:13px;color:#78716c;padding:8px 0;">Date</td>
-                    <td style="font-size:13px;font-weight:700;color:#292524;text-align:right;padding:8px 0;">${formattedDate}</td>
-                  </tr>
-                  <tr style="border-bottom:1px solid #fee2c8;">
-                    <td style="font-size:13px;color:#78716c;padding:8px 0;">Time</td>
-                    <td style="font-size:13px;font-weight:700;color:#292524;text-align:right;padding:8px 0;">${formattedTime}</td>
-                  </tr>
-                  <tr style="border-bottom:1px solid #fee2c8;">
-                    <td style="font-size:13px;color:#78716c;padding:8px 0;">Mode</td>
-                    <td style="font-size:13px;font-weight:700;color:#292524;text-align:right;padding:8px 0;">${poojaMode === "online" ? "Online" : "Offline (at your location)"}</td>
-                  </tr>
-                  <tr style="border-bottom:1px solid #fee2c8;">
-                    <td style="font-size:13px;color:#78716c;padding:8px 0;">Contact</td>
-                    <td style="font-size:13px;font-weight:700;color:#292524;text-align:right;padding:8px 0;">${contactNumber}</td>
-                  </tr>
-                  <tr style="border-bottom:1px solid #fee2c8;">
-                    <td style="font-size:13px;color:#78716c;padding:8px 0;">Amount Paid</td>
-                    <td style="font-size:18px;font-weight:800;color:#ea580c;text-align:right;padding:8px 0;">${amountPaidLabel}</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:12px;color:#a8a29e;padding:8px 0;">Booking ID</td>
-                    <td style="font-size:11px;color:#a8a29e;text-align:right;padding:8px 0;word-break:break-all;">${bookingId}</td>
-                  </tr>
-                </table>
-              </td></tr>
-              <tr><td style="padding:0 20px 20px;"></td></tr>
-            </table>
-
-            <p style="color:#78716c;font-size:13px;line-height:1.7;margin:0;">
-              For any queries, please reach out to us via WhatsApp. We are always here to serve you with devotion.
-            </p>
-          </td>
-        </tr>
-
-        <!-- Footer -->
-        <tr>
-          <td style="background:#FFF7ED;padding:24px 32px;text-align:center;border-top:1px solid #fed7aa;">
-            <div style="font-size:28px;margin-bottom:8px;">🕉️</div>
-            <p style="margin:0;font-weight:700;color:#292524;font-size:14px;">PanditJi At Request</p>
-            <p style="margin:4px 0;color:#a8a29e;font-size:12px;">Serving devotees with Vedic traditions</p>
-            <p style="margin:16px 0 0;color:#d6d3d1;font-size:11px;">© 2025 PanditJi At Request. All rights reserved.</p>
-          </td>
-        </tr>
-
+  const html = `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F3EDE4;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your PanditJi At Request sign-in code is ${otp}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F3EDE4;">
+    <tr><td align="center" style="padding:28px 12px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:480px;background:#FFFAF3;border:1px solid #EFE3D2;border-radius:16px;overflow:hidden;">
+        <tr><td style="background:#E05A10;padding:20px 28px;">
+          <div style="font:700 17px Georgia,'Times New Roman',serif;color:#FFFFFF;">PanditJi At Request</div>
+        </td></tr>
+        <tr><td align="center" style="padding:32px 28px 8px;">
+          <div style="font:700 11px Arial,Helvetica,sans-serif;color:#7A6A58;letter-spacing:1.6px;text-transform:uppercase;">Your sign-in code</div>
+          <div style="margin:16px 0;font:700 38px 'Courier New',Courier,monospace;letter-spacing:9px;color:#221A12;">${otp}</div>
+          <div style="font:400 13px/1.6 Arial,Helvetica,sans-serif;color:#7A6A58;">
+            Valid for ${minutes} minutes. Enter it on the sign-in screen to see your bookings.
+          </div>
+        </td></tr>
+        <tr><td style="padding:18px 28px 28px;">
+          <div style="background:#FFF6E9;border:1px solid #EFD9AE;border-radius:10px;padding:13px 15px;font:400 12px/1.6 Arial,Helvetica,sans-serif;color:#7A5A20;">
+            Did not request this? You can ignore this email — nobody can sign in without the code above.
+            Never share it with anyone, including someone claiming to be from our team.
+          </div>
+          <div style="margin-top:18px;text-align:center;font:400 11px/1.7 Arial,Helvetica,sans-serif;color:#A89880;">
+            PanditJi At Request · Zirakpur, Punjab, India<br>
+            <a href="https://panditjiatrequest.com" style="color:#E05A10;text-decoration:none;">panditjiatrequest.com</a>
+          </div>
+        </td></tr>
       </table>
     </td></tr>
   </table>
-</body>
-</html>`;
+</body></html>`;
 
-  await transporter.sendMail({
-    from: `"PanditJi At Request" <${process.env.SMTP_USER}>`,
-    to,
-    subject: `Booking Confirmed: ${poojaName} 🙏 — PanditJi At Request`,
-    html,
-  });
+  try {
+    await transporter.sendMail({
+      from: `"PanditJi At Request" <${process.env.SMTP_USER}>`,
+      to,
+      subject: `${otp} is your PanditJi At Request sign-in code`,
+      // Plain-text part matters more here than anywhere: security mail without
+      // one is far likelier to be filtered, and a filtered code locks a devotee
+      // out of the booking they already paid for.
+      text: `Your PanditJi At Request sign-in code is ${otp}.\n\n`
+        + `It is valid for ${minutes} minutes.\n\n`
+        + `If you did not request this, you can ignore this email. Never share this code with anyone.`,
+      html,
+    });
+    console.log(`[email] Sign-in code sent to ${to}`);
+    return true;
+  } catch (err: any) {
+    console.error(`[email] OTP send failed for ${to}:`, err?.message || err);
+    return false;
+  }
 };

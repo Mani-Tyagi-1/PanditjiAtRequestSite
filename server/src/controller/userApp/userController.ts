@@ -3,6 +3,7 @@ import { RequestHandler } from "express";
 import User from "../../model/userApp/userModel";
 import poojaBookingModel from "../../model/poojaBooking/poojaBooking.model";
 import { sendEncryptedResponse } from "../../utils/encryption"; // ⬅️ encrypt GET responses
+import { resolveUser } from "../../utils/resolveUser";
 
 /**
  * Update a user's profile
@@ -143,29 +144,26 @@ export const lookupUserByPhone: RequestHandler = async (req, res) => {
  * POST /users/find-or-register-guest
  */
 export const findOrRegisterGuest: RequestHandler = async (req, res) => {
-  const { phone, name, gotra } = req.body;
-  const cleaned = String(phone || "").replace(/\D/g, "").slice(-10);
-
-  if (!cleaned || cleaned.length !== 10) {
-    res.status(400).json({ success: false, message: "Valid 10-digit phone number is required" });
-    return;
-  }
+  const { phone, name, gotra, email, dialCode, countryCode, country } = req.body;
 
   try {
-    let user = await User.findOne({ phone: cleaned });
-    let exists = true;
+    // Shared resolver: searches the whole collection by phone AND by email
+    // before creating anything, and understands numbers that are not ten
+    // digits. The old inline version rejected every international number
+    // outright, which failed the chadhava checkout for anyone abroad.
+    const resolved = await resolveUser({
+      phone, dialCode, email, name: name || "Devotee", gotra, countryCode, country,
+    });
 
-    if (!user) {
-      exists = false;
-      user = await User.create({
-        phone: cleaned,
-        name: name || "Devotee",
-        gotra: gotra || "",
-        fullName: name || "Devotee"
+    if (!resolved) {
+      res.status(400).json({
+        success: false,
+        message: "A valid phone number or email address is required",
       });
+      return;
     }
 
-    res.status(200).json({ success: true, exists, user });
+    res.status(200).json({ success: true, exists: resolved.existed, user: resolved.user });
   } catch (error) {
     console.error("Error in findOrRegisterGuest:", error);
     res.status(500).json({ success: false, message: "Server error lookup/registering guest" });

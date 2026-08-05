@@ -25,6 +25,7 @@ import {
   resolveCurrency,
   toMinorUnits,
 } from '../../config/currency';
+import { resolveUser } from "../../utils/resolveUser";
 import type { Document } from "mongoose";
 
 // --- helpers ---
@@ -794,26 +795,40 @@ export async function finalizePendingPoojaBooking(
   void sendBookingConfirmationWhatsapp(finalBooking);
 
   // 🟢 Email booking confirmation (fire-and-forget)
+  //
+  // Sent whenever we have an address — optional in India, where WhatsApp is the
+  // primary channel, and REQUIRED abroad, where it is the devotee's only record
+  // of the booking (no international OTP means they cannot log in to find it).
   void (async () => {
-    try {
-      const email = (finalBooking as any).userEmail;
-      if (!email) return;
-      await sendBookingConfirmationEmail({
-        to: email,
-        bhaktName: (finalBooking as any).bhaktName || (finalBooking as any).userName || "Devotee",
-        poojaName: finalBooking.poojaNameEng || "Puja",
-        bookingDate: String(finalBooking.bookingDate),
-        poojaMode: finalBooking.poojaMode || "online",
-        amount: Number((finalBooking as any).amount || amountPaid || 0),
-        currency: (finalBooking as any).currency,
-        chargedAmount: (finalBooking as any).chargedAmount,
-        contactNumber: String((finalBooking as any).userPhone || ""),
-        bookingId: String((finalBooking as any)._id),
-      });
-      console.log(`✅ [PujaBooking] Email confirmation sent to ${email}`);
-    } catch (e: any) {
-      console.error("❌ [PujaBooking] Email failed:", e?.message || e);
-    }
+    const b = finalBooking as any;
+    const email = String(b.userEmail || b.emailId || "").trim();
+    if (!email) return;
+
+    const addr = b.address;
+    await sendBookingConfirmationEmail({
+      to: email,
+      bhaktName: b.bhaktName || b.userName || "Devotee",
+      poojaName: finalBooking.poojaNameEng || "Puja",
+      // Written out for a human, not an ISO string — this is a receipt, and
+      // "2026-08-04T00:30:00.000Z" is not a date anyone reads.
+      bookingDate: new Date(finalBooking.bookingDate).toLocaleDateString("en-GB", {
+        weekday: "short", day: "numeric", month: "long", year: "numeric",
+      }),
+      poojaMode: finalBooking.poojaMode || "online",
+      amount: Number(b.amount || amountPaid || 0),
+      currency: b.currency,
+      chargedAmount: b.chargedAmount,
+      contactNumber: String(b.userPhone || ""),
+      bookingId: String(b.razorpayOrderId || b._id),
+      templeName: b.templeName || undefined,
+      gotra: b.gotra || undefined,
+      familyMembers: Array.isArray(b.familyMembers) ? b.familyMembers : null,
+      prasadAdded: Boolean(b.prasadAdded),
+      deliveryAddress: addr
+        ? [addr.addressLine1, addr.addressLine2, addr.city, addr.state, addr.pincode, addr.country]
+            .filter(Boolean).join(", ")
+        : null,
+    });
   })();
 
   // ── Internal Referral Credit (fire-and-forget) ──────────────
@@ -1001,49 +1016,25 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
     } = req.body as CreatePendingBookingBody;
 
     // ── User resolution ──────────────────────────────────────────────────────
-    let userExists: any = null;
-    if (userId) {
-      userExists = await User.findById(userId);
+    // One shared resolver for every flow: it searches the WHOLE users
+    // collection by phone and then by email before creating anything, keeps
+    // India on its bare 10-digit identity, keeps the country code on foreign
+    // numbers, and records which country a new account was opened from.
+    let userExists: any = userId ? await User.findById(userId) : null;
+    if (!userExists) {
+      const resolved = await resolveUser({
+        phone: phone || contactNumber,
+        dialCode,
+        email: emailId,
+        name: bhaktName,
+        gotra,
+        countryCode,
+        country,
+      });
+      userExists = resolved?.user ?? null;
     }
     if (!userExists) {
-      // Fallback: resolve by phone. India keeps the historic bare 10-digit
-      // alias (every OneSignal login, WhatsApp template and existing booking
-      // assumes it); an international number keeps its country code, without
-      // which the confirmation would be sent to a truncated number.
-      const isIndianNumber = !dialCode || String(dialCode).replace(/\D/g, '') === '91';
-      const storedPhone = normalizePhone(phone || contactNumber, dialCode);
-      const usable = isIndianNumber ? storedPhone.length === 10 : storedPhone.length >= 8;
-
-      if (usable) {
-        userExists = await User.findOne(
-          isIndianNumber
-            ? {
-                $or: [
-                  { phone: storedPhone },
-                  { phone: `91${storedPhone}` },
-                  { phone: { $regex: storedPhone + '$' } },
-                ],
-              }
-            : { phone: storedPhone },
-        );
-
-        if (!userExists) {
-          // Auto-register user
-          userExists = new User({
-            phone: storedPhone,
-            name: bhaktName || 'Guest User',
-            isFromApp: false,
-            isNotifyOkay: true,
-            email_verified: false,
-            isActive: true,
-            addedOn: new Date(),
-          });
-          await userExists.save();
-        }
-      }
-    }
-    if (!userExists) {
-      res.status(400).json({ message: 'A valid phone number is required.' });
+      res.status(400).json({ message: 'A valid phone number or email address is required.' });
       return;
     }
 

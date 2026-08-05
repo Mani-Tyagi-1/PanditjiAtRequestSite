@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
 import { money } from "../utils/currency";
+import { isIndia } from "../utils/currency";
 
 const TIME_SLOTS = [
   { value: "9-11", display: "9 AM - 11 AM", period: "Morning" },
@@ -27,6 +28,7 @@ export default function PaidConsultationPage() {
   const [form, setForm] = useState({
     fullName: "",
     mobileNumber: "",
+    email: "",
     city: "",
     preferredTimeSlot: "5-7", // ← Default is now 5-7 PM
   });
@@ -77,6 +79,11 @@ export default function PaidConsultationPage() {
       return;
     }
 
+    if (!isIndia() && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+      setError("Please enter a valid email — it's how we send your booking confirmation.");
+      return;
+    }
+
     if (!/^\d{10}$/.test(form.mobileNumber.trim())) {
       setError("Please enter a valid 10-digit mobile number.");
       return;
@@ -92,6 +99,9 @@ export default function PaidConsultationPage() {
         body: JSON.stringify({
           fullName: form.fullName,
           mobileNumber: form.mobileNumber,
+          // The server needs an address to confirm to — without this the
+          // consultation booking has no email to send the receipt to.
+          email: form.email.trim(),
           city: form.city,
           preferredTimeSlot: form.preferredTimeSlot,
           type: consultType,
@@ -110,7 +120,7 @@ export default function PaidConsultationPage() {
         throw new Error("Razorpay SDK failed to load. Please refresh and try again.");
       }
 
-      const prefillEmail = user?.email || `user${form.mobileNumber.trim()}@panditjiatrequest.com`;
+      const prefillEmail = form.email.trim() || user?.email || `user${form.mobileNumber.trim()}@panditjiatrequest.com`;
 
       const rzp = new RazorpayCtor({
         key: orderData.razorpayKeyId,
@@ -299,6 +309,25 @@ export default function PaidConsultationPage() {
                     placeholder="10-digit mobile number"
                     inputMode="numeric"
                     maxLength={10}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+
+                <div>
+                  {/* Email — REQUIRED outside India, optional at home. Abroad
+                      there is no OTP to log in with, so the confirmation email
+                      is the devotee's only record of the booking. */}
+                  <label className={LABEL_CLASS}>
+                    Email {isIndia() ? <span className="opacity-70 font-normal">(optional)</span> : <span className="text-red-400">*</span>}
+                  </label>
+                  <input
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder={isIndia() ? "For a copy of your booking" : "For your booking confirmation"}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
                     className={INPUT_CLASS}
                   />
                 </div>

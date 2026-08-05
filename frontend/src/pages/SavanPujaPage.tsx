@@ -18,6 +18,7 @@ import {
     type SavanPackageId,
 } from "../data/kashiMahadevPuja";
 import SavanPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/savanPuja/SavanPackages";
+import SavanRain from "../components/savanPuja/SavanRain";
 import heroImages from "../data/savanHeroImages.json";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
@@ -108,40 +109,6 @@ const PACKAGES_SCROLL_DELAY_MS = 2000;
  * screen. 70 clears the ~56px sticky header with a small breathing gap.
  */
 const PACKAGES_SCROLL_OFFSET = 70;
-
-/**
- * Savan rainfall across the whole page. Generated once at module load from a
- * fixed seed — not on every render — so the drops keep their positions and
- * the rain doesn't reshuffle when the countdown ticks each second.
- *
- * Nearer drops fall faster and are longer, wider and brighter; farther ones
- * are slower and fainter. That depth spread is what stops it reading as a
- * marching row of identical ticks. Durations are tuned for a full-viewport
- * fall (~112vh), so they are far longer than a banner-height drop would need.
- */
-const SAVAN_RAINDROPS = (() => {
-    let h = 0x9e3779b9;
-    const rand = () => {
-        h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
-        return ((h >>> 0) % 10000) / 10000;
-    };
-    return Array.from({ length: 60 }, () => {
-        const depth = rand(); // 0 = far/slow/faint, 1 = near/fast/bright
-        return {
-            left: +(rand() * 100).toFixed(2),
-            delay: +(rand() * 4).toFixed(2),           // staggered over 4s
-            dur: +(4.2 - depth * 1.9).toFixed(2),      // 2.30s – 4.20s
-            h: Math.round(12 + depth * 16),            // 12px – 28px
-            w: +(0.9 + depth * 0.7).toFixed(1),        // 0.9px – 1.6px
-            // Far fainter than the old emerald-on-cream rain. Struck in gold
-            // on parchment the drops sit at almost the paper's own value, so
-            // anything near the previous 0.35–0.80 stopped reading as rainfall
-            // and started reading as scratches ruled down the sheet — right
-            // through the body copy they fall over.
-            opacity: +(0.14 + depth * 0.22).toFixed(2), // 0.14 – 0.36
-        };
-    });
-})();
 
 // Mahakal Savan online-puja devotee reviews (auto-scrolling marquee).
 type Review = { name: string; rating: number; date: string; text: string; verified: boolean };
@@ -277,7 +244,10 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
 
     return (
         <div className="overflow-hidden -mx-4 px-4">
-            <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track.is-paused{animation-play-state:paused}.review-track:hover{animation-play-state:paused}`}</style>
+            {/* The reduced-motion rule lives here, alongside the animation it
+                switches off. It used to ride in the page root's rain <style>,
+                which went with the rain when that moved to its own component. */}
+            <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track.is-paused{animation-play-state:paused}.review-track:hover{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.review-track{animation:none}}`}</style>
             <div ref={trackRef} className={`review-track flex gap-2.5${inView ? "" : " is-paused"}`}>
                 {items.map((r, i) => (
                     <div key={i} className="shrink-0 w-56 bg-[#FCF8F0] border border-[#D8B66A]/60 rounded-xl p-3 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)]">
@@ -331,27 +301,8 @@ export default function SavanPujaPage() {
     const [packageId, setPackageId] = useState<SavanPackageId>(DEFAULT_PACKAGE_ID);
     const selectedPkg = getPackage(packageId);
 
-    /**
-     * The rainfall is purely decorative, so it is mounted only after the page has
-     * painted. Measured with Lighthouse (mobile, simulated throttling): the 60
-     * always-animating drops cost ~2.1s of style & layout on the main thread
-     * (styleLayout 2712ms -> 611ms with them removed), because each drop is a
-     * compositing layer running an infinite transform animation. Paying that
-     * while the browser is still trying to render the hero delays first paint;
-     * paying it a beat later is invisible to the devotee.
-     */
-    const [showRain, setShowRain] = useState(false);
-    useEffect(() => {
-        const idle = (window as any).requestIdleCallback as
-            | ((cb: () => void, o?: { timeout: number }) => number)
-            | undefined;
-        if (idle) {
-            const id = idle(() => setShowRain(true), { timeout: 2000 });
-            return () => (window as any).cancelIdleCallback?.(id);
-        }
-        const t = setTimeout(() => setShowRain(true), 600);
-        return () => clearTimeout(t);
-    }, []);
+    // The rainfall's own deferred mount and perf notes moved with it into
+    // components/savanPuja/SavanRain.tsx.
 
     // ViewContent on load — reports the package the page opens on, not the
     // one the devotee may later switch to (that is AddToCart's job below).
@@ -556,44 +507,10 @@ export default function SavanPujaPage() {
     // strip of parchment under it.
     return (
       <div className="svn svn-parchment min-h-screen font-svn-body w-full max-w-md mx-auto shadow-xl relative border-x border-[#D8B66A]">
-        {/* Savan rain — falls across the entire page, not just the hero.
-            Drops are struck in Royal Gold rather than white or a cool blue:
-            the page is parchment, so white vanishes into it and a cool hue is
-            the one thing that would not belong on an aged sheet. Gold reads as
-            both rainfall and the theme's sparkle particles at once, which is
-            why it is one effect here and not two — a second always-animating
-            layer would double the cost documented on `showRain` below for no
-            visual gain. */}
-        <style>{`
-          @keyframes savanDrop{0%{transform:translateY(-6vh);opacity:0}10%{opacity:var(--drop-opacity,.7)}88%{opacity:var(--drop-opacity,.7)}100%{transform:translateY(106vh);opacity:0}}
-          .savan-rain{position:fixed;top:0;bottom:0;width:100%;max-width:28rem;overflow:hidden;pointer-events:none;z-index:30}
-          .savan-drop{position:absolute;top:0;width:var(--drop-w,1.5px);height:var(--drop-h,14px);border-radius:9999px;background:linear-gradient(to bottom,rgba(199,154,43,0),rgba(199,154,43,.62));animation:savanDrop var(--drop-dur,3s) linear infinite;will-change:transform}
-          @media (prefers-reduced-motion: reduce){.savan-rain{display:none}.review-track{animation:none}}
-        `}</style>
-
-        {/* Page-wide rainfall. `fixed` so it keeps falling while the devotee
-            scrolls, clipped to the max-w-md column, and pointer-events-none so
-            it never intercepts a tap. z-30 sits above the cards but below the
-            sticky header and bottom CTA (both z-50), which stay fully crisp.
-            Mounted after first paint — see the showRain note above. */}
-        {showRain && (
-        <div className="savan-rain" aria-hidden="true">
-          {SAVAN_RAINDROPS.map((d, i) => (
-            <span
-              key={i}
-              className="savan-drop"
-              style={{
-                left: `${d.left}%`,
-                animationDelay: `${d.delay}s`,
-                ["--drop-dur" as string]: `${d.dur}s`,
-                ["--drop-h" as string]: `${d.h}px`,
-                ["--drop-w" as string]: `${d.w}px`,
-                ["--drop-opacity" as string]: `${d.opacity}`,
-              }}
-            />
-          ))}
-        </div>
-        )}
+        {/* Savan rain — falls across the entire page, not just the hero. This
+            page only: the booking page shares the theme but stays still, so
+            nothing drifts behind a devotee filling in a form. */}
+        <SavanRain />
 
         <Helmet>
           {/* City, not `mandirShort` — the puja name already carries the

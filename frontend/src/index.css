@@ -45,10 +45,11 @@
 }
 
 /* ==========================================================================
-   KASHI SAVAN — antique parchment, aged gold, deep crimson
+   MAHAKAL SAVAN — antique parchment, aged gold, deep crimson
    --------------------------------------------------------------------------
-   The Savan Rudrabhishek page wears an old-manuscript look: parchment paper,
-   engraved gold rules, wax-seal badges and a dark wood band top and bottom.
+   Both Savan Rudrabhishek pages — the detail page and its booking page — wear
+   an old-manuscript look: parchment paper, engraved gold rules, wax-seal
+   badges and a dark wood band top and bottom.
    Everything here is namespaced `svn-` and the page-wide rules are scoped to
    `.svn` (the page root), for the same reason `.viv` is scoped below — a body
    face or a paper texture set globally would restyle the whole site.

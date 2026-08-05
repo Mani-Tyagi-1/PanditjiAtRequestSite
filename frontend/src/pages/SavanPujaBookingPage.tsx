@@ -20,9 +20,55 @@ import { ItemTileRow } from "../components/savanPuja/ItemTiles";
 
 type Step = "details" | "success";
 
+/**
+ * ── Theme ────────────────────────────────────────────────────────────────
+ * This page wears the same antique parchment / aged gold / deep crimson
+ * manuscript theme as SavanPujaPage: the `svn-*` decorative classes and the
+ * four `font-svn-*` faces both live in src/index.css, and the four faces are
+ * loaded once in index.html rather than imported here.
+ *
+ * Colours are written as literal hexes rather than theme utilities because
+ * that is how every hue on the detail page is written, and one convention
+ * across the two halves of a funnel beats two.
+ *
+ * The palette, in the roles this page uses it:
+ *   #F6F0E3 / #FCF8F0 / #FFFDF8   parchment, card, field
+ *   #F3E5BF / #EFE3CC             warm beige fills (chips, gift surfaces)
+ *   #D8B66A / #C79A2B             aged gold hairline / struck gold rule
+ *   #7A1622 / #A41F2E             deep crimson ink / the one action colour
+ *   #23201B / #665C50 / #8C8274   ink, body, faint
+ *   #8E6A25                       gold text, and every small icon
+ *   #3E6B4A                       Forest Green — the ONLY success hue, so a
+ *                                 tick or a "Free" never reads as ornament
+ */
 const INPUT =
-    "w-full bg-[#F0FAF7] border border-[#DDEBE6] rounded-xl px-4 py-3 text-sm text-[#17211D] placeholder-[#66736E] focus:outline-none focus:border-[#008C68] focus:ring-2 focus:ring-[#008C68]/20 transition-all";
-const LABEL = "text-[11px] font-bold text-[#66736E] uppercase tracking-wide mb-1.5 block";
+    "w-full bg-[#FFFDF8] border border-[#D8B66A]/70 rounded-xl px-4 py-3 text-sm text-[#23201B] placeholder-[#8C8274] focus:outline-none focus:border-[#C79A2B] focus:ring-2 focus:ring-[#C79A2B]/25 transition-all";
+const LABEL =
+    "font-svn-sub text-[10px] font-bold text-[#8E6A25] uppercase tracking-[0.12em] mb-1.5 block";
+
+/**
+ * Numbered step head — a wax-seal numeral beside a Cinzel small-caps title,
+ * over the theme's gold hairline.
+ *
+ * The counterpart to `SectionTitle` on the detail page, with the seal standing
+ * in for that page's leading icon: a checkout's sections are an ordered list, a
+ * landing page's are not, so the numeral has to survive the restyle.
+ */
+function StepHead({ n, title, sub }: { n: string; title: string; sub: React.ReactNode }) {
+    return (
+        <div className="flex items-center gap-2.5 pb-2 border-b border-[#D8B66A]/60">
+            <span className="svn-seal shrink-0 w-7 h-7 rounded-full flex items-center justify-center font-svn-sub text-[11px] font-bold">
+                {n}
+            </span>
+            <div className="min-w-0">
+                <h3 className="font-svn-sub text-[13px] font-bold uppercase tracking-[0.1em] text-[#7A1622] leading-tight">
+                    {title}
+                </h3>
+                <p className="text-[11px] text-[#665C50] leading-snug mt-0.5">{sub}</p>
+            </div>
+        </div>
+    );
+}
 
 /**
  * Beat before the free-bracelet toast appears, and how long it stays.
@@ -507,7 +553,10 @@ export default function SavanPujaBookingPage() {
                     contact: phoneDigits,
                     email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
                 },
-                theme: { color: "#008C68" },
+                // Razorpay's own chrome, tinted to the theme's action colour so
+                // the checkout sheet doesn't open in a different palette than
+                // the button that summoned it.
+                theme: { color: "#7A1622" },
                 handler: async (response: any) => {
                     try {
                         setSubmitting(true);
@@ -590,92 +639,108 @@ export default function SavanPujaBookingPage() {
     };
 
     return (
-        <div className="svb-page min-h-screen bg-[#FFFDF8] w-full max-w-md mx-auto border-x border-[#DDEBE6] relative pb-28">
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
-                .svb-page { font-family: 'DM Sans', sans-serif; }
-                .svb-serif { font-family: 'Cormorant Garamond', serif; }
-            `}</style>
+        <div className="svn svn-parchment min-h-screen font-svn-body w-full max-w-md mx-auto shadow-xl border-x border-[#D8B66A] relative pb-28">
+            {/* No Savan rain here, deliberately — it falls on the detail page
+                and stops at this one. That page is being read; this one is
+                being filled in, and a checkout is the wrong place for drifting
+                motion behind the fields. The parchment, the gold rules and the
+                crimson carry the continuity instead. */}
+
             <Helmet>
                 <title>{`Complete your booking — ${puja.poojaNameEng} | Pandit Ji At Request`}</title>
+                {/* A checkout page has nothing to gain from being indexed and
+                    everything to lose: it is a step, not a destination, and it
+                    competes with the landing page for the same query. */}
+                <meta name="robots" content="noindex, follow" />
             </Helmet>
 
-            {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFFDF8]/95 backdrop-blur-md border-b border-[#DDEBE6] px-4 py-3 flex items-center gap-3">
+            {/* ── Sticky header ──
+                Parchment rather than white, with the theme's gold rule along
+                its bottom edge, so the bar reads as the head of the sheet
+                rather than chrome laid over it. Matches the detail page's, but
+                at z-40 — the free-bracelet nudge below owns z-50 here. */}
+            <div className="sticky top-0 z-40 bg-[#F6F0E3]/92 backdrop-blur-md border-b border-[#D8B66A] px-4 py-3 flex items-center gap-3">
                 <button
                     onClick={() => (location.key !== "default" ? navigate(-1) : navigate(`/${KASHI_MAHADEV_PUJA_SLUG}`))}
                     aria-label="Go back"
-                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#DDEBE6] shadow-sm active:scale-90 transition-transform shrink-0"
+                    className="w-8 h-8 rounded-full bg-[#FFFDF8] flex items-center justify-center border border-[#C79A2B] shadow-sm active:scale-90 transition-transform shrink-0"
                 >
-                    <ArrowLeft className="w-4 h-4 text-[#17211D]" />
+                    <ArrowLeft className="w-4 h-4 text-[#7A1622]" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-[15px] font-bold text-[#17211D] leading-tight truncate">Complete Your Savan Puja</h1>
-                    <p className="text-[11px] text-[#66736E] flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-[#086B50] shrink-0" />
+                    <h1 className="font-svn-head text-[16px] font-semibold text-[#23201B] leading-tight truncate">
+                        Complete Your Savan Puja
+                    </h1>
+                    <p className="text-[11px] text-[#665C50] flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-[#8E6A25] shrink-0" />
                         <span className="truncate">{puja.templeName} · {puja.templeLocation}</span>
                     </p>
                 </div>
             </div>
 
-            {/* Savan occasion ribbon */}
-            <div className="bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] text-center py-1.5 px-4">
-                <p className="text-[10.5px] font-bold tracking-[0.14em] uppercase text-white">
-                    {puja.occasion} · {puja.pujaDate} · हर हर महादेव
+            {/* ── Savan occasion ribbon ──
+                Deep crimson, gold-ruled top and bottom, set in Cinzel caps —
+                the one saturated band at the head of this page, exactly as on
+                the detail page the devotee just came from. */}
+            <div className="svn-crimson border-y border-[#C79A2B]/70 text-center py-1.5 px-4">
+                <p className="font-svn-sub text-[10px] font-semibold tracking-[0.18em] uppercase text-[#E2BF62]">
+                    {puja.occasion} · {puja.pujaDate} · जय श्री महाकाल
                 </p>
             </div>
 
-            {/* Content */}
-            <div className="px-5 pt-4 space-y-6">
+            {/* Content. `svn-sheet-head` burns the parchment where it meets the
+                ribbon above — see the note on that class for why the shading
+                lives on the content wrapper and not on the page root. */}
+            <div className="svn-sheet-head px-5 pt-4 space-y-6">
                 {step === "details" ? (
                     <div className="space-y-6">
                         {/* Order summary — reflects the chosen package + extras */}
-                        <div className="bg-white border border-[#DDEBE6] rounded-2xl p-4 shadow-sm">
+                        <div className="bg-[#FCF8F0] border border-[#D8B66A]/70 rounded-2xl p-4 shadow-[0_3px_14px_-8px_rgba(40,25,10,0.35)]">
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                    <p className="text-[13.5px] font-bold text-[#17211D] leading-snug">{puja.poojaNameEng}</p>
-                                    <p className="text-[11px] text-[#086B50] font-semibold mt-0.5">{selectedPkg.name}</p>
+                                    <p className="font-svn-head text-[16px] font-semibold text-[#23201B] leading-snug">{puja.poojaNameEng}</p>
+                                    <p className="font-svn-sub text-[10px] font-semibold uppercase tracking-[0.1em] text-[#7A1622] mt-1">{selectedPkg.name}</p>
                                 </div>
-                                <span className="flex items-center gap-1 shrink-0 bg-[#C89B3C]/15 text-[#17211D] rounded-full px-2 py-0.5 text-[11px] font-bold">
-                                    ★ {puja.rating}
+                                <span className="flex items-center gap-1 shrink-0 bg-[#F3E5BF] border border-[#D8B66A] text-[#23201B] rounded-full px-2 py-0.5 text-[11px] font-bold">
+                                    <span className="text-[#C79A2B]">★</span> {puja.rating}
                                 </span>
                             </div>
 
-                            <div className="mt-2.5 pt-2.5 border-t border-[#DDEBE6] space-y-2">
+                            <div className="mt-2.5 pt-2.5 border-t border-[#D8B66A]/45 space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[12.5px] text-[#66736E] font-medium">{selectedPkg.name}</span>
-                                    <span className="text-[13px] font-bold text-[#17211D]">₹{basePrice.toLocaleString("en-IN")}</span>
+                                    <span className="text-[12.5px] text-[#665C50] font-medium">{selectedPkg.name}</span>
+                                    <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B]">₹{basePrice.toLocaleString("en-IN")}</span>
                                 </div>
 
                                 {/* Offerings made in your name — shown as "Included"
                                     so the value of the tier is visible on the bill. */}
                                 {offerings.length > 0 && (
                                     <div className="flex items-start justify-between gap-2">
-                                        <span className="text-[12px] text-[#66736E] font-medium flex items-start gap-1.5 min-w-0">
-                                            <Droplets className="w-3.5 h-3.5 text-[#086B50] shrink-0 mt-0.5" />
+                                        <span className="text-[12px] text-[#665C50] font-medium flex items-start gap-1.5 min-w-0">
+                                            <Droplets className="w-3.5 h-3.5 text-[#8E6A25] shrink-0 mt-0.5" />
                                             <span className="leading-snug">{offerings.join(", ")} offered in your name</span>
                                         </span>
-                                        <span className="text-[11px] font-bold text-[#008C68] shrink-0">Included</span>
+                                        <span className="text-[11px] font-bold text-[#3E6B4A] shrink-0">Included</span>
                                     </div>
                                 )}
 
                                 {selectedPkg.freeFamilyMembers > 0 && (
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
-                                            <Users className="w-3.5 h-3.5 text-[#C89B3C]" />
+                                        <span className="text-[12.5px] text-[#665C50] font-medium flex items-center gap-1.5">
+                                            <Users className="w-3.5 h-3.5 text-[#C79A2B]" />
                                             {selectedPkg.freeFamilyMembers} family Sankalp
                                         </span>
-                                        <span className="text-[11px] font-bold text-[#008C68]">Free</span>
+                                        <span className="text-[11px] font-bold text-[#3E6B4A]">Free</span>
                                     </div>
                                 )}
 
                                 {chargedMembers > 0 && (
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
-                                            <Users className="w-3.5 h-3.5 text-[#086B50]" />
+                                        <span className="text-[12.5px] text-[#665C50] font-medium flex items-center gap-1.5">
+                                            <Users className="w-3.5 h-3.5 text-[#8E6A25]" />
                                             Extra Sankalp × {chargedMembers}
                                         </span>
-                                        <span className="text-[13px] font-bold text-[#17211D]">+₹{familyCost.toLocaleString("en-IN")}</span>
+                                        <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B]">+₹{familyCost.toLocaleString("en-IN")}</span>
                                     </div>
                                 )}
 
@@ -684,8 +749,8 @@ export default function SavanPujaBookingPage() {
                                     otherwise so its absence is never a silent
                                     surprise at delivery time. */}
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5 min-w-0">
-                                        <Gift className="w-3.5 h-3.5 text-[#086B50] shrink-0" />
+                                    <span className="text-[12.5px] text-[#665C50] font-medium flex items-center gap-1.5 min-w-0">
+                                        <Gift className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
                                         <span className="truncate">{packagePrasadBox(selectedPkg).name}</span>
                                     </span>
                                     {!prasadBoxAdded ? (
@@ -693,11 +758,11 @@ export default function SavanPujaBookingPage() {
                                         // free still has to be asked for, and a bill
                                         // reading "Free" for a parcel nobody requested
                                         // is how a devotee ends up expecting one.
-                                        <span className="text-[11px] font-semibold text-[#66736E] shrink-0">Not added</span>
+                                        <span className="text-[11px] font-semibold text-[#8C8274] shrink-0">Not added</span>
                                     ) : selectedPkg.prasadBoxFree ? (
-                                        <span className="text-[11px] font-bold text-[#008C68] shrink-0">Free</span>
+                                        <span className="text-[11px] font-bold text-[#3E6B4A] shrink-0">Free</span>
                                     ) : (
-                                        <span className="text-[13px] font-bold text-[#17211D] shrink-0">+₹{prasadCost.toLocaleString("en-IN")}</span>
+                                        <span className="font-svn-head lining-nums text-[14px] font-bold text-[#23201B] shrink-0">+₹{prasadCost.toLocaleString("en-IN")}</span>
                                     )}
                                 </div>
 
@@ -706,17 +771,22 @@ export default function SavanPujaBookingPage() {
                                     ships, so it is counted rather than merely promised. */}
                                 {shippedBox && (
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[12.5px] text-[#66736E] font-medium flex items-center gap-1.5">
-                                            <Gift className="w-3.5 h-3.5 text-[#C89B3C]" />
+                                        <span className="text-[12.5px] text-[#665C50] font-medium flex items-center gap-1.5">
+                                            <Gift className="w-3.5 h-3.5 text-[#C79A2B]" />
                                             Rudraksh Bracelet
                                         </span>
-                                        <span className="text-[11px] font-extrabold uppercase tracking-wide text-[#C89B3C]">Free</span>
+                                        <span className="font-svn-sub text-[10px] font-bold uppercase tracking-[0.12em] text-[#8E6A25]">Free</span>
                                     </div>
                                 )}
 
-                                <div className="flex items-baseline justify-between pt-2 border-t border-[#DDEBE6]">
-                                    <span className="text-[10px] font-bold uppercase tracking-wide text-[#66736E]">Total</span>
-                                    <span className="text-xl font-extrabold text-[#086B50]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                                {/* The bill's own total. It is deliberately quieter
+                                    than the sticky bar's — crimson on parchment, not
+                                    the lacquered plate — because the bar is the one a
+                                    devotee pays from and two equally loud totals on
+                                    one screen is two prices to reconcile. */}
+                                <div className="flex items-baseline justify-between pt-2 border-t border-[#D8B66A]/60">
+                                    <span className="font-svn-sub text-[10px] font-bold uppercase tracking-[0.14em] text-[#8E6A25]">Total</span>
+                                    <span className="font-svn-head lining-nums text-xl font-bold text-[#7A1622]">₹{totalPrice.toLocaleString("en-IN")}</span>
                                 </div>
                             </div>
                         </div>
@@ -741,14 +811,18 @@ export default function SavanPujaBookingPage() {
                                         });
                                     }
                                 }}
-                                className="w-full text-left rounded-2xl border border-[#E8CF9A] bg-gradient-to-br from-[#FFF8E7] to-[#FFF3DC] px-3.5 py-3 shadow-sm active:scale-[0.99] transition-transform outline-none focus-visible:ring-2 focus-visible:ring-[#C89B3C] cursor-pointer"
+                                className="w-full text-left rounded-2xl border border-[#D8B66A] bg-gradient-to-br from-[#F3E5BF] to-[#EFE3CC] px-3.5 py-3 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)] active:scale-[0.99] transition-transform outline-none focus-visible:ring-2 focus-visible:ring-[#C79A2B] cursor-pointer"
                             >
                                 <div className="flex items-center gap-2">
-                                    <Sparkles className="w-4 h-4 text-[#C89B3C] shrink-0" />
-                                    <p className="flex-1 min-w-0 text-[12.5px] font-bold text-[#17211D] leading-snug">
+                                    <Sparkles className="w-4 h-4 text-[#C79A2B] shrink-0" />
+                                    <p className="flex-1 min-w-0 font-svn-sub text-[12px] font-semibold text-[#23201B] leading-snug">
                                         Upgrade to {nextPkg.name}
                                     </p>
-                                    <span className="shrink-0 flex items-center gap-0.5 rounded-full bg-[#C89B3C] px-2 py-0.5 text-[11px] font-extrabold text-white">
+                                    {/* A wax seal, the theme's badge language — the
+                                        same mark the package cards wear for "Most
+                                        Popular", which is what makes this read as
+                                        part of that ladder rather than an ad. */}
+                                    <span className="svn-seal shrink-0 flex items-center gap-0.5 rounded-full px-2 py-0.5 font-svn-sub text-[10.5px] font-bold lining-nums">
                                         +₹{(nextPkg.price - selectedPkg.price).toLocaleString("en-IN")}
                                         <ArrowUpRight className="w-3 h-3" />
                                     </span>
@@ -756,7 +830,7 @@ export default function SavanPujaBookingPage() {
                                 {/* What the upgrade actually buys, in the devotee's
                                     terms: the parcel first (it arrives at their door),
                                     then the extra Sankalps, then the new offerings. */}
-                                <p className="mt-1 text-[11px] text-[#66736E] leading-snug">
+                                <p className="mt-1 text-[11px] text-[#665C50] leading-snug">
                                     {[
                                         nextPkg.prasadBoxFree
                                             ? `Prasad box free instead of ₹${PRASAD_BOX_PRICE}`
@@ -776,13 +850,7 @@ export default function SavanPujaBookingPage() {
 
                         {/* Step 1: Devotee Details */}
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
-                                <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">01</span>
-                                <div>
-                                    <h3 className="font-bold text-[#17211D] text-[14px]">Devotee Details</h3>
-                                    <p className="text-[11px] text-[#66736E]">For the main Sankalp</p>
-                                </div>
-                            </div>
+                            <StepHead n="01" title="Devotee Details" sub="For the main Sankalp" />
                             <div className="space-y-3">
                                 <div>
                                     <label className={LABEL}>Mobile Number *</label>
@@ -820,23 +888,21 @@ export default function SavanPujaBookingPage() {
                         {/* Step 2: Family Sankalp — free up to the package
                             allowance, then ₹101 each */}
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
-                                <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">02</span>
-                                <div>
-                                    <h3 className="font-bold text-[#17211D] text-[14px]">Family Sankalp</h3>
-                                    <p className="text-[11px] text-[#66736E]">
-                                        {selectedPkg.freeFamilyMembers > 0
-                                            ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ₹${FAMILY_MEMBER_PRICE} each after`
-                                            : `Optional · add members at ₹${FAMILY_MEMBER_PRICE} each`}
-                                    </p>
-                                </div>
-                            </div>
+                            <StepHead
+                                n="02"
+                                title="Family Sankalp"
+                                sub={
+                                    selectedPkg.freeFamilyMembers > 0
+                                        ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ₹${FAMILY_MEMBER_PRICE} each after`
+                                        : `Optional · add members at ₹${FAMILY_MEMBER_PRICE} each`
+                                }
+                            />
 
                             {/* Free-allowance meter — reassures the devotee how many
                                 of the package's free Sankalps are still available. */}
                             {selectedPkg.freeFamilyMembers > 0 && (
-                                <div className="flex items-center gap-1.5 bg-[#DFF5EF] border border-[#DDEBE6] rounded-xl px-3 py-2 text-[11.5px] font-semibold text-[#086B50]">
-                                    <Sparkles className="w-3.5 h-3.5 text-[#008C68] shrink-0" />
+                                <div className="flex items-center gap-1.5 bg-[#F3E5BF] border border-[#D8B66A] rounded-xl px-3 py-2 text-[11.5px] font-semibold text-[#8E6A25]">
+                                    <Sparkles className="w-3.5 h-3.5 text-[#C79A2B] shrink-0" />
                                     {selectedPkg.freeFamilyMembers - form.familyMembers.length > 0
                                         ? `${selectedPkg.freeFamilyMembers - form.familyMembers.length} free family Sankalp${selectedPkg.freeFamilyMembers - form.familyMembers.length > 1 ? "s" : ""} left in your package`
                                         : `Free members used — extra names add ₹${FAMILY_MEMBER_PRICE} each`}
@@ -845,11 +911,11 @@ export default function SavanPujaBookingPage() {
 
                             {/* Name + gotra for the person being added. The row is
                                 only committed by the Add button (or Enter), so it is
-                                framed as a draft — amber border and an explicit
+                                framed as a draft — struck gold border and an explicit
                                 "not added yet" warning — until it is. */}
                             <div
                                 className={`rounded-2xl border p-3 space-y-2.5 transition-colors ${
-                                    pendingFamilyName ? "border-[#C89B3C] bg-[#C89B3C]/[0.07]" : "border-[#DDEBE6] bg-white"
+                                    pendingFamilyName ? "border-[#C79A2B] bg-[#F3E5BF]/70" : "border-[#D8B66A]/60 bg-[#FCF8F0]"
                                 }`}
                             >
                                 <div className="grid grid-cols-2 gap-2">
@@ -879,7 +945,7 @@ export default function SavanPujaBookingPage() {
                                     type="button"
                                     onClick={addFamilyMember}
                                     disabled={!pendingFamilyName}
-                                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#086B50] hover:bg-[#065A43] disabled:bg-[#DDEBE6] disabled:text-[#66736E] text-white font-bold text-[13px] py-2.5 transition-colors active:scale-95 disabled:active:scale-100 cursor-pointer disabled:cursor-not-allowed"
+                                    className="w-full font-svn-ui flex items-center justify-center gap-1.5 rounded-xl border border-[#C79A2B]/60 bg-[#A41F2E] hover:bg-[#87121E] disabled:bg-[#EFE3CC] disabled:text-[#8C8274] disabled:border-[#D8B66A]/60 text-[#FFF8F0] font-bold text-[13px] py-2.5 transition-colors active:scale-95 disabled:active:scale-100 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     <Plus className="w-4 h-4" />
                                     {pendingFamilyName
@@ -890,7 +956,7 @@ export default function SavanPujaBookingPage() {
                                 {/* The whole point of this block: make "typed but not
                                     added" impossible to mistake for "added". */}
                                 {pendingFamilyName && (
-                                    <p className="flex items-start gap-1.5 text-[11px] font-semibold text-[#8A6A1F] leading-snug">
+                                    <p className="flex items-start gap-1.5 text-[11px] font-semibold text-[#8E6A25] leading-snug">
                                         <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
                                         {pendingFamilyName} is not added yet — tap the Add button above to include them in the Sankalp.
                                     </p>
@@ -902,25 +968,25 @@ export default function SavanPujaBookingPage() {
                                     {form.familyMembers.map((m, idx) => (
                                         <div
                                             key={`${m.name}-${idx}`}
-                                            className="flex items-center gap-2 bg-[#DFF5EF] border border-[#DDEBE6] rounded-xl px-3 py-2"
+                                            className="flex items-center gap-2 bg-[#F3E5BF] border border-[#D8B66A] rounded-xl px-3 py-2"
                                         >
-                                            <Check className="w-3.5 h-3.5 text-[#008C68] shrink-0" strokeWidth={3} />
+                                            <Check className="w-3.5 h-3.5 text-[#3E6B4A] shrink-0" strokeWidth={3} />
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-[12.5px] font-bold text-[#17211D] truncate">{m.name}</p>
-                                                <p className="text-[10.5px] text-[#66736E] truncate">
+                                                <p className="text-[12.5px] font-bold text-[#23201B] truncate">{m.name}</p>
+                                                <p className="text-[10.5px] text-[#665C50] truncate">
                                                     Gotra: {m.gotra || "Kashyap (default)"}
                                                 </p>
                                             </div>
                                             {idx < selectedPkg.freeFamilyMembers ? (
-                                                <span className="text-[11px] font-bold text-[#008C68] shrink-0">FREE</span>
+                                                <span className="text-[11px] font-bold text-[#3E6B4A] shrink-0">FREE</span>
                                             ) : (
-                                                <span className="text-[11px] font-bold text-[#086B50] shrink-0">+₹{FAMILY_MEMBER_PRICE}</span>
+                                                <span className="lining-nums text-[11px] font-bold text-[#7A1622] shrink-0">+₹{FAMILY_MEMBER_PRICE}</span>
                                             )}
                                             <button
                                                 type="button"
                                                 onClick={() => removeFamilyMember(idx)}
                                                 aria-label={`Remove ${m.name}`}
-                                                className="text-[#008C68] hover:text-[#065A43] transition-colors shrink-0"
+                                                className="text-[#8E6A25] hover:text-[#7A1622] transition-colors shrink-0"
                                             >
                                                 <X className="w-4 h-4" />
                                             </button>
@@ -930,8 +996,8 @@ export default function SavanPujaBookingPage() {
                             )}
 
                             {form.familyMembers.length > 0 && (
-                                <p className="flex items-center gap-1.5 text-[11px] text-[#66736E]">
-                                    <Users className="w-3.5 h-3.5 text-[#086B50] shrink-0" />
+                                <p className="flex items-center gap-1.5 text-[11px] text-[#665C50]">
+                                    <Users className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
                                     {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added
                                     {chargedMembers > 0 ? ` · +₹${familyCost.toLocaleString("en-IN")}` : " · all free"}
                                 </p>
@@ -943,17 +1009,15 @@ export default function SavanPujaBookingPage() {
                             automatic: unticked means nothing is couriered, and
                             no address is asked for. */}
                         <div ref={prasadSectionRef} className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
-                                <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">03</span>
-                                <div>
-                                    <h3 className="font-bold text-[#17211D] text-[14px]">Prasad Box</h3>
-                                    <p className="text-[11px] text-[#66736E]">
-                                        {selectedPkg.prasadBoxFree
-                                            ? `FREE with ${selectedPkg.name} · add it to have it couriered`
-                                            : `₹${PRASAD_BOX_PRICE} · blessed prasad couriered to your home`}
-                                    </p>
-                                </div>
-                            </div>
+                            <StepHead
+                                n="03"
+                                title="Prasad Box"
+                                sub={
+                                    selectedPkg.prasadBoxFree
+                                        ? `FREE with ${selectedPkg.name} · add it to have it couriered`
+                                        : `₹${PRASAD_BOX_PRICE} · blessed prasad couriered to your home`
+                                }
+                            />
 
                             {/* The box carries the free Rudraksh bracelet, so the gift
                                 is sold on this checkbox rather than mentioned once in
@@ -961,9 +1025,9 @@ export default function SavanPujaBookingPage() {
                                 The card turns gold when ticked so the choice reads as
                                 claimed, not merely selected. */}
                             <label
-                                className={`flex items-center gap-3 rounded-2xl p-4 shadow-sm cursor-pointer select-none border transition-colors ${prasadBoxAdded
-                                    ? "bg-gradient-to-br from-[#FFF8E7] to-[#FFF3DC] border-[#E8CF9A]"
-                                    : "bg-white border-[#DDEBE6]"
+                                className={`flex items-center gap-3 rounded-2xl p-4 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)] cursor-pointer select-none border transition-colors ${prasadBoxAdded
+                                    ? "bg-gradient-to-br from-[#F3E5BF] to-[#EFE3CC] border-[#C79A2B]"
+                                    : "bg-[#FCF8F0] border-[#D8B66A]/60"
                                     }`}
                             >
                                 <input
@@ -980,19 +1044,19 @@ export default function SavanPujaBookingPage() {
                                             });
                                         }
                                     }}
-                                    className="w-4 h-4 shrink-0 rounded text-[#008C68] focus:ring-[#008C68] border-[#DDEBE6]"
+                                    className="w-4 h-4 shrink-0 rounded accent-[#A41F2E] border-[#D8B66A] focus:ring-[#C79A2B]"
                                 />
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-bold text-[#17211D]">Add {packagePrasadBox(selectedPkg).name}</p>
-                                    <p className="text-[11px] text-[#66736E] mt-0.5">
+                                    <p className="font-svn-sub text-[11.5px] font-semibold text-[#23201B]">Add {packagePrasadBox(selectedPkg).name}</p>
+                                    <p className="text-[11px] text-[#665C50] mt-0.5">
                                         Blessed at {puja.templeName} ·{" "}
                                         {selectedPkg.prasadBoxFree ? (
-                                            <b className="text-[#8A6A1F]">FREE with this seva</b>
+                                            <b className="text-[#8E6A25]">FREE with this seva</b>
                                         ) : (
                                             <>+₹{PRASAD_BOX_PRICE}</>
                                         )}
                                     </p>
-                                    <p className="text-[11px] font-bold text-[#8A6A1F] mt-1 leading-snug">
+                                    <p className="text-[11px] font-bold text-[#8E6A25] mt-1 leading-snug">
                                         {prasadBoxAdded
                                             ? "Free Rudraksh bracelet added 🎁"
                                             : "Includes a FREE Rudraksh bracelet"}
@@ -1008,9 +1072,9 @@ export default function SavanPujaBookingPage() {
                                         alt="Free 5 Mukhi Rudraksh bracelet"
                                         loading="lazy"
                                         decoding="async"
-                                        className="w-12 h-12 rounded-xl object-cover border border-[#F0E2C2]"
+                                        className="w-12 h-12 rounded-xl object-cover border border-[#D8B66A]"
                                     />
-                                    <span className="absolute -top-1.5 -right-1.5 bg-[#C89B3C] text-white text-[7.5px] font-extrabold uppercase tracking-wide px-1.5 py-[1px] rounded-full shadow-sm">
+                                    <span className="svn-seal absolute -top-1.5 -right-1.5 font-svn-sub text-[7.5px] font-bold uppercase tracking-[0.1em] px-1.5 py-[1px] rounded-full">
                                         Free
                                     </span>
                                 </span>
@@ -1020,14 +1084,18 @@ export default function SavanPujaBookingPage() {
                                 the price is attached to objects rather than to
                                 the word "prasad". */}
                             {prasadBoxAdded && (
-                                <div className="rounded-2xl border border-[#DDEBE6] bg-white p-3 shadow-sm">
-                                    <p className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#086B50] mb-1.5">
-                                        <Gift className="w-3 h-3 text-[#C89B3C]" />
+                                <div className="rounded-2xl border border-[#D8B66A]/70 bg-[#FCF8F0] p-3 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)]">
+                                    <p className="svn-rule flex items-center gap-1.5 font-svn-sub text-[9.5px] font-bold uppercase tracking-[0.14em] text-[#7A1622] mb-1.5">
+                                        <Gift className="w-3 h-3 text-[#C79A2B]" />
                                         In your {packagePrasadBox(selectedPkg).name}
                                     </p>
+                                    {/* `parchment`, the theme's own tone — the same
+                                        tiles the package cards render on the detail
+                                        page. `gold` still marks the free box, because
+                                        gold is this theme's language for a gift. */}
                                     <ItemTileRow
                                         items={shipList}
-                                        tone={selectedPkg.prasadBoxFree ? "gold" : "emerald"}
+                                        tone={selectedPkg.prasadBoxFree ? "gold" : "parchment"}
                                         cols={4}
                                     />
                                 </div>
@@ -1040,13 +1108,11 @@ export default function SavanPujaBookingPage() {
                             checkout for someone who didn't want one. */}
                         {needsDelivery && (
                         <div className="space-y-3 pb-6">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDEBE6]">
-                                <span className="w-7 h-7 rounded-full bg-[#DFF5EF] text-[#086B50] flex items-center justify-center font-bold text-sm">04</span>
-                                <div>
-                                    <h3 className="font-bold text-[#17211D] text-[14px]">Delivery Address</h3>
-                                    <p className="text-[11px] text-[#66736E]">Where we courier your {shippedBox?.name}</p>
-                                </div>
-                            </div>
+                            <StepHead
+                                n="04"
+                                title="Delivery Address"
+                                sub={`Where we courier your ${shippedBox?.name}`}
+                            />
 
                             {user && addresses.length > 0 && !showNewAddressForm && (
                                 <div className="space-y-2">
@@ -1054,24 +1120,24 @@ export default function SavanPujaBookingPage() {
                                     {addresses.map((addr) => (
                                         <label
                                             key={addr._id}
-                                            className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-[#008C68] bg-[#DFF5EF]/70" : "border-[#DDEBE6]"}`}
+                                            className={`flex items-start gap-3 border rounded-2xl p-3.5 cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-[#C79A2B] bg-[#F3E5BF]/70 ring-1 ring-[#C79A2B]/40" : "border-[#D8B66A]/60 bg-[#FCF8F0]"}`}
                                         >
                                             <input
                                                 type="radio"
                                                 name="addressSelect"
                                                 checked={selectedAddressId === addr._id}
                                                 onChange={() => setSelectedAddressId(addr._id)}
-                                                className="mt-1 text-[#008C68] focus:ring-[#008C68] border-[#DDEBE6]"
+                                                className="mt-1 accent-[#A41F2E] border-[#D8B66A] focus:ring-[#C79A2B]"
                                             />
-                                            <div className="text-[12.5px] text-[#17211D] leading-relaxed">
-                                                <span className="font-bold text-[11px] text-[#086B50] uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
+                                            <div className="text-[12.5px] text-[#23201B] leading-relaxed">
+                                                <span className="font-svn-sub font-bold text-[10px] text-[#7A1622] uppercase tracking-[0.12em] block mb-0.5">{addr.addressName || addr.saveAs}</span>
                                                 {addr.addressLine1 || addr.houseNo}, {addr.addressLine2 || addr.street}, {addr.city}, {addr.state} - {addr.pincode}
                                             </div>
                                         </label>
                                     ))}
                                     <button
                                         onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
-                                        className="text-[#086B50] hover:text-[#065A43] text-xs font-bold pt-1 block cursor-pointer"
+                                        className="font-svn-ui text-[#7A1622] hover:text-[#87121E] text-xs font-bold pt-1 block cursor-pointer"
                                     >
                                         + Add New Address
                                     </button>
@@ -1079,13 +1145,13 @@ export default function SavanPujaBookingPage() {
                             )}
 
                             {(!user || showNewAddressForm) && (
-                                <div className="bg-white border border-[#DDEBE6] rounded-2xl p-4 shadow-sm space-y-3">
-                                    <div className="flex items-center justify-between pb-1 border-b border-[#DDEBE6]">
-                                        <span className="text-[12px] font-bold text-[#17211D]">Delivery Address Details</span>
+                                <div className="bg-[#FCF8F0] border border-[#D8B66A]/70 rounded-2xl p-4 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)] space-y-3">
+                                    <div className="flex items-center justify-between pb-1 border-b border-[#D8B66A]/45">
+                                        <span className="font-svn-sub text-[11px] font-semibold uppercase tracking-[0.1em] text-[#7A1622]">Delivery Address Details</span>
                                         {user && addresses.length > 0 && (
                                             <button
                                                 onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
-                                                className="text-[#66736E] hover:text-[#66736E] text-xs font-medium cursor-pointer"
+                                                className="text-[#8C8274] hover:text-[#665C50] text-xs font-medium cursor-pointer"
                                             >
                                                 Cancel
                                             </button>
@@ -1155,18 +1221,25 @@ export default function SavanPujaBookingPage() {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.1 }}
-                            className="w-20 h-20 rounded-full bg-gradient-to-br from-[#008C68] to-[#086B50] flex items-center justify-center shadow-xl shadow-[#008C68]/25"
+                            /* A struck wax seal — the theme's mark of a thing
+                               made official, which is exactly what has just
+                               happened. */
+                            className="svn-seal w-20 h-20 rounded-full flex items-center justify-center"
                         >
-                            <Check className="w-10 h-10 text-white" strokeWidth={3} />
+                            <Check className="w-10 h-10 text-[#F3E5BF]" strokeWidth={3} />
                         </motion.div>
-                        <h3 className="svb-serif font-bold text-[#17211D] mt-5 text-2xl">
+                        <h3 className="font-svn-head font-semibold text-[#23201B] mt-5 text-2xl">
                             Booking Confirmed! 🙏
                         </h3>
-                        <p className="text-[13px] text-[#66736E] mt-2 max-w-[280px] leading-relaxed">
-                            Your <span className="font-semibold text-[#17211D]">{puja.poojaNameEng}</span> at <span className="font-semibold text-[#17211D]">{puja.templeName}</span> is booked for <span className="font-semibold text-[#17211D]">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
+                        <p className="text-[13px] text-[#665C50] mt-2 max-w-[280px] leading-relaxed">
+                            Your <span className="font-semibold text-[#23201B]">{puja.poojaNameEng}</span> at <span className="font-semibold text-[#23201B]">{puja.templeName}</span> is booked for <span className="font-semibold text-[#23201B]">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
                         </p>
-                        <p className="text-[13px] font-serif font-bold text-[#086B50] mt-3">ॐ नमः शिवाय</p>
-                        <button onClick={() => navigate("/account?tab=live")} className="mt-6 w-full bg-[#086B50] text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
+                        {/* Gold leaf, on the one sacred line — the same treatment
+                            the detail page's mantra strip reserves for it, and
+                            for the same reason: a sweep everywhere is a sweep
+                            nowhere. */}
+                        <p className="svn-foil font-svn-head text-[19px] font-semibold tracking-wide mt-3">ॐ नमः शिवाय</p>
+                        <button onClick={() => navigate("/account?tab=live")} className="mt-6 w-full font-svn-ui bg-[#A41F2E] hover:bg-[#87121E] text-[#FFF8F0] font-bold py-3.5 rounded-2xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.9)] active:scale-95 transition-all cursor-pointer">
                             Done
                         </button>
                     </motion.div>
@@ -1194,7 +1267,22 @@ export default function SavanPujaBookingPage() {
                     role="status"
                     className="fixed top-[72px] left-0 right-0 z-50 max-w-md mx-auto px-4"
                 >
-                    <div className="relative flex items-center gap-3 rounded-2xl border border-[#E8CF9A] bg-gradient-to-br from-[#FFF8E7] to-[#FFF3DC] px-3 py-2.5 shadow-lg">
+                    {/* Deep crimson with a lacquered black corner, on a struck
+                        gold rim with the theme's engraved inner hairline —
+                        essentially `svn-crimson`, entered from the shadow of
+                        `svn-plate` rather than starting flat.
+
+                        Dark, not the gift-gold it used to be: this thing drops
+                        IN OVER a parchment page, and a beige card on a beige
+                        sheet had to shout with a border to be seen at all. A
+                        crimson one needs no such help.
+
+                        The black is held to the first ~quarter on purpose. It
+                        sits under the bracelet photo, which is the darkest
+                        thing on the card anyway, so it reads as the shadow the
+                        gift is lit out of — push it past halfway and the card
+                        stops being crimson and starts being a black bar. */}
+                    <div className="relative flex items-center gap-3 rounded-2xl border border-[#C79A2B] bg-[linear-gradient(135deg,#1A1210_0%,#7A1622_26%,#A41F2E_100%)] px-3 py-2.5 shadow-[inset_0_0_0_1px_rgba(199,154,43,0.22),0_12px_28px_-12px_rgba(20,10,0,0.9)]">
                         {/* Drawn at 44px; 140px covers ~3x density. onError falls
                             back to the origin URL — the convention `optimizedImg`
                             documents — so a proxy hiccup can't blank the gift. */}
@@ -1204,15 +1292,20 @@ export default function SavanPujaBookingPage() {
                             alt="Free 5 Mukhi Rudraksh bracelet"
                             loading="lazy"
                             decoding="async"
-                            className="w-11 h-11 shrink-0 rounded-xl object-cover border border-[#F0E2C2]"
+                            className="w-11 h-11 shrink-0 rounded-xl object-cover border border-[#C79A2B]"
                         />
                         <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-bold text-[#17211D] leading-tight">
+                            {/* Gold headline over cream body — the occasion
+                                ribbon's own pairing, because most of this card
+                                is now the same crimson that ribbon is. The
+                                warm grey that was here reads fine on near-black
+                                and goes muddy on red. */}
+                            <p className="font-svn-sub text-[11.5px] font-semibold text-[#E2BF62] leading-tight">
                                 {selectedPkg.prasadBoxFree
                                     ? "Your prasad box is FREE — claim it"
                                     : "Get a FREE Rudraksh bracelet"}
                             </p>
-                            <p className="text-[10.5px] text-[#66736E] leading-snug mt-0.5">
+                            <p className="text-[10.5px] text-[#F3E5BF]/85 leading-snug mt-0.5">
                                 {selectedPkg.prasadBoxFree ? (
                                     <>
                                         {selectedPkg.name} includes the {packagePrasadBox(selectedPkg).name} at
@@ -1228,39 +1321,58 @@ export default function SavanPujaBookingPage() {
                         </div>
                         <button
                             onClick={acceptPrasadNudge}
-                            className="shrink-0 bg-[#C89B3C] hover:bg-[#B98C2F] text-white text-[11px] font-extrabold px-3 py-2 rounded-full shadow-sm active:scale-95 transition-all cursor-pointer"
+                            /* Gold, and this is the one place on the page where
+                               the action ISN'T crimson — the card's gradient
+                               ends in crimson right where this button sits, so
+                               the page's usual #A41F2E would sink into its own
+                               background. Bright gold on lacquer is the only
+                               pairing here with anything left to give. */
+                            className="shrink-0 font-svn-ui bg-[#C79A2B] hover:bg-[#E2BF62] text-[#1E1A17] text-[11px] font-bold px-3.5 py-2 rounded-full border border-[#E2BF62]/70 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.6)] active:scale-95 transition-all cursor-pointer"
                         >
                             Add
                         </button>
                         <button
                             onClick={() => setNudgeDismissed(true)}
                             aria-label="Dismiss offer"
-                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white border border-[#E8CF9A] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-[#FFFDF8] border border-[#C79A2B] flex items-center justify-center shadow-sm active:scale-90 transition-transform cursor-pointer"
                         >
-                            <X className="w-3.5 h-3.5 text-[#66736E]" />
+                            <X className="w-3.5 h-3.5 text-[#8E6A25]" />
                         </button>
                     </div>
                 </motion.div>
             )}
 
-            {/* Sticky Footer */}
+            {/* ── Sticky pay bar ──
+                Ivory rather than white, gold-ruled along its top edge, and the
+                button is the palette's flat Primary (#A41F2E, hover #87121E) —
+                NOT a gradient. Same bar the detail page ends on, so the last
+                thing a devotee taps there and the last thing they tap here are
+                recognisably the same control. */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#DDEBE6] px-5 py-4">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FCF8F0]/96 backdrop-blur-md border-t border-[#C79A2B] shadow-[0_-6px_20px_-10px_rgba(40,25,10,0.5)] px-5 py-3.5">
                     {error && (
-                        <p className="text-red-500 text-[12px] font-semibold mb-3 text-center">{error}</p>
+                        <p className="text-[#A41F2E] text-[12px] font-semibold mb-2.5 text-center leading-snug">{error}</p>
                     )}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] text-[#66736E] font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#086B50]">₹{totalPrice.toLocaleString("en-IN")}</span>
+                    <div className="flex items-center gap-3">
+                        <div className="shrink-0">
+                            <span className="font-svn-sub text-[8.5px] text-[#8E6A25] font-semibold uppercase tracking-[0.1em] block leading-none">
+                                Total to pay
+                            </span>
+                            {/* `lining-nums` because Cormorant Garamond defaults
+                                to oldstyle figures, which drop the 1, 4, 7 and 9
+                                below the baseline. Charming in a heading, wrong
+                                in a price. */}
+                            <span className="font-svn-head lining-nums text-[22px] font-bold text-[#7A1622] leading-tight">
+                                ₹{totalPrice.toLocaleString("en-IN")}
+                            </span>
                         </div>
                         <button
                             onClick={handleConfirm}
                             disabled={submitting}
-                            className="flex items-center gap-1.5 bg-gradient-to-r from-[#086B50] via-[#008C68] to-[#086B50] hover:from-[#065A43] hover:to-[#065A43] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-[#008C68]/20 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                            className="flex-1 font-svn-ui flex items-center justify-center gap-1.5 bg-[#A41F2E] hover:bg-[#87121E] text-[#FFF8F0] font-bold text-[14px] py-3 rounded-xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.9)] active:scale-95 transition-all disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none cursor-pointer"
                         >
                             {submitting ? (
-                                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
+                                <><span className="w-4 h-4 border-2 border-[#FFF8F0] border-t-transparent rounded-full animate-spin" /> Processing…</>
                             ) : (
                                 <>Book With Devotion <ChevronRight className="w-4 h-4" /></>
                             )}

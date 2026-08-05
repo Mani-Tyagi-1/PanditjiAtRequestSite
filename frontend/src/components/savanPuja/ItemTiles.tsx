@@ -54,29 +54,34 @@ export function itemIcon(label: string): LucideIcon {
     return ITEM_ICONS[label] ?? Sparkles;
 }
 
-type Tone = "emerald" | "gold" | "parchment";
+/**
+ * Two tones, and the choice between them means something: `parchment` is the
+ * default surface, `gold` marks anything the devotee is given free.
+ *
+ * There used to be a third, `emerald`, kept alive purely because
+ * SavanPujaBookingPage was still on the old teal palette. That page now wears
+ * the parchment theme too, so the tone had no caller left and went with it.
+ */
+type Tone = "gold" | "parchment";
 
 type ToneSpec = { frame: string; icon: string; label: string; fallback: string };
 
 const TONES: Record<Tone, ToneSpec> = {
-    emerald: {
-        frame: "border-[#DDEBE6] bg-white",
-        icon: "text-[#086B50]",
-        label: "text-[#17211D]",
-        fallback: "bg-gradient-to-br from-[#DFF5EF] to-[#086B50]/20",
-    },
-    // For anything the devotee gets free — the gold coupon language the rest of
-    // the page uses for the bracelet and the countdown card.
+    // For anything the devotee gets free — the gift language both pages use for
+    // the bracelet and the free prasad box.
+    //
+    // It differs from `parchment` by BORDER STRENGTH, not by hue: a full-weight
+    // struck-gold rule and a warm beige fill against parchment's gold hairline
+    // on ivory. These carried the old coupon palette's own near-miss golds
+    // (#C89B3C / #8A6A1F / #E8CF9A) until the booking page joined this theme —
+    // two golds a shade apart in one table is a bug waiting to be copied.
     gold: {
-        frame: "border-[#E8CF9A] bg-[#FFFDF5]",
-        icon: "text-[#C89B3C]",
-        label: "text-[#8A6A1F]",
-        fallback: "bg-gradient-to-br from-[#FFFDF5] to-[#E8CF9A]/45",
+        frame: "border-[#C79A2B] bg-[#F3E5BF]",
+        icon: "text-[#C79A2B]",
+        label: "text-[#8E6A25]",
+        fallback: "bg-gradient-to-br from-[#F3E5BF] to-[#C79A2B]/40",
     },
-    // The parchment/aged-gold theme worn by the Savan detail page. Added as a
-    // THIRD tone rather than by retinting `emerald`, because that tone is still
-    // what SavanPujaBookingPage renders — repainting it here would silently
-    // restyle a page nobody asked to change.
+    // The parchment/aged-gold theme both Savan pages wear.
     parchment: {
         frame: "border-[#D8B66A]/60 bg-[#FCF8F0]",
         icon: "text-[#8E6A25]",
@@ -85,7 +90,7 @@ const TONES: Record<Tone, ToneSpec> = {
     },
 };
 
-export function ItemTile({ label, tone = "emerald" }: { label: string; tone?: Tone }) {
+export function ItemTile({ label, tone = "parchment" }: { label: string; tone?: Tone }) {
     const src = ITEM_IMAGES[label] || "";
     const Icon = itemIcon(label);
     const t = TONES[tone];
@@ -142,7 +147,7 @@ const COLS: Record<number, string> = {
 
 export function ItemTileRow({
     items,
-    tone = "emerald",
+    tone = "parchment",
     cols = 5,
 }: {
     items: string[];

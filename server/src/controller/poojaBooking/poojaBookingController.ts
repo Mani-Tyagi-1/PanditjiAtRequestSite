@@ -521,6 +521,27 @@ type CreatePendingBookingBody = {
   concern?: string;
   familyMembers?: any[];
   prasadAdded?: boolean;
+  /**
+   * Opt OUT of Meta conversion reporting for this booking.
+   *
+   * EVERY puja booking flow on the site posts to this one endpoint — the
+   * generic /puja/:id modal, Savan, Banke Bihari, Hanuman, Kaal Bhairav and
+   * Live Mandir — so the Purchase event in `finalizePendingPoojaBooking` is
+   * shared by all of them and cannot be switched off per-puja from the server.
+   *
+   * This is the switch. It is opt-OUT and defaults to reporting: absent, false
+   * or anything other than an explicit `true` behaves exactly as it always
+   * has, so every flow that does not send it is untouched by construction.
+   * Only the generic /puja/:id flow sends it today
+   * (frontend/src/components/booking/UI/BookingModal.tsx), which is why the
+   * themed pujas keep their CAPI while those bookings report nothing.
+   *
+   * It is persisted on the booking rather than judged at send time on purpose:
+   * the event fires from the browser's verify call OR the Razorpay webhook,
+   * minutes apart and with different request context, and both must reach the
+   * same verdict.
+   */
+  skipMetaCapi?: boolean;
   // ── International checkout ──
   /** ISO-4217 the devotee wants to be billed in. `amount` stays INR regardless. */
   currency?: string;
@@ -660,6 +681,17 @@ export async function finalizePendingPoojaBooking(
   void (async () => {
     if (!isProduction) {
       console.log(`[MetaCAPI][Puja] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+      return;
+    }
+    // Booking-level opt-out, set at create-pending. Checked here rather than at
+    // the call sites because both of them — the browser's verify call and the
+    // Razorpay webhook — land in this one function, and a purchase that reports
+    // from one path but not the other is worse than one that reports from
+    // neither. Every flow that does not set the flag is unaffected.
+    if ((finalBooking as any).skipMetaCapi === true) {
+      console.log(
+        `[MetaCAPI][Puja] Skipped (booking opted out via skipMetaCapi) for orderID=${razorpayOrderId}`,
+      );
       return;
     }
     try {
@@ -1009,6 +1041,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       concern,
       familyMembers,
       prasadAdded,
+      skipMetaCapi,
       currency: requestedCurrency,
       dialCode,
       countryCode,
@@ -1172,6 +1205,10 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       ...(ritualPlace && { ritualPlace }),
       ...(referralCode && { referralCode }),
       isFromApp: isFromApp === true,
+      // `=== true` and not a truthiness check: only an explicit opt-out
+      // silences reporting, so a stray or malformed value can never take a
+      // puja out of Events Manager by accident.
+      skipMetaCapi: skipMetaCapi === true,
       packageIncluded,
       ...(packageIncluded && {
         packageId,

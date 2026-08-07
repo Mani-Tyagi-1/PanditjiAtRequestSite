@@ -771,16 +771,12 @@ export default function PujaDetailPage() {
                     <div className="fixed bottom-0 left-0 right-0 z-50">
                         <div className="w-full max-w-md mx-auto bg-white/90 backdrop-blur-md border-t border-orange-100 px-4 py-3">
                             <button
-                                onClick={() => {
-                                    if (window.fbq) {
-                                        window.fbq("track", "AddToCart", {
-                                            content_ids: [pujaId],
-                                            content_name: title,
-                                            content_type: "product",
-                                        });
-                                    }
-                                    setIsBookingModalOpen(true);
-                                }}
+                                // No AddToCart pixel. Bookings from this page
+                                // report nothing to Meta — the funnel pixels in
+                                // BookingModal are gone too, and the server CAPI
+                                // Purchase is suppressed by the `skipMetaCapi`
+                                // flag that flow sends with create-pending.
+                                onClick={() => setIsBookingModalOpen(true)}
                                 className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-semibold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 transition-all duration-200 flex items-center justify-center gap-2"
                             >
                                 Book Pandit Ji

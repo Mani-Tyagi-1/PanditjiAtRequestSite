@@ -135,6 +135,13 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     concern: { type: String, trim: true },
     familyMembers: { type: Array, default: undefined },
     prasadAdded: { type: Boolean, default: undefined },
+
+    // Opt OUT of the Meta CAPI Purchase event for this booking. Carried over
+    // from the pending row, which carries it from the create-pending request.
+    // Defaults false, so a booking that never asked for it reports exactly as
+    // it always has — see the note on `skipMetaCapi` in
+    // controller/poojaBooking/poojaBookingController.ts.
+    skipMetaCapi: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

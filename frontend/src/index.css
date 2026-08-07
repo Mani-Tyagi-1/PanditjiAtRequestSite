@@ -8,41 +8,6 @@
    font-display …). Everything is namespaced `viv-` so it cannot collide with
    the palette the rest of the site already uses.
    ========================================================================== */
-@theme {
-  /* Ivory / paper */
-  --color-viv-ivory: #fdfaf4;
-  --color-viv-sheet: #fcf6ef;
-  --color-viv-tint: #fef5ec;
-  --color-viv-tint-2: #f8ecdd;
-
-  /* Maroon */
-  --color-viv-deep: #210908;
-  /* mobile checkout page background */
-  --color-viv-maroon-900: #321110;
-  /* footer */
-  --color-viv-maroon-800: #441312;
-  /* finale band */
-  --color-viv-maroon: #611a1b;
-  /* brand / premium tier */
-  --color-viv-maroon-600: #7a1f1e;
-
-  /* Accents */
-  --color-viv-orange: #c04a01;
-  --color-viv-orange-lt: #e8730f;
-  --color-viv-gold: #bf8b34;
-  --color-viv-gold-lt: #d2a45d;
-  --color-viv-gold-pale: #f5e6c8;
-  --color-viv-cream: #fff6e6;
-
-  /* Type */
-  --color-viv-ink: #3a2a20;
-  --color-viv-muted: #7c6a5c;
-  --color-viv-muted-2: #a08d7d;
-  --color-viv-hair: rgba(191, 139, 52, 0.26);
-
-  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --font-body: "Inter", system-ui, -apple-system, sans-serif;
-}
 
 /* ==========================================================================
    MAHAKAL SAVAN — antique parchment, aged gold, deep crimson
@@ -60,12 +25,12 @@
      body       DM Sans            — every paragraph and list line
      buttons    Inter              — CTAs and controls only
    ========================================================================== */
-@theme {
+/* @theme {
   --font-svn-head: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --font-svn-sub: "Cinzel", "Cormorant Garamond", Georgia, serif;
   --font-svn-body: "DM Sans", system-ui, -apple-system, sans-serif;
   --font-svn-ui: "Inter", system-ui, -apple-system, sans-serif;
-}
+} */
 
 .svn {
   font-family: var(--font-svn-body);

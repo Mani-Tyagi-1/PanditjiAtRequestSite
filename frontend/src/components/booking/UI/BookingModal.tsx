@@ -350,20 +350,11 @@ export default function BookingModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasAutoOpenedSummary, setHasAutoOpenedSummary] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [hasTrackedDetails, setHasTrackedDetails] = useState(false);
-
-  const trackCustomerDetails = () => {
-    if (bhaktName.trim().length >= 3 && contactNumber.trim().length >= 10 && !hasTrackedDetails) {
-      if (window.fbq) {
-        window.fbq("track", "CustomerDetailsFilled", {
-          content_name: pooja?.poojaNameEng || "Pooja Booking",
-          bhaktName: bhaktName,
-          contactNumber: contactNumber,
-        });
-      }
-      setHasTrackedDetails(true);
-    }
-  };
+  // `trackCustomerDetails` fired a CustomerDetailsFilled pixel off the name and
+  // phone fields. Removed with the rest of this flow's Meta reporting — it also
+  // put the devotee's name and number into a pixel payload, which is the one
+  // thing here worth not restoring. The onBlur handlers it was wired to are
+  // gone too.
 
   const [alertConfig, setAlertConfig] = useState<{
     show: boolean;
@@ -764,7 +755,6 @@ export default function BookingModal({
 
       setIsProcessing(false);
       setAlertConfig({ show: false, title: "", message: "", type: "info" });
-      setHasTrackedDetails(false);
 
       if (user) {
         try {
@@ -931,24 +921,11 @@ export default function BookingModal({
 
     setIsProcessing(true);
 
-    if (window.fbq) {
-      window.fbq("track", "InitiateCheckout", {
-        content_ids: [pooja?._id || pooja?.id],
-        productname: [pooja?.poojaNameEng || "Pooja Booking"],
-        content_name: pooja?.poojaNameEng || "Pooja Booking",
-        content_type: "product",
-        value: discountedPrice,
-        currency: "INR",
-      });
-    }
-
-    window.dispatchEvent(new CustomEvent("InitiateCheckout", {
-      detail: {
-        poojaId: pooja?._id || pooja?.id,
-        amount: discountedPrice,
-        productname: pooja?.poojaNameEng || "Pooja Booking"
-      }
-    }));
+    // NO InitiateCheckout pixel, and no `InitiateCheckout` DOM event either —
+    // that event was the GTM hook for the same signal, so leaving it would put
+    // the conversion back on the tag-manager side of the fence. Bookings from
+    // the generic /puja/:id flow report nothing to Meta; see `skipMetaCapi` in
+    // the pending payload below.
 
     const apiUrl = API_URL;
 
@@ -1085,6 +1062,18 @@ export default function BookingModal({
           ritualPlace: selectedRitualPlace,
         }),
         ...(partnerRefCode && { referralCode: partnerRefCode }),
+        // Bookings from the generic /puja/:id flow report NOTHING to Meta —
+        // no browser pixel (all removed from this file and from PujaPage) and
+        // no server CAPI Purchase. This flag is the server half: it is stored
+        // on the booking and checked in finalizePendingPoojaBooking, so the
+        // event stays suppressed whether the purchase is finalised by the
+        // browser or by the Razorpay webhook.
+        //
+        // Every booking flow shares this endpoint, so it MUST be sent from
+        // here and only from here. The themed booking pages (Savan, Banke
+        // Bihari, Hanuman, Kaal Bhairav, Live Mandir) omit it and keep
+        // reporting exactly as before.
+        skipMetaCapi: true,
         address:
           mode === "offline"
             ? {
@@ -1240,18 +1229,11 @@ export default function BookingModal({
               }
             })();
 
-            // Track successful purchase — eventID must match server CAPI event_id for deduplication
-            if (window.fbq) {
-              const capiEventId = `puja_purchase_${response.razorpay_order_id}`;
-              window.fbq("track", "Purchase", {
-                content_ids: [pooja?._id || pooja?.id],
-                productname: [pooja?.poojaNameEng || "Pooja Booking"],
-                content_name: pooja?.poojaNameEng || "Pooja Booking",
-                content_type: "product",
-                value: discountedPrice,
-                currency: "INR",
-              }, { eventID: capiEventId });
-            }
+            // NO Purchase pixel. This block is dormant (payments are taken over
+            // WhatsApp), and it fired one keyed to the server's CAPI event_id
+            // for dedup. Both halves are off for this flow now — the server
+            // event is suppressed by `skipMetaCapi` — so the pixel is removed
+            // here too rather than left to come back with the block.
           } catch (err: any) {
             triggerAlert("Booking Error", err.message || "Failed to complete booking after payment.", "error");
           } finally {
@@ -1305,17 +1287,9 @@ export default function BookingModal({
         }).catch((err) => console.error("Coupon apply failed:", err));
       }
 
-      // Track successful submission via pixel
-      if (window.fbq) {
-        window.fbq("track", "Purchase", {
-          content_ids: [pooja?._id || pooja?.id],
-          productname: [pooja?.poojaNameEng || "Pooja Booking"],
-          content_name: pooja?.poojaNameEng || "Pooja Booking",
-          content_type: "product",
-          value: discountedPrice,
-          currency: "INR",
-        });
-      }
+      // NO Purchase pixel here. Bookings from the generic /puja/:id flow are
+      // deliberately not reported to Meta — see `skipMetaCapi` in the pending
+      // payload above, which suppresses the matching server CAPI event.
 
       // Booking created — drop this row out of the abandoned-lead list.
       markCartConverted();
@@ -1459,7 +1433,6 @@ export default function BookingModal({
                     <div className="space-y-3">
                       <input type="text" placeholder="Your full name*" value={bhaktName}
                         onChange={(e) => setBhaktName(e.target.value)}
-                        onBlur={trackCustomerDetails}
                         className="bm-input" />
 
                       <input type="text" placeholder="Gotra (optional)" value={gotra}
@@ -1468,7 +1441,6 @@ export default function BookingModal({
                       <input type="tel" inputMode="numeric" maxLength={10}
                         placeholder="Contact number*" value={contactNumber}
                         onChange={(e) => setContactNumber(onlyDigits10(e.target.value))}
-                        onBlur={trackCustomerDetails}
                         className="bm-input" />
 
                       <input type="email" placeholder="Email address*" value={emailId}

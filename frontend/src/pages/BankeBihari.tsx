@@ -662,9 +662,9 @@ export default function BankeBihariPage() {
         </div>
 
         {/* ── Hero banner ── artwork only, no overlaid copy.
-            Auto-advances every few seconds and can be swiped by hand. With a
-            single banner in BANNER_IMAGES it renders as a plain still, so this
-            is the same hero it always was until more artwork is pasted in. */}
+            Three banners from BANNER_IMAGES: auto-advances every few seconds,
+            swipeable by hand, with tappable dots. Drop the list back to one
+            entry and it degrades to a plain still with no carousel chrome. */}
         <HeroBannerCarousel
           images={bannerImages}
           alt={puja.poojaNameEng}

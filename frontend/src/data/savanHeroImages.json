@@ -15,8 +15,8 @@
     "Regenerate with: node scripts/regenerate-hero-images.mjs"
   ],
   "hero": {
-    "src": "/hero/ujjain-rudrabhishek-448.webp",
-    "srcSet": "/hero/ujjain-rudrabhishek-448.webp 448w, /hero/ujjain-rudrabhishek-896.webp 896w",
+    "src": "/hero/ujjain-rudrabhishek-v2-448.webp",
+    "srcSet": "/hero/ujjain-rudrabhishek-v2-448.webp 448w, /hero/ujjain-rudrabhishek-v2-896.webp 896w",
     "sizes": "(max-width: 448px) 100vw, 448px",
     "width": 448,
     "height": 252

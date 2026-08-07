@@ -1,5 +1,5 @@
 /**
- * Seeds the "Shree Mahakaleshwar Rudrabhishek Mahapuja" (Shri Mahakaleshwar
+ * Seeds the "Shree Ujjain Rudrabhishek Mahapuja" (Shri Mahakaleshwar
  * Jyotirlinga Temple, Ujjain) catalog entry.
  *
  * ⚠️  FILE NAME. Still seedKashiMahadevPuja.ts: the puja moved from Kashi
@@ -60,8 +60,8 @@ const BANNER =
  */
 const KASHI_MAHADEV_PUJA = {
   poojaID: POOJA_ID,
-  poojaNameEng: "Shree Mahakaleshwar Rudrabhishek Mahapuja",
-  poojaNameHindi: "श्री महाकालेश्वर रुद्राभिषेक महापूजा",
+  poojaNameEng: "Shree Ujjain Rudrabhishek Mahapuja",
+  poojaNameHindi: "श्री उज्जैन रुद्राभिषेक महापूजा",
   poojaMode: "online" as const,
   poojaPriceOnline: 851,
   poojaPriceOffline: 851,

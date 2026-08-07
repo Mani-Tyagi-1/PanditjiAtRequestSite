@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  Shree Mahakaleshwar Rudrabhishek Mahapuja — FRONTEND-ONLY puja detail data.
+//  Shree Ujjain Rudrabhishek Mahapuja — FRONTEND-ONLY puja detail data.
 //
 //  This is an ONLINE puja: the puja is performed on the devotee's behalf by
 //  verified pandits at Shri Mahakaleshwar Jyotirlinga Temple (Ujjain, Madhya
@@ -257,7 +257,7 @@ export const SAVAN_PACKAGES: SavanPackage[] = [
         tagline: "The essential Savan Somwar abhishek",
         price: 851,
         core: [
-            "Rudrabhishek performed in your name at Mahakal, Ujjain",
+            "Rudrabhishek performed in your name in Mahakal Nagri Ujjain",
             "Personalised Sankalp with your name & gotra",
             "Full puja video shared on WhatsApp",
         ],
@@ -397,8 +397,8 @@ export const kashiMahadevPuja = {
     // also carry the puja name, so a stable string is fine here.
     _id: KASHI_MAHADEV_POOJA_ID,
     poojaID: KASHI_MAHADEV_POOJA_ID,
-    poojaNameEng: "Shree Mahakaleshwar Rudrabhishek Mahapuja",
-    poojaNameHindi: "श्री महाकालेश्वर रुद्राभिषेक महापूजा",
+    poojaNameEng: "Shree Ujjain Rudrabhishek Mahapuja",
+    poojaNameHindi: "श्री उज्जैन रुद्राभिषेक महापूजा",
     poojaMode: "online", // performed at Shri Mahakaleshwar Temple on your behalf
     poojaPriceOnline: 851,
     poojaPriceOffline: 851,

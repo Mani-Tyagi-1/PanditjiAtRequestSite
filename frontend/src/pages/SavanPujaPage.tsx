@@ -69,7 +69,7 @@ const MANTRA_SIDE_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com
  * picture, so a missing hero file would have silently swapped in unrelated
  * art rather than a lower-fidelity copy of the same banner.
  */
-const HERO_ORIGIN_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner.png.webp";
+const HERO_ORIGIN_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banne1.webp";
 
 /**
  * Banners that auto-advance after the hero above.
@@ -87,11 +87,11 @@ const HERO_ORIGIN_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com
  */
 const HERO_EXTRA_SLIDES: { src: string; alt: string }[] = [
     {
-        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Ujjain-banner1.png.webp",
+        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banner2.png.webp",
         alt: "Why Rudrabhishek in Ujjain? Ujjain is the sacred city of Mahakal and home to the revered Shri Mahakaleshwar Jyotirlinga. Performing Rudrabhishek here is believed to invite Lord Shiva's blessings for peace, protection, spiritual strength and removal of obstacles.",
     },
     {
-        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/ujjain-banner2.png.webp",
+        src: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banner3.png.webp",
         alt: "Puja process: 1. Choose the Rudrabhishek Puja. 2. Enter your name and gotra during booking. 3. Pandit ji performs your Sankalp and puja in Ujjain. 4. Receive the puja video on WhatsApp, and prasad if chosen.",
     },
 ];
@@ -283,7 +283,7 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
 // them anyway; restore this from git if the standalone row is ever wanted back.
 
 // ── Page ───────────────────────────────────────────────────────
-// FRONTEND-ONLY Shree Mahakaleshwar Rudrabhishek Mahapuja — an online
+// FRONTEND-ONLY Shree Ujjain Rudrabhishek Mahapuja — an online
 // Rudrabhishek performed on the devotee's behalf at Shri Mahakaleshwar
 // Jyotirlinga Temple, Ujjain on the last Savan Somwar. Renders entirely from frontend data
 // but carries a distinct Savan/Shiv theme (the emerald / light-aqua / temple-gold palette, abhishek
@@ -346,15 +346,16 @@ export default function SavanPujaPage() {
     // than quoting the seva they just picked.
     const price = selectedPkg.price;
     const reviews = seededReviews(pujaId, 9);
-    const mandirName = `${puja.templeName}, ${puja.templeLocation}`;
     // The city on its own ("Ujjain"). `templeLocation` is written city-first
     // for exactly this reason — see the note on that field.
     const templeCity = puja.templeLocation.split(",")[0].trim();
     // City only ("Mahakal, Ujjain") for the meta line — the state adds length
-    // without telling a devotee anything they don't already know. The full
-    // name still goes to the SEO description, where the extra words earn their
-    // place.
+    // without telling a devotee anything they don't already know.
     const mandirShort = `${puja.templeName}, ${templeCity}`;
+    // How the seva itself is described — "Rudrabhishek in Mahakal Nagri
+    // Ujjain", never "Rudrabhishek at Mahakal". `mandirShort` stays as it is:
+    // it labels the place, this phrases the puja.
+    const pujaPlace = "Mahakal Nagri Ujjain";
 
     // ── Hero carousel ─────────────────────────────────────────────────────
     // The extra banners mount only after the LCP image has painted, so a
@@ -542,7 +543,7 @@ export default function SavanPujaPage() {
           <title>{`${puja.poojaNameEng} at ${templeCity} | Pandit Ji At Request`}</title>
           <meta
             name="description"
-            content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Rudrabhishek performed on your behalf at ${mandirName} on the last Savan Somwar, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
+            content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Rudrabhishek performed on your behalf in ${pujaPlace} on the last Savan Somwar, ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
           />
           <link rel="canonical" href={`https://panditjiatrequest.com/${KASHI_MAHADEV_PUJA_SLUG}`} />
           {/* Social share preview (WhatsApp / Facebook / X). This page has a
@@ -550,12 +551,12 @@ export default function SavanPujaPage() {
               without these every share renders as a bare URL with no card. */}
           <meta property="og:type" content="product" />
           <meta property="og:site_name" content="Pandit Ji At Request" />
-          <meta property="og:title" content={`${puja.poojaNameEng} — ${puja.occasion} at ${mandirShort}`} />
-          <meta property="og:description" content={`Rudrabhishek performed on your behalf at ${mandirName} on ${puja.pujaDate}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}.`} />
+          <meta property="og:title" content={`${puja.poojaNameEng} — ${puja.occasion} in ${pujaPlace}`} />
+          <meta property="og:description" content={`Rudrabhishek performed on your behalf in ${pujaPlace} on ${puja.pujaDate}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}.`} />
           <meta property="og:url" content={`https://panditjiatrequest.com/${KASHI_MAHADEV_PUJA_SLUG}`} />
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content={`${puja.poojaNameEng} — ${puja.occasion} at ${puja.templeName}`} />
-          <meta name="twitter:description" content={`Rudrabhishek at ${mandirName} on ${puja.pujaDate}. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}, puja video on WhatsApp.`} />
+          <meta name="twitter:title" content={`${puja.poojaNameEng} — ${puja.occasion} in ${pujaPlace}`} />
+          <meta name="twitter:description" content={`Rudrabhishek in ${pujaPlace} on ${puja.pujaDate}. Packages from ₹${SAVAN_PACKAGES[0].price.toLocaleString("en-IN")}, puja video on WhatsApp.`} />
           {/* Only emitted once the banner artwork exists — an empty og:image is
               worse than none. Deliberately the ORIGIN CDN url, not a resized
               one: social scrapers should fetch the original. */}
@@ -733,10 +734,7 @@ export default function SavanPujaPage() {
           )}
         </div>
 
-        {/* `svn-sheet-head` burns the parchment where it meets the hero above
-            — see the note on that class for why the shading lives here and not
-            on the page root. */}
-        <div className="svn-sheet-head px-4 pt-3 pb-4 space-y-4">
+        <div className="px-4 pt-3 pb-4 space-y-4">
           {/* ── Puja name + meta ─────────────────────────────────────────────
               Three lines: name, then the Hindi name with the date riding the
               empty right half of that line, then deity + place. The rating
@@ -1002,7 +1000,7 @@ export default function SavanPujaPage() {
               ॐ नमः शिवाय
             </p>
             <p className="font-svn-sub text-[9px] uppercase tracking-[0.14em] text-[#E2BF62]/85 mt-1">
-              Chanted through your Rudrabhishek at {puja.templeName}
+              Chanted through your Rudrabhishek in {pujaPlace}
             </p>
             {MANTRA_SIDE_IMAGE && (
               <img
@@ -1026,7 +1024,7 @@ export default function SavanPujaPage() {
           {/* ── Online-puja reassurance line ── */}
           <div className="flex items-center justify-center gap-1.5 bg-[#F3E5BF] border border-[#D8B66A] text-[#7A1622] rounded-lg px-3 py-2 text-[11.5px] font-medium text-center">
             <MessageCircle className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
-            Puja performed at {puja.templeName} · receive the video with your
+            Rudrabhishek performed in {pujaPlace} · receive the video with your
             name &amp; gotra on WhatsApp
           </div>
 
@@ -1051,7 +1049,7 @@ export default function SavanPujaPage() {
             <div className="space-y-2.5">
               {[
                 "Enter your name, gotra and phone number",
-                `Pandit ji performs the Rudrabhishek at ${puja.templeName}`,
+                `Pandit ji performs the Rudrabhishek in ${pujaPlace}`,
                 "Sankalp is taken in your name & gotra",
                 "Puja video is shared with you on WhatsApp",
                 "Add the prasad box while booking to have blessed prasad couriered home",

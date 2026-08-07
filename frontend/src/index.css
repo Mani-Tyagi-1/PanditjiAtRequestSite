@@ -78,13 +78,20 @@
 }
 
 /* --------------------------------------------------------------------------
-   Vintage parchment — a single long sheet, burnt at its edges and lighter
-   through the middle, the way a real aged page photographs.
+   Vintage parchment — a single long sheet, aged by its stains and its grain
+   rather than by its edges.
 
-   Six layers, in paint order:
-     1  burnt rails      the two long edges, dark and falling off by ~19%
-     2–4 foxing          irregular stains, TILED down the page
-     5–6 tooth           two 3px cross-hatches at ~2.5% for the grain
+   Five layers, in paint order:
+     1–3 foxing          irregular stains, TILED down the page
+     4–5 tooth           two 3px cross-hatches at ~2.5% for the grain
+
+   It used to open with a sixth layer above these: burnt rails down the two
+   long edges, 0.34 brown falling off over ~19%. On the 448px column that put a
+   dark ~85px band along each side, heaviest at the top where it ran into the
+   sheet-head burn — the "blackish shade on the corners". The sheet is bounded
+   by its own gold border and the page's outer shadow, so the rails were doing
+   framing work that was already done, at the cost of the two corners a devotee
+   reads first. The foxing and the tooth carry the aged-paper read on their own.
 
    The foxing tiles rather than stretching. Stretched over a ~4400px document
    three blooms are invisible smears; tiled at 940 / 1180 / 1460px with
@@ -104,41 +111,27 @@
 .svn-parchment {
   background-color: #f6f0e3;
   background-image:
-    linear-gradient(90deg,
-      rgba(118, 84, 34, 0.34) 0%,
-      rgba(118, 84, 34, 0.13) 5%,
-      rgba(118, 84, 34, 0.035) 11%,
-      rgba(118, 84, 34, 0) 19%,
-      rgba(118, 84, 34, 0) 81%,
-      rgba(118, 84, 34, 0.035) 89%,
-      rgba(118, 84, 34, 0.13) 95%,
-      rgba(118, 84, 34, 0.34) 100%),
     radial-gradient(40% 24% at 14% 16%, rgba(146, 106, 42, 0.11), transparent 70%),
     radial-gradient(32% 19% at 87% 44%, rgba(122, 22, 34, 0.055), transparent 72%),
     radial-gradient(48% 27% at 33% 76%, rgba(150, 112, 44, 0.095), transparent 70%),
     repeating-linear-gradient(45deg, rgba(122, 90, 40, 0.03) 0 1px, transparent 1px 3px),
     repeating-linear-gradient(-45deg, rgba(122, 90, 40, 0.024) 0 1px, transparent 1px 3px);
-  background-repeat: no-repeat, repeat-y, repeat-y, repeat-y, repeat, repeat;
-  background-size: 100% 100%, 100% 940px, 100% 1180px, 100% 1460px, auto, auto;
-  background-position: center, 0 0, 0 260px, 0 540px, 0 0, 0 0;
+  background-repeat: repeat-y, repeat-y, repeat-y, repeat, repeat;
+  background-size: 100% 940px, 100% 1180px, 100% 1460px, auto, auto;
+  background-position: 0 0, 0 260px, 0 540px, 0 0, 0 0;
 }
 
-/* The sheet's burnt TOP edge, where the parchment meets the wood-framed hero
-   — the counterpart to the wood footer at its foot, so the page is shaded on
-   all four sides.
+/* `.svn-sheet-head` used to live here: a brown shade painted across the top
+   ~260px of the content wrapper, where the parchment meets the wood-framed
+   hero. Together with `.svn-parchment`'s burnt rails (also gone, see above) it
+   is what darkened the head of the sheet. Narrowing it to an ellipse that
+   cleared the corners was not enough — the band still read as a smudge under
+   the banner — so the shade is removed entirely and the parchment now runs
+   clean from the hero down. The class name is gone from the pages too; nothing
+   references it.
 
-   It goes on the CONTENT wrapper, not on `.svn-parchment`: the root's own top
-   ~300px sits under the sticky header, the occasion ribbon and the hero, all
-   of them opaque, so a top burn there would be painted and never once seen. */
-.svn-sheet-head {
-  background-image: linear-gradient(180deg,
-      rgba(118, 84, 34, 0.3) 0%,
-      rgba(118, 84, 34, 0.1) 34%,
-      rgba(118, 84, 34, 0) 100%);
-  background-repeat: no-repeat;
-  background-size: 100% 260px;
-  background-position: top;
-}
+   If a dark strip is still visible hard against the banner, that is the bottom
+   edge of the banner ARTWORK itself, not CSS — recut the image. */
 
 /* Ancient-manuscript separator: an engraved gold hairline that fades out at
    both ends, with a small lozenge at its centre. Used standalone between

@@ -323,7 +323,7 @@ export default function SavanPujaBookingPage() {
     const boxLabel = shippedBox
         ? `${shippedBox.name}${selectedPkg.prasadBoxFree ? " (free)" : ` (paid add-on ${money(PRASAD_BOX_PRICE)})`}: ${shipList.join(", ")}`
         : "";
-    // e.g. "Shree Mahakaleshwar Rudrabhishek Mahapuja — Rudri Path Mahaseva [Prasad Box + Shiv Chalisa (free): Dry Prasad…]"
+    // e.g. "Shree Ujjain Rudrabhishek Mahapuja — Rudri Path Mahaseva [Prasad Box + Shiv Chalisa (free): Dry Prasad…]"
     const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${boxLabel ? ` [${boxLabel}]` : ""}`;
 
     // Line-item breakdown reported to Meta alongside `value`. The package price
@@ -773,10 +773,8 @@ export default function SavanPujaBookingPage() {
                 </div>
             */}
 
-            {/* Content. `svn-sheet-head` burns the parchment where it meets the
-                ribbon above — see the note on that class for why the shading
-                lives on the content wrapper and not on the page root. */}
-            <div className="svn-sheet-head px-5 pt-4 space-y-6">
+            {/* Content. */}
+            <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
                     <div className="space-y-6">
                         {/* Order summary — reflects the chosen package + extras */}
@@ -1389,7 +1387,7 @@ export default function SavanPujaBookingPage() {
                             Booking Confirmed! 🙏
                         </h3>
                         <p className="text-[13px] text-[#665C50] mt-2 max-w-[280px] leading-relaxed">
-                            Your <span className="font-semibold text-[#23201B]">{puja.poojaNameEng}</span> at <span className="font-semibold text-[#23201B]">{puja.templeName}</span> is booked for <span className="font-semibold text-[#23201B]">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
+                            Your <span className="font-semibold text-[#23201B]">{puja.poojaNameEng}</span> in <span className="font-semibold text-[#23201B]">Mahakal Nagri Ujjain</span> is booked for <span className="font-semibold text-[#23201B]">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
                         </p>
                         {/* Gold leaf, on the one sacred line — the same treatment
                             the detail page's mantra strip reserves for it, and

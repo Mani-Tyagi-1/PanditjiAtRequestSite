@@ -122,7 +122,7 @@ export const PRASAD_BOXES: Record<PrasadBoxTier, PrasadBox> = {
         adds: [
             "Radha Naam Tulsi Mala",
             "Mor Pankh",
-            "Small Dahi Handi",
+            "Small Handi",
             "3 Laddu Gopal Ji Dress",
         ],
     },
@@ -156,7 +156,7 @@ export const ITEM_IMAGES: Record<string, string> = {
     "Jaap Counter": "https://rukminim2.flixcart.com/image/480/640/xif0q/tally-counter/q/w/d/99999-dg11pcs1-degno-original-imahfzeztnjd49f9.jpeg?q=90",
     "Radha Naam Tulsi Mala": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/RADHA_NAAM_MALA.png",
     "Mor Pankh": "https://png.pngtree.com/png-vector/20250310/ourmid/pngtree-3d-realistic-peacock-feather-png-image_15681047.png",
-    "Small Dahi Handi": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DAHI_HANDI.png",
+    "Small Handi": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/DAHI_HANDI.png",
     "Brass Laddu Gopal Ji Idol": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_IDOL.png",
     "3 Laddu Gopal Ji Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
     "5 Laddu Gopal Ji Dress": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/LADDU_GOPAL_DRESS.png",
@@ -261,8 +261,19 @@ export const FLUTE_FEATHER_IMAGE =
 export const MAKHAN_MATKI_IMAGE =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/With%20makhan.webp";
 
- export const BANNER_IMG =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banke%20bihariji%20banner1.webp";
+/**
+ * Slide 0 of the hero carousel, and the artwork this puja is represented by
+ * everywhere else: `poojaCardImage`, `poojaMainImage`, the page's `og:image`
+ * and LCP preload, and the Janmashtami slot on the Home page.
+ *
+ * Every consumer serves it through `optimizedImg`/`bannerImg`, which resizes to
+ * display width and re-encodes to WebP at the edge — so the ~2.6 MB PNG origin
+ * arrives as ~127 KB. It is only the raw file on the onError fallback path,
+ * when the resizer is unreachable. A WebP re-export on the CDN would make that
+ * fallback cheap too.
+ */
+export const BANNER_IMG =
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banke%20Bihariji%20banner1.png";
 
 /**
  * ▶ PASTE EXTRA HERO BANNERS HERE ◀
@@ -277,11 +288,12 @@ export const MAKHAN_MATKI_IMAGE =
  *
  * Same 2:1-ish crop as the first banner for all of them — the hero band is a
  * fixed height, so a portrait image will be cropped to fit, not letterboxed.
+ * All three below are 1672x941 (16:9), so the band crops each identically.
  */
 export const BANNER_IMAGES: string[] = [
     BANNER_IMG,
-    // "https://…/banner2.webp",
-    // "https://…/banner3.webp",
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banke%20Bihariji%20banner2.png",
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banke%20Bihariji%20banner3.png",
 ];
 
 

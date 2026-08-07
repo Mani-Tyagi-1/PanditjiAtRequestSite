@@ -114,13 +114,42 @@ import React, { Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 
 // Global Auth Context & Modal
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ShopifyCartProvider } from "./context/ShopifyCartContext";
-import LoginModal from "./components/auth/LoginModal";
 import ShopifyCartDrawer from "./components/booking/Shop/ShopifyCartDrawer";
 import AppDownloadModal from "./components/AppDownloadModal";
 import AppLayout from "./components/layout/AppLayout";
 import { useCurrencyRoot } from "./utils/currency";
+
+/**
+ * The login modal is the ONLY thing in App's eager import graph that pulls in
+ * framer-motion, and framer-motion is a 113 KB / 37.5 KB gz chunk of its own
+ * (see `manualChunks` in vite.config.ts). Imported statically it was
+ * `modulepreload`ed into the critical path of EVERY route on the site — paid
+ * before first paint by every devotee, on a modal most of them never open.
+ *
+ * Lazy alone would not have moved it: the modal was rendered unconditionally
+ * and only returned null once inside, so React.lazy would have resolved the
+ * chunk on first render anyway. `LazyLoginModal` below is what makes the split
+ * real — it reads the open flag and mounts nothing at all until the modal is
+ * actually asked for.
+ */
+const LoginModal = React.lazy(() => import("./components/auth/LoginModal"));
+
+/**
+ * Mounts the login modal only while it is open, so its chunk (and
+ * framer-motion behind it) is fetched on the tap that opens it rather than on
+ * first paint. Must live inside <AuthProvider> — it reads that context.
+ */
+function LazyLoginModal() {
+  const { isLoginModalOpen } = useAuth();
+  if (!isLoginModalOpen) return null;
+  return (
+    <Suspense fallback={null}>
+      <LoginModal />
+    </Suspense>
+  );
+}
 
 // Lazy load all other pages
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
@@ -251,7 +280,7 @@ function App() {
   return (
     <AuthProvider>
       <ShopifyCartProvider>
-      <LoginModal />
+      <LazyLoginModal />
       <ShopifyCartDrawer />
       <ScrollToTop />
       <PixelPageTracker />

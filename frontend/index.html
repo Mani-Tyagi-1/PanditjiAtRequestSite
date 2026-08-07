@@ -38,10 +38,27 @@
     ═══════════════════════════════════════════════ -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- NOT render-blocking. As a plain stylesheet this sat in front of first
+       paint on a THIRD origin: DNS + TLS + round trip to fonts.googleapis.com
+       before the browser would paint a single pixel, and the font files it
+       names then need the same again for fonts.gstatic.com. `media="print"`
+       makes it a non-blocking fetch; onload promotes it to the real thing.
+       Nothing about the type changes — every family already ships
+       `display=swap`, so text has always painted in the fallback face and
+       swapped on arrival. This only stops the page waiting for the swap to
+       become possible. -->
   <link
     rel="stylesheet"
+    media="print"
+    onload="this.media='all';this.onload=null"
     href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
   />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+    />
+  </noscript>
 
   <!-- Preconnect to image CDNs for faster LCP -->
   <link rel="preconnect" href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com" crossorigin />

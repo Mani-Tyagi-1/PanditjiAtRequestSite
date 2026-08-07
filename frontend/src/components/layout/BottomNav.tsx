@@ -1,6 +1,14 @@
 import { HouseIcon, FireIcon, GiftIcon, BankIcon, StorefrontIcon, type Icon } from "@phosphor-icons/react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+
+/**
+ * NO framer-motion here, deliberately. This nav is rendered by AppLayout, which
+ * App.tsx imports statically — so the one `motion.div` below used to drag the
+ * whole 113 KB / 37.5 KB gz framer-motion chunk into the `modulepreload` set of
+ * EVERY route on the site, before first paint, to play a single 0.3s fade-up on
+ * one button. `svn-nav-pop` in index.css is that animation in ~6 lines of CSS,
+ * runs on the compositor, and costs nothing to download.
+ */
 
 type Tab = {
     label: string;
@@ -41,11 +49,8 @@ export default function BottomNav() {
                                 onClick={() => handleTabClick(path)}
                                 className="flex-1 flex flex-col items-center justify-end h-12 relative active:scale-95 transition-transform"
                             >
-                                <motion.div
-                                    initial={{ y: 30, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 15, delay: 0.15 }}
-                                    className={`flex items-center justify-center w-12 h-12 rounded-full absolute -top-5 border-4 border-white transition-all shadow-md ${
+                                <div
+                                    className={`svn-nav-pop flex items-center justify-center w-12 h-12 rounded-full absolute -top-5 border-4 border-white transition-all shadow-md ${
                                         active
                                             ? "bg-[#E05A10] text-white shadow-orange-500/40"
                                             : "bg-[#FFF2E6] text-orange-600 shadow-orange-100"
@@ -55,7 +60,7 @@ export default function BottomNav() {
                                         size={22}
                                         weight={active ? "fill" : "regular"}
                                     />
-                                </motion.div>
+                                </div>
                                 <span
                                     className={`text-[10.5px] font-semibold transition-colors mt-auto ${
                                         active ? "text-orange-600" : "text-stone-400"

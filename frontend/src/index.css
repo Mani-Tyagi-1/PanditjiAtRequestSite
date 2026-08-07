@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* --------------------------------------------------------------------------
+   The bottom nav's raised Shop button, popping up on mount.
+
+   This replaces a framer-motion spring. It was the last thing holding that
+   library in App.tsx's EAGER import graph, which put a 37.5 KB gz chunk in
+   front of first paint on every route for this one flourish. The curve is an
+   overshoot cubic-bezier standing in for the old spring — close enough that
+   the motion reads the same, at zero download.
+   -------------------------------------------------------------------------- */
+@keyframes svn-nav-pop {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.svn-nav-pop {
+  animation: svn-nav-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+/* Honour a reduced-motion preference: show it, just don't fly it in. */
+@media (prefers-reduced-motion: reduce) {
+  .svn-nav-pop { animation: none; }
+}
+
 /* ==========================================================================
    VEDIC VIVAH SANSKAR — design tokens
    --------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -23,7 +23,12 @@ import { useAuth } from "../../../context/AuthContext";
 import { useShopifyCart } from "../../../context/ShopifyCartContext";
 import { productPrice } from "./shopifyTypes";
 import CodConfirmModal from "./CodConfirmModal";
-import OrderSuccessModal from "./OrderSuccessModal";
+// Lazy: this modal uses framer-motion, and ShopifyCartDrawer is imported
+// statically by App.tsx — so a static import here put that 37.5 KB gz chunk in
+// front of first paint on every route, for a screen shown only after checkout.
+// It is rendered behind an `isSuccess` guard, so the chunk is never fetched
+// until an order actually completes.
+const OrderSuccessModal = lazy(() => import("./OrderSuccessModal"));
 import { money } from "../../../utils/currency";
 
 const GIFT_WRAP_CHARGE = 49;
@@ -348,11 +353,13 @@ export default function ShopifyCartDrawer() {
 
     if (isSuccess) {
         return (
-            <OrderSuccessModal
-                mode={successMode}
-                onContinueShopping={() => { setIsSuccess(false); closeCart(); navigate("/shop"); }}
-                onSeeOrders={() => { setIsSuccess(false); closeCart(); navigate("/profile?tab=shopify"); }}
-            />
+            <Suspense fallback={null}>
+                <OrderSuccessModal
+                    mode={successMode}
+                    onContinueShopping={() => { setIsSuccess(false); closeCart(); navigate("/shop"); }}
+                    onSeeOrders={() => { setIsSuccess(false); closeCart(); navigate("/profile?tab=shopify"); }}
+                />
+            </Suspense>
         );
     }
 

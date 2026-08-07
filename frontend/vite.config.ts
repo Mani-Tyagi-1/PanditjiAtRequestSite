@@ -54,9 +54,41 @@ export default defineConfig(({ mode }) => {
       // deploys and shrink the main entry chunk (build-only — no runtime change).
       rollupOptions: {
         output: {
-          manualChunks: {
-            react: ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
-            motion: ['framer-motion'],
+          /**
+           * Matched by PATH, not by package entry point.
+           *
+           * This was the object form — `{ react: ['react', 'react-dom', …],
+           * motion: ['framer-motion'] }` — which claims only the modules those
+           * specifiers resolve to. The JSX runtime does not resolve to any of
+           * them: `react/jsx-runtime` is a thin wrapper whose real code lives
+           * in `react/cjs/react-jsx-runtime.production.js`, a module id no
+           * entry in that list matched. It therefore went unclaimed, and
+           * Rollup folded it into the first group that imported it — `motion`,
+           * because framer-motion imports the runtime too.
+           *
+           * The effect was severe and completely invisible in the source: every
+           * compiled component imports the JSX runtime, so EVERY route chunk
+           * opened with `import{j as e}from"./motion-*.js"`. That put the whole
+           * 112 KB / 37 KB gz animation library on every page of the site,
+           * including pages that never animate anything, and preloaded it from
+           * index.html ahead of first paint. Adding 'react/jsx-runtime' to the
+           * array does NOT fix it — the wrapper is not the module that carries
+           * the code.
+           *
+           * Matching on the node_modules path catches the package and all of
+           * its internals, wrapper and CJS build alike. Alternatives are
+           * ordered longest-first so `react-router-dom` is not shadowed by the
+           * `react` prefix. `scheduler` is React's own dependency and belongs
+           * in the same chunk.
+           */
+          manualChunks(id: string) {
+            if (!id.includes('node_modules')) return;
+            if (/[\\/]node_modules[\\/](react-router-dom|react-router|react-helmet-async|react-dom|react|scheduler)[\\/]/.test(id)) {
+              return 'react';
+            }
+            if (/[\\/]node_modules[\\/]framer-motion[\\/]/.test(id)) {
+              return 'motion';
+            }
           },
         },
       },

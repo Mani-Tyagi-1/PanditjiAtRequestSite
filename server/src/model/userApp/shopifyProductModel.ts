@@ -85,6 +85,30 @@ export interface IShopifyProduct {
   title: string;
   totalInventory?: number;
   variants?: IShopifyVariant[];
+
+  /**
+   * Cross-sell-only product: shown on the Vedic Vivah page, hidden from the
+   * shop. These were added for the marriage flow and have no business in a
+   * general product grid — but they are ordinary Shopify products, so nothing
+   * else tells them apart. The admin sets this; every shop surface honours it.
+   */
+  vivahOnly?: boolean;
+
+  /**
+   * Field names the admin has edited in our own Mongo, e.g. ["descriptionHtml"].
+   *
+   * A Shopify sync writes every field it owns. Without this list one sync
+   * silently reverts every correction made here — precisely the damage a
+   * manual "Sync now" button would otherwise do. Listed fields are skipped by
+   * the sync and stay ours.
+   */
+  manualOverrides?: string[];
+
+  /** `updatedAt` as Shopify reports it — lets a sync skip untouched products. */
+  shopifyUpdatedAt?: Date | null;
+  /** When our copy was last refreshed from Shopify. */
+  lastSyncedAt?: Date | null;
+
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -167,11 +191,22 @@ const shopifyProductSchema = new Schema<IShopifyProduct>(
     title: { type: String, required: true, index: true },
     totalInventory: { type: Number, default: 0 },
     variants: [VariantSchema],
+
+    // Channel visibility — see the interface above.
+    vivahOnly: { type: Boolean, default: false, index: true },
+
+    // Sync bookkeeping.
+    manualOverrides: { type: [String], default: [] },
+    shopifyUpdatedAt: { type: Date, default: null },
+    lastSyncedAt: { type: Date, default: null },
   },
   {
     timestamps: true,
   }
 );
+
+/* The shop's default query: active, not vivah-only, newest first. */
+shopifyProductSchema.index({ vivahOnly: 1, status: 1, createdAt: -1 });
 
 const ShopifyProduct: Model<IShopifyProduct> =
   panditJiAtRequestMongooose.model<IShopifyProduct>(

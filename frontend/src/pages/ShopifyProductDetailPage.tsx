@@ -250,12 +250,12 @@ export default function ShopifyProductDetailPage() {
                 </div>
 
                 {/* Description */}
-                {product.descriptionHtml && (
+                {(product.description || product.descriptionHtml) && (
                     <div>
                         <h3 className="text-[12px] font-black uppercase tracking-wider text-stone-500 mb-1.5">Description</h3>
                         <div
                             className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm text-[12.5px] text-stone-600 leading-relaxed space-y-2 shopify-description"
-                            dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+                            dangerouslySetInnerHTML={{ __html: product.description || product.descriptionHtml }}
                         />
                     </div>
                 )}

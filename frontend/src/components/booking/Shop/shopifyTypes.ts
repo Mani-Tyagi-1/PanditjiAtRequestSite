@@ -25,6 +25,15 @@ export type ShopifyProduct = {
     title: string;
     handle: string;
     descriptionHtml?: string;
+    /**
+     * Added by the API alongside `descriptionHtml`, never in place of it:
+     * `descriptionHtml` is empty on every product created by hand or synced
+     * before the sync asked Shopify for it, so the server falls back to the SEO
+     * description. Optional because the lean list view (`listView=true`) skips
+     * the normaliser and ships the raw documents.
+     * See server/src/controller/userApp/shopifyProductController.ts.
+     */
+    description?: string;
     featuredImage?: ShopifyImage;
     media?: ShopifyMedia[];
     priceRangeV2?: {

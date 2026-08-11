@@ -35,13 +35,21 @@ export type BookingCardData = {
     amount?: number;
     currency?: string;
     chargedAmount?: number;
-    status: "confirmed" | "pending" | "completed" | "cancelled";
+    /**
+     * "balance_due" is a CONFIRMED booking that still owes money — a puja booked
+     * with an advance. Calling it "pending" would read as "we have not taken
+     * your booking", which is the opposite of what happened.
+     */
+    status: "confirmed" | "pending" | "completed" | "cancelled" | "balance_due";
+    /** Still owed, in INR. Only set on an advance booking. */
+    balanceDue?: number;
     /** Online / at-home, for pooja bookings. */
     mode?: "online" | "offline";
     reference?: string;
 };
 
 const STATUS = {
+    balance_due: { label: "Balance due", Icon: Clock3, cls: "bg-amber-50 text-amber-800 border-amber-200" },
     completed: { label: "Completed", Icon: CheckCircle2, cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
     confirmed: { label: "Confirmed", Icon: CheckCircle2, cls: "bg-blue-50 text-blue-700 border-blue-200" },
     pending: { label: "Payment pending", Icon: Clock3, cls: "bg-amber-50 text-amber-800 border-amber-200" },
@@ -73,10 +81,15 @@ export default function BookingCard({
     kind,
     data,
     onClick,
+    onPayBalance,
+    payingId,
 }: {
     kind: BookingKind;
     data: BookingCardData;
     onClick?: () => void;
+    /** Settle an advance booking's balance. Omit and the button never renders. */
+    onPayBalance?: (bookingId: string) => void;
+    payingId?: string | null;
 }) {
     const status = STATUS[data.status] ?? STATUS.confirmed;
     const KindIcon = KIND_ICON[kind];
@@ -162,6 +175,25 @@ export default function BookingCard({
                     </span>
                 )}
             </div>
+
+            {/* Row 4 — settle the balance. Rendered only when there is one, and
+                stopPropagation so tapping Pay does not also open the card. */}
+            {typeof data.balanceDue === "number" && data.balanceDue > 0 && onPayBalance && (
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onPayBalance(data.id);
+                    }}
+                    disabled={payingId === data.id}
+                    className="mt-2.5 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-[12.5px] font-bold text-white shadow-sm transition-all hover:from-orange-600 hover:to-orange-700 active:scale-[0.99] disabled:opacity-60"
+                >
+                    {payingId === data.id
+                        ? "Opening payment…"
+                        : `Pay remaining ₹${Math.round(data.balanceDue).toLocaleString("en-IN")}`}
+                </button>
+            )}
         </Tag>
     );
 }

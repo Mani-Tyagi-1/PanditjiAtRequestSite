@@ -64,10 +64,21 @@ function pujaTypeOf(b: any): string {
     return b?.templeName ? "Temple Seva" : "Puja";
 }
 
+/** Rupees still owed. Bookings made before advances existed have no amountPaid. */
+function balanceDueOf(b: any): number {
+    const total = Number(b?.amount) || 0;
+    const paid = Number(b?.amountPaid) || 0;
+    if (b?.isPaymentDone || b?.paymentStatus === "paid") return 0;
+    return Math.max(0, Math.round((total - paid) * 100) / 100);
+}
+
 function statusOf(b: any): BookingCardData["status"] {
     if (b?.isCompleted) return "completed";
     if (b?.status === "cancelled" || b?.cancellation) return "cancelled";
     if (b?.isPaymentDone || b?.paymentStatus === "paid") return "confirmed";
+    // Something was paid but not everything: an advance booking. It IS confirmed
+    // — a Pandit Ji is being dispatched for it — it simply still owes a balance.
+    if (Number(b?.amountPaid) > 0) return "balance_due";
     return "pending";
 }
 
@@ -116,6 +127,73 @@ const MyBookingsPage: React.FC = () => {
 
     useEffect(() => { fetchAll(); }, []);
 
+    const [payingId, setPayingId] = useState<string | null>(null);
+
+    /**
+     * Settle the balance on a puja booked with an advance.
+     *
+     * The Pandit Ji's QR does the same job in person. Both converge on one
+     * idempotent server update, so paying here while he is scanning cannot take
+     * the money twice — whichever lands second is told it is already settled.
+     */
+    const payPoojaBalance = async (bookingId: string) => {
+        setPayingId(bookingId);
+        try {
+            const { data: order } = await axios.post(`${API_URL}/bookings/${bookingId}/balance-order`, {});
+
+            await new Promise<void>((resolve, reject) => {
+                const open = () => {
+                    const Ctor = (window as any).Razorpay;
+                    if (!Ctor) return reject(new Error("Razorpay SDK failed to load."));
+                    const rzp = new Ctor({
+                        key: order.razorpayKeyId,
+                        // The server's figure, in paise — never a locally derived one.
+                        amount: Math.round(Number(order.amount) * 100),
+                        currency: "INR",
+                        name: "Pandit Ji At Request",
+                        description: "Balance payment",
+                        order_id: order.razorpayOrderId,
+                        handler: async (response: any) => {
+                            try {
+                                await axios.post(`${API_URL}/bookings/${bookingId}/complete-balance-payment`, {
+                                    razorpayPaymentId: response.razorpay_payment_id,
+                                    razorpayOrderId: response.razorpay_order_id,
+                                    razorpaySignature: response.razorpay_signature,
+                                });
+                                resolve();
+                            } catch (e) {
+                                reject(e);
+                            }
+                        },
+                        modal: { ondismiss: () => reject(new Error("cancelled")) },
+                        theme: { color: "#F97316" },
+                    });
+                    rzp.on("payment.failed", (r: any) =>
+                        reject(new Error(r?.error?.description || "Your payment could not be processed.")),
+                    );
+                    rzp.open();
+                };
+                if ((window as any).Razorpay) return open();
+                const el = document.createElement("script");
+                el.src = "https://checkout.razorpay.com/v1/checkout.js";
+                el.async = true;
+                el.onload = open;
+                el.onerror = () => reject(new Error("Razorpay SDK failed to load."));
+                document.body.appendChild(el);
+            });
+
+            // Re-read rather than patching local state: the pandit's QR may have
+            // settled it in the meantime, and the server is the only truth here.
+            await fetchAll();
+        } catch (e: any) {
+            const msg = e?.response?.data?.message || e?.message || "Could not complete the payment.";
+            // A dismissed Razorpay sheet is a choice, not an error worth shouting about.
+            if (String(msg).toLowerCase() !== "cancelled") setError(msg);
+        } finally {
+            setPayingId(null);
+        }
+    };
+
     // ── Rows, normalised to one card shape per tab ──────────────────────────
     const rows: BookingCardData[] = useMemo(() => {
         if (tab === "pooja") {
@@ -129,6 +207,7 @@ const MyBookingsPage: React.FC = () => {
                 currency: b.currency,
                 chargedAmount: b.chargedAmount,
                 status: statusOf(b),
+                balanceDue: balanceDueOf(b),
                 mode: b.poojaMode === "offline" ? "offline" : "online",
                 reference: b.razorpayOrderId || b._id,
             }));
@@ -321,7 +400,12 @@ const MyBookingsPage: React.FC = () => {
                                        card wait a second to appear. */
                                     transition={{ delay: Math.min(i, 6) * 0.04, duration: 0.2 }}
                                 >
-                                    <BookingCard kind={tab} data={row} />
+                                    <BookingCard
+                                        kind={tab}
+                                        data={row}
+                                        onPayBalance={tab === "pooja" ? payPoojaBalance : undefined}
+                                        payingId={payingId}
+                                    />
                                 </motion.div>
                             ))}
                         </div>

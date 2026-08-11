@@ -835,6 +835,72 @@ export default function BookingModal({
 
   const discountedPrice = Math.max(0, currentPoojaPrice - couponDiscount);
 
+  /* ── How the devotee wants to pay ───────────────────────────────────────
+     "full"    → the whole bill now.
+     "advance" → a percentage now, the rest after the puja (Pandit Ji's QR, or
+                 "Pay remaining" in My Bookings).
+     The percentage comes from the server so this page can never quote a figure
+     the server would refuse to charge. */
+  const [payOption, setPayOption] = useState<"full" | "advance">("full");
+  const [advancePercent, setAdvancePercent] = useState(30);
+  const [advanceEnabled, setAdvanceEnabled] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${apiUrl}/bookings/payment-options`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        const pct = Number(data?.advancePercent);
+        if (Number.isFinite(pct) && pct > 0 && pct < 100) setAdvancePercent(Math.round(pct));
+        if (data?.advanceEnabled === false) setAdvanceEnabled(false);
+      } catch {
+        // Keep the default. What is actually charged always comes back from
+        // create-pending, so a failed lookup only affects the preview text.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Only at-home pujas can be split — the server enforces the same rule, so the
+  // two can never disagree about what gets charged.
+  const canSplitPayment = advanceEnabled && mode === "offline";
+  // Mirrors the server's advanceOf(): whole rupees, never 0, never above the bill.
+  const advanceDue = Math.min(
+    Math.max(0, discountedPrice),
+    Math.max(1, Math.round((discountedPrice * advancePercent) / 100)),
+  );
+  const balanceAfter = Math.max(0, discountedPrice - advanceDue);
+
+  // Switching to an online puja after choosing the split would leave the page
+  // promising a part-payment the server would decline to honour.
+  useEffect(() => {
+    if (!canSplitPayment && payOption === "advance") setPayOption("full");
+  }, [canSplitPayment, payOption]);
+
+  /** Razorpay's script is not bundled; make sure it is there before opening. */
+  const ensureRazorpay = async (): Promise<any> => {
+    if ((window as any).Razorpay) return (window as any).Razorpay;
+    await new Promise<void>((resolve, reject) => {
+      const existing = document.querySelector<HTMLScriptElement>('script[src*="checkout.razorpay.com"]');
+      if (existing) {
+        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("error", () => reject(new Error("Razorpay SDK failed to load.")));
+        return;
+      }
+      const el = document.createElement("script");
+      el.src = "https://checkout.razorpay.com/v1/checkout.js";
+      el.async = true;
+      el.onload = () => resolve();
+      el.onerror = () => reject(new Error("Razorpay SDK failed to load."));
+      document.body.appendChild(el);
+    });
+    if (!(window as any).Razorpay) throw new Error("Razorpay SDK failed to load.");
+    return (window as any).Razorpay;
+  };
+
   // Abandoned-cart capture: the row is created as soon as the 10-digit contact
   // number is typed, then patched with every further detail (name, gotra, email,
   // date/time, amount, death-ritual details), so a devotee who closes the modal
@@ -1049,7 +1115,10 @@ export default function BookingModal({
         poojaId: pooja?._id || pooja?.id,
         poojaMode: mode,
         bookingDate: combinedDateTime,
+        // The INR bill. What is collected NOW is derived server-side from
+        // paymentOption — this page never dictates the payable.
         amount: discountedPrice,
+        paymentOption: canSplitPayment ? payOption : "full",
         panditDakshina: panditDakshina,
         bhaktName,
         gotra,
@@ -1107,16 +1176,29 @@ export default function BookingModal({
         throw new Error(errorData.message || "Failed to initialize booking.");
       }
 
-      // const pendingData = await pendingRes.json();
+      const pendingData = await pendingRes.json();
 
-      // ── Razorpay triggers commented out as payments happen via WhatsApp ──
-      /*
+      // The browser charges the SERVER's figures, never its own. On an advance
+      // booking `amount` is the advance rather than the bill, and complete-booking
+      // rejects any mismatch — substituting discountedPrice here would fail every
+      // part-payment.
+      const payableInr = Number(pendingData.amount ?? discountedPrice);
+      const payableMinor = Number(
+        pendingData.amountMinor ?? Math.round(payableInr * 100),
+      );
+      const payCurrency = String(pendingData.currency || "INR");
+
+      const RazorpayCtor = await ensureRazorpay();
+
       const options = {
         key: pendingData.razorpayKeyId,
-        amount: discountedPrice * 100,
-        currency: "INR",
+        amount: payableMinor,
+        currency: payCurrency,
         name: "PanditJiAtRequest",
-        description: pooja?.poojaNameEng || "Pooja Booking",
+        description:
+          pendingData.paymentOption === "advance"
+            ? `${pooja?.poojaNameEng || "Pooja Booking"} — ${pendingData.advancePercent ?? advancePercent}% advance`
+            : pooja?.poojaNameEng || "Pooja Booking",
         order_id: pendingData.razorpayOrderId,
         handler: async function (response: any) {
           try {
@@ -1160,7 +1242,8 @@ export default function BookingModal({
               razorpayPaymentId: response.razorpay_payment_id,
               razorpayOrderId: response.razorpay_order_id,
               razorpaySignature: response.razorpay_signature,
-              amountPaid: discountedPrice,
+              // Rupees actually collected on this leg — the advance, or the whole bill.
+              amountPaid: payableInr,
             };
 
             const encryptedCompletePayload = encryptPayload(completePayload);
@@ -1199,41 +1282,13 @@ export default function BookingModal({
               }).catch((err) => console.error("Coupon apply after payment failed:", err));
             }
 
+            // Booking is paid — drop this row out of the abandoned-lead list.
+            markCartConverted();
             setShowSuccessModal(true);
 
-            // Fire Google Ads conversion on successful booking
-            (() => {
-              const gadsId = '[AW-XXXXXXXXXX]';
-              const fireConversion = () => {
-                (window as any).gtag('event', 'conversion', {
-                  send_to: gadsId,
-                  value: discountedPrice,
-                  currency: 'INR',
-                  transaction_id: response.razorpay_order_id,
-                });
-              };
-              if (typeof (window as any).gtag === 'function') {
-                fireConversion();
-              } else {
-                (window as any).dataLayer = (window as any).dataLayer || [];
-                (window as any).gtag = function (...args: any[]) { (window as any).dataLayer.push(args); };
-                const s = document.createElement('script');
-                s.async = true;
-                s.src = `https://www.googletagmanager.com/gtag/js?id=${gadsId}`;
-                s.onload = () => {
-                  (window as any).gtag('js', new Date());
-                  (window as any).gtag('config', gadsId);
-                  fireConversion();
-                };
-                document.head.appendChild(s);
-              }
-            })();
-
-            // NO Purchase pixel. This block is dormant (payments are taken over
-            // WhatsApp), and it fired one keyed to the server's CAPI event_id
-            // for dedup. Both halves are off for this flow now — the server
-            // event is suppressed by `skipMetaCapi` — so the pixel is removed
-            // here too rather than left to come back with the block.
+            // NO Purchase pixel. Bookings from the generic /puja/:id flow are
+            // deliberately not reported to Meta — see `skipMetaCapi` in the
+            // pending payload above, which suppresses the server CAPI event.
           } catch (err: any) {
             triggerAlert("Booking Error", err.message || "Failed to complete booking after payment.", "error");
           } finally {
@@ -1250,17 +1305,13 @@ export default function BookingModal({
         },
         modal: {
           ondismiss: function () {
+            // The pending booking stays put: the devotee can come back and pay,
+            // and it feeds the abandoned-cart follow-up in the meantime.
             triggerAlert("Payment Cancelled", "Your booking session was cancelled. You can try again from the menu.", "info");
             setIsProcessing(false);
           },
         },
       };
-
-      const RazorpayCtor = (window as any).Razorpay;
-
-      if (!RazorpayCtor) {
-        throw new Error("Razorpay SDK failed to load.");
-      }
 
       const rzp = new RazorpayCtor(options);
 
@@ -1270,33 +1321,6 @@ export default function BookingModal({
       });
 
       rzp.open();
-      */
-
-      // Directly apply coupon proxy silently if applied
-      if (appliedCoupon) {
-        fetch(`${apiUrl}/config/apply-coupon-proxy`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: effectiveUserId,
-            phone: contactNumber || (user as any)?.phone || 0,
-            appKey: "par",
-            couponCode: appliedCoupon.code,
-            orderAmount: currentPoojaPrice,
-          }),
-        }).catch((err) => console.error("Coupon apply failed:", err));
-      }
-
-      // NO Purchase pixel here. Bookings from the generic /puja/:id flow are
-      // deliberately not reported to Meta — see `skipMetaCapi` in the pending
-      // payload above, which suppresses the matching server CAPI event.
-
-      // Booking created — drop this row out of the abandoned-lead list.
-      markCartConverted();
-
-      // Directly trigger the success popup modal
-      setShowSuccessModal(true);
-      setIsProcessing(false);
     } catch (error: any) {
       triggerAlert("Unexpected Error", error.message || "An unexpected error occurred while processing your request.", "error");
       setIsProcessing(false);
@@ -1895,13 +1919,62 @@ export default function BookingModal({
               </div>
             </div> */}
 
+            {/* ── How would you like to pay? ── */}
+            <div className="mb-3 rounded-2xl border border-orange-200 bg-orange-50/40 p-3">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-stone-500">
+                How would you like to pay?
+              </p>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setPayOption("full")}
+                  className={`flex w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${payOption === "full" ? "border-orange-500 bg-white shadow-sm" : "border-stone-200 bg-white/60"}`}
+                >
+                  <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${payOption === "full" ? "border-orange-500" : "border-stone-300"}`}>
+                    {payOption === "full" && <span className="h-2 w-2 rounded-full bg-orange-500" />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-stone-800">
+                      Pay full now — {money(discountedPrice)}
+                    </span>
+                    <span className="block text-[11px] leading-snug text-stone-500">
+                      Pay securely online and confirm instantly. Nothing to pay later.
+                    </span>
+                  </span>
+                </button>
+
+                {canSplitPayment && (
+                  <button
+                    type="button"
+                    onClick={() => setPayOption("advance")}
+                    className={`flex w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-all ${payOption === "advance" ? "border-orange-500 bg-white shadow-sm" : "border-stone-200 bg-white/60"}`}
+                  >
+                    <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${payOption === "advance" ? "border-orange-500" : "border-stone-300"}`}>
+                      {payOption === "advance" && <span className="h-2 w-2 rounded-full bg-orange-500" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-stone-800">
+                        Pay {advancePercent}% now — {money(advanceDue)}
+                      </span>
+                      <span className="block text-[11px] leading-snug text-stone-500">
+                        Remaining {money(balanceAfter)} after the pooja — scan Pandit Ji&rsquo;s QR, or pay from My
+                        Bookings.
+                      </span>
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             <button
               onClick={handleCheckout}
               disabled={isProcessing}
               className={`w-full active:scale-[0.98] text-white rounded-2xl py-3.5 px-5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-200 mb-1 ${isProcessing ? "bg-orange-400" : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"}`}
             >
               <span className="text-sm font-bold tracking-wide text-orange-50">
-                {isProcessing ? "Processing..." : "Schedule Pandit Ji"}
+                {isProcessing
+                  ? "Processing..."
+                  : `Pay ${money(canSplitPayment && payOption === "advance" ? advanceDue : discountedPrice)} & Book`}
               </span>
               {!isProcessing && (
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

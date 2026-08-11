@@ -1,3 +1,4 @@
+import { poojaPaymentConfig } from '../../config/poojaPaymentConfig';
 import { RequestHandler } from 'express';
 import { Server as SocketIOServer } from 'socket.io';
 import axios from 'axios';
@@ -509,6 +510,10 @@ type CreatePendingBookingBody = {
   // orders only" referral cap (see utils/partnerAffiliateReferralCap.ts) — website referrals
   // have no such cap.
   isFromApp?: boolean;
+  /** "full" = pay everything now, "advance" = pay ADVANCE_PERCENT now. */
+  paymentOption?: 'full' | 'advance';
+  /** Legacy alias older app builds send for the split option. */
+  paymentTiming?: 'prepaid' | 'postpaid';
   // ── Live Mandir fields ──
   isLiveMandir?: boolean;
   pujaSlug?: string;
@@ -595,6 +600,49 @@ type FinalizeContext = {
   activePanditExternalIds?: string[];
 };
 
+/**
+ * A booking's address as a GeoJSON point, or undefined when the address has no
+ * usable coordinates.
+ *
+ * This is what makes a website booking dispatchable: pandit matching runs a
+ * $geoWithin over `PoojaBooking.location`, so a booking without this field is
+ * invisible to every pandit regardless of how much it paid.
+ */
+const buildPointFromAddress = (address?: any) => {
+  const lat = Number(address?.latitude ?? address?.lat ?? address?.coordinates?.lat);
+  const lng = Number(
+    address?.longitude ?? address?.lng ?? address?.long ?? address?.coordinates?.lng,
+  );
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+  // Mongo wants [longitude, latitude] — the opposite order to how humans say it.
+  return { type: 'Point' as const, coordinates: [lng, lat] as [number, number] };
+};
+
+/**
+ * Rupees payable UP FRONT for a given total. Rounded to whole rupees and
+ * clamped to [1, total] so Razorpay never sees a zero-value order and an
+ * advance can never exceed the bill.
+ */
+const advanceOf = (total: number, percent: number): number =>
+  Math.min(Math.max(0, total), Math.max(1, Math.round((total * percent) / 100)));
+
+/**
+ * What a booking owed at checkout, read back from its own stored fields rather
+ * than recomputed from config — so changing the percentage tomorrow cannot
+ * alter what yesterday's booking was supposed to have paid.
+ */
+const upfrontAmountOf = (b: any): number => {
+  const total = Number(b?.amount) || 0;
+  if (b?.paymentOption !== 'advance') return total;
+  const stored = Number(b?.advanceAmount);
+  if (Number.isFinite(stored) && stored > 0) return stored;
+  return advanceOf(total, Number(b?.advancePercent) || poojaPaymentConfig.ADVANCE_PERCENT);
+};
+
+/** Money still owed. Rows created before this existed have no amountPaid. */
+const balanceDueOf = (b: any): number =>
+  Math.max(0, Math.round(((Number(b?.amount) || 0) - (Number(b?.amountPaid) || 0)) * 100) / 100);
+
 export async function finalizePendingPoojaBooking(
   pendingDoc: any,
   payment: {
@@ -645,10 +693,26 @@ export async function finalizePendingPoojaBooking(
   // so restore it — otherwise a paid booking would vanish entirely.
   let finalBooking: Document & IPoojaBooking;
   try {
+    const isAdvance = (pendingObject as any).paymentOption === 'advance';
+    const capturedNow = upfrontAmountOf(pendingObject);
+    // Carry the coordinates through even for rows created before this existed,
+    // so an older pending booking still becomes dispatchable when it settles.
+    const point =
+      (pendingObject as any).location || buildPointFromAddress((pendingObject as any).address);
+
     finalBooking = (await poojaBookingModel.create({
       ...pendingObject,
       _id: undefined, // new id
-      isPaymentDone: true,
+      ...(point && { location: point }),
+      // An advance booking is CONFIRMED but not fully paid: isPaymentDone stays
+      // false so the pandit app still offers the collect-balance QR, and the
+      // puja cannot be closed out until that balance lands.
+      isPaymentDone: !isAdvance,
+      paymentTiming: isAdvance ? 'postpaid' : 'prepaid',
+      paymentOption: isAdvance ? 'advance' : 'full',
+      paymentStatus: isAdvance ? 'partial' : 'paid',
+      amountPaid: capturedNow,
+      paidAt: new Date(),
       isConfirmed: false, // still needs Pandit confirmation
       razorpayPaymentId,
       razorpayOrderId,
@@ -1046,6 +1110,8 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       dialCode,
       countryCode,
       country,
+      paymentOption,
+      paymentTiming,
     } = req.body as CreatePendingBookingBody;
 
     // ── User resolution ──────────────────────────────────────────────────────
@@ -1123,8 +1189,26 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       },
     });
 
+    // Two ways to pay, and BOTH take money now:
+    //   "full"    -> the whole amount up front.
+    //   "advance" -> ADVANCE_PERCENT up front, balance collected after the puja.
+    // Offered on at-home (offline) pujas only, and only in rupees: the split
+    // exists so a pandit travels to a house with money already behind the job,
+    // which does not apply to a temple seva or a foreign-currency checkout.
+    const wantsAdvance =
+      poojaPaymentConfig.ADVANCE_ENABLED &&
+      poojaMode === 'offline' &&
+      !isLiveMandir &&
+      (paymentOption === 'advance' || paymentTiming === 'postpaid');
+    const advancePercent = poojaPaymentConfig.ADVANCE_PERCENT;
+    const advanceAmount = advanceOf(Number(amount), advancePercent);
+    // Always derived here — a client-sent payable is never trusted.
+    const payableNow = wantsAdvance ? advanceAmount : Number(amount);
+
     let currency = resolveCurrency(requestedCurrency);
-    let chargedAmount = convertFromInr(Number(amount), currency);
+    // `chargedAmount` describes what the card is actually billed, which on an
+    // advance booking is the advance — `amount` remains the INR bill total.
+    let chargedAmount = convertFromInr(payableNow, currency);
     let order;
     try {
       order = await razorpay.orders.create(buildOrderOptions(currency, chargedAmount) as any);
@@ -1138,7 +1222,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
         `[PujaBooking] Razorpay rejected a ${currency} order (${orderErr?.error?.description || orderErr?.message}); retrying in ${BASE_CURRENCY}.`,
       );
       currency = BASE_CURRENCY;
-      chargedAmount = Number(amount);
+      chargedAmount = payableNow;
       order = await razorpay.orders.create(buildOrderOptions(currency, chargedAmount) as any);
     }
 
@@ -1195,6 +1279,16 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       razorpayOrderId: order.id,
 
       ...((poojaMode === 'offline' || prasadAdded) && { address }),
+      // Stored here so the coordinates survive onto the final booking even if
+      // the address shape changes between now and payment.
+      ...(poojaMode === 'offline' && buildPointFromAddress(address)
+        ? { location: buildPointFromAddress(address) }
+        : {}),
+      // "postpaid" is the internal axis meaning "money is still owed after the
+      // puja" — the pandit app's QR collection keys on exactly this.
+      paymentTiming: wantsAdvance ? 'postpaid' : 'prepaid',
+      paymentOption: wantsAdvance ? 'advance' : 'full',
+      ...(wantsAdvance && { advancePercent, advanceAmount }),
       bhaktName: bhaktName || (userExists as any).name,
       gotra,
       contactNumber: contactNumber || phone,
@@ -1267,6 +1361,15 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       currency,
       chargedAmount,
       amountMinor: toMinorUnits(chargedAmount, currency),
+      // What this checkout collects NOW vs what the puja costs in total. The
+      // browser must not substitute `totalAmount` into the Razorpay handler —
+      // complete-booking compares against `amount` and would reject it.
+      amount: payableNow,
+      totalAmount: Number(amount),
+      balanceDue: Math.max(0, Number(amount) - payableNow),
+      paymentOption: wantsAdvance ? 'advance' : 'full',
+      advancePercent,
+      advanceAmount,
     });
   } catch (error) {
     next(error);
@@ -1334,10 +1437,14 @@ export const completePoojaBooking: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    // 4) Verify amount. Both sides are INR — the client reports the seva total
+    // 4) Verify amount. Both sides are INR — the client reports the rupee figure
     //    it displayed, not the foreign amount its card was billed, so this check
-    //    is identical for a devotee in Delhi and one in New Jersey.
-    if (pendingDoc.amount !== amountPaid) {
+    //    is identical for a devotee in Delhi and one in New Jersey. On an advance
+    //    booking the figure due is a fraction of the bill, so it is read back
+    //    from the pending row rather than assumed to be the total. Compared in
+    //    paise so a rupee stored as 2100.0000000000005 does not fail equality.
+    const expectedNow = upfrontAmountOf(pendingDoc);
+    if (Math.round(expectedNow * 100) !== Math.round(Number(amountPaid) * 100)) {
       res.status(400).json({ message: 'Amount paid mismatch. Potential fraud or error.' });
       return;
     }
@@ -1565,6 +1672,172 @@ export const getPendingBookingsForPandit: RequestHandler = async (req, res, next
 };
 
 /** GET /api/bookings/:bookingId */
+/**
+ * GET /api/bookings/payment-options
+ *
+ * The checkout has to SHOW the split before it can charge it, and the
+ * percentage lives in the server's env. Hardcoding 30 in the browser bundle
+ * would mean a deploy every time it changes — and, worse, a page quoting a
+ * figure the server does not actually charge.
+ */
+export const getPoojaPaymentOptions: RequestHandler = async (_req, res) => {
+  res.status(200).json({
+    advanceEnabled: poojaPaymentConfig.ADVANCE_ENABLED,
+    advancePercent: poojaPaymentConfig.ADVANCE_PERCENT,
+    // Only at-home pujas can be split; temple sevas and online pujas pay in full.
+    advanceModes: ['offline'],
+  });
+};
+
+// -------------------------------------------------------------
+// BALANCE ("rest after puja") — devotee-side settlement
+// -------------------------------------------------------------
+/**
+ * POST /api/bookings/:bookingId/balance-order
+ *
+ * Website twin of the QR the pandit shows after the puja. The amount is always
+ * DERIVED from the booking, never taken from the request, and the order id is
+ * kept in its own field: `razorpayOrderId` carries a unique index and holds the
+ * advance, so reusing it would collide the moment a balance order was raised.
+ */
+export const createPoojaBalanceOrder: RequestHandler = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params as { bookingId?: string };
+    if (!bookingId) {
+      res.status(400).json({ message: 'bookingId is required.' });
+      return;
+    }
+    const booking = await poojaBookingModel.findById(bookingId);
+    if (!booking) {
+      res.status(404).json({ message: 'Booking not found.' });
+      return;
+    }
+    if ((booking as any).isPaymentDone || (booking as any).paymentStatus === 'paid') {
+      res.status(400).json({ message: 'This booking is already fully paid.' });
+      return;
+    }
+    const balance = balanceDueOf(booking);
+    if (balance <= 0) {
+      res.status(400).json({ message: 'No balance is pending on this booking.' });
+      return;
+    }
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(balance * 100),
+      currency: 'INR',
+      receipt: `PARBAL_${String((booking as any)._id).slice(-16).toUpperCase()}`,
+      payment_capture: 1,
+      notes: {
+        bookingId: String((booking as any)._id),
+        kind: 'pooja_balance',
+        poojaName: String(booking.poojaNameEng || ''),
+      },
+    } as any);
+
+    (booking as any).balanceRazorpayOrderId = (order as any).id;
+    await booking.save();
+
+    res.status(201).json({
+      bookingId: booking.id,
+      razorpayOrderId: (order as any).id,
+      razorpayKeyId,
+      amount: balance,
+      totalAmount: Number((booking as any).amount) || 0,
+      amountPaid: Number((booking as any).amountPaid) || 0,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * POST /api/bookings/:bookingId/complete-balance-payment
+ *
+ * Settles the balance leg. The update is a conditional findOneAndUpdate on
+ * `isPaymentDone: false`, so if the pandit's QR settles the same booking at the
+ * same moment, exactly one of the two wins and the devotee is never charged
+ * twice for the same balance.
+ */
+export const completePoojaBalancePayment: RequestHandler = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params as { bookingId?: string };
+    const { razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body as {
+      razorpayPaymentId?: string;
+      razorpayOrderId?: string;
+      razorpaySignature?: string;
+    };
+    if (!bookingId || !razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+      res.status(400).json({ message: 'bookingId and the Razorpay payment fields are required.' });
+      return;
+    }
+
+    const booking = await poojaBookingModel.findById(bookingId);
+    if (!booking) {
+      res.status(404).json({ message: 'Booking not found.' });
+      return;
+    }
+    // The order id must be the one THIS server minted for THIS booking.
+    if (String((booking as any).balanceRazorpayOrderId || '') !== String(razorpayOrderId)) {
+      res.status(400).json({ message: 'Order ID mismatch.' });
+      return;
+    }
+    if (!verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature)) {
+      res.status(400).json({ message: 'Payment verification failed (Invalid signature).' });
+      return;
+    }
+
+    const total = Number((booking as any).amount) || 0;
+    const collected = balanceDueOf(booking);
+    const settled = await poojaBookingModel.findOneAndUpdate(
+      { _id: (booking as any)._id, isPaymentDone: false },
+      {
+        $set: {
+          isPaymentDone: true,
+          paymentStatus: 'paid',
+          paidAt: new Date(),
+          // Set to the full amount rather than incremented, so a replayed
+          // request cannot push amountPaid past the bill.
+          amountPaid: total,
+          balancePaidAt: new Date(),
+          balancePaymentId: razorpayPaymentId,
+        },
+      },
+      { new: true },
+    );
+
+    if (!settled) {
+      res.status(200).json({ message: 'Payment already settled.', alreadyPaid: true });
+      return;
+    }
+
+    // Report only what was captured on THIS leg, under the balance order id, so
+    // the two payments on one booking do not dedupe into a single purchase.
+    void sendMetaPurchaseEvent({
+      orderID: String(razorpayOrderId),
+      value: collected,
+      currency: 'INR',
+      contentId: String((settled as any).poojaNameEng || 'PUJA_BOOKING'),
+      actionSource: 'website',
+      phone: (settled as any).userPhone ? String((settled as any).userPhone) : null,
+      email: (settled as any).userEmail ? String((settled as any).userEmail) : null,
+      externalId: String((settled as any).userId),
+      clientIp: req.ip || null,
+      userAgent: String(req.headers['user-agent'] || ''),
+    } as any).catch((err: any) =>
+      console.error('[MetaCAPI] Pooja balance Purchase failed:', err?.message || err),
+    );
+
+    res.status(200).json({
+      message: 'Balance payment received. Dhanyavaad.',
+      bookingId: (settled as any).id,
+      amountPaid: (settled as any).amountPaid,
+      isPaymentDone: (settled as any).isPaymentDone,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getOnePendingBooking: RequestHandler = async (req, res, next) => {
   try {
     const { bookingId } = req.params as { bookingId?: string };

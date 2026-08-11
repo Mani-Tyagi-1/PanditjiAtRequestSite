@@ -169,6 +169,14 @@ export interface IPendingPoojaBooking extends Document {
   couponCode?: string;
   razorpayOrderId?: string;    // stored after order creation before user payment
 
+  // ── How much is due UP FRONT ──
+  // "full" charges `amount`; "advance" charges `advanceAmount` and leaves the
+  // rest to be collected after the puja.
+  paymentTiming?: 'prepaid' | 'postpaid';
+  paymentOption?: 'full' | 'advance';
+  advancePercent?: number;
+  advanceAmount?: number;
+
   // ── International checkout (presentment currency) ──
   // `amount` above stays the INR source of truth for every downstream consumer
   // (WhatsApp, admin, Meta CAPI, reporting). These three only describe what the
@@ -273,6 +281,11 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
 
     // Razorpay
     razorpayOrderId: { type: String },
+
+    paymentTiming: { type: String, enum: ['prepaid', 'postpaid'], default: 'prepaid' },
+    paymentOption: { type: String, enum: ['full', 'advance'], default: 'full' },
+    advancePercent: { type: Number },
+    advanceAmount: { type: Number },
 
     // Online fields
     bhaktName: { type: String },

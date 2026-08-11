@@ -704,14 +704,17 @@ export default function BookingModal({
   //   fetchConfig();
   // }, []);
 
-  useEffect(() => {
-    const fetchSavedAddresses = async () => {
-      if (!user) return;
+  // Most website bookings are placed without logging in: the phone lookup is
+  // the only identity that flow has, and addresses must follow it or an at-home
+  // booking would be impossible for everyone except logged-in devotees.
+  const addrUserId = user?._id || user?.id || phoneUserData?._id || phoneUserData?.id;
+
+  const fetchSavedAddresses = useCallback(async () => {
+      if (!addrUserId) return;
       setIsLoadingAddresses(true);
       try {
         const apiUrl = API_URL;
-        const userId = user?._id || user?.id;
-        console.log("Fetching saved addresses for user:", userId);
+        const userId = addrUserId;
         const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
 
         if (res.ok) {
@@ -729,12 +732,124 @@ export default function BookingModal({
       } finally {
         setIsLoadingAddresses(false);
       }
-    };
+  }, [addrUserId]);
 
-    if (isOpen && user) {
+  useEffect(() => {
+    if (isOpen && addrUserId) {
       fetchSavedAddresses();
     }
-  }, [isOpen, user]);
+  }, [isOpen, addrUserId, fetchSavedAddresses]);
+
+  /* ── Adding an address ────────────────────────────────────────────────
+     Coordinates come from the browser, not a maps key: this server has no
+     geocoding endpoint, and pandit dispatch matches on the coordinates, so a
+     typed address with no lat/lng would produce a booking no pandit can be
+     matched to. The devotee grants location once and the rest is plain text
+     for the Pandit Ji to find the door. */
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [newAddr, setNewAddr] = useState({
+    addressName: "Home",
+    addressLine1: "",
+    addressLine2: "",
+    street: "",
+    city: "",
+    state: "",
+    pincode: "",
+  });
+  const [newAddrCoords, setNewAddrCoords] = useState<LatLng | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+
+  const captureLocation = () => {
+    if (!navigator.geolocation) {
+      triggerAlert(
+        "Location unavailable",
+        "Your browser cannot share a location. Please add the address from your profile instead.",
+        "error"
+      );
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setNewAddrCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+        triggerAlert(
+          "Location needed",
+          "We need the location to find a Pandit Ji near you. Please allow location access and try again.",
+          "info"
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  };
+
+  const saveNewAddress = async () => {
+    const userId = addrUserId;
+    if (!userId) {
+      triggerAlert(
+        "Phone number needed",
+        "Enter your phone number above so we can save this address to your bookings.",
+        "info"
+      );
+      return;
+    }
+    // Mirrors the server's own required set, so a save cannot bounce with a
+    // generic "Missing required fields".
+    if (!newAddr.addressLine1.trim() || !newAddr.street.trim() || !newAddr.state.trim() || !newAddr.pincode.trim()) {
+      triggerAlert("Almost there", "Please fill house/flat, street, state and pincode.", "info");
+      return;
+    }
+    if (!newAddrCoords) {
+      triggerAlert(
+        "Location needed",
+        "Tap \u201cUse my current location\u201d so we can find a Pandit Ji near you.",
+        "info"
+      );
+      return;
+    }
+
+    setSavingAddress(true);
+    try {
+      const payload = encryptPayload({
+        userId,
+        addressName: newAddr.addressName.trim() || "Home",
+        addressLine1: newAddr.addressLine1.trim(),
+        addressLine2: newAddr.addressLine2.trim(),
+        street: newAddr.street.trim(),
+        city: newAddr.city.trim(),
+        state: newAddr.state.trim(),
+        pincode: newAddr.pincode.trim(),
+        latitude: newAddrCoords.lat,
+        longitude: newAddrCoords.lng,
+        country: "India",
+        isPrimary: savedAddresses.length === 0,
+      });
+      const res = await fetch(`${API_URL}/addresses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-user-id": String(userId) },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.message || "Could not save the address.");
+      }
+      const created = await res.json().catch(() => null);
+      await fetchSavedAddresses();
+      // Select it straight away — the devotee added it to use it now.
+      if (created?._id) setSelectedAddressId(created._id);
+      setShowAddAddress(false);
+      setNewAddr({ addressName: "Home", addressLine1: "", addressLine2: "", street: "", city: "", state: "", pincode: "" });
+      setNewAddrCoords(null);
+    } catch (e: any) {
+      triggerAlert("Could not save", e?.message || "Please try again.", "error");
+    } finally {
+      setSavingAddress(false);
+    }
+  };
 
   const handleBodyScroll = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -2057,10 +2172,109 @@ export default function BookingModal({
                   </div>
                 ) : (
                   <p className="text-[12px] leading-snug text-stone-600">
-                    {user
-                      ? "No saved addresses yet. Add one from your profile and it will show up here."
-                      : "Enter your phone number above to see your saved addresses, or add one from your profile."}
+                    {addrUserId
+                      ? "No saved addresses yet — add one below."
+                      : "Enter your phone number above so we can load your saved addresses."}
                   </p>
+                )}
+
+                {/* Add an address inline. Without this a devotee with none
+                    saved simply cannot book an at-home puja on the website. */}
+                {addrUserId && !showAddAddress && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddAddress(true)}
+                    className="mt-2 text-[12px] font-bold text-orange-600 hover:text-orange-700"
+                  >
+                    + Add a new address
+                  </button>
+                )}
+
+                {addrUserId && showAddAddress && (
+                  <div className="mt-3 space-y-2 rounded-xl border border-stone-200 bg-white p-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        className="w-full rounded-lg border border-stone-200 px-2.5 py-2 text-[12.5px] text-stone-800 placeholder:text-stone-400 focus:border-orange-400 focus:outline-none"
+                        placeholder="Label (Home / Office)"
+                        value={newAddr.addressName}
+                        onChange={(e) => setNewAddr((p) => ({ ...p, addressName: e.target.value }))}
+                      />
+                      <input
+                        className="w-full rounded-lg border border-stone-200 px-2.5 py-2 text-[12.5px] text-stone-800 placeholder:text-stone-400 focus:border-orange-400 focus:outline-none"
+                        placeholder="House / Flat no. *"
+                        value={newAddr.addressLine1}
+                        onChange={(e) => setNewAddr((p) => ({ ...p, addressLine1: e.target.value }))}
+                      />
+                    </div>
+                    <input
+                      className="w-full rounded-lg border border-stone-200 px-2.5 py-2 text-[12.5px] text-stone-800 placeholder:text-stone-400 focus:border-orange-400 focus:outline-none"
+                      placeholder="Street / Locality *"
+                      value={newAddr.street}
+                      onChange={(e) => setNewAddr((p) => ({ ...p, street: e.target.value }))}
+                    />
+                    <input
+                      className="w-full rounded-lg border border-stone-200 px-2.5 py-2 text-[12.5px] text-stone-800 placeholder:text-stone-400 focus:border-orange-400 focus:outline-none"
+                      placeholder="Landmark (optional)"
+                      value={newAddr.addressLine2}
+                      onChange={(e) => setNewAddr((p) => ({ ...p, addressLine2: e.target.value }))}
+                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      <input
+                        className="w-full rounded-lg border border-stone-200 px-2.5 py-2 text-[12.5px] text-stone-800 placeholder:text-stone-400 focus:border-orange-400 focus:outline-none"
+                        placeholder="City"
+                        value={newAddr.city}
+                        onChange={(e) => setNewAddr((p) => ({ ...p, city: e.target.value }))}
+                      />
+                      <input
+                        className="w-full rounded-lg border border-stone-200 px-2.5 py-2 text-[12.5px] text-stone-800 placeholder:text-stone-400 focus:border-orange-400 focus:outline-none"
+                        placeholder="State *"
+                        value={newAddr.state}
+                        onChange={(e) => setNewAddr((p) => ({ ...p, state: e.target.value }))}
+                      />
+                      <input
+                        className="w-full rounded-lg border border-stone-200 px-2.5 py-2 text-[12.5px] text-stone-800 placeholder:text-stone-400 focus:border-orange-400 focus:outline-none"
+                        placeholder="Pincode *"
+                        inputMode="numeric"
+                        value={newAddr.pincode}
+                        onChange={(e) => setNewAddr((p) => ({ ...p, pincode: e.target.value }))}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={captureLocation}
+                      disabled={locating}
+                      className={`w-full rounded-lg border px-3 py-2 text-[12px] font-bold transition-colors ${newAddrCoords ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100"}`}
+                    >
+                      {locating
+                        ? "Getting your location…"
+                        : newAddrCoords
+                          ? "✓ Location captured"
+                          : "Use my current location *"}
+                    </button>
+                    <p className="text-[10.5px] leading-snug text-stone-400">
+                      We need this to find a verified Pandit Ji near you — the typed address
+                      alone is not enough to match one.
+                    </p>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={saveNewAddress}
+                        disabled={savingAddress}
+                        className="flex-1 rounded-lg bg-orange-500 px-3 py-2 text-[12.5px] font-bold text-white hover:bg-orange-600 disabled:opacity-60"
+                      >
+                        {savingAddress ? "Saving…" : "Save & use this address"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddAddress(false)}
+                        className="rounded-lg border border-stone-200 px-3 py-2 text-[12.5px] font-semibold text-stone-500"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}

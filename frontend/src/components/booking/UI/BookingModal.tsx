@@ -343,6 +343,28 @@ export default function BookingModal({
   const [mode, setMode] = useState<"online" | "offline">(
     pooja?.poojaMode === "offline" ? "offline" : "online"
   );
+
+  /**
+   * A puja catalogued as "both" can be performed either way, so the devotee
+   * chooses. Anything else is fixed by the catalog.
+   *
+   * The useState initialiser above only runs once, on the first render — and
+   * this modal is mounted before `pooja` has necessarily loaded. Without this
+   * effect an offline-only puja could stay stuck on "online" forever.
+   */
+  const canChooseMode = pooja?.poojaMode === "both";
+  useEffect(() => {
+    if (!pooja?.poojaMode) return;
+    if (pooja.poojaMode === "both") return; // the devotee's choice stands
+    setMode(pooja.poojaMode === "offline" ? "offline" : "online");
+  }, [pooja?.poojaMode]);
+
+  const chooseMode = (next: "online" | "offline") => {
+    setMode(next);
+    // An address picked for an at-home booking is meaningless online, and
+    // leaving it selected would send a stale addressId to the server.
+    if (next === "online") setSelectedAddressId(null);
+  };
   // const [modeInfoType, setModeInfoType] = useState<"online" | "offline" | null>(null);
   const [saveAs, _setSaveAs] = useState<"home" | "work" | "other">("home");
   // const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -474,10 +496,10 @@ export default function BookingModal({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
 
-  const [_savedAddresses, setSavedAddresses] = useState<any[]>([]);
-  const [selectedAddressId, _setSelectedAddressId] = useState<string | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
-  const [_isLoadingAddresses, setIsLoadingAddresses] = useState(false);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
 
   const { user } = useAuth();
 
@@ -818,6 +840,23 @@ export default function BookingModal({
       : 0;
   const currentPoojaPrice = basePoojaPrice + deathRitualExtraPrice;
 
+  /**
+   * The address an at-home booking will be performed at.
+   *
+   * Only ever a SAVED address the devotee picked. The old code fell back to
+   * `markerPosition`, which is a hardcoded default that nothing moves — so a
+   * booking would carry coordinates for a place the devotee has never been,
+   * and pandit dispatch (which matches on those coordinates) would offer it to
+   * the wrong pandits entirely.
+   */
+  const selectedAddress = savedAddresses.find(
+    (a: any) => String(a?._id) === String(selectedAddressId)
+  );
+  const addressLat = Number(selectedAddress?.latitude ?? selectedAddress?.lat);
+  const addressLng = Number(selectedAddress?.longitude ?? selectedAddress?.lng);
+  const hasUsableAddress =
+    !!selectedAddress && Number.isFinite(addressLat) && Number.isFinite(addressLng);
+
   // const totalDiscount = samagriCharge + panditDakshina;
 
   let couponDiscount = 0;
@@ -843,7 +882,11 @@ export default function BookingModal({
      the server would refuse to charge. */
   const [payOption, setPayOption] = useState<"full" | "advance">("full");
   const [advancePercent, setAdvancePercent] = useState(30);
-  const [advanceEnabled, setAdvanceEnabled] = useState(true);
+  // Starts FALSE on purpose: a server that has not been redeployed knows
+  // nothing about paymentOption and would charge the full amount after this
+  // page had promised a 30% split. The option only appears once the server
+  // confirms it honours it.
+  const [advanceEnabled, setAdvanceEnabled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -854,8 +897,10 @@ export default function BookingModal({
         const data = await res.json();
         if (cancelled) return;
         const pct = Number(data?.advancePercent);
-        if (Number.isFinite(pct) && pct > 0 && pct < 100) setAdvancePercent(Math.round(pct));
-        if (data?.advanceEnabled === false) setAdvanceEnabled(false);
+        if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return;
+        setAdvancePercent(Math.round(pct));
+        const modes: string[] = Array.isArray(data?.advanceModes) ? data.advanceModes : ["offline"];
+        setAdvanceEnabled(data?.advanceEnabled !== false && modes.includes("offline"));
       } catch {
         // Keep the default. What is actually charged always comes back from
         // create-pending, so a failed lookup only affects the preview text.
@@ -996,13 +1041,21 @@ export default function BookingModal({
     const apiUrl = API_URL;
 
     if (mode === "offline") {
+      // No guessing. Without real coordinates the serviceability check is
+      // meaningless and the Pandit Ji would be sent to the wrong place.
+      if (!hasUsableAddress) {
+        triggerAlert(
+          "Where should Pandit Ji come?",
+          savedAddresses.length
+            ? "Please choose the address for the puja."
+            : "Please add an address to your profile first, then book the puja at home.",
+          "info"
+        );
+        setIsProcessing(false);
+        return;
+      }
       try {
-        const checkPayload = selectedAddressId
-          ? encryptPayload({ addressId: selectedAddressId })
-          : encryptPayload({
-            latitude: markerPosition.lat,
-            longitude: markerPosition.lng
-          });
+        const checkPayload = encryptPayload({ addressId: selectedAddressId });
 
         const checkRes = await fetch(`${apiUrl}/addresses/check`, {
           method: "POST",
@@ -1022,7 +1075,10 @@ export default function BookingModal({
             return;
           }
 
-          if (!selectedAddressId && user) {
+          // NOTE: the old "auto-save the map pin as a new address" branch is
+          // gone with the map — an at-home booking now always uses an address
+          // the devotee already saved, so there is nothing new to store.
+          if (false && user) {
             try {
               const addressPayload = {
                 userId: user?._id || user?.id,
@@ -1144,8 +1200,18 @@ export default function BookingModal({
         // reporting exactly as before.
         skipMetaCapi: true,
         address:
-          mode === "offline"
+          mode === "offline" && hasUsableAddress
             ? {
+              // Sent so the server can store a GeoJSON point and dispatch the
+              // booking to pandits near THIS address.
+              _id: selectedAddress?._id,
+              addressId: selectedAddress?._id,
+              addressLine1: selectedAddress?.addressLine1,
+              addressLine2: selectedAddress?.addressLine2,
+              street: selectedAddress?.street,
+              city: selectedAddress?.city,
+              state: selectedAddress?.state,
+              pincode: selectedAddress?.pincode,
               // houseFlatNo: houseNo,
               // streetArea: street,
               // landmark: landmark,
@@ -1153,12 +1219,9 @@ export default function BookingModal({
               // state: stateVal,
               // pincode: pincode,
               saveAs: saveAs,
-              latitude: markerPosition.lat,
-              longitude: markerPosition.lng,
-              coordinates: {
-                lat: markerPosition.lat,
-                lng: markerPosition.lng,
-              },
+              latitude: addressLat,
+              longitude: addressLng,
+              coordinates: { lat: addressLat, lng: addressLng },
             }
             : undefined,
       };
@@ -1918,6 +1981,89 @@ export default function BookingModal({
                 </div>
               </div>
             </div> */}
+
+            {/* ── Online or at your home ──
+                Only offered when the catalog allows both; a puja fixed to one
+                mode has nothing to choose. */}
+            {canChooseMode && (
+              <div className="mb-3 rounded-2xl border border-orange-200 bg-orange-50/40 p-3">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-stone-500">
+                  How should the puja be performed?
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { key: "offline" as const, title: "At my home", sub: "Pandit Ji visits you", price: pooja?.poojaPriceOffline },
+                    { key: "online" as const, title: "Online", sub: "Performed for you, streamed", price: pooja?.poojaPriceOnline },
+                  ]).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => chooseMode(opt.key)}
+                      className={`rounded-xl border p-3 text-left transition-all ${mode === opt.key ? "border-orange-500 bg-white shadow-sm" : "border-stone-200 bg-white/60"}`}
+                    >
+                      <span className="block text-sm font-bold text-stone-800">{opt.title}</span>
+                      <span className="block text-[11px] leading-snug text-stone-500">{opt.sub}</span>
+                      {typeof opt.price === "number" && opt.price > 0 && (
+                        <span className="mt-1 block text-[12px] font-bold text-orange-600">{money(opt.price)}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Where should Pandit Ji come? ──
+                A saved address only. Guessing a location would send him to the
+                wrong house and hand the booking to the wrong pandits. */}
+            {mode === "offline" && (
+              <div className="mb-3 rounded-2xl border border-orange-200 bg-orange-50/40 p-3">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-stone-500">
+                  Where should Pandit Ji come?
+                </p>
+
+                {isLoadingAddresses ? (
+                  <div className="flex gap-2">
+                    <div className="h-16 flex-1 animate-pulse rounded-xl bg-stone-100" />
+                    <div className="h-16 flex-1 animate-pulse rounded-xl bg-stone-100" />
+                  </div>
+                ) : savedAddresses.length > 0 ? (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {savedAddresses.map((addr: any) => {
+                      const on = String(selectedAddressId) === String(addr._id);
+                      const line = [addr.addressLine1, addr.street, addr.city]
+                        .filter(Boolean)
+                        .join(", ");
+                      return (
+                        <button
+                          key={addr._id}
+                          type="button"
+                          onClick={() => setSelectedAddressId(on ? null : addr._id)}
+                          className={`w-44 shrink-0 rounded-xl border p-3 text-left transition-all ${on ? "border-orange-500 bg-white shadow-sm" : "border-stone-200 bg-white/60"}`}
+                        >
+                          <span className="block text-[12px] font-bold text-stone-800">
+                            {addr.addressName || addr.saveAs || "Address"}
+                          </span>
+                          <span className="mt-0.5 block line-clamp-2 text-[11px] leading-snug text-stone-500">
+                            {line || "Saved address"}
+                          </span>
+                          {addr.pincode && (
+                            <span className="mt-1 block text-[10.5px] font-semibold text-stone-400">
+                              {addr.pincode}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[12px] leading-snug text-stone-600">
+                    {user
+                      ? "No saved addresses yet. Add one from your profile and it will show up here."
+                      : "Enter your phone number above to see your saved addresses, or add one from your profile."}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* ── How would you like to pay? ── */}
             <div className="mb-3 rounded-2xl border border-orange-200 bg-orange-50/40 p-3">

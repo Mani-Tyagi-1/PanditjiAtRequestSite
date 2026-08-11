@@ -1,5 +1,6 @@
 import { Schema, Model, Document } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
+import LiveMandirPuja from "./liveMandirPujaModel";
 
 /**
  * Vedic Vivah Catalog (SINGLETON)
@@ -625,6 +626,71 @@ export type NormalisedCatalog = {
   seo: IVivahSeo;
 };
 
+/** Loose key for matching the same mandir written two different ways. */
+const templeKey = (v?: string) => String(v || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const templeSlug = (v?: string) =>
+  String(v || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+/**
+ * The mandirs the admin added under **Live Darshan**, shaped as vivah temples.
+ *
+ * These rows live in `liveMandirPujas` and already drive the Live Mandir pages;
+ * this is what makes them reachable from Vedic Vivah too, so a mandir only has
+ * to be added once.
+ *
+ * A mandir can host several live pujas, but the vivah picker chooses a MANDIR,
+ * not a puja — so rows are grouped by temple name. The representative row is
+ * the CHEAPEST active puja at that mandir, which keeps the wedding darshan
+ * add-on from ever costing more than booking the same darshan directly.
+ *
+ * Never throws: a mandir list that fails to load must not take the whole
+ * pricing catalog down with it.
+ */
+const loadLiveDarshanTemples = async (): Promise<IVivahTemple[]> => {
+  let rows: any[] = [];
+  try {
+    rows = await LiveMandirPuja.find({ isActive: true })
+      .select("templeName templeLocation deity image price sortOrder createdAt")
+      .sort({ sortOrder: 1, createdAt: 1 })
+      .lean();
+  } catch {
+    return [];
+  }
+
+  const byTemple = new Map<string, IVivahTemple>();
+  for (const r of rows) {
+    const name = String(r?.templeName || "").trim();
+    const key = templeKey(name);
+    if (!name || !key) continue;
+
+    const price = Number(r?.price) || 0;
+    const existing = byTemple.get(key);
+    // Map keeps the first insertion's position, so a cheaper puja replaces the
+    // entry without reshuffling the admin's ordering.
+    if (existing && existing.price <= price) continue;
+
+    const city = String(r?.templeLocation || "").trim();
+    byTemple.set(key, {
+      templeId: templeSlug(name),
+      name,
+      city,
+      deity: String(r?.deity || "").trim(),
+      image: String(r?.image || "").trim(),
+      price,
+      description: `Live darshan seva at ${name}${city ? `, ${city}` : ""}.`,
+      isActive: true,
+      sortOrder: 0, // re-numbered once both sources are merged
+    });
+  }
+
+  return Array.from(byTemple.values()).filter((t) => t.templeId);
+};
+
 /**
  * Read the singleton catalog (falls back to the default seed if the
  * admin hasn't created it yet). Never throws on "missing" — always
@@ -701,15 +767,44 @@ export const loadVivahCatalog = async (): Promise<NormalisedCatalog> => {
     .slice()
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
-  // ── Live-darshan temples (admin-authored; fall back to defaults). ──
-  const rawTemples =
-    Array.isArray((source as any).temples) && (source as any).temples.length
-      ? ((source as any).temples as IVivahTemple[])
-      : DEFAULT_VIVAH_TEMPLES;
-  const temples = rawTemples
+  // ── Live-darshan temples. Two admin sources feed the mandir picker:
+  //
+  //   1. Temples authored inside the Vivah Sanskar catalog itself.
+  //   2. Mandirs added under Live Darshan — see loadLiveDarshanTemples above.
+  //
+  // Catalog entries come first and win a tie, because their price and copy
+  // were written for a wedding darshan specifically. The bundled samples are a
+  // last resort only: the moment EITHER real source has a row they are dropped,
+  // so the picker never mixes real mandirs with demo ones.
+  // Read from `doc`, NOT `source`: `source` falls back to DEFAULT_VIVAH_CATALOG,
+  // which carries the sample temples — treating those as "authored" would pin the
+  // samples in place forever on an install where the admin never saved the vivah
+  // catalog at all, which is exactly the case this change exists to fix.
+  const authoredTemples = (
+    doc && Array.isArray((doc as any).temples) ? ((doc as any).temples as IVivahTemple[]) : []
+  )
     .filter((t) => t && t.templeId && t.isActive !== false)
     .slice()
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  const darshanTemples = await loadLiveDarshanTemples();
+
+  const seenTemple = new Set<string>();
+  const mergedTemples: IVivahTemple[] = [];
+  for (const t of [...authoredTemples, ...darshanTemples]) {
+    // The same mandir can exist in both places — match on either the slug or
+    // the name, since the two are typed independently.
+    const keys = [templeKey(t.templeId), templeKey(t.name)].filter(Boolean);
+    if (!keys.length || keys.some((k) => seenTemple.has(k))) continue;
+    for (const k of keys) seenTemple.add(k);
+    mergedTemples.push({ ...t, sortOrder: mergedTemples.length + 1 });
+  }
+
+  const temples = mergedTemples.length
+    ? mergedTemples
+    : DEFAULT_VIVAH_TEMPLES.filter((t) => t && t.templeId && t.isActive !== false)
+        .slice()
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   const templeMap: Record<string, IVivahTemple> = {};
   for (const t of temples) templeMap[t.templeId] = t;
 

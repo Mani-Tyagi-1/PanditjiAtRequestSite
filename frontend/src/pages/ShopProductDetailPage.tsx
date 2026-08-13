@@ -6,6 +6,7 @@ import API_URL from "../utils/apiConfig";
 import { type ShopProduct, type CartLine } from "../components/booking/Shop/shopData";
 import ShopCartModal from "../components/booking/Shop/ShopCartModal";
 import { money } from "../utils/currency";
+import analytics from "../utils/analytics";
 
 export default function ShopProductDetailPage() {
     const { slug } = useParams<{ slug: string }>();
@@ -106,14 +107,12 @@ export default function ShopProductDetailPage() {
         addToCart(product, qty);
         setJustAdded(true);
         window.setTimeout(() => setJustAdded(false), 1400);
-        if (window.fbq) {
-            window.fbq("track", "AddToCart", {
-                content_name: product.name,
-                content_type: "shop_product",
-                value: product.price * qty,
-                currency: "INR",
-            });
-        }
+        analytics.metaBridge("AddToCart", {
+            content_name: product.name,
+            content_type: "shop_product",
+            value: product.price * qty,
+            currency: "INR",
+        });
     };
 
     const handleBuyNow = () => {

@@ -5,6 +5,7 @@ import BookingModal from "./UI/BookingModal";
 import API_URL from "../../utils/apiConfig";
 import PujaEnquiryModal from "./PujaEnquiryModal";
 import { decryptData } from "../../utils/encryption";
+import analytics from "../../utils/analytics";
 
 // ── Dummy Data ────────────────────────────────────────────────
 // const STATIC_INCLUDES = [
@@ -465,9 +466,7 @@ export default function PujaDetailPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={() => {
-                                    if (window.fbq) {
-                                        window.fbq("track", "App Download");
-                                    }
+                                    analytics.metaBridge("App Download");
                                 }}
                                 className="promo-cta mt-2 w-full flex items-center justify-center gap-2 text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform"
                             >

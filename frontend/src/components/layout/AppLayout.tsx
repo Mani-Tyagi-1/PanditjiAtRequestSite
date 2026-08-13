@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import BottomNav from "./BottomNav";
+import analytics from "../../utils/analytics";
 
 // Click-to-chat support line (same number used across the site / schema).
 const WHATSAPP_URL =
@@ -39,12 +40,17 @@ export default function AppLayout() {
             rel="noopener noreferrer"
             aria-label="Chat with Pandit Ji on WhatsApp"
             onClick={() => {
-              if (window.fbq) {
-                window.fbq("track", "Contact", {
-                  content_name: "WhatsApp Chat",
-                  content_type: "consultation",
-                });
-              }
+              analytics.contact({
+                method: "whatsapp",
+                context: "Floating WhatsApp button",
+                meta: {
+                  event: "Contact",
+                  params: {
+                    content_name: "WhatsApp Chat",
+                    content_type: "consultation",
+                  },
+                },
+              });
             }}
             className="pointer-events-auto w-12 h-12 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg shadow-green-500/40 active:scale-90 transition-transform cursor-pointer"
           >

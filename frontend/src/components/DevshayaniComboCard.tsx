@@ -10,6 +10,7 @@ import { MapPin, CalendarDays, Share2, Feather } from "lucide-react";
 import {
     devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_PRICE, COMBO_DATE,
 } from "../data/devshayaniCombo";
+import analytics from "../utils/analytics";
 
 function Countdown({ targetDate }: { targetDate: string }) {
     const [txt, setTxt] = useState("");
@@ -111,15 +112,13 @@ export function DevshayaniComboCard() {
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (window.fbq) {
-                            window.fbq("track", "Chadhava Participate Now", {
-                                content_name: devshayaniCombo.deity,
-                                content_ids: [DEVSHAYANI_COMBO_SLUG],
-                                content_type: "chadhava",
-                                value: COMBO_PRICE,
-                                currency: "INR",
-                            });
-                        }
+                        analytics.metaBridge("Chadhava Participate Now", {
+                            content_name: devshayaniCombo.deity,
+                            content_ids: [DEVSHAYANI_COMBO_SLUG],
+                            content_type: "chadhava",
+                            value: COMBO_PRICE,
+                            currency: "INR",
+                        });
                         navigate(`/chadhava/${DEVSHAYANI_COMBO_SLUG}`);
                     }}
                     className="mt-3 w-full bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold py-3.5 rounded-full flex items-center justify-center gap-1.5 shadow-lg shadow-orange-200/50 active:scale-[0.985] transition-all duration-200 text-[14.5px]"

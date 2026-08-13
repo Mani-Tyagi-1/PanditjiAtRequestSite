@@ -5,6 +5,7 @@ import axios from "axios";
 import { CHADHAVA_FALLBACK, Chadhava } from "./chadhavaFallback";
 import API_URL from "../../utils/apiConfig";
 import { money } from "../../utils/currency";
+import analytics from "../../utils/analytics";
 
 const CHADHAVA_LIST_URL = `${API_URL}/config/get-all-new-chadhava-proxy`;
 
@@ -282,15 +283,13 @@ export default function SacredChadhavaSewa() {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (window.fbq) {
-                                                    window.fbq("track", "Chadhava Offer Now", {
-                                                        content_name: c.deity,
-                                                        content_ids: [c.id],
-                                                        content_type: "chadhava",
-                                                        value: c.startingPrice,
-                                                        currency: "INR",
-                                                    });
-                                                }
+                                                analytics.metaBridge("Chadhava Offer Now", {
+                                                    content_name: c.deity,
+                                                    content_ids: [c.id],
+                                                    content_type: "chadhava",
+                                                    value: c.startingPrice,
+                                                    currency: "INR",
+                                                });
                                                 navigate(`/chadhava/${c.id}`);
                                             }}
                                             className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[13px] px-7 py-1 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200"

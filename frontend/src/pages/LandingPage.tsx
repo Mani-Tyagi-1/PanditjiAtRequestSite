@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
 import ConsultancyModal from "../components/booking/ConsultancyModal";
+import analytics from "../utils/analytics";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -28,12 +29,10 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    if (window.fbq) {
-      window.fbq("track", "ViewContent", {
-        content_name: "Home Page",
-        content_type: "website",
-      });
-    }
+    analytics.metaBridge("ViewContent", {
+    content_name: "Home Page",
+    content_type: "website",
+    });
   }, []);
 
   return (

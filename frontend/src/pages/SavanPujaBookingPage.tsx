@@ -7,6 +7,7 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
 import { optimizedImg } from "../utils/img";
 import { useMoney, isValidPhone, shipsPrasad, toStoredPhone } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
@@ -221,13 +222,19 @@ export default function SavanPujaBookingPage() {
     const acceptPrasadNudge = () => {
         setPrasadOptedIn(true);
         setNudgeDismissed(true);
-        if ((window as any).fbq) {
-            (window as any).fbq("trackCustom", "PrasadNudgeAccepted", {
-                content_name: puja.poojaNameEng,
-                value: PRASAD_BOX_PRICE,
-                currency: "INR",
-            });
-        }
+        analytics.custom(
+            "prasad_nudge_accepted",
+            { item_name: puja.poojaNameEng, value: PRASAD_BOX_PRICE, currency: "INR" },
+            {
+                event: "PrasadNudgeAccepted",
+                custom: true,
+                params: {
+                    content_name: puja.poojaNameEng,
+                    value: PRASAD_BOX_PRICE,
+                    currency: "INR",
+                },
+            },
+        );
         prasadSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     };
 
@@ -333,6 +340,38 @@ export default function SavanPujaBookingPage() {
     // against the puja price. Ids mirror the ones the server CAPI Purchase sends
     // (built off the booking name) so the deduplicated pair reports identically
     // either way.
+    // GA4 line items for the same basket metaContents() describes. Kept next to
+    // it deliberately: an add-on added to one and forgotten in the other is how
+    // Google and Meta start reporting different revenue for the same order.
+    const ga4Items = (): AnalyticsItem[] => [
+        {
+            id: String(puja._id),
+            name: packageLabel,
+            price: toInr(basePrice),
+            quantity: 1,
+            category: "Puja",
+            brand: "Savan",
+        },
+        ...(prasadCost > 0
+            ? [{
+                id: `${puja._id}__prasad`,
+                name: `${puja.poojaNameEng} — Prasad Box`,
+                price: toInr(PRASAD_BOX_PRICE),
+                quantity: 1,
+                category: "Add-on",
+            }]
+            : []),
+        ...(chargedMembers > 0
+            ? [{
+                id: `${puja._id}__sankalp`,
+                name: `${puja.poojaNameEng} — Extra Sankalp Name`,
+                price: toInr(FAMILY_MEMBER_PRICE),
+                quantity: chargedMembers,
+                category: "Add-on",
+            }]
+            : []),
+    ];
+
     const metaContents = () => [
         { id: packageLabel, quantity: 1, item_price: toInr(basePrice) },
         // Only the PAID box is a line item; a free one is part of the package
@@ -402,13 +441,21 @@ export default function SavanPujaBookingPage() {
         if (hasTrackedDetails.current) return;
         if (form.name.trim().length < 3 || !isValidPhone(form.phone, country)) return;
         hasTrackedDetails.current = true;
-        if ((window as any).fbq) {
-            (window as any).fbq("track", "CustomerDetailsFilled", {
-                content_name: puja.poojaNameEng,
-                bhaktName: form.name.trim(),
-                contactNumber: toStoredPhone(form.phone, country),
-            });
-        }
+        // Meta keeps receiving the devotee's name and number, as it always has.
+        // GA4 gets only the item — a phone number in a GA4 property is a Terms
+        // of Service violation, which is why the two payloads are separate.
+        analytics.checkoutDetailsFilled({
+            itemName: puja.poojaNameEng,
+            itemId: String(puja._id),
+            meta: {
+                event: "CustomerDetailsFilled",
+                params: {
+                    content_name: puja.poojaNameEng,
+                    bhaktName: form.name.trim(),
+                    contactNumber: toStoredPhone(form.phone, country),
+                },
+            },
+        });
     };
 
     const handleConfirm = async () => {
@@ -584,17 +631,39 @@ export default function SavanPujaBookingPage() {
             // AddToCart already fired on the detail-page CTA that led here, so
             // this step only reports InitiateCheckout — firing both here would
             // put two funnel steps on a single trigger.
-            if ((window as any).fbq) {
+            {
                 const contents = metaContents();
-                (window as any).fbq("track", "InitiateCheckout", {
-                    content_name: puja.poojaNameEng,
-                    content_ids: [puja._id],
-                    content_type: "product",
-                    contents,
-                    num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                analytics.beginCheckout({
+                    items: ga4Items(),
+                    value: toInr(totalPrice),
+                    currency: "INR",
+                    meta: {
+                        event: "InitiateCheckout",
+                        params: {
+                            content_name: puja.poojaNameEng,
+                            content_ids: [puja._id],
+                            content_type: "product",
+                            contents,
+                            num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                            value: toInr(totalPrice),
+                            currency: "INR",
+                        },
+                    },
+                });
+
+                // The Razorpay sheet is about to open on a real order — the
+                // strongest pre-purchase signal there is, and a usable
+                // secondary conversion for Ads while purchase volume is thin.
+                analytics.addPaymentInfo({
+                    items: ga4Items(),
                     value: toInr(totalPrice),
                     currency: "INR",
                 });
+
+                // Park this browser's GA4/Ads ids against the order id, so the
+                // Razorpay webhook can still attribute the purchase correctly
+                // if this tab is gone by the time payment settles.
+                analytics.stashOrderAttribution(orderData.razorpayOrderId);
             }
 
             // 2) Open Razorpay checkout.
@@ -653,17 +722,31 @@ export default function SavanPujaBookingPage() {
 
                         if (verifyData.token && verifyData.user) login(verifyData.token, verifyData.user);
 
-                        if ((window as any).fbq) {
+                        {
                             const contents = metaContents();
-                            (window as any).fbq("track", "Purchase", {
-                                content_name: puja.poojaNameEng,
-                                content_ids: [puja._id],
-                                content_type: "product",
-                                contents,
-                                num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                            analytics.purchase({
+                                // MUST be the Razorpay order id: the server
+                                // fires this same purchase from the webhook,
+                                // and a shared transaction_id is what keeps
+                                // GA4 from counting the sale twice.
+                                transactionId: response.razorpay_order_id,
+                                items: ga4Items(),
                                 value: toInr(totalPrice),
                                 currency: "INR",
-                            }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
+                                meta: {
+                                    event: "Purchase",
+                                    eventId: `puja_purchase_${response.razorpay_order_id}`,
+                                    params: {
+                                        content_name: puja.poojaNameEng,
+                                        content_ids: [puja._id],
+                                        content_type: "product",
+                                        contents,
+                                        num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                                        value: toInr(totalPrice),
+                                        currency: "INR",
+                                    },
+                                },
+                            });
                         }
 
                         // Paid — drop this row out of the abandoned-lead list.
@@ -890,14 +973,25 @@ export default function SavanPujaBookingPage() {
                                 type="button"
                                 onClick={() => {
                                     setPackageId(nextPkg.id);
-                                    if ((window as any).fbq) {
-                                        (window as any).fbq("trackCustom", "PujaPackageUpgrade", {
-                                            to: nextPkg.id,
+                                    analytics.custom(
+                                        "puja_package_upgrade",
+                                        {
+                                            package_id: nextPkg.id,
                                             value: nextPkg.price,
                                             currency: "INR",
                                             source: "booking_summary",
-                                        });
-                                    }
+                                        },
+                                        {
+                                            event: "PujaPackageUpgrade",
+                                            custom: true,
+                                            params: {
+                                                to: nextPkg.id,
+                                                value: nextPkg.price,
+                                                currency: "INR",
+                                                source: "booking_summary",
+                                            },
+                                        },
+                                    );
                                 }}
                                 className="w-full text-left rounded-2xl border border-[#D8B66A] bg-gradient-to-br from-[#F3E5BF] to-[#EFE3CC] px-3.5 py-3 shadow-[0_2px_10px_-6px_rgba(40,25,10,0.4)] active:scale-[0.99] transition-transform outline-none focus-visible:ring-2 focus-visible:ring-[#C79A2B] cursor-pointer"
                             >
@@ -1166,14 +1260,25 @@ export default function SavanPujaBookingPage() {
                                     checked={prasadBoxAdded}
                                     onChange={(e) => {
                                         setPrasadOptedIn(e.target.checked);
-                                        if ((window as any).fbq) {
-                                            (window as any).fbq("trackCustom", "PujaPrasadBoxToggle", {
+                                        analytics.custom(
+                                            "puja_prasad_box_toggle",
+                                            {
                                                 added: e.target.checked,
-                                                package: selectedPkg.id,
+                                                package_id: selectedPkg.id,
                                                 value: prasadBoxCost(selectedPkg, true),
                                                 currency: "INR",
-                                            });
-                                        }
+                                            },
+                                            {
+                                                event: "PujaPrasadBoxToggle",
+                                                custom: true,
+                                                params: {
+                                                    added: e.target.checked,
+                                                    package: selectedPkg.id,
+                                                    value: prasadBoxCost(selectedPkg, true),
+                                                    currency: "INR",
+                                                },
+                                            },
+                                        );
                                     }}
                                     className="w-4 h-4 shrink-0 rounded accent-[#A41F2E] border-[#D8B66A] focus:ring-[#C79A2B]"
                                 />

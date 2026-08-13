@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
+import analytics from "../utils/analytics";
 
 const HELP_OPTIONS = [
     "Choosing the right pooja",
@@ -94,10 +95,16 @@ export default function FreeConsultationPage() {
             });
             if (!res.ok) throw new Error("Failed");
 
-            // Meta Pixel Tracking
-            if (window.fbq) {
-                window.fbq("track", "Consultation Form");
-            }
+            // The Google Ads conversion action for consultation campaigns.
+            // `value` is what a consultation lead is worth to the business, not
+            // a price — Ads bids on it directly, so revisit it once the real
+            // lead-to-booking rate is known.
+            analytics.generateLead({
+                leadType: "Free Consultation",
+                method: "consultation_form",
+                value: 0,
+                meta: { event: "Consultation Form" },
+            });
 
             setSubmitted(true);
         } catch {

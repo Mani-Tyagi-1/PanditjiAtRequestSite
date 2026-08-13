@@ -7,5 +7,14 @@ node_modules/
 .env.dev
 .env.production
 
+# Anything derived from an env file is just as sensitive as the original.
+# Without this, an editor swap file or a hand-made `cp .env.production
+# .env.production.bak` sits in `git status` as a plain untracked file and one
+# `git add .` publishes every key in it.
+.env*.bak*
+.env.*.bak
+*.env.backup
+.env.production.*
+
 
 INTERNATIONAL-PAYMENTS.md

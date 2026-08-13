@@ -14,6 +14,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
+import { reportServerPurchase } from '../../utils/serverAnalytics';
 import { tryConsumeAppReferralOrder } from '../../utils/partnerAffiliateReferralCap';
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from '../../utils/whatsapp';
 import { sendBookingConfirmationEmail } from '../../utils/emailService';
@@ -807,6 +808,45 @@ export async function finalizePendingPoojaBooking(
         e?.response?.data || e?.message || e,
       );
     }
+  })();
+
+  // 4b) GA4 + Google Ads Purchase (fire-and-forget).
+  //     Lives here for the same reason the Meta call does: both the browser's
+  //     verify call and the Razorpay webhook land in this one function, so a
+  //     closed tab cannot lose the conversion. reportServerPurchase holds an
+  //     exactly-once claim per order id, so being reached twice is a no-op.
+  void (async () => {
+    const ga4ItemId = String((finalBooking as any).poojaNameEng || 'PUJA').trim();
+    const extraNames = Array.isArray((finalBooking as any).familyMembers)
+      ? (finalBooking as any).familyMembers.length
+      : 0;
+
+    await reportServerPurchase({
+      razorpayOrderId: String(finalBooking.razorpayOrderId || razorpayOrderId),
+      // The full order value, matching what the browser's purchase reported —
+      // GA4 dedupes on transaction_id, and two different values for one id is
+      // how a revenue report starts disagreeing with the bank.
+      value: Number((finalBooking as any).amount || amountPaid || 0),
+      currency: 'INR',
+      userId: String((finalBooking as any).userId || ''),
+      service: (finalBooking as any).isLiveMandir ? 'LiveMandirPuja' : 'Puja',
+      items: [
+        {
+          item_id: ga4ItemId,
+          item_name: ga4ItemId,
+          item_category: (finalBooking as any).isLiveMandir ? 'Live Mandir' : 'Puja',
+          item_variant: String((finalBooking as any).poojaMode || ''),
+          quantity: 1,
+          price: Number((finalBooking as any).amount || 0),
+        },
+        ...((finalBooking as any).prasadAdded
+          ? [{ item_id: `${ga4ItemId}__prasad`, item_name: `${ga4ItemId} — Prasad Box`, item_category: 'Add-on', quantity: 1 }]
+          : []),
+        ...(extraNames > 0
+          ? [{ item_id: `${ga4ItemId}__sankalp`, item_name: `${ga4ItemId} — Sankalp Name`, item_category: 'Add-on', quantity: extraNames }]
+          : []),
+      ],
+    });
   })();
 
   // 5) Notify dashboard (socket)
@@ -1826,6 +1866,26 @@ export const completePoojaBalancePayment: RequestHandler = async (req, res, next
     } as any).catch((err: any) =>
       console.error('[MetaCAPI] Pooja balance Purchase failed:', err?.message || err),
     );
+
+    // Same leg, reported to GA4. The balance order id is its own transaction_id
+    // for the reason above: an advance booking is two real payments, and
+    // collapsing them onto one id would hide half the revenue.
+    void reportServerPurchase({
+      razorpayOrderId: String(razorpayOrderId),
+      value: collected,
+      currency: 'INR',
+      userId: String((settled as any).userId || ''),
+      service: 'PujaBalance',
+      items: [
+        {
+          item_id: String((settled as any).poojaNameEng || 'PUJA_BOOKING'),
+          item_name: `${String((settled as any).poojaNameEng || 'Puja')} — Balance`,
+          item_category: 'Puja',
+          quantity: 1,
+          price: collected,
+        },
+      ],
+    });
 
     res.status(200).json({
       message: 'Balance payment received. Dhanyavaad.',

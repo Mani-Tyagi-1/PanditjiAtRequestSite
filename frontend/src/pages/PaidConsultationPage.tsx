@@ -5,6 +5,27 @@ import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
 import { money } from "../utils/currency";
 import { isIndia } from "../utils/currency";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
+
+/**
+ * The consultation as a GA4 line item.
+ *
+ * Split by call type rather than reported as one generic "consultation", so
+ * Ads can see which of the two actually converts and bid accordingly.
+ */
+const consultationGa4ItemsFor = (
+  consultType: string,
+  price: number,
+): AnalyticsItem[] => [
+  {
+    id: consultType === "video" ? "consultation_video" : "consultation_audio",
+    name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+    price,
+    quantity: 1,
+    category: "Consultation",
+    variant: consultType === "video" ? "video" : "audio",
+  },
+];
 
 const TIME_SLOTS = [
   { value: "9-11", display: "9 AM - 11 AM", period: "Morning" },
@@ -33,6 +54,10 @@ export default function PaidConsultationPage() {
     preferredTimeSlot: "5-7", // ← Default is now 5-7 PM
   });
   const [amount, setAmount] = useState(consultType === "video" ? 201 : 101);
+
+  /** This page's consultation as a GA4 line item, priced at `price`. */
+  const consultationGa4Items = (price: number) =>
+    consultationGa4ItemsFor(consultType, price);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
@@ -153,15 +178,23 @@ export default function PaidConsultationPage() {
               throw new Error(completeData.message || "Payment verification failed.");
             }
 
-            if (window.fbq) {
-              // eventID must match server CAPI event_id for deduplication
-              window.fbq("track", "Purchase", {
-                content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
-                content_type: consultType === "video" ? "video_call" : "audio_call",
-                value: orderData.amount,
-                currency: orderData.currency || "INR",
-              }, { eventID: `consultation_purchase_${response.razorpay_order_id}` });
-            }
+            analytics.purchase({
+              transactionId: response.razorpay_order_id,
+              items: consultationGa4Items(Number(orderData.amount) || amount),
+              value: Number(orderData.amount) || amount,
+              currency: orderData.currency || "INR",
+              meta: {
+                event: "Purchase",
+                // eventID must match server CAPI event_id for deduplication
+                eventId: `consultation_purchase_${response.razorpay_order_id}`,
+                params: {
+                  content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+                  content_type: consultType === "video" ? "video_call" : "audio_call",
+                  value: orderData.amount,
+                  currency: orderData.currency || "INR",
+                },
+              },
+            });
 
             setSubmitted(true);
           } catch (paymentError: any) {
@@ -183,13 +216,30 @@ export default function PaidConsultationPage() {
         setSubmitting(false);
       });
 
-      if (window.fbq) {
-        window.fbq("track", "InitiateCheckout", {
-          content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
-          content_type: consultType === "video" ? "video_call" : "audio_call",
-          value: Number(orderData.amount) || amount,
+      {
+        const checkoutValue = Number(orderData.amount) || amount;
+        analytics.beginCheckout({
+          items: consultationGa4Items(checkoutValue),
+          value: checkoutValue,
+          currency: orderData.currency || "INR",
+          meta: {
+            event: "InitiateCheckout",
+            params: {
+              content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+              content_type: consultType === "video" ? "video_call" : "audio_call",
+              value: checkoutValue,
+              currency: orderData.currency || "INR",
+            },
+          },
+        });
+        analytics.addPaymentInfo({
+          items: consultationGa4Items(checkoutValue),
+          value: checkoutValue,
           currency: orderData.currency || "INR",
         });
+        // Lets the Razorpay webhook attribute the purchase to this visitor even
+        // if the tab is gone before payment settles.
+        analytics.stashOrderAttribution(orderData.razorpayOrderId);
       }
 
       rzp.open();

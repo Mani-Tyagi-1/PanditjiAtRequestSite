@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import API_URL from "../utils/apiConfig";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
 import {
   DEFAULT_ADVANCE_PERCENT,
   DEFAULT_VIVAH_CATALOG,
@@ -437,41 +438,81 @@ export const loadRazorpay = (): Promise<any> =>
   });
 
 /* ========================================================================== */
-/*                              META PIXEL EVENTS                             */
+/*                            ANALYTICS EVENTS                                */
 /* ========================================================================== */
+/* These were Meta-only helpers. They now go through utils/analytics, which     */
+/* fans each call out to GA4 + Google Ads as well. The Meta leg is byte-for-    */
+/* byte what it always was — the `meta` blocks below carry the original event   */
+/* names and params — so Ads Manager history is continuous. The names and       */
+/* signatures are unchanged so every existing call site keeps working.          */
+
+/** One Vedic Vivah package as a GA4 line item. */
+const vivahItems = (label: string, value: number): AnalyticsItem[] => [
+  {
+    id: "VEDIC_VIVAH",
+    name: `Vedic Vivah — ${label}`,
+    price: value,
+    quantity: 1,
+    category: "Vedic Vivah",
+    variant: label,
+  },
+];
 
 /** Browser-side Purchase. `eventID` must match the server's CAPI event_id. */
 export const pixelVivahPurchase = (orderId: string, value: number, label: string) => {
-  const fbq = (window as any).fbq;
-  if (!fbq) return;
-  fbq(
-    "track",
-    "Purchase",
-    {
-      content_name: `Vedic Vivah — ${label}`,
-      content_ids: ["VEDIC_VIVAH"],
-      content_type: "vivah",
-      value,
-      currency: "INR",
+  analytics.purchase({
+    transactionId: orderId,
+    items: vivahItems(label, value),
+    value,
+    currency: "INR",
+    meta: {
+      event: "Purchase",
+      eventId: `vivah_purchase_${orderId}`,
+      params: {
+        content_name: `Vedic Vivah — ${label}`,
+        content_ids: ["VEDIC_VIVAH"],
+        content_type: "vivah",
+        value,
+        currency: "INR",
+      },
     },
-    { eventID: `vivah_purchase_${orderId}` }
-  );
+  });
 };
 
 export const pixelVivahInitiateCheckout = (value: number, label: string) => {
-  const fbq = (window as any).fbq;
-  if (!fbq) return;
-  fbq("track", "InitiateCheckout", {
-    content_name: `Vedic Vivah — ${label}`,
-    content_ids: ["VEDIC_VIVAH"],
-    content_type: "vivah",
+  analytics.beginCheckout({
+    items: vivahItems(label, value),
     value,
     currency: "INR",
+    meta: {
+      event: "InitiateCheckout",
+      params: {
+        content_name: `Vedic Vivah — ${label}`,
+        content_ids: ["VEDIC_VIVAH"],
+        content_type: "vivah",
+        value,
+        currency: "INR",
+      },
+    },
   });
 };
 
 export const pixelVivahLead = (label: string) => {
-  const fbq = (window as any).fbq;
-  if (!fbq) return;
-  fbq("track", "Lead", { content_name: `Vedic Vivah — ${label}`, content_type: "vivah" });
+  analytics.generateLead({
+    leadType: `Vedic Vivah — ${label}`,
+    method: "vivah_enquiry",
+    meta: {
+      event: "Lead",
+      params: { content_name: `Vedic Vivah — ${label}`, content_type: "vivah" },
+    },
+  });
 };
+
+/**
+ * Park this browser's GA4/Ads ids against a Vivah Razorpay order.
+ *
+ * Call right after the order is created and before the Razorpay sheet opens, so
+ * the webhook can still attribute the purchase if the tab is closed.
+ */
+export const stashVivahOrderAttribution = (razorpayOrderId: string) =>
+  analytics.stashOrderAttribution(razorpayOrderId);

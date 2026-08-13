@@ -13,12 +13,14 @@ import { decryptData } from "../utils/encryption";
 import { hanumanPuja, HANUMAN_PUJA_SLUG, DEFAULT_PACKAGE_ID, getPackage, type PujaPackageId } from "../data/hanumanPuja";
 import PujaPackages from "../components/hanuman/PujaPackages";
 import { money } from "../utils/currency";
+import analytics from "../utils/analytics";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
-    if (typeof window !== "undefined" && typeof window.fbq === "function") {
-        window.fbq(custom ? "trackCustom" : "track", event, params);
-    }
+    // Delegates to utils/analytics: Meta receives exactly what this helper
+    // always sent, and GA4 / Google Ads receive a mapped equivalent. The
+    // signature is unchanged, so every call site on this page still works.
+    analytics.metaBridge(event, params, custom);
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");

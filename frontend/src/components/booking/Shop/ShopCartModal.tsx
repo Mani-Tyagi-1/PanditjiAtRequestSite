@@ -10,6 +10,7 @@ import {
     type CartLine, type ShopProduct,
 } from "./shopData";
 import { money } from "../../../utils/currency";
+import analytics from "../../../utils/analytics";
 
 interface Props {
     isOpen: boolean;
@@ -85,14 +86,12 @@ export default function ShopCartModal({
                 }),
             });
             if (!res.ok) throw new Error("Failed");
-            if (window.fbq) {
-                window.fbq("track", "Purchase", {
-                    content_type: "shop_product",
-                    num_items: itemCount,
-                    value: total,
-                    currency: "INR",
-                });
-            }
+            analytics.metaBridge("Purchase", {
+                content_type: "shop_product",
+                num_items: itemCount,
+                value: total,
+                currency: "INR",
+            });
             setStep("success");
         } catch {
             setError("Could not place your order. Please try again.");

@@ -7,6 +7,7 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
 import { useMoney, isValidPhone, shipsPrasad, toStoredPhone } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
@@ -274,10 +275,11 @@ export default function BankeBihariBookingPage() {
                         : undefined,
                 diff: next.price - selectedPkg.price,
             });
-            window.fbq?.("trackCustom", "PujaUpgradeNudge", {
-                from: selectedPkg.id,
-                to: next.id,
-            });
+            analytics.custom(
+                "puja_upgrade_nudge",
+                { from_package: selectedPkg.id, to_package: next.id },
+                { event: "PujaUpgradeNudge", custom: true, params: { from: selectedPkg.id, to: next.id } },
+            );
         }, UPGRADE_NUDGE_DELAY_MS);
 
         return () => clearTimeout(timer);
@@ -308,6 +310,37 @@ export default function BankeBihariBookingPage() {
     // Events Manager and the higher value can't be reconciled against the price.
     // Ids mirror the ones the server CAPI Purchase sends (built off the booking
     // name) so the deduplicated pair reports identically either way.
+    // GA4 line items for the same basket metaContents() describes. Kept next to
+    // it so the two cannot drift apart into two different revenue figures.
+    const ga4Items = (): AnalyticsItem[] => [
+        {
+            id: String(puja._id),
+            name: packageLabel,
+            price: toInr(basePrice),
+            quantity: 1,
+            category: "Puja",
+            brand: "Banke Bihari",
+        },
+        ...(chargedMembers > 0
+            ? [{
+                id: `${puja._id}__sankalp`,
+                name: `${puja.poojaNameEng} — Extra Sankalp Name`,
+                price: toInr(EXTRA_FAMILY_MEMBER_PRICE),
+                quantity: chargedMembers,
+                category: "Add-on",
+            }]
+            : []),
+        ...(prasadCost > 0
+            ? [{
+                id: `${puja._id}__prasad`,
+                name: `${puja.poojaNameEng} — Prasad Box`,
+                price: PRASAD_BOX_PRICE,
+                quantity: 1,
+                category: "Add-on",
+            }]
+            : []),
+    ];
+
     const metaContents = () => [
         { id: packageLabel, quantity: 1, item_price: toInr(basePrice) },
         ...(chargedMembers > 0
@@ -381,13 +414,20 @@ export default function BankeBihariBookingPage() {
         if (hasTrackedDetails.current) return;
         if (form.name.trim().length < 3 || !isValidPhone(form.phone, country)) return;
         hasTrackedDetails.current = true;
-        if ((window as any).fbq) {
-            (window as any).fbq("track", "CustomerDetailsFilled", {
-                content_name: puja.poojaNameEng,
-                bhaktName: form.name.trim(),
-                contactNumber: toStoredPhone(form.phone, country),
-            });
-        }
+        // Meta still receives the name and number it always has; GA4 gets only
+        // the item, because PII in a GA4 property breaches Google's terms.
+        analytics.checkoutDetailsFilled({
+            itemName: puja.poojaNameEng,
+            itemId: String(puja._id),
+            meta: {
+                event: "CustomerDetailsFilled",
+                params: {
+                    content_name: puja.poojaNameEng,
+                    bhaktName: form.name.trim(),
+                    contactNumber: toStoredPhone(form.phone, country),
+                },
+            },
+        });
     };
 
     const handleConfirm = async () => {
@@ -563,17 +603,29 @@ export default function BankeBihariBookingPage() {
             // AddToCart already fired on the detail-page CTA that led here, so
             // this step only reports InitiateCheckout — firing both here would
             // put two funnel steps on a single trigger.
-            if ((window as any).fbq) {
+            {
                 const contents = metaContents();
-                (window as any).fbq("track", "InitiateCheckout", {
-                    content_name: puja.poojaNameEng,
-                    content_ids: [puja._id],
-                    content_type: "product",
-                    contents,
-                    num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                analytics.beginCheckout({
+                    items: ga4Items(),
                     value: toInr(totalPrice),
                     currency: "INR",
+                    meta: {
+                        event: "InitiateCheckout",
+                        params: {
+                            content_name: puja.poojaNameEng,
+                            content_ids: [puja._id],
+                            content_type: "product",
+                            contents,
+                            num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                            value: toInr(totalPrice),
+                            currency: "INR",
+                        },
+                    },
                 });
+                analytics.addPaymentInfo({ items: ga4Items(), value: toInr(totalPrice), currency: "INR" });
+                // Lets the Razorpay webhook attribute the purchase to this
+                // visitor even if the tab is gone before payment settles.
+                analytics.stashOrderAttribution(orderData.razorpayOrderId);
             }
 
             // 2) Open Razorpay checkout.
@@ -629,17 +681,27 @@ export default function BankeBihariBookingPage() {
 
                         if (verifyData.token && verifyData.user) login(verifyData.token, verifyData.user);
 
-                        if ((window as any).fbq) {
+                        {
                             const contents = metaContents();
-                            (window as any).fbq("track", "Purchase", {
-                                content_name: puja.poojaNameEng,
-                                content_ids: [puja._id],
-                                content_type: "product",
-                                contents,
-                                num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                            analytics.purchase({
+                                transactionId: response.razorpay_order_id,
+                                items: ga4Items(),
                                 value: toInr(totalPrice),
                                 currency: "INR",
-                            }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
+                                meta: {
+                                    event: "Purchase",
+                                    eventId: `puja_purchase_${response.razorpay_order_id}`,
+                                    params: {
+                                        content_name: puja.poojaNameEng,
+                                        content_ids: [puja._id],
+                                        content_type: "product",
+                                        contents,
+                                        num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                                        value: toInr(totalPrice),
+                                        currency: "INR",
+                                    },
+                                },
+                            });
                         }
 
                         // Paid — drop this row out of the abandoned-lead list.
@@ -716,12 +778,25 @@ export default function BankeBihariBookingPage() {
                     if (!upgradeOffer) return;
                     setPackageId(upgradeOffer.id);
                     setUpgradeOffer(null);
-                    window.fbq?.("trackCustom", "PujaPackageUpgrade", {
-                        to: upgradeOffer.id,
-                        value: getPackage(upgradeOffer.id).price,
-                        currency: "INR",
-                        source: "nudge",
-                    });
+                    analytics.custom(
+                        "puja_package_upgrade",
+                        {
+                            package_id: upgradeOffer.id,
+                            value: getPackage(upgradeOffer.id).price,
+                            currency: "INR",
+                            source: "nudge",
+                        },
+                        {
+                            event: "PujaPackageUpgrade",
+                            custom: true,
+                            params: {
+                                to: upgradeOffer.id,
+                                value: getPackage(upgradeOffer.id).price,
+                                currency: "INR",
+                                source: "nudge",
+                            },
+                        },
+                    );
                 }}
                 onDismiss={() => setUpgradeOffer(null)}
             />
@@ -1064,14 +1139,25 @@ export default function BankeBihariBookingPage() {
                                 added={prasadBoxAdded}
                                 onToggle={(next) => {
                                     setAddPrasadBox(next);
-                                    if ((window as any).fbq) {
-                                        (window as any).fbq("trackCustom", "PujaPrasadBoxToggle", {
+                                    analytics.custom(
+                                        "puja_prasad_box_toggle",
+                                        {
                                             added: next,
-                                            package: selectedPkg.id,
+                                            package_id: selectedPkg.id,
                                             value: PRASAD_BOX_PRICE,
                                             currency: "INR",
-                                        });
-                                    }
+                                        },
+                                        {
+                                            event: "PujaPrasadBoxToggle",
+                                            custom: true,
+                                            params: {
+                                                added: next,
+                                                package: selectedPkg.id,
+                                                value: PRASAD_BOX_PRICE,
+                                                currency: "INR",
+                                            },
+                                        },
+                                    );
                                 }}
                             />
                         </div>

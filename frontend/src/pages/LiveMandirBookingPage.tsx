@@ -8,6 +8,7 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
@@ -138,6 +139,26 @@ export default function LiveMandirBookingPage() {
     const familyCost = form.familyMembers.length * 101;
     const prasadCost = prasadAdded ? 501 : 0;
     const totalPrice = basePrice + familyCost + prasadCost;
+
+    // GA4 line items for this seva. Add-ons are separate rows so the item total
+    // reconciles with `totalPrice` — a single lump row would show the base
+    // price against an inflated order value and read as a tracking bug.
+    const liveMandirGa4Items = (): AnalyticsItem[] => [
+        {
+            id: String(puja?.id ?? "live_mandir_puja"),
+            name: `${puja?.pujaName ?? "Live Mandir Puja"} - ${puja?.templeName ?? ""}`.trim(),
+            price: basePrice,
+            quantity: 1,
+            category: "Live Mandir",
+            brand: puja?.templeName,
+        },
+        ...(prasadCost > 0
+            ? [{ id: `${puja?.id}__prasad`, name: "Prasad Box", price: 501, quantity: 1, category: "Add-on" }]
+            : []),
+        ...(familyCost > 0
+            ? [{ id: `${puja?.id}__sankalp`, name: "Extra Sankalp Name", price: 101, quantity: form.familyMembers.length, category: "Add-on" }]
+            : []),
+    ];
 
     // Whatever delivery address the devotee has settled on so far — a selected
     // saved address, or the new-address form once they start typing into it.
@@ -322,18 +343,26 @@ export default function LiveMandirBookingPage() {
                             login(verifyData.token, verifyData.user);
                         }
 
-                        if ((window as any).fbq) {
-                            // Website live-mandir bookings settle through the unified pooja
-                            // /bookings/complete-booking endpoint, whose server CAPI emits
-                            // `puja_purchase_<orderID>`. eventID must match that for dedup.
-                            (window as any).fbq("track", "Purchase", {
-                                content_name: `${puja.pujaName} - ${puja.templeName}`,
-                                content_ids: [puja.id],
-                                content_type: "live_mandir_puja",
-                                value: totalPrice,
-                                currency: "INR",
-                            }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
-                        }
+                        analytics.purchase({
+                            transactionId: response.razorpay_order_id,
+                            items: liveMandirGa4Items(),
+                            value: totalPrice,
+                            currency: "INR",
+                            meta: {
+                                // Website live-mandir bookings settle through the unified pooja
+                                // /bookings/complete-booking endpoint, whose server CAPI emits
+                                // `puja_purchase_<orderID>`. eventID must match that for dedup.
+                                event: "Purchase",
+                                eventId: `puja_purchase_${response.razorpay_order_id}`,
+                                params: {
+                                    content_name: `${puja.pujaName} - ${puja.templeName}`,
+                                    content_ids: [puja.id],
+                                    content_type: "live_mandir_puja",
+                                    value: totalPrice,
+                                    currency: "INR",
+                                },
+                            },
+                        });
                         // Paid — drop this row out of the abandoned-lead list.
                         markCartConverted(orderData.bookingId);
 
@@ -361,15 +390,26 @@ export default function LiveMandirBookingPage() {
                 setSubmitting(false);
             });
 
-            if ((window as any).fbq) {
-                (window as any).fbq("track", "InitiateCheckout", {
-                    content_name: `${puja.pujaName} - ${puja.templeName}`,
-                    content_ids: [puja.id],
-                    content_type: "live_mandir_puja",
-                    value: totalPrice,
-                    currency: "INR",
-                });
-            }
+            analytics.beginCheckout({
+                items: liveMandirGa4Items(),
+                value: totalPrice,
+                currency: "INR",
+                meta: {
+                    event: "InitiateCheckout",
+                    params: {
+                        content_name: `${puja.pujaName} - ${puja.templeName}`,
+                        content_ids: [puja.id],
+                        content_type: "live_mandir_puja",
+                        value: totalPrice,
+                        currency: "INR",
+                    },
+                },
+            });
+            analytics.addPaymentInfo({ items: liveMandirGa4Items(), value: totalPrice, currency: "INR" });
+
+            // Lets the Razorpay webhook attribute the purchase to this visitor
+            // even if the tab is gone before payment settles.
+            analytics.stashOrderAttribution(orderData.razorpayOrderId);
 
             rzp.open();
         } catch (err: any) {

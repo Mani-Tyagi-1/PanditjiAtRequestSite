@@ -3,6 +3,63 @@
 
 <head>
 
+  <!-- ═══════════════════════════════════════════════
+         GOOGLE CONSENT MODE v2
+         MUST stay above the GTM snippet. Tags read the default the instant the
+         container loads, so a default declared after it arrives too late and
+         the first page_view has already fired ungoverned.
+
+         Region-scoped on purpose. Traffic is overwhelmingly Indian, where the
+         DPDP Act does not require prior opt-in, so storage is granted by
+         default and the banner offers an opt-OUT. Visitors from the EEA, UK and
+         Switzerland — where GDPR does require prior consent — start denied and
+         nothing is written until they accept.
+
+         "Denied" is not "no tracking": Consent Mode keeps sending cookieless
+         pings that Google uses to model the conversions it can no longer
+         observe, which is why the tags stay installed either way.
+
+         To require opt-in everywhere, delete the region list from the second
+         call and change the first call's grants to 'denied'.
+    ═══════════════════════════════════════════════ -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+
+    // Default for the rest of the world (India included).
+    gtag('consent', 'default', {
+      ad_storage: 'granted',
+      ad_user_data: 'granted',
+      ad_personalization: 'granted',
+      analytics_storage: 'granted',
+      functionality_storage: 'granted',
+      security_storage: 'granted'
+    });
+
+    // Stricter default for consent-required jurisdictions. `wait_for_update`
+    // holds tags for 500ms so a returning visitor's stored "accept" can land
+    // before anything fires — without it their first pageview is always lost.
+    gtag('consent', 'default', {
+      region: ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR',
+               'HU', 'IS', 'IE', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
+               'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'GB', 'CH'],
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      functionality_storage: 'granted',
+      security_storage: 'granted',
+      wait_for_update: 500
+    });
+
+    // Keeps click ids on the URL when ad_storage is denied, so a conversion can
+    // still be attributed without a cookie.
+    gtag('set', 'url_passthrough', true);
+    // Strips ad click identifiers from the tag's own network requests while
+    // ad_storage is denied.
+    gtag('set', 'ads_data_redaction', true);
+  </script>
+
   <!-- Google Tag Manager -->
   <script>(function (w, d, s, l, i) {
       w[l] = w[l] || []; w[l].push({

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { ArrowLeft, User, Phone, Mail, Check } from "lucide-react";
 import API_URL from "../utils/apiConfig";
+import analytics from "../utils/analytics";
 import { useAuth } from "../context/AuthContext";
 
 const KASHI_BG =
@@ -57,13 +58,18 @@ export default function KashiPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || "Failed to submit request.");
 
-            // Meta Pixel Tracking
-            if (window.fbq) {
-                window.fbq("track", "Kashi Pandit Pooja Request", {
-                    content_name: "Kashi Vishwanath Dham",
-                    content_type: "kashi_request",
-                });
-            }
+            analytics.generateLead({
+                leadType: "Kashi Pandit Pooja Request",
+                method: "kashi_request_form",
+                value: 0,
+                meta: {
+                    event: "Kashi Pandit Pooja Request",
+                    params: {
+                        content_name: "Kashi Vishwanath Dham",
+                        content_type: "kashi_request",
+                    },
+                },
+            });
 
             setSubmitted(true);
         } catch (err: any) {

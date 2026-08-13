@@ -7,6 +7,7 @@ import { panditJiAtRequestMongooose } from "../../config/connectDB";
 import ChadhavaBooking, { IChadhavaSelection } from "../../model/userApp/chadhavaBookingModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
+import { reportServerPurchase, getStoredAttribution } from "../../utils/serverAnalytics";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 // Devshayani Ekadashi combo (frontend-only offering — remove to disable)
 import { resolveDevshayaniCombo } from "../../config/devshayaniCombo";
@@ -661,39 +662,16 @@ export const completeChadhavaPayment: RequestHandler = async (req, res) => {
     // 🟢 Thank-you WhatsApp — only now that payment is verified (fire-and-forget)
     void sendChadhavaConfirmationWhatsapp(booking);
 
-    // META CAPI Purchase (fire-and-forget) — dedup with browser pixel via eventId.
-    void (async () => {
-      if (!isProduction) {
-        console.log(`[MetaCAPI][Chadhava] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
-        return;
-      }
-      try {
-        const forwardedFor = req.headers["x-forwarded-for"];
-        const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(",")[0]) || req.ip || null;
-
-        await sendMetaPurchaseEvent({
-          orderID: String(razorpayOrderId),
-          eventId: `chadhava_purchase_${razorpayOrderId}`,
-          value: Number((booking as any).totalAmount || 0),
-          currency: "INR",
-          contentId: String((booking as any).deity || "CHADHAVA").trim(),
-          actionSource: "website",
-          phone: String((booking as any).phone || ""),
-          externalId: String((booking as any)._id || ""),
-          clientIp,
-          userAgent: String(req.headers["user-agent"] || ""),
-          fbp: String(req.headers["x-fbp"] || (req as any).cookies?._fbp || ""),
-          fbc: String(req.headers["x-fbc"] || (req as any).cookies?._fbc || ""),
-          eventSourceUrl:
-            String(req.headers["x-event-source-url"] || "") ||
-            process.env.META_DEFAULT_EVENT_SOURCE_URL ||
-            null,
-        });
-        console.log(`[MetaCAPI][Chadhava] Purchase sent for orderID=${razorpayOrderId}`);
-      } catch (e: any) {
-        console.error(`[MetaCAPI][Chadhava] Purchase failed for orderID=${razorpayOrderId}:`, e?.response?.data || e?.message || e);
-      }
-    })();
+    void reportChadhavaPurchase(booking, {
+      clientIp:
+        (Array.isArray(req.headers["x-forwarded-for"])
+          ? req.headers["x-forwarded-for"][0]
+          : req.headers["x-forwarded-for"]?.split(",")[0]) || req.ip || null,
+      userAgent: String(req.headers["user-agent"] || ""),
+      fbp: String(req.headers["x-fbp"] || (req as any).cookies?._fbp || ""),
+      fbc: String(req.headers["x-fbc"] || (req as any).cookies?._fbc || ""),
+      eventSourceUrl: String(req.headers["x-event-source-url"] || ""),
+    });
 
     res.status(200).json({
       success: true,
@@ -705,6 +683,95 @@ export const completeChadhavaPayment: RequestHandler = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to verify chadhava payment" });
   }
 };
+
+/**
+ * Report a paid Chadhava to Meta and to GA4/Google Ads.
+ *
+ * Extracted so BOTH payment paths can call it — the browser's verify call and
+ * the Razorpay webhook. It previously lived inline in the verify handler only,
+ * which meant a devotee who closed the tab on the success screen was a sale we
+ * took the money for and never counted. Ads then bid as if that click had not
+ * converted.
+ *
+ * Safe to reach twice for one order: Meta dedupes on the deterministic
+ * `eventId` below, and GA4 on `transaction_id` plus the exactly-once claim
+ * inside reportServerPurchase.
+ *
+ * `http` is only present on the browser path — a webhook has no user agent or
+ * cookies of its own, so those fields fall back to whatever the checkout page
+ * parked in the attribution stash.
+ */
+async function reportChadhavaPurchase(
+  booking: any,
+  http?: {
+    clientIp?: string | null;
+    userAgent?: string;
+    fbp?: string;
+    fbc?: string;
+    eventSourceUrl?: string;
+  },
+): Promise<void> {
+  const razorpayOrderId = String(booking?.razorpayOrderId || "");
+  if (!razorpayOrderId) return;
+
+  const deity = String(booking?.deity || "CHADHAVA").trim();
+  const value = Number(booking?.totalAmount || 0);
+
+  // GA4 / Google Ads
+  void reportServerPurchase({
+    razorpayOrderId,
+    value,
+    currency: "INR",
+    userId: String(booking?._id || ""),
+    service: "Chadhava",
+    items: [
+      {
+        item_id: deity,
+        item_name: String(booking?.chadhavaName || deity),
+        item_category: "Chadhava",
+        item_brand: String(booking?.templeName || deity),
+        quantity: 1,
+        price: value,
+      },
+    ],
+  });
+
+  // Meta CAPI
+  if (!isProduction) {
+    console.log(`[MetaCAPI][Chadhava] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+    return;
+  }
+  try {
+    const stashed = http ? null : await getStoredAttribution(razorpayOrderId);
+    await sendMetaPurchaseEvent({
+      orderID: razorpayOrderId,
+      eventId: `chadhava_purchase_${razorpayOrderId}`,
+      value,
+      currency: "INR",
+      contentId: deity,
+      actionSource: "website",
+      phone: String(booking?.phone || ""),
+      externalId: String(booking?._id || ""),
+      clientIp: http?.clientIp ?? stashed?.clientIp ?? null,
+      // Meta rejects a website event with no user agent, so the stash is what
+      // keeps the webhook path from being refused outright.
+      userAgent: http?.userAgent || stashed?.userAgent || "",
+      fbp: http?.fbp || stashed?.fbp || "",
+      fbc: http?.fbc || stashed?.fbc || "",
+      eventSourceUrl:
+        http?.eventSourceUrl ||
+        stashed?.eventSourceUrl ||
+        process.env.META_DEFAULT_EVENT_SOURCE_URL ||
+        null,
+    });
+    console.log(`[MetaCAPI][Chadhava] Purchase sent for orderID=${razorpayOrderId}`);
+  } catch (e: any) {
+    console.error(
+      `[MetaCAPI][Chadhava] Purchase failed for orderID=${razorpayOrderId}:`,
+      e?.response?.data || e?.message || e,
+    );
+  }
+}
 
 /**
  * Razorpay reconciliation for a Chadhava booking. Called by the shared webhook
@@ -741,6 +808,11 @@ export async function reconcileChadhavaPayment(opts: {
     });
 
     void sendChadhavaConfirmationWhatsapp(booking);
+
+    // The conversion the browser could not report because it was gone. Uses the
+    // ids the checkout page parked in the attribution stash for match quality.
+    void reportChadhavaPurchase(booking);
+
     console.log(`[RazorpayWebhook][Chadhava] order=${orderId} → confirmed`);
   } else if (event === "payment.failed") {
     booking.paymentStatus = "failed";

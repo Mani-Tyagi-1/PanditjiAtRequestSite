@@ -136,6 +136,10 @@ import { useCurrencyRoot } from "./utils/currency";
  */
 const LoginModal = React.lazy(() => import("./components/auth/LoginModal"));
 
+// Analytics: one module for GA4 + Google Ads + Meta. See utils/analytics.ts.
+import analytics from "./utils/analytics";
+import ConsentBanner from "./components/ConsentBanner";
+
 /**
  * Mounts the login modal only while it is open, so its chunk (and
  * framer-motion behind it) is fetched on the tap that opens it rather than on
@@ -215,14 +219,23 @@ function ScrollToTop() {
   return null;
 }
 
-// Fires PageView on every SPA route change so Meta Pixel tracks all pages
-function PixelPageTracker() {
+/**
+ * Fires a page view on every SPA route change, to GA4 (via dataLayer → GTM)
+ * and to the Meta Pixel.
+ *
+ * Both platforms need this for the same reason: their base snippets report a
+ * page view exactly once, when the container loads. On a single-page app that
+ * happens on the first URL only, so without this every route after the landing
+ * page is invisible to both.
+ *
+ * Keyed on search as well as pathname — /shop/all and /shop?q=rudraksh are
+ * different pages to a marketer even though the pathname alone can't tell.
+ */
+function AnalyticsPageTracker() {
   const location = useLocation();
   useEffect(() => {
-    if (window.fbq) {
-      window.fbq("track", "PageView");
-    }
-  }, [location.pathname]);
+    analytics.pageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
   return null;
 }
 
@@ -283,7 +296,8 @@ function App() {
       <LazyLoginModal />
       <ShopifyCartDrawer />
       <ScrollToTop />
-      <PixelPageTracker />
+      <AnalyticsPageTracker />
+      <ConsentBanner />
       <ReferralCapture />
       <AppDownloadModal />
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>

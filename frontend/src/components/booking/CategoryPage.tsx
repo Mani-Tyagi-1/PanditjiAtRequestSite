@@ -8,6 +8,7 @@ import {
 import PujaCard from "./UI/PujaCard";
 import ConsultancyModal from "./ConsultancyModal";
 import { useAuth } from "../../context/AuthContext";
+import analytics from "../../utils/analytics";
 
 interface PujaData {
   _id: string;
@@ -158,14 +159,12 @@ export default function CategoryPage() {
   // Fire ViewContent once category name is known
   useEffect(() => {
     if (!categoryDetails) return;
-    if (window.fbq) {
-      window.fbq("track", "ViewContent", {
-        content_ids: [categoryId],
-        content_name: categoryDetails.category_name_en,
-        content_type: "product_group",
-        currency: "INR",
-      });
-    }
+    analytics.metaBridge("ViewContent", {
+    content_ids: [categoryId],
+    content_name: categoryDetails.category_name_en,
+    content_type: "product_group",
+    currency: "INR",
+    });
   }, [categoryDetails, categoryId]);
 
   // Re-sync activeCategory when categoryId changes

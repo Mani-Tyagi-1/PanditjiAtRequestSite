@@ -9,6 +9,7 @@ import { type Chadhava, type ChadhavaSelection } from "../components/booking/Cha
 // Devshayani Ekadashi combo (frontend-only offering — remove to disable)
 import { devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_TEMPLES, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 import { money } from "../utils/currency";
+import analytics from "../utils/analytics";
 
 function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" | "goldbar" }) {
     const [timeLeft, setTimeLeft] = useState("");
@@ -348,17 +349,32 @@ export default function ChadhavaDetailPage() {
         })();
     }, [slug]);
 
-    // Meta Pixel: track chadhava detail view
+    // Product detail view — GA4's view_item and Meta's ViewContent. The head of
+    // the funnel, and what Google Ads builds its remarketing audiences from.
     useEffect(() => {
-        if (chadhava && window.fbq) {
-            window.fbq("track", "ViewContent", {
-                content_name: chadhava.deity,
-                content_ids: [chadhava.id],
-                content_type: "chadhava",
-                value: chadhava.startingPrice,
-                currency: "INR",
-            });
-        }
+        if (!chadhava) return;
+        analytics.viewItem({
+            items: [{
+                id: String(chadhava.id),
+                name: chadhava.deity,
+                price: chadhava.startingPrice,
+                quantity: 1,
+                category: "Chadhava",
+                brand: chadhava.templeName,
+            }],
+            value: chadhava.startingPrice,
+            currency: "INR",
+            meta: {
+                event: "ViewContent",
+                params: {
+                    content_name: chadhava.deity,
+                    content_ids: [chadhava.id],
+                    content_type: "chadhava",
+                    value: chadhava.startingPrice,
+                    currency: "INR",
+                },
+            },
+        });
     }, [chadhava]);
 
     // Auto-scroll: once the chadhava loads, gently glide the page down and

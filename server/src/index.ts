@@ -47,6 +47,7 @@ import shopifyOrderRoutes from "./routes/userAppRoutes/shopifyOrderRoutes";
 import seoRoutes from "./routes/seoRoutes";
 import affiliateProductsRoutes from "./routes/userAppRoutes/affiliateProductsRoutes";
 import razorpayWebhookRoutes from "./routes/payments/razorpayWebhookRoutes";
+import analyticsRoutes from "./routes/analytics/analyticsRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -111,6 +112,9 @@ app.use("/api", shopifyProductRoutes);
 app.use("/api", shopifyOrderRoutes);
 // Razorpay server-to-server payment confirmation for every service
 app.use("/api/payments", razorpayWebhookRoutes);
+// Parks the browser's GA4/Ads ids against an order id so the webhook above can
+// report the purchase as the right visitor. See utils/serverAnalytics.ts.
+app.use("/api/analytics", analyticsRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 

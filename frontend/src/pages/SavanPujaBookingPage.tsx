@@ -161,6 +161,27 @@ export default function SavanPujaBookingPage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
 
+    /**
+     * Saved Razorpay order that can be retried without hitting create-pending
+     * again. Set as soon as the server returns an order; cleared on success or
+     * when the user edits the form (which changes the total and invalidates the
+     * old order).
+     *
+     * Why: when Google Pay times out the modal is dismissed, but the Razorpay
+     * order and the PendingPoojaBooking row are still valid — Razorpay allows
+     * retrying the same order_id within its expiry window (usually 15 minutes).
+     * Reusing the same order avoids creating a second orphan pending row and
+     * lets the webhook reconcile whichever attempt eventually succeeds.
+     */
+    const [retryOrderData, setRetryOrderData] = useState<{
+        razorpayOrderId: string;
+        razorpayKeyId: string;
+        amountMinor: number;
+        currency: string;
+        bookingId: string;
+        prefill: { name: string; contact: string; email: string };
+    } | null>(null);
+
     // Devotee + schedule form
     const [form, setForm] = useState({
         name: "",
@@ -460,6 +481,9 @@ export default function SavanPujaBookingPage() {
 
     const handleConfirm = async () => {
         setError("");
+        // A fresh submit starts a new order — discard any stale retry state
+        // so the user doesn't accidentally reopen a superseded Razorpay order.
+        setRetryOrderData(null);
 
         if (!form.name.trim()) {
             setError("Please enter the devotee's name.");
@@ -628,6 +652,22 @@ export default function SavanPujaBookingPage() {
             const RazorpayCtor = (window as any).Razorpay;
             if (!RazorpayCtor) throw new Error("Payment SDK failed to load. Please refresh and try again.");
 
+            // Persist the order so ondismiss can surface a Retry button that
+            // reopens THIS Razorpay order instead of calling create-pending again.
+            const savedPrefill = {
+                name: form.name.trim(),
+                contact: isIndia ? phoneDigits : `+${phoneDigits}`,
+                email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
+            };
+            setRetryOrderData({
+                razorpayOrderId: orderData.razorpayOrderId,
+                razorpayKeyId: orderData.razorpayKeyId,
+                amountMinor: orderData.amountMinor ?? totalPrice * 100,
+                currency: orderData.currency ?? "INR",
+                bookingId: orderData.bookingId,
+                prefill: savedPrefill,
+            });
+
             // AddToCart already fired on the detail-page CTA that led here, so
             // this step only reports InitiateCheckout — firing both here would
             // put two funnel steps on a single trigger.
@@ -680,12 +720,36 @@ export default function SavanPujaBookingPage() {
                 name: "Pandit Ji At Request",
                 description: puja.poojaNameEng,
                 order_id: orderData.razorpayOrderId,
-                prefill: {
-                    name: form.name.trim(),
-                    // E.164 for international numbers — Razorpay expects the
-                    // "+" form and will not prefill a bare digit string.
-                    contact: isIndia ? phoneDigits : `+${phoneDigits}`,
-                    email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
+                prefill: savedPrefill,
+                // Keep the sheet open for the full UPI collect-request window.
+                // Google Pay issues a 5-minute UPI collect; without this the
+                // Razorpay modal can time out before the network settles and
+                // the payment is dropped even though the user approved it.
+                timeout: 300,
+                // Explicit UPI instrument config.
+                //
+                // `intent` opens Google Pay / PhonePe directly (deeplink).
+                // `qr`     is the fallback for in-app browsers (Instagram,
+                //           WhatsApp, Facebook) that block upi:// deep-links.
+                // `collect` covers UPI pull when the device has no UPI app
+                //           or intent fails.
+                //
+                // `show_default_blocks: true` keeps cards and netbanking
+                // alongside UPI so this config is additive, never restrictive.
+                config: {
+                    display: {
+                        blocks: {
+                            upi: {
+                                name: "Pay via UPI",
+                                instruments: [{
+                                    method: "upi",
+                                    flows: ["intent", "qr", "collect"],
+                                }],
+                            },
+                        },
+                        sequence: ["block.upi"],
+                        preferences: { show_default_blocks: true },
+                    },
                 },
                 // Razorpay's own chrome, tinted to the theme's action colour so
                 // the checkout sheet doesn't open in a different palette than
@@ -767,8 +831,16 @@ export default function SavanPujaBookingPage() {
                 },
                 modal: {
                     ondismiss: () => {
-                        setError("Payment was cancelled. You can try again.");
+                        // The Razorpay order is still valid — Razorpay allows
+                        // retrying the same order_id within its expiry window.
+                        // retryOrderData is already set (above) so the Retry
+                        // button can reopen the sheet without a new create-pending.
+                        setError(
+                            "Payment was not completed. Tap \"Retry Payment\" to try again — " +
+                            "your booking details are saved."
+                        );
                         setSubmitting(false);
+                        // retryOrderData stays set so the Retry button is visible.
                     },
                 },
             });
@@ -1626,17 +1698,134 @@ export default function SavanPujaBookingPage() {
                                 {money(totalPrice)}
                             </span>
                         </div>
-                        <button
-                            onClick={handleConfirm}
-                            disabled={submitting}
-                            className="flex-1 font-svn-ui flex items-center justify-center gap-1.5 bg-[#A41F2E] hover:bg-[#87121E] text-[#FFF8F0] font-bold text-[14px] py-3 rounded-xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.9)] active:scale-95 transition-all disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none cursor-pointer"
-                        >
-                            {submitting ? (
-                                <><span className="w-4 h-4 border-2 border-[#FFF8F0] border-t-transparent rounded-full animate-spin" /> Processing…</>
-                            ) : (
-                                <>Book With Devotion <ChevronRight className="w-4 h-4" /></>
-                            )}
-                        </button>
+
+                        {/* Retry Payment — shown after a Google Pay timeout / modal dismiss.
+                            Reopens the SAME Razorpay order so no second pending booking
+                            is created and the webhook can reconcile whichever attempt
+                            eventually succeeds. Hidden once the order is gone or
+                            the user edits their form (which resets retryOrderData). */}
+                        {retryOrderData && !submitting ? (
+                            <button
+                                onClick={() => {
+                                    const RazorpayCtor = (window as any).Razorpay;
+                                    if (!RazorpayCtor) {
+                                        setError("Payment SDK not loaded. Please refresh and try again.");
+                                        return;
+                                    }
+                                    setError("");
+                                    setSubmitting(true);
+                                    const rzpRetry = new RazorpayCtor({
+                                        key: retryOrderData.razorpayKeyId,
+                                        amount: retryOrderData.amountMinor,
+                                        currency: retryOrderData.currency,
+                                        name: "Pandit Ji At Request",
+                                        description: puja.poojaNameEng,
+                                        order_id: retryOrderData.razorpayOrderId,
+                                        prefill: retryOrderData.prefill,
+                                        timeout: 300,
+                                        // Same UPI config as the primary checkout — intent
+                                        // first, QR fallback for in-app browsers, collect
+                                        // last. Keeps the retry path consistent.
+                                        config: {
+                                            display: {
+                                                blocks: {
+                                                    upi: {
+                                                        name: "Pay via UPI",
+                                                        instruments: [{
+                                                            method: "upi",
+                                                            flows: ["intent", "qr", "collect"],
+                                                        }],
+                                                    },
+                                                },
+                                                sequence: ["block.upi"],
+                                                preferences: { show_default_blocks: true },
+                                            },
+                                        },
+                                        theme: { color: "#7A1622" },
+                                        handler: async (response: any) => {
+                                            try {
+                                                const verifyRes = await fetch(`${API_URL}/bookings/complete-booking`, {
+                                                    method: "POST",
+                                                    headers: {
+                                                        "Content-Type": "application/json",
+                                                        "x-event-source-url": window.location.href,
+                                                        "x-fbp": readCookie("_fbp"),
+                                                        "x-fbc": readCookie("_fbc"),
+                                                    },
+                                                    body: JSON.stringify(encryptPayload({
+                                                        pendingBookingId: retryOrderData.bookingId,
+                                                        razorpayOrderId: response.razorpay_order_id,
+                                                        razorpayPaymentId: response.razorpay_payment_id,
+                                                        razorpaySignature: response.razorpay_signature,
+                                                        amountPaid: toInr(totalPrice),
+                                                    })),
+                                                });
+                                                const verifyData = await verifyRes.json();
+                                                if (!verifyRes.ok) throw new Error(verifyData.message || "Payment verification failed.");
+                                                if (verifyData.token && verifyData.user) login(verifyData.token, verifyData.user);
+                                                const contents = metaContents();
+                                                analytics.purchase({
+                                                    transactionId: response.razorpay_order_id,
+                                                    items: ga4Items(),
+                                                    value: toInr(totalPrice),
+                                                    currency: "INR",
+                                                    meta: {
+                                                        event: "Purchase",
+                                                        eventId: `puja_purchase_${response.razorpay_order_id}`,
+                                                        params: {
+                                                            content_name: puja.poojaNameEng,
+                                                            content_ids: [puja._id],
+                                                            content_type: "product",
+                                                            contents,
+                                                            num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                                                            value: toInr(totalPrice),
+                                                            currency: "INR",
+                                                        },
+                                                    },
+                                                });
+                                                markCartConverted(retryOrderData.bookingId);
+                                                setRetryOrderData(null);
+                                                setStep("success");
+                                                setTimeout(() => navigate("/account?tab=live"), 2500);
+                                            } catch (verifyErr: any) {
+                                                setError(verifyErr.message || "Payment verification failed. Please contact support.");
+                                            } finally {
+                                                setSubmitting(false);
+                                            }
+                                        },
+                                        modal: {
+                                            ondismiss: () => {
+                                                setError(
+                                                    "Payment was not completed. Tap \"Retry Payment\" to try again — " +
+                                                    "your booking details are saved."
+                                                );
+                                                setSubmitting(false);
+                                            },
+                                        },
+                                    });
+                                    rzpRetry.on("payment.failed", (resp: any) => {
+                                        setError(resp?.error?.description || "Payment failed. Please try again.");
+                                        setSubmitting(false);
+                                    });
+                                    rzpRetry.open();
+                                }}
+                                className="flex-1 font-svn-ui flex items-center justify-center gap-1.5 bg-[#8E6A25] hover:bg-[#7A5A1E] text-[#FFF8F0] font-bold text-[13px] py-3 rounded-xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.6)] active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none cursor-pointer"
+                            >
+                                Retry Payment <ArrowUpRight className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleConfirm}
+                                disabled={submitting}
+                                className="flex-1 font-svn-ui flex items-center justify-center gap-1.5 bg-[#A41F2E] hover:bg-[#87121E] text-[#FFF8F0] font-bold text-[14px] py-3 rounded-xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.9)] active:scale-95 transition-all disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none cursor-pointer"
+                            >
+                                {submitting ? (
+                                    <><span className="w-4 h-4 border-2 border-[#FFF8F0] border-t-transparent rounded-full animate-spin" /> Processing…</>
+                                ) : (
+                                    <>Book With Devotion <ChevronRight className="w-4 h-4" /></>
+                                )}
+                            </button>
+                        )}
                     </div>
                 </div>
             )}

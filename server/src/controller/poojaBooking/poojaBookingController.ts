@@ -1217,7 +1217,13 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       amount: toMinorUnits(charged, ccy),
       currency: ccy,
       receipt: receiptId,
-      payment_capture: 1,
+      // `payment_capture` is intentionally omitted.
+      //
+      // Setting it to 1 tells Razorpay to capture the payment the instant it is
+      // authorized — which races ahead of the UPI collect-request settlement
+      // window and causes Google Pay to show a timeout before the money moves.
+      // Without it, Razorpay uses its default (auto-capture after the gateway
+      // confirms) and the UPI network has time to settle cleanly.
       notes: {
         userId: String(userId ?? ''),
         poojaId: String(poojaId ?? pujaSlug ?? ''),

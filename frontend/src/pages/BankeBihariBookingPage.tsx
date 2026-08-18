@@ -19,6 +19,9 @@ import {
 } from "../data/bankeBihariPuja";
 import PrasadBoxAddon from "../components/bankeBihari/PrasadBoxAddon";
 import PackageUpgradeNudge, { type UpgradeOffer } from "../components/bankeBihari/PackageUpgradeNudge";
+import CheckoutRecommendationsSheet, { type RecommendedPuja } from "../components/booking/CheckoutRecommendationsSheet";
+import { useShopifyCart } from "../context/ShopifyCartContext";
+import { clearPujaCheckoutDraft, loadPujaCheckoutDraft, savePujaCheckoutDraft } from "../utils/pujaCheckoutDraft";
 
 type Step = "details" | "success";
 
@@ -71,6 +74,7 @@ export default function BankeBihariBookingPage() {
     // re-prices the whole page (and re-shapes the phone + address fields) in a
     // single re-render. Prices themselves never leave INR; see utils/currency.
     const { country, currency, isIndia, money, inr: toInr } = useMoney();
+    const { items: shopCartItems, subtotal: shopSubtotal } = useShopifyCart();
 
     // Package + prasad-box choice made on the detail page (handed over as
     // navigation state); the devotee can still change both here. Defaults to the
@@ -78,8 +82,17 @@ export default function BankeBihariBookingPage() {
     const handover = location.state as
         | { packageId?: PujaPackageId; addPrasadBox?: boolean }
         | null;
-    const [packageId, setPackageId] = useState<PujaPackageId>(handover?.packageId ?? DEFAULT_PACKAGE_ID);
-    const [addPrasadBox, setAddPrasadBox] = useState(handover?.addPrasadBox ?? false);
+    const savedDraft = loadPujaCheckoutDraft<{
+        packageId?: PujaPackageId;
+        addPrasadBox?: boolean;
+        form?: { name: string; gotra: string; phone: string; email: string; time: string; familyMembers: { name: string; gotra: string }[] };
+        selectedAddressId?: string | null;
+        showNewAddressForm?: boolean;
+        newAddress?: { houseNo: string; street: string; city: string; state: string; pincode: string; saveAs: string };
+        relatedPuja?: RecommendedPuja | null;
+    }>("banke-bihari");
+    const [packageId, setPackageId] = useState<PujaPackageId>(savedDraft?.packageId ?? handover?.packageId ?? DEFAULT_PACKAGE_ID);
+    const [addPrasadBox, setAddPrasadBox] = useState(savedDraft?.addPrasadBox ?? handover?.addPrasadBox ?? false);
     const selectedPkg = getPackage(packageId);
 
     // Upgrading to a package that already includes a box free must drop the paid
@@ -107,9 +120,11 @@ export default function BankeBihariBookingPage() {
     const [step, setStep] = useState<Step>("details");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [showCheckoutRecommendations, setShowCheckoutRecommendations] = useState(false);
+    const [selectedRelatedPuja, setSelectedRelatedPuja] = useState<RecommendedPuja | null>(savedDraft?.relatedPuja ?? null);
 
     // Devotee + schedule form
-    const [form, setForm] = useState({
+    const [form, setForm] = useState(savedDraft?.form ?? {
         name: "",
         gotra: "",
         phone: "",
@@ -134,9 +149,9 @@ export default function BankeBihariBookingPage() {
 
     // Delivery address (only required when the package ships something)
     const [addresses, setAddresses] = useState<any[]>([]);
-    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-    const [showNewAddressForm, setShowNewAddressForm] = useState(false);
-    const [newAddress, setNewAddress] = useState({
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(savedDraft?.selectedAddressId ?? null);
+    const [showNewAddressForm, setShowNewAddressForm] = useState(savedDraft?.showNewAddressForm ?? false);
+    const [newAddress, setNewAddress] = useState(savedDraft?.newAddress ?? {
         houseNo: "",
         street: "",
         city: "",
@@ -212,6 +227,8 @@ export default function BankeBihariBookingPage() {
     const familyCost = chargedMembers * EXTRA_FAMILY_MEMBER_PRICE;
     const prasadCost = prasadBoxCost(selectedPkg, prasadBoxAdded);
     const totalPrice = packageTotal(selectedPkg, form.familyMembers.length, prasadBoxAdded);
+    const relatedPujaPrice = selectedRelatedPuja?.poojaPriceOffline || 0;
+    const payablePrice = totalPrice + shopSubtotal + relatedPujaPrice;
 
     // Everything offered to Bihari Ji at this tier, in the devotee's name.
     const offerings = packageOfferings(selectedPkg);
@@ -326,7 +343,27 @@ export default function BankeBihariBookingPage() {
                 item_price: PRASAD_BOX_PRICE,
             }]
             : []),
+        ...shopCartItems.map((line) => ({
+            id: line.product.shopifyProductId || line.product._id,
+            quantity: line.qty,
+            item_price: toInr(Number(line.product.priceRangeV2?.minVariantPrice?.amount || 0)),
+        })),
+        ...(selectedRelatedPuja
+            ? [{ id: selectedRelatedPuja._id, quantity: 1, item_price: toInr(selectedRelatedPuja.poojaPriceOffline || 0) }]
+            : []),
     ];
+
+    const persistBankeCheckoutDraft = (relatedPuja: RecommendedPuja | null = selectedRelatedPuja) => {
+        savePujaCheckoutDraft("banke-bihari", {
+            packageId,
+            addPrasadBox,
+            form,
+            selectedAddressId,
+            showNewAddressForm,
+            newAddress,
+            relatedPuja,
+        });
+    };
 
     // Whatever delivery address the devotee has settled on so far — a selected
     // saved address, or the new-address form once they start typing into it.
@@ -355,7 +392,7 @@ export default function BankeBihariBookingPage() {
         templeName: puja.templeName,
         packageId: selectedPkg.id,
         packageName: packageLabel,
-        amount: toInr(totalPrice),
+        amount: toInr(payablePrice),
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
@@ -390,7 +427,7 @@ export default function BankeBihariBookingPage() {
         }
     };
 
-    const handleConfirm = async () => {
+    const handleConfirm = async (skipRecommendations = false, checkout?: { shopSubtotal: number; relatedPuja?: RecommendedPuja | null }) => {
         setError("");
 
         if (!form.name.trim()) {
@@ -461,9 +498,18 @@ export default function BankeBihariBookingPage() {
             }
         }
 
+        if (!skipRecommendations) {
+            setShowCheckoutRecommendations(true);
+            return;
+        }
+
         setSubmitting(true);
 
         try {
+            const checkoutShopSubtotal = checkout?.shopSubtotal ?? shopSubtotal;
+            const checkoutRelatedPuja = checkout?.relatedPuja || selectedRelatedPuja;
+            const checkoutRelatedPujaPrice = checkoutRelatedPuja?.poojaPriceOffline || 0;
+            const checkoutTotal = totalPrice + checkoutShopSubtotal + checkoutRelatedPujaPrice;
             const bookingDate = resolveBookingDate(puja.pujaDate, form.time);
 
             // 1) Create the pending booking + Razorpay order. The server
@@ -515,6 +561,14 @@ export default function BankeBihariBookingPage() {
                             price: prasadCost,
                         } : { added: false, free: false, price: 0 },
                         totalPrice,
+                        shopSubtotal: checkoutShopSubtotal,
+                        relatedPuja: checkoutRelatedPuja ? {
+                            id: checkoutRelatedPuja._id,
+                            name: checkoutRelatedPuja.poojaNameEng,
+                            price: checkoutRelatedPujaPrice,
+                            mode: "offline",
+                        } : null,
+                        payableTotal: checkoutTotal,
                     },
                     templeName: puja.templeName,
                     poojaMode: "online",
@@ -526,7 +580,7 @@ export default function BankeBihariBookingPage() {
                     // The list price with the foreign multiplier applied —
                     // the INR this sale is actually worth. Sending `totalPrice`
                     // would record a 1x sale for a booking charged at 2x.
-                    amount: toInr(totalPrice),
+                    amount: toInr(checkoutTotal),
                     currency,
                     // Tells the server this is (or isn't) an Indian number, so
                     // it stores the country code instead of trimming to 10.
@@ -571,7 +625,7 @@ export default function BankeBihariBookingPage() {
                     content_type: "product",
                     contents,
                     num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                    value: toInr(totalPrice),
+                    value: toInr(checkoutTotal),
                     currency: "INR",
                 });
             }
@@ -585,7 +639,7 @@ export default function BankeBihariBookingPage() {
             //    field) working on the plain INR path.
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: orderData.amountMinor ?? totalPrice * 100,
+                amount: orderData.amountMinor ?? toInr(checkoutTotal) * 100,
                 currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
                 description: puja.poojaNameEng,
@@ -621,7 +675,7 @@ export default function BankeBihariBookingPage() {
                                 razorpayOrderId: response.razorpay_order_id,
                                 razorpayPaymentId: response.razorpay_payment_id,
                                 razorpaySignature: response.razorpay_signature,
-                                amountPaid: toInr(totalPrice),
+                                amountPaid: toInr(checkoutTotal),
                             })),
                         });
                         const verifyData = await verifyRes.json();
@@ -637,13 +691,14 @@ export default function BankeBihariBookingPage() {
                                 content_type: "product",
                                 contents,
                                 num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                                value: toInr(totalPrice),
+                                value: toInr(checkoutTotal),
                                 currency: "INR",
                             }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
                         }
 
                         // Paid — drop this row out of the abandoned-lead list.
                         markCartConverted(orderData.bookingId);
+                        clearPujaCheckoutDraft("banke-bihari");
 
                         setStep("success");
                         // "live", not "pooja": this booking is created with
@@ -679,8 +734,51 @@ export default function BankeBihariBookingPage() {
         }
     };
 
+    const resumeCheckout = new URLSearchParams(location.search).get("resumeCheckout") === "1";
+    const resumedCheckoutRef = useRef(false);
+    useEffect(() => {
+        if (!resumeCheckout || resumedCheckoutRef.current || step === "success") return;
+        resumedCheckoutRef.current = true;
+        const timer = window.setTimeout(() => { void handleConfirm(true); }, 350);
+        return () => window.clearTimeout(timer);
+    }, [resumeCheckout, step]);
+
     return (
         <div className="bbb-page min-h-screen bg-[#FFF9F2] w-full max-w-md mx-auto border-x border-[#F4DFC2] relative pb-28">
+            <CheckoutRecommendationsSheet
+                isOpen={showCheckoutRecommendations}
+                source="banke_bihari_checkout_recommendations"
+                shopTags={["krishna", "janmashtami", "banke bihari", "radha krishna", "vrindavan"]}
+                pujaTerms={["krishna", "janmashtami", "banke bihari", "radha", "radha krishna", "vrindavan", "gopal", "laddu gopal"]}
+                excludePoojaID={BANKE_BIHARI_POOJA_ID}
+                recommendedProductId="6a83fa6eb744c5f101fa8162"
+                recommendedPujaId="6865a255380dcc9b941768a7"
+                recommendedProductFallback={{
+                    _id: "6a83fa6eb744c5f101fa8162",
+                    shopifyProductId: "gid://shopify/Product/9146607960279",
+                    title: "Original Tulsi Kanthi Mala – Sacred Devotional Neck Beads",
+                    handle: "original-tulsi-kanthi-mala-sacred-devotional-neck-beads",
+                    featuredImage: { url: "https://cdn.shopify.com/s/files/1/0790/3884/1047/files/tulsikanthimal.jpg?v=1767432923" },
+                    priceRangeV2: {
+                        minVariantPrice: { amount: "649", currencyCode: "INR" },
+                        maxVariantPrice: { amount: "649", currencyCode: "INR" },
+                    },
+                }}
+                summary={{ pujaAmount: totalPrice, formatAmount: money }}
+                onDismiss={() => setShowCheckoutRecommendations(false)}
+                selectedRelatedPuja={selectedRelatedPuja}
+                enableRelatedPujaCart
+                onRelatedPujaChange={(next) => {
+                    setSelectedRelatedPuja(next);
+                    persistBankeCheckoutDraft(next);
+                }}
+                onPujaInfo={() => persistBankeCheckoutDraft()}
+                onContinue={(checkout) => {
+                    setShowCheckoutRecommendations(false);
+                    persistBankeCheckoutDraft(checkout?.relatedPuja || selectedRelatedPuja);
+                    void handleConfirm(true, checkout);
+                }}
+            />
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .bbb-page { font-family: 'DM Sans', sans-serif; }
@@ -825,9 +923,23 @@ export default function BankeBihariBookingPage() {
                                     </div>
                                 )}
 
+                                {shopSubtotal > 0 && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="min-w-0 truncate pr-3 text-[12.5px] text-[#555555] font-medium">{shopCartItems.map((line) => `${line.product.title}${line.qty > 1 ? ` ×${line.qty}` : ""}`).join(", ") || "Shop additions"}</span>
+                                        <span className="text-[13px] font-bold text-[#5C1A34]">{money(shopSubtotal)}</span>
+                                    </div>
+                                )}
+
+                                {selectedRelatedPuja && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="min-w-0 truncate pr-3 text-[12.5px] text-[#555555] font-medium">{selectedRelatedPuja.poojaNameEng}</span>
+                                        <span className="text-[13px] font-bold text-[#5C1A34]">{money(selectedRelatedPuja.poojaPriceOffline || 0)}</span>
+                                    </div>
+                                )}
+
                                 <div className="flex items-baseline justify-between pt-2 border-t border-[#F4DFC2]">
                                     <span className="text-[10px] font-bold uppercase tracking-wide text-[#8A8A8A]">Total</span>
-                                    <span className="text-xl font-extrabold text-[#D63D72]">{money(totalPrice)}</span>
+                                    <span className="text-xl font-extrabold text-[#D63D72]">{money(payablePrice)}</span>
                                 </div>
                             </div>
                         </div>
@@ -1256,10 +1368,10 @@ export default function BankeBihariBookingPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[10px] text-[#8A8A8A] font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D63D72]">{money(totalPrice)}</span>
+                            <span className="text-[20px] font-extrabold text-[#D63D72]">{money(payablePrice)}</span>
                         </div>
                         <button
-                            onClick={handleConfirm}
+                            onClick={() => { void handleConfirm(); }}
                             disabled={submitting}
                             className="flex items-center gap-1.5 bg-gradient-to-r from-[#E63B74] to-[#FF6A88] hover:from-[#D22E65] hover:to-[#F04B73] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-[#D63D72]/25 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
                         >

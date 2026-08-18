@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import {
     ArrowLeft,
@@ -21,13 +21,31 @@ import {
     slugToCategory,
 } from "../utils/shopCategories";
 import { money } from "../utils/currency";
+import { loadPujaCheckoutDraft } from "../utils/pujaCheckoutDraft";
 
 const DEFAULT_CATEGORY = "Rudraksh";
 
 export default function ShopPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { category: categorySlug } = useParams<{ category?: string }>();
-    const { addItem, openCart, count } = useShopifyCart();
+    const { addItem, openCart, count, subtotal } = useShopifyCart();
+    const shopParams = new URLSearchParams(location.search);
+    const returnTo = shopParams.get("returnTo");
+    const source = shopParams.get("source");
+    const isPujaCheckout = Boolean(returnTo && source);
+    const checkoutDraft = isPujaCheckout
+        ? loadPujaCheckoutDraft<{ pujaTotal?: number }>(source?.includes("banke") ? "banke-bihari" : "savan")
+        : null;
+    const [returningToPayment, setReturningToPayment] = useState(false);
+
+    const shopQuery = () => {
+        const params = new URLSearchParams();
+        if (source) params.set("source", source);
+        if (returnTo) params.set("returnTo", returnTo);
+        const query = params.toString();
+        return query ? `?${query}` : "";
+    };
 
     const [products, setProducts] = useState<ShopifyProduct[]>([]);
     const [loading, setLoading] = useState(true);
@@ -78,11 +96,28 @@ export default function ShopPage() {
 
     const handleBuyClick = (prod: ShopifyProduct) => {
         addItem(prod, 1);
-        openCart();
+        // During a puja checkout, products are add-ons to that checkout. Keep
+        // the user on the catalog and let them return to the puja total rather
+        // than opening the standalone shop payment drawer.
+        if (!isPujaCheckout) {
+            openCart();
+            return;
+        }
+
+        // Give the cart context/localStorage a moment to persist the new line,
+        // then resume the original puja checkout with the complete cart.
+        setReturningToPayment(true);
+        window.setTimeout(() => {
+            const separator = returnTo!.includes("?") ? "&" : "?";
+            navigate(`${returnTo}${separator}resumeCheckout=1`);
+        }, 450);
     };
 
+    const pujaAmount = Number(checkoutDraft?.pujaTotal || 0);
+    const combinedTotal = pujaAmount + subtotal;
+
     return (
-        <div className="font-sans min-h-screen bg-[#FFFAF3] pb-24 w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100/50">
+        <div className={`font-sans min-h-screen bg-[#FFFAF3] ${isPujaCheckout ? "pb-80" : "pb-24"} w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100/50`}>
             <Helmet>
                 <title>
                     {activeCategory && activeCategory !== ALL
@@ -95,13 +130,14 @@ export default function ShopPage() {
             {/* ── Header ── */}
             <div className="relative px-4 pt-3 pb-5 bg-gradient-to-b from-[#f7d9ad] to-[#FFFAF3]">
                 <button
-                    onClick={() => navigate("/home")}
+                    onClick={() => navigate(returnTo || "/home")}
+                    aria-label={returnTo ? "Return to puja checkout" : "Back to home"}
                     className="absolute left-4 top-3 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
                 >
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <button
-                    onClick={openCart}
+                    onClick={() => (isPujaCheckout ? navigate(returnTo!) : openCart())}
                     className="absolute right-4 top-3 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
                 >
                     <ShoppingCart className="w-4 h-4 text-stone-700" />
@@ -115,6 +151,16 @@ export default function ShopPage() {
                     Pandit Ji At Request Shop
                 </h1>
                 <p className="text-center text-[12.5px] text-stone-500 -mt-0.5">Energized spiritual gems & bracelets</p>
+
+                {isPujaCheckout && (
+                    <button
+                        type="button"
+                        onClick={() => navigate(returnTo!)}
+                        className="mx-auto mt-3 flex items-center gap-1.5 rounded-full bg-white/85 px-4 py-2 text-[12px] font-bold text-orange-700 shadow-sm border border-orange-200"
+                    >
+                        <ArrowLeft className="h-3.5 w-3.5" /> Return to puja checkout
+                    </button>
+                )}
 
                 {/* Search Bar */}
                 <div className="relative mt-4">
@@ -144,7 +190,7 @@ export default function ShopPage() {
                         return (
                             <button
                                 key={category}
-                                onClick={() => navigate(`/shop/${categoryToSlug(category)}`)}
+                                onClick={() => navigate(`/shop/${categoryToSlug(category)}${shopQuery()}`)}
                                 className={`shrink-0 px-4 py-1.5 rounded-full text-[12.5px] font-bold border transition-all ${
                                     active
                                         ? "bg-orange-500 text-white border-orange-500 shadow-sm"
@@ -190,8 +236,8 @@ export default function ShopPage() {
                             return (
                                 <div
                                     key={p._id}
-                                    onClick={() =>
-                                        navigate(`/shop/${categoryToSlug(getCategory(p))}/${p.handle}`)
+                                        onClick={() =>
+                                        navigate(`/shop/${categoryToSlug(getCategory(p))}/${p.handle}${shopQuery()}`)
                                     }
                                     className="bg-white rounded-2xl border border-orange-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"
                                 >
@@ -255,6 +301,27 @@ export default function ShopPage() {
                     </div>
                 )}
             </div>
+
+            {isPujaCheckout && (
+                <section className="fixed bottom-0 left-0 right-0 z-50 mx-auto w-full max-w-md rounded-t-[26px] border-t border-orange-200 bg-[#FFFAF3]/98 px-4 pb-5 pt-3 shadow-[0_-10px_30px_-15px_rgba(80,40,0,0.45)] backdrop-blur-md">
+                    <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-orange-200" />
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-orange-800">Your puja checkout</p>
+                            <p className="text-[11px] text-stone-500">Products added here will be included with your puja.</p>
+                        </div>
+                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-bold text-orange-700">{count} item{count === 1 ? "" : "s"}</span>
+                    </div>
+                    <div className="mt-3 space-y-1.5 border-y border-orange-200 py-2.5 text-[12px] text-stone-600">
+                        <div className="flex items-center justify-between"><span>Puja seva</span><span className="font-semibold text-stone-800">{money(pujaAmount)}</span></div>
+                        {subtotal > 0 && <div className="flex items-center justify-between"><span>Shop additions</span><span className="font-semibold text-stone-800">{money(subtotal)}</span></div>}
+                        <div className="flex items-baseline justify-between pt-1"><span className="font-serif text-[10px] uppercase tracking-[0.14em] text-orange-800">Final payable</span><span className="font-serif text-[22px] font-bold text-[#A41F2E]">{money(combinedTotal)}</span></div>
+                    </div>
+                    <button type="button" onClick={() => navigate(returnTo!)} disabled={returningToPayment} className="mt-3 w-full rounded-2xl bg-[#A41F2E] py-3 text-[13px] font-bold text-white disabled:opacity-60">
+                        {returningToPayment ? "Opening payment…" : "Return to payment"}
+                    </button>
+                </section>
+            )}
         </div>
     );
 }

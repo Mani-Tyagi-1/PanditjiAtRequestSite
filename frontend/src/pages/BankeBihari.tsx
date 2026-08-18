@@ -23,6 +23,8 @@ import {
 import PujaPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/bankeBihari/PujaPackages";
 import { ItemTileRow } from "../components/bankeBihari/ItemTiles";
 import PrasadBoxNudge, { type PrasadNudge } from "../components/bankeBihari/PrasadBoxNudge";
+import { clearPujaCheckoutDraft } from "../utils/pujaCheckoutDraft";
+import { useShopifyCart } from "../context/ShopifyCartContext";
 import HeroBannerCarousel, { bannerImg } from "../components/bankeBihari/HeroBannerCarousel";
 import { useMoney, shipsPrasad } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
@@ -274,6 +276,7 @@ const FREE_BOX_TIERS = BANKE_BIHARI_PACKAGES.filter((p) => p.freePrasadBox);
 export default function BankeBihariPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { clear: clearShopCart } = useShopifyCart();
     const { user } = useAuth();
 
     // Every price on this page is written through `money()`. The package data
@@ -552,6 +555,9 @@ export default function BankeBihariPage() {
     // NOTE: takes an argument, so every call site must wrap it in an arrow —
     // passing it bare as onClick would hand it the click event as `source`.
     const openBooking = (source: "sticky_cta" | "mid_page_cta_banner") => {
+        // Start a fresh form and add-on cart for a new Janmashtami booking.
+        clearPujaCheckoutDraft("banke-bihari");
+        clearShopCart();
         track("AddToCart", {
             content_name: `${puja.poojaNameEng} — ${selectedPkg.name}`,
             content_ids: [pujaId],
@@ -856,8 +862,6 @@ export default function BankeBihariPage() {
               className="w-full h-auto"
             />
           </button>
-
-
           {/* ── Auto-scrolling devotee reviews ── */}
           <div>
             <SectionTitle icon={<Star className="w-3.5 h-3.5 text-[#E7B63A]" />}>

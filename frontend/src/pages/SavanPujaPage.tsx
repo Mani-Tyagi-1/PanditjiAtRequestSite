@@ -20,6 +20,8 @@ import {
 import SavanPackages, { PACKAGE_CARDS_ANCHOR_ID } from "../components/savanPuja/SavanPackages";
 import SavanRain from "../components/savanPuja/SavanRain";
 import { useMoney, shipsPrasad } from "../utils/currency";
+import { clearPujaCheckoutDraft } from "../utils/pujaCheckoutDraft";
+import { useShopifyCart } from "../context/ShopifyCartContext";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import heroImages from "../data/savanHeroImages.json";
 
@@ -292,6 +294,7 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
 export default function SavanPujaPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { clear: clearShopCart } = useShopifyCart();
     const { user } = useAuth();
 
     // Every price on this page is written through `money()`. The package data
@@ -484,6 +487,11 @@ export default function SavanPujaPage() {
     // SavanPujaBookingPage and by the server CAPI Purchase — read those, not
     // these, when reconciling revenue in Events Manager.
     const openBooking = () => {
+        // A new landing-page booking starts a fresh add-on session. Products
+        // selected after the recommendation sheet opens are then added back
+        // normally and included in this booking's total.
+        clearPujaCheckoutDraft("savan");
+        clearShopCart();
         track("AddToCart", {
             content_name: `${puja.poojaNameEng} — ${selectedPkg.name}`,
             content_ids: [pujaId],
@@ -1021,7 +1029,6 @@ export default function SavanPujaPage() {
 
           
 
-          {/* ── Online-puja reassurance line ── */}
           <div className="flex items-center justify-center gap-1.5 bg-[#F3E5BF] border border-[#D8B66A] text-[#7A1622] rounded-lg px-3 py-2 text-[11.5px] font-medium text-center">
             <MessageCircle className="w-3.5 h-3.5 text-[#8E6A25] shrink-0" />
             Rudrabhishek performed in {pujaPlace} · receive the video with your

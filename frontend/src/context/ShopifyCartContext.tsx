@@ -38,6 +38,38 @@ export function ShopifyCartProvider({ children }: { children: ReactNode }) {
         }
     }, [items]);
 
+    // The shop can be opened in a second same-origin tab from the puja
+    // checkout. Keep the booking tab's React state in sync when that tab
+    // changes the persisted cart.
+    useEffect(() => {
+        const syncFromStorage = (event: StorageEvent) => {
+            if (event.key !== STORAGE_KEY) return;
+            try {
+                const next = event.newValue ? JSON.parse(event.newValue) : [];
+                setItems(Array.isArray(next) ? next : []);
+            } catch {
+                setItems([]);
+            }
+        };
+
+        const syncOnFocus = () => {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                const next = saved ? JSON.parse(saved) : [];
+                setItems(Array.isArray(next) ? next : []);
+            } catch {
+                // Keep the current in-memory cart if storage is unavailable.
+            }
+        };
+
+        window.addEventListener("storage", syncFromStorage);
+        window.addEventListener("focus", syncOnFocus);
+        return () => {
+            window.removeEventListener("storage", syncFromStorage);
+            window.removeEventListener("focus", syncOnFocus);
+        };
+    }, []);
+
     const addItem = useCallback((product: ShopifyProduct, qty = 1) => {
         setItems((prev) => {
             const existing = prev.find((l) => l.product._id === product._id);

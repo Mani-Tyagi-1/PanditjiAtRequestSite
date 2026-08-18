@@ -20,6 +20,9 @@ import {
     type SavanPackageId,
 } from "../data/kashiMahadevPuja";
 import { ItemTileRow } from "../components/savanPuja/ItemTiles";
+import CheckoutRecommendationsSheet, { type RecommendedPuja } from "../components/booking/CheckoutRecommendationsSheet";
+import { useShopifyCart } from "../context/ShopifyCartContext";
+import { clearPujaCheckoutDraft, loadPujaCheckoutDraft, savePujaCheckoutDraft } from "../utils/pujaCheckoutDraft";
 
 type Step = "details" | "success";
 
@@ -109,6 +112,7 @@ export default function SavanPujaBookingPage() {
     // re-prices the whole page (and re-shapes the phone + address fields) in a
     // single re-render. Prices themselves never leave INR; see utils/currency.
     const { country, currency, isIndia, money, inr: toInr } = useMoney();
+    const { items: shopCartItems, subtotal: shopSubtotal } = useShopifyCart();
 
     // Package chosen on the detail page (handed over as navigation state), or
     // the entry package when this page is opened directly. The `addPrasadBox` /
@@ -117,7 +121,16 @@ export default function SavanPujaBookingPage() {
     const handover = location.state as
         | { packageId?: SavanPackageId; addPrasadBox?: boolean; prasadAdded?: boolean }
         | null;
-    const [packageId, setPackageId] = useState<SavanPackageId>(handover?.packageId ?? DEFAULT_PACKAGE_ID);
+    const savedDraft = loadPujaCheckoutDraft<{
+        packageId?: SavanPackageId;
+        prasadOptedIn?: boolean;
+        form?: { name: string; gotra: string; phone: string; email: string; time: string; familyMembers: { name: string; gotra: string }[] };
+        selectedAddressId?: string | null;
+        showNewAddressForm?: boolean;
+        newAddress?: { houseNo: string; street: string; city: string; state: string; pincode: string; saveAs: string };
+        relatedPuja?: RecommendedPuja | null;
+    }>("savan");
+    const [packageId, setPackageId] = useState<SavanPackageId>(savedDraft?.packageId ?? handover?.packageId ?? DEFAULT_PACKAGE_ID);
     const selectedPkg = getPackage(packageId);
 
     /**
@@ -130,7 +143,7 @@ export default function SavanPujaBookingPage() {
      * what the box COSTS (₹298 → free), not whether it was wanted.
      */
     const [prasadOptedIn, setPrasadOptedIn] = useState(
-        Boolean(handover?.addPrasadBox ?? handover?.prasadAdded),
+        Boolean(savedDraft?.prasadOptedIn ?? handover?.addPrasadBox ?? handover?.prasadAdded),
     );
 
     /**
@@ -159,9 +172,11 @@ export default function SavanPujaBookingPage() {
     const [step, setStep] = useState<Step>("details");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [showCheckoutRecommendations, setShowCheckoutRecommendations] = useState(false);
+    const [selectedRelatedPuja, setSelectedRelatedPuja] = useState<RecommendedPuja | null>(savedDraft?.relatedPuja ?? null);
 
     // Devotee + schedule form
-    const [form, setForm] = useState({
+    const [form, setForm] = useState(savedDraft?.form ?? {
         name: "",
         gotra: "",
         phone: "",
@@ -233,9 +248,9 @@ export default function SavanPujaBookingPage() {
 
     // Delivery address (only required when blessed prasad is added)
     const [addresses, setAddresses] = useState<any[]>([]);
-    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-    const [showNewAddressForm, setShowNewAddressForm] = useState(false);
-    const [newAddress, setNewAddress] = useState({
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(savedDraft?.selectedAddressId ?? null);
+    const [showNewAddressForm, setShowNewAddressForm] = useState(savedDraft?.showNewAddressForm ?? false);
+    const [newAddress, setNewAddress] = useState(savedDraft?.newAddress ?? {
         houseNo: "",
         street: "",
         city: "",
@@ -311,6 +326,8 @@ export default function SavanPujaBookingPage() {
     const familyCost = chargedMembers * FAMILY_MEMBER_PRICE;
     const prasadCost = prasadBoxCost(selectedPkg, prasadBoxAdded);
     const totalPrice = packageTotal(selectedPkg, form.familyMembers.length, prasadBoxAdded);
+    const relatedPujaPrice = selectedRelatedPuja?.poojaPriceOffline || 0;
+    const payablePrice = totalPrice + shopSubtotal + relatedPujaPrice;
 
     // Everything poured over the Shivling at this tier, in the devotee's name.
     const offerings = packageOfferings(selectedPkg);
@@ -347,7 +364,27 @@ export default function SavanPujaBookingPage() {
                 item_price: toInr(FAMILY_MEMBER_PRICE),
             }]
             : []),
+        ...shopCartItems.map((line) => ({
+            id: line.product.shopifyProductId || line.product._id,
+            quantity: line.qty,
+            item_price: toInr(Number(line.product.priceRangeV2?.minVariantPrice?.amount || 0)),
+        })),
+        ...(selectedRelatedPuja
+            ? [{ id: selectedRelatedPuja._id, quantity: 1, item_price: toInr(selectedRelatedPuja.poojaPriceOffline || 0) }]
+            : []),
     ];
+
+    const persistSavanCheckoutDraft = (relatedPuja: RecommendedPuja | null = selectedRelatedPuja) => {
+        savePujaCheckoutDraft("savan", {
+            packageId,
+            prasadOptedIn,
+            form,
+            selectedAddressId,
+            showNewAddressForm,
+            newAddress,
+            relatedPuja,
+        });
+    };
 
     // Whatever delivery address the devotee has settled on so far — a selected
     // saved address, or the new-address form once they start typing into it.
@@ -376,7 +413,7 @@ export default function SavanPujaBookingPage() {
         templeName: puja.templeName,
         packageId: selectedPkg.id,
         packageName: packageLabel,
-        amount: toInr(totalPrice),
+        amount: toInr(payablePrice),
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
@@ -411,7 +448,7 @@ export default function SavanPujaBookingPage() {
         }
     };
 
-    const handleConfirm = async () => {
+    const handleConfirm = async (skipRecommendations = false, checkout?: { shopSubtotal: number; relatedPuja?: RecommendedPuja | null }) => {
         setError("");
 
         if (!form.name.trim()) {
@@ -482,9 +519,20 @@ export default function SavanPujaBookingPage() {
             }
         }
 
+        if (!skipRecommendations) {
+            setShowCheckoutRecommendations(true);
+            return;
+        }
+
         setSubmitting(true);
 
         try {
+            // The recommendation sheet supplies a snapshot when a product was
+            // just added, avoiding a race with the asynchronous cart update.
+            const checkoutShopSubtotal = checkout?.shopSubtotal ?? shopSubtotal;
+            const checkoutRelatedPuja = checkout?.relatedPuja || selectedRelatedPuja;
+            const checkoutRelatedPujaPrice = checkoutRelatedPuja?.poojaPriceOffline || 0;
+            const checkoutTotal = totalPrice + checkoutShopSubtotal + checkoutRelatedPujaPrice;
             const bookingDate = resolveBookingDate(puja.pujaDate, form.time);
 
             // 1) Create the pending booking + Razorpay order. The server
@@ -536,6 +584,14 @@ export default function SavanPujaBookingPage() {
                             price: prasadCost,
                         } : { added: false, free: false, price: 0 },
                         totalPrice,
+                        shopSubtotal: checkoutShopSubtotal,
+                        relatedPuja: checkoutRelatedPuja ? {
+                            id: checkoutRelatedPuja._id,
+                            name: checkoutRelatedPuja.poojaNameEng,
+                            price: checkoutRelatedPujaPrice,
+                            mode: "offline",
+                        } : null,
+                        payableTotal: checkoutTotal,
                     },
                     templeName: puja.templeName,
                     poojaMode: "online",
@@ -547,7 +603,7 @@ export default function SavanPujaBookingPage() {
                     // The list price with the foreign multiplier applied —
                     // the INR this sale is actually worth. Sending `totalPrice`
                     // would record a 1x sale for a booking charged at 2x.
-                    amount: toInr(totalPrice),
+                    amount: toInr(checkoutTotal),
                     currency,
                     // Tells the server this is (or isn't) an Indian number, so
                     // it stores the country code instead of trimming to 10.
@@ -592,7 +648,7 @@ export default function SavanPujaBookingPage() {
                     content_type: "product",
                     contents,
                     num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                    value: toInr(totalPrice),
+                    value: toInr(checkoutTotal),
                     currency: "INR",
                 });
             }
@@ -606,7 +662,7 @@ export default function SavanPujaBookingPage() {
             //    field) working on the plain INR path.
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                amount: orderData.amountMinor ?? totalPrice * 100,
+                amount: orderData.amountMinor ?? toInr(checkoutTotal) * 100,
                 currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
                 description: puja.poojaNameEng,
@@ -645,7 +701,7 @@ export default function SavanPujaBookingPage() {
                                 razorpayOrderId: response.razorpay_order_id,
                                 razorpayPaymentId: response.razorpay_payment_id,
                                 razorpaySignature: response.razorpay_signature,
-                                amountPaid: toInr(totalPrice),
+                                amountPaid: toInr(checkoutTotal),
                             })),
                         });
                         const verifyData = await verifyRes.json();
@@ -661,13 +717,14 @@ export default function SavanPujaBookingPage() {
                                 content_type: "product",
                                 contents,
                                 num_items: contents.reduce((n, c) => n + c.quantity, 0),
-                                value: toInr(totalPrice),
+                                value: toInr(checkoutTotal),
                                 currency: "INR",
                             }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
                         }
 
                         // Paid — drop this row out of the abandoned-lead list.
                         markCartConverted(orderData.bookingId);
+                        clearPujaCheckoutDraft("savan");
 
                         setStep("success");
                         // "live", not "pooja": this booking is created with
@@ -705,6 +762,27 @@ export default function SavanPujaBookingPage() {
 
     return (
         <div className="svn svn-parchment min-h-screen font-svn-body w-full max-w-md mx-auto shadow-xl border-x border-[#D8B66A] relative pb-28">
+            <CheckoutRecommendationsSheet
+                isOpen={showCheckoutRecommendations}
+                source="savan_checkout_recommendations"
+                shopTags={["shiva", "mahadev", "rudrabhishek", "rudraksha"]}
+                pujaTerms={["shiva", "mahadev", "rudra", "rudrabhishek", "mrityunjaya", "mrityunjay", "homa", "jaap"]}
+                excludePoojaID={KASHI_MAHADEV_POOJA_ID}
+                summary={{ pujaAmount: totalPrice, formatAmount: money }}
+                onDismiss={() => setShowCheckoutRecommendations(false)}
+                selectedRelatedPuja={selectedRelatedPuja}
+                enableRelatedPujaCart
+                onRelatedPujaChange={(next) => {
+                    setSelectedRelatedPuja(next);
+                    persistSavanCheckoutDraft(next);
+                }}
+                onPujaInfo={() => persistSavanCheckoutDraft()}
+                onContinue={(checkout) => {
+                    setShowCheckoutRecommendations(false);
+                    persistSavanCheckoutDraft(checkout?.relatedPuja || selectedRelatedPuja);
+                    void handleConfirm(true, checkout);
+                }}
+            />
             {/* No Savan rain here, deliberately — it falls on the detail page
                 and stops at this one. That page is being read; this one is
                 being filled in, and a checkout is the wrong place for drifting
@@ -867,6 +945,20 @@ export default function SavanPujaBookingPage() {
                                     </div>
                                 )}
 
+                                {shopSubtotal > 0 && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="min-w-0 truncate pr-3 text-[12.5px] text-[#665C50] font-medium">{shopCartItems.map((line) => `${line.product.title}${line.qty > 1 ? ` ×${line.qty}` : ""}`).join(", ") || "Shop additions"}</span>
+                                        <span className="font-svn-sub text-[12px] font-bold text-[#8E6A25]">{money(shopSubtotal)}</span>
+                                    </div>
+                                )}
+
+                                {selectedRelatedPuja && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="min-w-0 truncate pr-3 text-[12.5px] text-[#665C50] font-medium">{selectedRelatedPuja.poojaNameEng}</span>
+                                        <span className="font-svn-sub text-[12px] font-bold text-[#8E6A25]">{money(selectedRelatedPuja.poojaPriceOffline || 0)}</span>
+                                    </div>
+                                )}
+
                                 {/* The bill's own total. It is deliberately quieter
                                     than the sticky bar's — crimson on parchment, not
                                     the lacquered plate — because the bar is the one a
@@ -874,7 +966,7 @@ export default function SavanPujaBookingPage() {
                                     one screen is two prices to reconcile. */}
                                 <div className="flex items-baseline justify-between pt-2 border-t border-[#D8B66A]/60">
                                     <span className="font-svn-sub text-[10px] font-bold uppercase tracking-[0.14em] text-[#8E6A25]">Total</span>
-                                    <span className="font-svn-head lining-nums text-xl font-bold text-[#7A1622]">{money(totalPrice)}</span>
+                                    <span className="font-svn-head lining-nums text-xl font-bold text-[#7A1622]">{money(payablePrice)}</span>
                                 </div>
                             </div>
                         </div>
@@ -1518,11 +1610,11 @@ export default function SavanPujaBookingPage() {
                                 below the baseline. Charming in a heading, wrong
                                 in a price. */}
                             <span className="font-svn-head lining-nums text-[22px] font-bold text-[#7A1622] leading-tight">
-                                {money(totalPrice)}
+                                {money(payablePrice)}
                             </span>
                         </div>
                         <button
-                            onClick={handleConfirm}
+                            onClick={() => { void handleConfirm(); }}
                             disabled={submitting}
                             className="flex-1 font-svn-ui flex items-center justify-center gap-1.5 bg-[#A41F2E] hover:bg-[#87121E] text-[#FFF8F0] font-bold text-[14px] py-3 rounded-xl border border-[#C79A2B]/60 shadow-[0_6px_16px_-8px_rgba(122,22,34,0.9)] active:scale-95 transition-all disabled:opacity-60 focus-visible:ring-2 focus-visible:ring-[#C79A2B] outline-none cursor-pointer"
                         >

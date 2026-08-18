@@ -146,6 +146,62 @@ export const getShopifyProducts: RequestHandler = async (req, res) => {
   }
 };
 
+const escapeRelatedTag = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// GET /shopify-products/related — relevance-ranked product cards for puja and
+// campaign pages. The caller supplies Shopify tags so pages need no product IDs.
+export const getRelatedShopifyProducts: RequestHandler = async (req, res) => {
+  try {
+    const requestedTags = String(req.query.tags || "")
+      .split(",")
+      .map((tag) => tag.trim().toLowerCase())
+      .filter(Boolean)
+      .slice(0, 12);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 6, 1), 12);
+
+    if (!requestedTags.length) {
+      res.status(200).json({ success: true, data: [] });
+      return;
+    }
+
+    const tagRegexes = requestedTags.map((tag) => new RegExp(escapeRelatedTag(tag), "i"));
+    const products = await ShopifyProduct.find({
+      vivahOnly: { $ne: true },
+      status: { $ne: "draft" },
+      $or: [
+        { tags: { $in: tagRegexes } },
+        { title: { $in: tagRegexes } },
+        { productType: { $in: tagRegexes } },
+        { keywords: { $in: tagRegexes } },
+      ],
+    })
+      .select("shopifyProductId handle title status tags productType keywords totalInventory featuredImage priceRangeV2 compareAtPriceRange")
+      .limit(60)
+      .lean();
+
+    const ranked = products
+      .map((product: any) => {
+        const haystack = [product.title, product.productType, ...(product.tags || []), ...(product.keywords || [])]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const score = requestedTags.reduce(
+          (total, tag, index) => total + (haystack.includes(tag) ? requestedTags.length - index : 0),
+          0,
+        );
+        return { product, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(({ product }) => product);
+
+    res.status(200).json({ success: true, data: ranked });
+  } catch (error) {
+    console.error("Error fetching related Shopify products:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch related products", data: [] });
+  }
+};
+
 // GET /shopify-products/handle/:handle — fetch single product details by handle
 export const getShopifyProductByHandle: RequestHandler = async (req, res) => {
   try {

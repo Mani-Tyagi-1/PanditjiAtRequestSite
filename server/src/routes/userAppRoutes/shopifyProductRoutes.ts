@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import {
   getShopifyProducts,
+  getRelatedShopifyProducts,
   getShopifyProductByHandle,
   getShopifyProductById,
   createShopifyProduct,
@@ -22,6 +23,9 @@ const wrap =
 
 // Retrieve products with filtering & pagination
 router.get("/shopify-products", wrap(getShopifyProducts));
+
+// Must precede the dynamic /:id route below.
+router.get("/shopify-products/related", wrap(getRelatedShopifyProducts));
 
 // Retrieve single product details by handle
 router.get("/shopify-products/handle/:handle", wrap(getShopifyProductByHandle));

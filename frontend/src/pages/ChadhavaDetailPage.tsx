@@ -208,10 +208,10 @@ export default function ChadhavaDetailPage() {
                 const res = await fetch(`${API_URL}/chadhavas/${slug}`);
                 if (!res.ok) throw new Error("Chadhava not found");
                 const json = await res.json();
-                
+
                 const raw = json.data;
                 if (!raw) throw new Error("Chadhava data is empty");
-                
+
                 // Hero carousel images, in the order they are shown: the web card
                 // image FIRST, then the inner images. The remaining arrays are
                 // only carried for legacy Vedic Vaibhav docs, which expose none
@@ -332,7 +332,7 @@ export default function ChadhavaDetailPage() {
                         normalized.originalPrice = raw.originalPrice || Math.round(normalized.startingPrice * 2.2);
                     }
                 }
-                
+
                 setChadhava(normalized);
 
                 // Auto select the first offering
@@ -515,7 +515,7 @@ export default function ChadhavaDetailPage() {
                                     />
                                 ))}
                             </div>
-                           
+
                             <div className="absolute bottom-3 left-3 bg-white/95 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
                                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                                 <span className="text-[12px] font-bold text-stone-800">{chadhava.rating.toFixed(1)}</span>
@@ -535,9 +535,8 @@ export default function ChadhavaDetailPage() {
                                 {banners.map((_, i) => (
                                     <span
                                         key={i}
-                                        className={`h-1.5 rounded-full transition-all ${
-                                            i === bannerIndex ? "w-5 bg-[#E05A10]" : "w-1.5 bg-[#FFD9BF]"
-                                        }`}
+                                        className={`h-1.5 rounded-full transition-all ${i === bannerIndex ? "w-5 bg-[#E05A10]" : "w-1.5 bg-[#FFD9BF]"
+                                            }`}
                                     />
                                 ))}
                             </div>
@@ -589,152 +588,151 @@ export default function ChadhavaDetailPage() {
 
             {/* Sections (auto-scroll target) */}
             <div ref={sectionsRef} className="pt-1">
-            {(() => {
-                // Flatten items across all sections so rows of 3 stay continuous
-                // (section titles are hidden, so no visual grouping is lost).
-                const allItems = chadhava.sections.flatMap((section) => section.items);
-                const regularItems = allItems.filter((i) => i.isActive !== false && i.type !== "combo");
-                const comboItems = allItems.filter((i) => i.isActive !== false && i.type === "combo");
-                const firstRowItems = regularItems.slice(0, 3);
-                const remainingItems = regularItems.slice(3);
+                {(() => {
+                    // Flatten items across all sections so rows of 3 stay continuous
+                    // (section titles are hidden, so no visual grouping is lost).
+                    const allItems = chadhava.sections.flatMap((section) => section.items);
+                    const regularItems = allItems.filter((i) => i.isActive !== false && i.type !== "combo");
+                    const comboItems = allItems.filter((i) => i.isActive !== false && i.type === "combo");
+                    const firstRowItems = regularItems.slice(0, 3);
+                    const remainingItems = regularItems.slice(3);
 
-                const renderItemCard = (item: typeof regularItems[number]) => {
-                    const count = qty[item.code] || 0;
+                    const renderItemCard = (item: typeof regularItems[number]) => {
+                        const count = qty[item.code] || 0;
+                        return (
+                            <div
+                                key={item.code}
+                                className={`bg-white rounded-2xl border shadow-sm p-1.5 flex flex-col transition-colors ${count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"}`}
+                            >
+                                <div className="relative w-full h-[70px] rounded-xl overflow-hidden bg-[#FFFDF9] mb-1">
+                                    <img
+                                        src={optimizedImg(item.itemImage, 200)}
+                                        onError={(e) => { e.currentTarget.src = item.itemImage; }}
+                                        alt={item.itemName}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                    />
+                                    {item.popular && (
+                                        <span className="absolute top-1 left-1 bg-amber-400 text-amber-950 text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase">★</span>
+                                    )}
+                                </div>
+                                <h5 className="text-[11px] font-bold text-[#2E1F15] leading-tight line-clamp-2 text-center">{item.itemName}</h5>
+                                <span className="text-[12px] font-bold text-[#C1272D] text-center mt-0.5">{money(item.itemPrice)}/-</span>
+                                <div className="mt-1">
+                                    {count === 0 ? (
+                                        <button
+                                            onClick={() => setItemQty(item.code, 1)}
+                                            className="w-full bg-[#9B1B1B] text-white text-[11.5px] font-bold py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
+                                        >
+                                            Add+
+                                        </button>
+                                    ) : (
+                                        <div className="flex items-center justify-between bg-white border border-[#9B1B1B] rounded-lg px-2 py-1 shadow-sm">
+                                            <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
+                                                <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                                            </button>
+                                            <span className="text-[12px] font-bold text-stone-800">{count}</span>
+                                            <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
+                                                <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    };
+
                     return (
-                        <div
-                            key={item.code}
-                            className={`bg-white rounded-2xl border shadow-sm p-1.5 flex flex-col transition-colors ${count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"}`}
-                        >
-                            <div className="relative w-full h-[70px] rounded-xl overflow-hidden bg-[#FFFDF9] mb-1">
-                                <img
-                                    src={optimizedImg(item.itemImage, 200)}
-                                    onError={(e) => { e.currentTarget.src = item.itemImage; }}
-                                    alt={item.itemName}
-                                    className="w-full h-full object-cover"
-                                    loading="lazy"
-                                />
-                                {item.popular && (
-                                    <span className="absolute top-1 left-1 bg-amber-400 text-amber-950 text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase">★</span>
-                                )}
-                            </div>
-                            <h5 className="text-[11px] font-bold text-[#2E1F15] leading-tight line-clamp-2 text-center">{item.itemName}</h5>
-                            <span className="text-[12px] font-bold text-[#C1272D] text-center mt-0.5">{money(item.itemPrice)}/-</span>
-                            <div className="mt-1">
-                                {count === 0 ? (
-                                    <button
-                                        onClick={() => setItemQty(item.code, 1)}
-                                        className="w-full bg-[#9B1B1B] text-white text-[11.5px] font-bold py-1.5 rounded-lg shadow-sm active:scale-95 transition-transform"
+                        <div className="px-4 pt-3">
+                            {/* First row of regular offerings (up to 3) */}
+                            {firstRowItems.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2.5 mt-3">
+                                    {firstRowItems.map(renderItemCard)}
+                                </div>
+                            )}
+
+                            {/* Combo Offering Cards (Full Width) — shown after the first 3 items */}
+                            {comboItems.map((item) => {
+                                const count = qty[item.code] || 0;
+                                const discountPct = item.originalPrice ? Math.round((1 - item.itemPrice / item.originalPrice) * 100) : 0;
+                                return (
+                                    <div
+                                        key={item.code}
+                                        className={`w-full bg-white rounded-2xl border overflow-hidden mt-3 transition-all shadow-sm ${count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"
+                                            }`}
                                     >
-                                        Add+
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center justify-between bg-white border border-[#9B1B1B] rounded-lg px-2 py-1 shadow-sm">
-                                        <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
-                                            <Minus className="w-3.5 h-3.5" strokeWidth={3} />
-                                        </button>
-                                        <span className="text-[12px] font-bold text-stone-800">{count}</span>
-                                        <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
-                                            <Plus className="w-3.5 h-3.5" strokeWidth={3} />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                };
-
-                return (
-                    <div className="px-4 pt-3">
-                        {/* First row of regular offerings (up to 3) */}
-                        {firstRowItems.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2.5 mt-3">
-                                {firstRowItems.map(renderItemCard)}
-                            </div>
-                        )}
-
-                        {/* Combo Offering Cards (Full Width) — shown after the first 3 items */}
-                        {comboItems.map((item) => {
-                            const count = qty[item.code] || 0;
-                            const discountPct = item.originalPrice ? Math.round((1 - item.itemPrice / item.originalPrice) * 100) : 0;
-                            return (
-                                <div
-                                    key={item.code}
-                                    className={`w-full bg-white rounded-2xl border overflow-hidden mt-3 transition-all shadow-sm ${
-                                        count > 0 ? "border-[#9B1B1B]" : "border-[#F4E7DC]"
-                                    }`}
-                                >
-                                    {/* Image with badges */}
-                                    <div className="relative w-full bg-[#FFFDF9]">
-                                        <img
-                                            src={optimizedImg(item.itemImage, 700)}
-                                            onError={(e) => { e.currentTarget.src = item.itemImage; }}
-                                            alt={item.itemName}
-                                            className="w-full h-[160px] object-cover object-bottom"
-                                            loading="lazy"
-                                        />
-                                        <span className="absolute top-2 left-2 bg-[#E8A22A] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
-                                            Combo Pack
-                                        </span>
-                                        {discountPct > 0 && (
-                                            <span className="absolute top-2 right-2 bg-[#C1272D] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
-                                                Save {discountPct}%
+                                        {/* Image with badges */}
+                                        <div className="relative w-full bg-[#FFFDF9]">
+                                            <img
+                                                src={optimizedImg(item.itemImage, 700)}
+                                                onError={(e) => { e.currentTarget.src = item.itemImage; }}
+                                                alt={item.itemName}
+                                                className="w-full h-[160px] object-cover object-bottom"
+                                                loading="lazy"
+                                            />
+                                            <span className="absolute top-2 left-2 bg-[#E8A22A] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+                                                Combo Pack
                                             </span>
-                                        )}
-                                    </div>
-
-                                    {/* Details */}
-                                    <div className="px-4 py-2 text-left">
-                                        <h5 className="text-[15px] font-bold text-[#2E1F15] leading-snug">
-                                            {item.itemName}
-                                        </h5>
-                                        {item.itemDesc && item.itemDesc !== item.itemName && (
-                                            <p className="text-[12px] text-stone-500 mt-0.5 leading-snug line-clamp-1">
-                                                {item.itemDesc}
-                                            </p>
-                                        )}
-
-                                        {/* Price & Action */}
-                                        <div className="flex items-center justify-between mt-1">
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-[18px] font-extrabold text-[#C1272D]">{money(item.itemPrice)}/-</span>
-                                                {item.originalPrice && (
-                                                    <span className="text-[13px] text-stone-400 line-through">{money(item.originalPrice)}/-</span>
-                                                )}
-                                            </div>
-
-                                            {count === 0 ? (
-                                                <button
-                                                    onClick={() => setItemQty(item.code, 1)}
-                                                    className="bg-[#9B1B1B] text-white text-[13px] font-bold px-6 py-2 rounded-xl active:scale-95 transition-transform shadow-md"
-                                                >
-                                                    Add+
-                                                </button>
-                                            ) : (
-                                                <div className="flex items-center gap-3 bg-white border border-[#9B1B1B] rounded-xl px-3 py-1.5 shadow-md">
-                                                    <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
-                                                        <Minus className="w-4 h-4" strokeWidth={3} />
-                                                    </button>
-                                                    <span className="text-[14px] font-bold text-stone-800 w-4 text-center">{count}</span>
-                                                    <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
-                                                        <Plus className="w-4 h-4" strokeWidth={3} />
-                                                    </button>
-                                                </div>
+                                            {discountPct > 0 && (
+                                                <span className="absolute top-2 right-2 bg-[#C1272D] text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+                                                    Save {discountPct}%
+                                                </span>
                                             )}
                                         </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
 
-                        {/* Remaining regular offerings (after the combo pack) */}
-                        {remainingItems.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2.5 mt-3">
-                                {remainingItems.map(renderItemCard)}
-                            </div>
-                        )}
-                    </div>
-                );
-            })()}
+                                        {/* Details */}
+                                        <div className="px-4 py-2 text-left">
+                                            <h5 className="text-[15px] font-bold text-[#2E1F15] leading-snug">
+                                                {item.itemName}
+                                            </h5>
+                                            {item.itemDesc && item.itemDesc !== item.itemName && (
+                                                <p className="text-[12px] text-stone-500 mt-0.5 leading-snug line-clamp-1">
+                                                    {item.itemDesc}
+                                                </p>
+                                            )}
+
+                                            {/* Price & Action */}
+                                            <div className="flex items-center justify-between mt-1">
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-[18px] font-extrabold text-[#C1272D]">{money(item.itemPrice)}/-</span>
+                                                    {item.originalPrice && (
+                                                        <span className="text-[13px] text-stone-400 line-through">{money(item.originalPrice)}/-</span>
+                                                    )}
+                                                </div>
+
+                                                {count === 0 ? (
+                                                    <button
+                                                        onClick={() => setItemQty(item.code, 1)}
+                                                        className="bg-[#9B1B1B] text-white text-[13px] font-bold px-6 py-2 rounded-xl active:scale-95 transition-transform shadow-md"
+                                                    >
+                                                        Add+
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex items-center gap-3 bg-white border border-[#9B1B1B] rounded-xl px-3 py-1.5 shadow-md">
+                                                        <button onClick={() => setItemQty(item.code, count - 1)} className="text-[#9B1B1B] active:scale-90">
+                                                            <Minus className="w-4 h-4" strokeWidth={3} />
+                                                        </button>
+                                                        <span className="text-[14px] font-bold text-stone-800 w-4 text-center">{count}</span>
+                                                        <button onClick={() => setItemQty(item.code, count + 1)} className="text-[#9B1B1B] active:scale-90">
+                                                            <Plus className="w-4 h-4" strokeWidth={3} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            {/* Remaining regular offerings (after the combo pack) */}
+                            {remainingItems.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2.5 mt-3">
+                                    {remainingItems.map(renderItemCard)}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* Prasad add-on */}
@@ -827,24 +825,23 @@ export default function ChadhavaDetailPage() {
                     <div className="bg-white rounded-[24px] border border-[#FFEFE2] overflow-hidden shadow-sm">
                         {chadhava.mandirAppImage && (
                             <div className="w-full h-36 overflow-hidden">
-                                <img 
+                                <img
                                     src={optimizedImg(chadhava.mandirAppImage, 700)}
                                     onError={(e) => { e.currentTarget.src = chadhava.mandirAppImage || ""; }}
-                                    alt={chadhava.templeName} 
-                                    className="w-full h-full object-cover" 
-                                    loading="lazy" 
+                                    alt={chadhava.templeName}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
                                 />
                             </div>
                         )}
-                        
+
                         <div className="p-5">
                             {/* Tab Headers */}
                             <div className="flex border-b border-[#FFEFE2] mb-3.5 gap-6">
                                 <button
                                     onClick={() => setActiveTab("about")}
-                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative ${
-                                        activeTab === "about" ? "text-[#E05A10]" : "text-stone-400"
-                                    }`}
+                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative ${activeTab === "about" ? "text-[#E05A10]" : "text-stone-400"
+                                        }`}
                                 >
                                     About
                                     {activeTab === "about" && (
@@ -853,9 +850,8 @@ export default function ChadhavaDetailPage() {
                                 </button>
                                 <button
                                     onClick={() => setActiveTab("history")}
-                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative ${
-                                        activeTab === "history" ? "text-[#E05A10]" : "text-stone-400"
-                                    }`}
+                                    className={`pb-2 text-[14px] font-bold transition-all px-1 relative ${activeTab === "history" ? "text-[#E05A10]" : "text-stone-400"
+                                        }`}
                                 >
                                     History
                                     {activeTab === "history" && (
@@ -865,12 +861,14 @@ export default function ChadhavaDetailPage() {
                             </div>
 
                             {/* Tab Content */}
-                            <div className="text-[12.5px] text-stone-600 leading-relaxed text-left whitespace-pre-line">
-                                {activeTab === "about" 
-                                    ? chadhava.mandirSectionIntro 
-                                    : chadhava.mandirSectionHistory
-                                }
-                            </div>
+                            <div
+                                className="text-[12.5px] text-stone-600 leading-relaxed text-left prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{
+                                    __html: activeTab === "about"
+                                        ? chadhava.mandirSectionIntro
+                                        : chadhava.mandirSectionHistory
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
@@ -989,11 +987,11 @@ export default function ChadhavaDetailPage() {
                             {/* Prasad Box Detail Card */}
                             <div className="mt-5 border border-[#FFEFE2] rounded-2xl p-4 bg-[#FFFDF9] flex gap-3 text-left items-center">
                                 <div className="w-16 h-16 rounded-xl bg-orange-50 overflow-hidden shrink-0 border border-orange-100 flex items-center justify-center">
-                                    <img 
+                                    <img
                                         src={optimizedImg(chadhava.prasad?.image || chadhava.image, 140)}
                                         onError={(e) => { e.currentTarget.src = chadhava.prasad?.image || chadhava.image; }}
-                                        alt="Prasad Box" 
-                                        className="w-full h-full object-cover" 
+                                        alt="Prasad Box"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">

@@ -138,7 +138,6 @@ const LoginModal = React.lazy(() => import("./components/auth/LoginModal"));
 
 // Analytics: one module for GA4 + Google Ads + Meta. See utils/analytics.ts.
 import analytics from "./utils/analytics";
-import ConsentBanner from "./components/ConsentBanner";
 
 /**
  * Mounts the login modal only while it is open, so its chunk (and
@@ -293,45 +292,44 @@ function App() {
   return (
     <AuthProvider>
       <ShopifyCartProvider>
-      <LazyLoginModal />
-      <ShopifyCartDrawer />
-      <ScrollToTop />
-      <AnalyticsPageTracker />
-      <ConsentBanner />
-      <ReferralCapture />
-      <AppDownloadModal />
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
-        <Routes>
-          {/* App shell with persistent bottom nav */}
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/home" element={<Navigate to="/" replace />} />
-            <Route path="/book-puja" element={<BookPujaPage />} />
-            <Route path="/chadhava" element={<ChadhavaPage />} />
-            <Route path="/kashi" element={<KashiPage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            {/* Selected category lives in the URL, e.g. /shop/rudraksh, /shop/all */}
-            <Route path="/shop/:category" element={<ShopPage />} />
-            <Route path="/account" element={<ProfilePage />} />
-          </Route>
+        <LazyLoginModal />
+        <ShopifyCartDrawer />
+        <ScrollToTop />
+        <AnalyticsPageTracker />
+        <ReferralCapture />
+        <AppDownloadModal />
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+          <Routes>
+            {/* App shell with persistent bottom nav */}
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/home" element={<Navigate to="/" replace />} />
+              <Route path="/book-puja" element={<BookPujaPage />} />
+              <Route path="/chadhava" element={<ChadhavaPage />} />
+              <Route path="/kashi" element={<KashiPage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              {/* Selected category lives in the URL, e.g. /shop/rudraksh, /shop/all */}
+              <Route path="/shop/:category" element={<ShopPage />} />
+              <Route path="/account" element={<ProfilePage />} />
+            </Route>
 
-          <Route path="/privacypolicy" element={<PrivacyPolicy />} />
-          <Route path="/termsandconditions" element={<TermsAndConditions />} />
-          <Route path="/privacypolicy-pandit" element={<PanditPrivacyPolicy />} />
-          <Route path="/termsandconditions-pandit" element={<TermsAndConditionPandit />} />
-          <Route path="/delete-pandit-account" element={<DeleteMyAccount />} />
-          <Route path="/delete-my-account" element={<DeleteUserAccount />} />
-          <Route path="/category" element={<CategoryPage />} />
-          <Route path="/category/:categoryId" element={<CategoryPage />} />
-          <Route path="/puja" element={<PujaDetailPage />} />
-          {/* Retired campaign (Maa Chintpurni / Shri Durga Mata) — the dedicated
+            <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+            <Route path="/termsandconditions" element={<TermsAndConditions />} />
+            <Route path="/privacypolicy-pandit" element={<PanditPrivacyPolicy />} />
+            <Route path="/termsandconditions-pandit" element={<TermsAndConditionPandit />} />
+            <Route path="/delete-pandit-account" element={<DeleteMyAccount />} />
+            <Route path="/delete-my-account" element={<DeleteUserAccount />} />
+            <Route path="/category" element={<CategoryPage />} />
+            <Route path="/category/:categoryId" element={<CategoryPage />} />
+            <Route path="/puja" element={<PujaDetailPage />} />
+            {/* Retired campaign (Maa Chintpurni / Shri Durga Mata) — the dedicated
               pages are gone, but these slugs were used in ads and WhatsApp
               shares, so send that traffic to the puja catalog instead of 404. */}
-          <Route path="/maa-chintpurni-puja" element={<Navigate to="/puja" replace />} />
-          <Route path="/maa-chintpurni-puja/booking" element={<Navigate to="/puja" replace />} />
-          <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/puja" replace />} />
-          <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/puja" replace />} />
-          {/* Savan 2026 — Mahadev Rudrabhishek at Shri Mahakaleshwar, Ujjain on
+            <Route path="/maa-chintpurni-puja" element={<Navigate to="/puja" replace />} />
+            <Route path="/maa-chintpurni-puja/booking" element={<Navigate to="/puja" replace />} />
+            <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/puja" replace />} />
+            <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/puja" replace />} />
+            {/* Savan 2026 — Mahadev Rudrabhishek at Shri Mahakaleshwar, Ujjain on
               the last Savan Somwar. To stop the campaign, comment this block out
               again (plus the lazy imports above) so all of these slugs fall
               through to the catch-all and land on the home page.
@@ -340,84 +338,84 @@ function App() {
               data/kashiMahadevPuja.ts — keep the path below and that constant
               the same string, or the page renders at one url and links to,
               canonicalises to and preloads another. */}
-          <Route path="/mahakaal-savan-somwar-puja" element={<SavanPujaPage />} />
-          <Route path="/mahakaal-savan-somwar-puja/booking" element={<SavanPujaBookingPage />} />
-          {/* Short alias — easier to type/share in ads & WhatsApp */}
-          <Route path="/savan-puja" element={<Navigate to="/mahakaal-savan-somwar-puja" replace />} />
-          <Route path="/savan-puja/booking" element={<Navigate to="/mahakaal-savan-somwar-puja/booking" replace />} />
-          {/* Earlier Kashi slug — the campaign ran here while the puja was at
+            <Route path="/mahakaal-savan-somwar-puja" element={<SavanPujaPage />} />
+            <Route path="/mahakaal-savan-somwar-puja/booking" element={<SavanPujaBookingPage />} />
+            {/* Short alias — easier to type/share in ads & WhatsApp */}
+            <Route path="/savan-puja" element={<Navigate to="/mahakaal-savan-somwar-puja" replace />} />
+            <Route path="/savan-puja/booking" element={<Navigate to="/mahakaal-savan-somwar-puja/booking" replace />} />
+            {/* Earlier Kashi slug — the campaign ran here while the puja was at
               Kashi Vishwanath, so live ad links and WhatsApp shares still point
               at it. Redirect, never delete. */}
-          <Route path="/kashi-mahadev-savan-puja" element={<Navigate to="/mahakaal-savan-somwar-puja" replace />} />
-          <Route path="/kashi-mahadev-savan-puja/booking" element={<Navigate to="/mahakaal-savan-somwar-puja/booking" replace />} />
-          {/* Kaal Bhairav — Kalashtami puja at Shri Kaal Bhairav Mandir, Kashi */}
-          <Route path="/kashi-kaal-bhairav-puja" element={<KaalBhairavPage />} />
-          <Route path="/kashi-kaal-bhairav-puja/booking" element={<KaalBhairavBookingPage />} />
-          {/* Short alias — easier to type/share in ads & WhatsApp */}
-          <Route path="/kaal-bhairav-puja" element={<Navigate to="/kashi-kaal-bhairav-puja" replace />} />
-          <Route path="/kaal-bhairav-puja/booking" element={<Navigate to="/kashi-kaal-bhairav-puja/booking" replace />} />
-          {/* Banke Bihari — Janmashtami puja at Shri Banke Bihari Ji Mandir, Vrindavan */}
-          <Route path="/vrindavan-banke-bihari-puja" element={<BankeBihariPage />} />
-          <Route path="/vrindavan-banke-bihari-puja/booking" element={<BankeBihariBookingPage />} />
-          {/* Short aliases — easier to type/share in ads & WhatsApp */}
-          <Route path="/banke-bihari-puja" element={<Navigate to="/vrindavan-banke-bihari-puja" replace />} />
-          <Route path="/banke-bihari-puja/booking" element={<Navigate to="/vrindavan-banke-bihari-puja/booking" replace />} />
-          <Route path="/janmashtami-puja" element={<Navigate to="/vrindavan-banke-bihari-puja" replace />} />
-          <Route path="/janmashtami-puja/booking" element={<Navigate to="/vrindavan-banke-bihari-puja/booking" replace />} />
-          {/* Hanuman — Bada Mangal puja at Shri Hanuman Garhi Mandir, Ayodhya */}
-          <Route path="/ayodhya-hanuman-garhi-puja" element={<Hanumanjipage />} />
-          <Route path="/ayodhya-hanuman-garhi-puja/booking" element={<HanumanBookingPage />} />
-          {/* Short alias — easier to type/share in ads & WhatsApp */}
-          <Route path="/hanuman-puja" element={<Navigate to="/ayodhya-hanuman-garhi-puja" replace />} />
-          <Route path="/hanuman-puja/booking" element={<Navigate to="/ayodhya-hanuman-garhi-puja/booking" replace />} />
-          {/* ── Vedic Vivah Sanskar ──────────────────────────────────────
+            <Route path="/kashi-mahadev-savan-puja" element={<Navigate to="/mahakaal-savan-somwar-puja" replace />} />
+            <Route path="/kashi-mahadev-savan-puja/booking" element={<Navigate to="/mahakaal-savan-somwar-puja/booking" replace />} />
+            {/* Kaal Bhairav — Kalashtami puja at Shri Kaal Bhairav Mandir, Kashi */}
+            <Route path="/kashi-kaal-bhairav-puja" element={<KaalBhairavPage />} />
+            <Route path="/kashi-kaal-bhairav-puja/booking" element={<KaalBhairavBookingPage />} />
+            {/* Short alias — easier to type/share in ads & WhatsApp */}
+            <Route path="/kaal-bhairav-puja" element={<Navigate to="/kashi-kaal-bhairav-puja" replace />} />
+            <Route path="/kaal-bhairav-puja/booking" element={<Navigate to="/kashi-kaal-bhairav-puja/booking" replace />} />
+            {/* Banke Bihari — Janmashtami puja at Shri Banke Bihari Ji Mandir, Vrindavan */}
+            <Route path="/vrindavan-banke-bihari-puja" element={<BankeBihariPage />} />
+            <Route path="/vrindavan-banke-bihari-puja/booking" element={<BankeBihariBookingPage />} />
+            {/* Short aliases — easier to type/share in ads & WhatsApp */}
+            <Route path="/banke-bihari-puja" element={<Navigate to="/vrindavan-banke-bihari-puja" replace />} />
+            <Route path="/banke-bihari-puja/booking" element={<Navigate to="/vrindavan-banke-bihari-puja/booking" replace />} />
+            <Route path="/janmashtami-puja" element={<Navigate to="/vrindavan-banke-bihari-puja" replace />} />
+            <Route path="/janmashtami-puja/booking" element={<Navigate to="/vrindavan-banke-bihari-puja/booking" replace />} />
+            {/* Hanuman — Bada Mangal puja at Shri Hanuman Garhi Mandir, Ayodhya */}
+            <Route path="/ayodhya-hanuman-garhi-puja" element={<Hanumanjipage />} />
+            <Route path="/ayodhya-hanuman-garhi-puja/booking" element={<HanumanBookingPage />} />
+            {/* Short alias — easier to type/share in ads & WhatsApp */}
+            <Route path="/hanuman-puja" element={<Navigate to="/ayodhya-hanuman-garhi-puja" replace />} />
+            <Route path="/hanuman-puja/booking" element={<Navigate to="/ayodhya-hanuman-garhi-puja/booking" replace />} />
+            {/* ── Vedic Vivah Sanskar ──────────────────────────────────────
               Canonical path is /vedic-vivah, matching the SEO canonicalUrl the
               admin catalog serves (and what the app's /seo endpoint returns).
               The shorter /vivah slugs are kept as redirects because they're
               easier to type in ads and WhatsApp. */}
-          <Route path="/vedic-vivah" element={<VivahPage />} />
-          <Route path="/vedic-vivah/checkout" element={<VivahCheckoutPage />} />
-          <Route path="/vedic-vivah/package/:packageId" element={<VivahPackageDetailPage />} />
-          {/* SEO guide hub — JSON-driven posts targeting vivah head keywords */}
-          <Route path="/vedic-vivah/guides" element={<VivahGuidesListPage />} />
-          <Route path="/vedic-vivah/guides/:slug" element={<VivahBlogDetailPage />} />
-          <Route path="/vivah" element={<Navigate to="/vedic-vivah" replace />} />
-          <Route path="/vivah/checkout" element={<Navigate to="/vedic-vivah/checkout" replace />} />
-          <Route path="/vivah/package/:packageId" element={<VivahPackageRedirect />} />
+            <Route path="/vedic-vivah" element={<VivahPage />} />
+            <Route path="/vedic-vivah/checkout" element={<VivahCheckoutPage />} />
+            <Route path="/vedic-vivah/package/:packageId" element={<VivahPackageDetailPage />} />
+            {/* SEO guide hub — JSON-driven posts targeting vivah head keywords */}
+            <Route path="/vedic-vivah/guides" element={<VivahGuidesListPage />} />
+            <Route path="/vedic-vivah/guides/:slug" element={<VivahBlogDetailPage />} />
+            <Route path="/vivah" element={<Navigate to="/vedic-vivah" replace />} />
+            <Route path="/vivah/checkout" element={<Navigate to="/vedic-vivah/checkout" replace />} />
+            <Route path="/vivah/package/:packageId" element={<VivahPackageRedirect />} />
 
-          <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/my-bookings" element={<MyBookingsPage />} />
-          <Route path="/video-call/:callId/:panditId" element={<VideoCallPage />} />
-          <Route path="/audio-call/:callId/:panditId" element={<AudioCallPage />} />
-          <Route path="/track-pandit/:panditId/:destLat/:destLng" element={<TrackPanditPage />} />
-          <Route path="/blog" element={<BlogListPage />} />
-          <Route path="/blog/:blogID" element={<BlogDetailPage />} />
-          <Route path="/puja/:pujaId/enquiry" element={<PujaEnquiryPage />} />
-          <Route path="/free-consultation" element={<FreeConsultationPage />} />
-          <Route path="/paid-consultation" element={<PaidConsultationPage />} />
-          {/* Pandit Listings & Profiles */}
-          <Route path="/all-pandits" element={<AllPanditsPage />} />
-          <Route path="/pandit/:panditId" element={<PanditDetailPage />} />
+            <Route path="/puja/:pujaId" element={<PujaDetailPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/my-bookings" element={<MyBookingsPage />} />
+            <Route path="/video-call/:callId/:panditId" element={<VideoCallPage />} />
+            <Route path="/audio-call/:callId/:panditId" element={<AudioCallPage />} />
+            <Route path="/track-pandit/:panditId/:destLat/:destLng" element={<TrackPanditPage />} />
+            <Route path="/blog" element={<BlogListPage />} />
+            <Route path="/blog/:blogID" element={<BlogDetailPage />} />
+            <Route path="/puja/:pujaId/enquiry" element={<PujaEnquiryPage />} />
+            <Route path="/free-consultation" element={<FreeConsultationPage />} />
+            <Route path="/paid-consultation" element={<PaidConsultationPage />} />
+            {/* Pandit Listings & Profiles */}
+            <Route path="/all-pandits" element={<AllPanditsPage />} />
+            <Route path="/pandit/:panditId" element={<PanditDetailPage />} />
 
-          {/* Detail pages for dynamic sharing */}
-          <Route path="/live-mandir-puja/:slug/booking" element={<LiveMandirBookingPage />} />
-          <Route path="/live-mandir-puja/:slug" element={<LiveMandirPujaDetailPage />} />
-          <Route path="/holy-pandit/:slug" element={<HolyPanditDetailPage />} />
-          <Route path="/chadhava/:slug/booking" element={<ChadhavaBookingPage />} />
-          <Route path="/chadhava/:slug" element={<ChadhavaDetailPage />} />
-          <Route path="/shop-product/:slug" element={<ShopProductDetailPage />} />
-          {/* Legacy product URL — kept so already-shared links keep working */}
-          <Route path="/shop/product/:handle" element={<ShopifyProductDetailPage />} />
-          {/* Current shape: /shop/<category>/<product-handle> */}
-          <Route path="/shop/:category/:handle" element={<ShopifyProductDetailPage />} />
+            {/* Detail pages for dynamic sharing */}
+            <Route path="/live-mandir-puja/:slug/booking" element={<LiveMandirBookingPage />} />
+            <Route path="/live-mandir-puja/:slug" element={<LiveMandirPujaDetailPage />} />
+            <Route path="/holy-pandit/:slug" element={<HolyPanditDetailPage />} />
+            <Route path="/chadhava/:slug/booking" element={<ChadhavaBookingPage />} />
+            <Route path="/chadhava/:slug" element={<ChadhavaDetailPage />} />
+            <Route path="/shop-product/:slug" element={<ShopProductDetailPage />} />
+            {/* Legacy product URL — kept so already-shared links keep working */}
+            <Route path="/shop/product/:handle" element={<ShopifyProductDetailPage />} />
+            {/* Current shape: /shop/<category>/<product-handle> */}
+            <Route path="/shop/:category/:handle" element={<ShopifyProductDetailPage />} />
 
-          {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
+            {/* <Route path="/.well-known/assetlinks.json" element={<assetlinks.json />} /> */}
 
-          {/* Redirect example */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+            {/* Redirect example */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </ShopifyCartProvider>
     </AuthProvider>
   );

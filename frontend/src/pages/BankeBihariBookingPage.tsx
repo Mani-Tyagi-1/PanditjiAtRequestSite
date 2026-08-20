@@ -510,6 +510,31 @@ export default function BankeBihariBookingPage() {
             const checkoutRelatedPuja = checkout?.relatedPuja || selectedRelatedPuja;
             const checkoutRelatedPujaPrice = checkoutRelatedPuja?.poojaPriceOffline || 0;
             const checkoutTotal = totalPrice + checkoutShopSubtotal + checkoutRelatedPujaPrice;
+            const addons = {
+                shopItems: shopCartItems.map((line) => {
+                    const unitPrice = Number(line.product.priceRangeV2?.minVariantPrice?.amount || 0);
+                    return {
+                        type: "shop_item",
+                        productId: line.product._id,
+                        shopifyProductId: line.product.shopifyProductId,
+                        name: line.product.title,
+                        quantity: line.qty,
+                        unitPrice,
+                        totalPrice: unitPrice * line.qty,
+                    };
+                }),
+                relatedPujas: checkoutRelatedPuja ? [{
+                    type: "related_puja",
+                    poojaId: checkoutRelatedPuja._id,
+                    poojaID: checkoutRelatedPuja.poojaID,
+                    name: checkoutRelatedPuja.poojaNameEng,
+                    mode: "offline",
+                    quantity: 1,
+                    unitPrice: checkoutRelatedPujaPrice,
+                    totalPrice: checkoutRelatedPujaPrice,
+                }] : [],
+                addonsTotal: checkoutShopSubtotal + checkoutRelatedPujaPrice,
+            };
             const bookingDate = resolveBookingDate(puja.pujaDate, form.time);
 
             // 1) Create the pending booking + Razorpay order. The server
@@ -519,6 +544,7 @@ export default function BankeBihariBookingPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
                     userId: user?._id || (user as any)?.id,
+                    addons,
                     // Resolve the catalog row by its stable `poojaID` string rather
                     // than a hardcoded Mongo _id, which differs between the dev and
                     // production clusters. The server falls back to

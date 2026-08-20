@@ -521,6 +521,11 @@ type CreatePendingBookingBody = {
   packageId?: string;
   packageName?: string;
   packageDetails?: Record<string, any>;
+  addons?: {
+    shopItems?: Array<Record<string, any>>;
+    relatedPujas?: Array<Record<string, any>>;
+    addonsTotal: number;
+  };
   members?: string;
   wish?: string;
   concern?: string;
@@ -1100,6 +1105,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       packageId,
       packageName,
       packageDetails,
+      addons,
       members,
       wish,
       concern,
@@ -1304,6 +1310,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       // puja out of Events Manager by accident.
       skipMetaCapi: skipMetaCapi === true,
       packageIncluded,
+      ...(addons && typeof addons === 'object' && { addons }),
       ...(packageIncluded && {
         packageId,
         packageName,

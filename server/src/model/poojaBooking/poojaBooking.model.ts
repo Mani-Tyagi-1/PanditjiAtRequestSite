@@ -176,6 +176,7 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     packageName: { type: String, trim: true },
     packageIncluded: { type: Boolean, default: false },
     packageDetails: { type: Schema.Types.Mixed, default: undefined },
+    addons: { type: Schema.Types.Mixed, default: undefined },
     members: { type: String, trim: true },
     wish: { type: String, trim: true },
     isLiveMandir: { type: Boolean, default: false },

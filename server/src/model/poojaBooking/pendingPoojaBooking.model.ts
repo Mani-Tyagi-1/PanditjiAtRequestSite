@@ -234,6 +234,11 @@ export interface IPendingPoojaBooking extends Document {
   packageName?: string;
   packageIncluded?: boolean;
   packageDetails?: Record<string, any>;
+  addons?: {
+    shopItems?: Array<Record<string, any>>;
+    relatedPujas?: Array<Record<string, any>>;
+    addonsTotal: number;
+  };
   members?: string;
   wish?: string;
   isLiveMandir?: boolean;
@@ -340,6 +345,7 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     packageName: { type: String, trim: true },
     packageIncluded: { type: Boolean, default: false },
     packageDetails: { type: Schema.Types.Mixed, default: undefined },
+    addons: { type: Schema.Types.Mixed, default: undefined },
     members: { type: String, trim: true },
     wish: { type: String, trim: true },
     isLiveMandir: { type: Boolean, default: false },

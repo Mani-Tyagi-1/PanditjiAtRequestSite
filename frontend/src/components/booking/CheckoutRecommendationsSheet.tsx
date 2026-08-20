@@ -8,6 +8,7 @@ import { type ShopifyProduct } from "./Shop/shopifyTypes";
 
 export type RecommendedPuja = {
     _id: string;
+    poojaID?: string;
     poojaNameEng: string;
     poojaMode: "online" | "offline" | "both";
     poojaPriceOnline?: number;

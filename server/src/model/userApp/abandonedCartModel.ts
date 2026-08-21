@@ -1,5 +1,9 @@
 import { Schema, Model } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
+import {
+  attributionField,
+  IMarketingAttribution,
+} from "../analytics/marketingAttribution.schema";
 
 // A booking form the devotee started filling but never paid for.
 //
@@ -44,6 +48,15 @@ export interface IAbandonedCart {
 
   userId?: string;
   pageUrl?: string;
+  /**
+   * Which campaign brought this devotee in.
+   *
+   * This is the one place attribution answers a question the ad platforms
+   * cannot even ask: which campaign produces leads that DON'T convert. A
+   * campaign with a great click-through rate and a cart full of abandoned
+   * rows is buying the wrong audience, and only this collection shows it.
+   */
+  attribution?: IMarketingAttribution;
 
   status: "active" | "converted";
   bookingId?: string;
@@ -78,6 +91,8 @@ const abandonedCartSchema = new Schema<IAbandonedCart>({
   userId: { type: String, trim: true },
   pageUrl: { type: String, trim: true },
 
+  attribution: attributionField,
+
   status: { type: String, enum: ["active", "converted"], default: "active", index: true },
   bookingId: { type: String, trim: true },
 
@@ -88,6 +103,9 @@ const abandonedCartSchema = new Schema<IAbandonedCart>({
 
 // The admin list is "newest un-paid leads first".
 abandonedCartSchema.index({ status: 1, lastUpdatedOn: -1 });
+// "which campaign is filling the abandoned list?" — the report this
+// collection exists to answer once attribution is on it.
+abandonedCartSchema.index({ "attribution.last.campaign": 1, status: 1 }, { sparse: true });
 
 const AbandonedCart: Model<IAbandonedCart> =
   panditJiAtRequestMongooose.model<IAbandonedCart>(

@@ -102,10 +102,20 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
       required: function (this: any) { return this.paymentTiming !== 'postpaid'; },
     },
     razorpayOrderId: { type: String, required: true },
-    razorpaySignature: {
-      type: String,
-      required: function (this: any) { return this.paymentTiming !== 'postpaid'; },
-    },
+    // Deliberately NOT required, unlike razorpayPaymentId above.
+    //
+    // This is the Razorpay Checkout callback signature, and it exists only when
+    // the BROWSER confirmed the payment. A booking promoted by the Razorpay
+    // webhook has no such value — Razorpay signs the whole webhook body with
+    // RAZORPAY_WEBHOOK_SECRET instead, and that HMAC is verified in
+    // razorpayWebhookController before any reconciler runs. Same guarantee,
+    // different route.
+    //
+    // Requiring it made every webhook-confirmed booking fail validation, so the
+    // server-to-server safety net — the entire point of which is to rescue a
+    // payment the browser never reported — could not save a single one. Every
+    // other booking model in this codebase already leaves it optional.
+    razorpaySignature: { type: String },
 
     paymentTiming: { type: String, enum: ['prepaid', 'postpaid'], default: 'prepaid' },
     paymentStatus: { type: String, enum: ['pending', 'partial', 'paid', 'failed'], default: 'paid' },

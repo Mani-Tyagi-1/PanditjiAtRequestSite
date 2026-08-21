@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import API_URL from "./apiConfig";
 
+import { attributionPayload } from "./attribution";
 /**
  * Abandoned-cart capture for the booking pages.
  *
@@ -148,6 +149,10 @@ export function useAbandonedCart(source: string, draft: CartDraft, scopeKey?: st
         pageUrl: typeof window !== "undefined" ? window.location.href : undefined,
         ...compact(draft),
         phone: leadPhone(draft.phone),
+        // Which campaign brought this devotee in. Read from localStorage, so
+        // it is byte-identical on every render and cannot make `buildBody`
+        // produce a 'changed' payload that re-posts on a loop.
+        ...attributionPayload(),
         ...(extraFields || {}),
       }),
     // draft is a fresh object literal each render; its serialization is the

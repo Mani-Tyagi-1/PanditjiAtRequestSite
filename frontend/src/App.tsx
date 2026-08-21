@@ -139,7 +139,6 @@ const LoginModal = React.lazy(() => import("./components/auth/LoginModal"));
 // Analytics: one module for GA4 + Google Ads + Meta. See utils/analytics.ts.
 import analytics from "./utils/analytics";
 import { captureAttribution } from "./utils/attribution";
-import ConsentBanner from "./components/ConsentBanner";
 
 /**
  * Mounts the login modal only while it is open, so its chunk (and
@@ -320,7 +319,6 @@ function App() {
       <ShopifyCartDrawer />
       <ScrollToTop />
       <AnalyticsPageTracker />
-      <ConsentBanner />
       <AttributionCapture />
       <ReferralCapture />
       <AppDownloadModal />

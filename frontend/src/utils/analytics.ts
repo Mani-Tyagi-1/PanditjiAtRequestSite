@@ -48,12 +48,6 @@ import API_URL from "./apiConfig";
 const GA4_MEASUREMENT_ID =
   (import.meta.env.VITE_GA4_MEASUREMENT_ID as string) || "G-GLFX9MEX7V";
 
-/** localStorage key holding the visitor's consent choice. */
-const CONSENT_STORAGE_KEY = "pjar_consent_v1";
-
-/** Bump when the consent copy or categories change, to re-prompt everyone. */
-const CONSENT_VERSION = 1;
-
 /* ═══════════════════════════════════════════════════════════════════════════
    TYPES
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -105,13 +99,6 @@ interface CommercePayload {
   meta?: MetaSpec;
 }
 
-export interface ConsentState {
-  /** GA4 + any measurement tag. */
-  analytics: boolean;
-  /** Google Ads + Meta Pixel remarketing/conversion tags. */
-  ads: boolean;
-}
-
 declare global {
   interface Window {
     dataLayer?: unknown[];
@@ -134,17 +121,12 @@ function ensureDataLayer(): unknown[] {
   return window.dataLayer;
 }
 
-/**
- * The canonical `gtag` shim.
- *
- * It must push the raw `arguments` OBJECT, not a plain array — Consent Mode
- * inspects `arguments.length` and rejects an array-shaped push. That single
- * detail is why this is a `function` declaration and not an arrow.
- */
-function gtag(..._args: unknown[]): void {
-  // eslint-disable-next-line prefer-rest-params
-  ensureDataLayer().push(arguments);
-}
+// NOTE: the `gtag` shim that used to live here was removed with the consent
+// banner — the consent calls were its only callers. If anything ever needs it
+// again it must be a `function` declaration that pushes the raw `arguments`
+// OBJECT (not a plain array): Consent Mode inspects `arguments.length` and
+// silently rejects an array-shaped push. The remaining index.html block
+// defines its own copy for the same reason.
 
 /**
  * Push a named event for GTM to trigger on.
@@ -362,88 +344,21 @@ export function clearIdentity(): void {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CONSENT MODE v2
+   CONSENT MODE v2 — no runtime half any more
    ═══════════════════════════════════════════════════════════════════════════
 
-   Defaults are set in index.html BEFORE the GTM snippet — they have to be, or
-   tags fire once at container load before any choice is recorded. This half
-   only handles the visitor's answer and replays it on later visits.
+   All six grants are declared 'granted' for every visitor in index.html, above
+   the GTM snippet, and nothing updates them afterwards. The banner and the
+   stored-choice replay that used to live here were removed on purpose: with a
+   single unconditional default there is no answer to collect, nothing to
+   persist in localStorage, and no state to re-apply on the next visit.
 
-   With Consent Mode, "denied" does not mean "no tag": Google still receives
-   cookieless pings it uses to model the conversions it can no longer observe.
-   That is why the tags stay installed and only the storage grants change.
+   Reinstating opt-in means putting back BOTH halves — the region-scoped
+   'denied' default in index.html and a banner calling gtag('consent','update')
+   — because a default alone can never be revised upward. Git history has the
+   previous implementation (ConsentBanner.tsx, readStoredConsent/setConsent/
+   restoreConsent) if it is ever needed.
    ═══════════════════════════════════════════════════════════════════════════ */
-
-interface StoredConsent extends ConsentState {
-  version: number;
-  decidedAt: string;
-}
-
-/** The visitor's stored choice, or null if they have not answered yet. */
-export function readStoredConsent(): ConsentState | null {
-  if (!isBrowser()) return null;
-  try {
-    const raw = localStorage.getItem(CONSENT_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredConsent;
-    if (parsed.version !== CONSENT_VERSION) return null;
-    return { analytics: !!parsed.analytics, ads: !!parsed.ads };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Record a choice and tell Google about it.
- *
- * `ad_user_data` / `ad_personalization` are the two grants Consent Mode v2
- * added; omitting them is what silently degrades remarketing audiences in the
- * EEA, so they move together with `ad_storage`.
- */
-export function setConsent(state: ConsentState): void {
-  if (!isBrowser()) return;
-
-  gtag("consent", "update", {
-    analytics_storage: state.analytics ? "granted" : "denied",
-    ad_storage: state.ads ? "granted" : "denied",
-    ad_user_data: state.ads ? "granted" : "denied",
-    ad_personalization: state.ads ? "granted" : "denied",
-  });
-
-  try {
-    const record: StoredConsent = {
-      ...state,
-      version: CONSENT_VERSION,
-      decidedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(record));
-  } catch {
-    /* Private mode — the choice holds for this page load only. */
-  }
-
-  pushEvent("consent_decision", {
-    consent_analytics: state.analytics,
-    consent_ads: state.ads,
-  });
-}
-
-/**
- * Re-apply a stored choice on page load.
- *
- * Required on EVERY load: Consent Mode state lives in the tag runtime, not in
- * a cookie, so without this replay a returning visitor who accepted last week
- * is treated as denied and their conversions go unattributed.
- */
-export function restoreConsent(): void {
-  const stored = readStoredConsent();
-  if (!stored) return;
-  gtag("consent", "update", {
-    analytics_storage: stored.analytics ? "granted" : "denied",
-    ad_storage: stored.ads ? "granted" : "denied",
-    ad_user_data: stored.ads ? "granted" : "denied",
-    ad_personalization: stored.ads ? "granted" : "denied",
-  });
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PAGE VIEWS
@@ -844,10 +759,6 @@ export function stashOrderAttribution(razorpayOrderId: string): void {
  * long import list. Both are the same functions.
  */
 const analytics = {
-  // consent
-  readStoredConsent,
-  setConsent,
-  restoreConsent,
   // identity
   identify,
   clearIdentity,

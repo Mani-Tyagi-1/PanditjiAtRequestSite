@@ -12,5 +12,12 @@
     "rootDir": "./src",
     "outDir": "./dist"
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  // ts-node ignores "include" by default and compiles only what an entrypoint
+  // actually imports. src/types/express/index.d.ts is imported by nothing — it
+  // is a global augmentation (req.files, req.userID) — so without this every
+  // `npx ts-node src/scripts/*.ts` that reaches a controller dies on
+  // "Property 'files' does not exist on type 'Request'", even though
+  // `npm run build` compiles the same code cleanly.
+  "ts-node": { "files": true }
 }

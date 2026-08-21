@@ -122,10 +122,31 @@ booking.
 | `liveMandirBookings` | `userApp/liveMandirBookingModel.ts` |
 | `vedic_vivah_bookings` | `userApp/vedicVivahBookingModel.ts` |
 | `consultancyLeads` | `userApp/consultancyLeadModel.ts` |
+| `abandonedCarts` | `userApp/abandonedCartModel.ts` |
 
 `poojabookings` and `vedic_vivah_bookings` carry a sparse index on
 `attribution.last.campaign` + `createdAt`, because those are the two the revenue
 report actually groups by.
+
+### Unpaid attempts are attributed too
+
+Attribution is written when the *attempt* starts, not when money lands, so three
+collections carry it for bookings that were never paid:
+
+- **`pendingPoojaBookings`** — written at order creation. This is also what makes the
+  webhook path work: the pending row is spread onto the final booking, so the
+  campaign survives the devotee closing the tab.
+- **`abandonedCarts`** — written from the moment a valid mobile number is typed, and
+  re-sent with every subsequent patch. This is the one report the ad platforms
+  cannot produce at all: **which campaigns generate leads that never convert.** A
+  campaign with a strong click-through rate and a cart full of abandoned rows is
+  buying the wrong audience, and nothing else in the stack will tell you.
+- **`chadhavaBookings`, `liveMandirBookings`, `vedic_vivah_bookings`,
+  `consultancyLeads`** — the row is created before payment (`status: "pending"` /
+  `"lead"`), so an unpaid attempt is attributed the same as a paid one.
+
+Existing `abandonedCarts` rows created before this shipped pick the campaign up on
+their next patch, because attribution goes in `$set` rather than `$setOnInsert`.
 
 ### Adding it to a new booking type
 
@@ -189,13 +210,33 @@ db.poojabookings.aggregate([
 db.poojabookings.findOne({ _id: ObjectId("…") }, { devoteeName: 1, amount: 1, attribution: 1 })
 ```
 
-**Abandoned vs paid, by campaign** — the pending collection is the denominator the ad
-platforms never show you:
+**Which campaigns generate leads that never convert** — the report nothing else in
+the stack can produce:
+
+```js
+db.abandonedCarts.aggregate([
+  { $group: {
+      _id: { campaign: "$attribution.last.campaign", source: "$attribution.last.source" },
+      abandoned: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
+      converted: { $sum: { $cond: [{ $eq: ["$status", "converted"] }, 1, 0] } },
+  }},
+  { $addFields: { conversionRate: {
+      $cond: [
+        { $eq: [{ $add: ["$abandoned", "$converted"] }, 0] },
+        0,
+        { $divide: ["$converted", { $add: ["$abandoned", "$converted"] }] },
+      ],
+  }}},
+  { $sort: { abandoned: -1 } },
+])
+```
+
+**Started but never paid, by campaign** (puja flows that reached Razorpay):
 
 ```js
 db.pendingPoojaBookings.aggregate([
-  { $group: { _id: "$attribution.last.campaign", abandoned: { $sum: 1 } } },
-  { $sort: { abandoned: -1 } },
+  { $group: { _id: "$attribution.last.campaign", stalled: { $sum: 1 } } },
+  { $sort: { stalled: -1 } },
 ])
 ```
 

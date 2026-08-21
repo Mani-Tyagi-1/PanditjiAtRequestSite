@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import AbandonedCart from "../../model/userApp/abandonedCartModel";
+import { readAttribution } from "../../utils/marketingAttribution";
 
 // Fields the client may patch onto its own cart row. Anything else in the body
 // (status, addedOn, …) is ignored, so a stray key can never overwrite bookkeeping.
@@ -65,6 +66,13 @@ export const upsertAbandonedCart: RequestHandler = async (req, res) => {
     if (Array.isArray(body.items)) set.items = body.items;
     if (body.address && typeof body.address === "object") set.address = body.address;
     if (body.extra && typeof body.extra === "object") set.extra = body.extra;
+
+    // Written on every update rather than on insert only, so the rows that
+    // already exist pick the campaign up on their next patch instead of
+    // staying blank forever. Absent from the body leaves the stored value
+    // alone, like every other field here.
+    const attribution = readAttribution(req);
+    if (attribution) set.attribution = attribution;
 
     // "converted" is the only status the client may set, and it is one-way:
     // `status` is otherwise seeded as "active" on insert only, so a late

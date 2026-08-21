@@ -139,6 +139,10 @@
 
 import { Schema, Document, Types } from 'mongoose';
 import { panditJiAtRequestMongooose } from '../../config/connectDB';
+import {
+  attributionField,
+  IMarketingAttribution,
+} from '../analytics/marketingAttribution.schema';
 
 export interface IPendingPoojaBooking extends Document {
   userId: Types.ObjectId;
@@ -249,6 +253,15 @@ export interface IPendingPoojaBooking extends Document {
    * `skipMetaCapi` in controller/poojaBooking/poojaBookingController.ts.
    */
   skipMetaCapi?: boolean;
+
+  /**
+   * Which campaign brought this devotee in, captured by the browser at
+   * checkout. Carried onto the final PoojaBooking verbatim when the payment
+   * settles — see finalizePendingPoojaBooking, which spreads this whole
+   * document — so the campaign survives even when the browser never comes
+   * back and the Razorpay webhook is what promotes the booking.
+   */
+  attribution?: IMarketingAttribution;
 }
 
 const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
@@ -349,6 +362,8 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     prasadAdded: { type: Boolean, default: undefined },
     poojaType: { type: String, default: 'normal_pooja' },
     skipMetaCapi: { type: Boolean, default: false },
+
+    attribution: attributionField,
   },
   { timestamps: true },
 );

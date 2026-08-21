@@ -74,17 +74,23 @@ export const upsertAbandonedCart: RequestHandler = async (req, res) => {
       if (body.bookingId) set.bookingId = String(body.bookingId).trim();
     }
 
+    const onInsert: Record<string, any> = {
+      sessionId,
+      isFromSite: true,
+      addedOn: new Date(),
+    };
+    // `status` may appear in $set OR $setOnInsert, never both: MongoDB rejects
+    // an update that writes the same path twice ("would create a conflict at
+    // 'status'") and the whole call fails. That is exactly what happened on the
+    // conversion call — the one update that matters — so every paid booking
+    // stayed in the abandoned-lead list and got chased with a "you didn't
+    // finish" nudge. When the client is converting the cart $set owns the
+    // field; otherwise it seeds as "active" on insert as before.
+    if (set.status === undefined) onInsert.status = "active";
+
     const cart = await AbandonedCart.findOneAndUpdate(
       { sessionId },
-      {
-        $set: set,
-        $setOnInsert: {
-          sessionId,
-          status: "active",
-          isFromSite: true,
-          addedOn: new Date(),
-        },
-      },
+      { $set: set, $setOnInsert: onInsert },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 

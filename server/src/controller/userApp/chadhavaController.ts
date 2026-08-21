@@ -14,6 +14,7 @@ import { resolveDevshayaniCombo } from "../../config/devshayaniCombo";
 import { markUpInr, resolveCurrency } from "../../config/currency";
 import { createOrderWithFallback, internationalFields } from "../../utils/internationalOrder";
 import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
+import { readAttribution } from "../../utils/marketingAttribution";
 
 // Shape a DB doc to the frontend `Chadhava` interface (id = slug).
 const toClientShape = (doc: any) => {
@@ -473,6 +474,9 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
   try {
     const { chadhavaSlug, items, addPrasadBox, devoteeName, gotra, phone, wish, familyMembers, deliveryAddress, email, emailId } = req.body;
 
+    // Which campaign brought this devotee in, whitelisted and clipped.
+    const attribution = readAttribution(req);
+
     if (!chadhavaSlug || !devoteeName || !phone) {
       res.status(400).json({
         success: false,
@@ -568,6 +572,11 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       isFromSite: true,
       familyMembers: Array.isArray(familyMembers) ? familyMembers : [],
       deliveryAddress: addPrasadBox ? deliveryAddress : undefined,
+      // Which campaign brought this devotee in. Written at order creation,
+      // not at payment confirmation, because a booking that is never paid is
+      // still worth attributing — it is the denominator of the campaign's
+      // conversion rate.
+      ...(attribution && { attribution }),
     });
 
     // Payment attempt started → booking is now pending. If it isn't completed

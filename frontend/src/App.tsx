@@ -138,6 +138,7 @@ const LoginModal = React.lazy(() => import("./components/auth/LoginModal"));
 
 // Analytics: one module for GA4 + Google Ads + Meta. See utils/analytics.ts.
 import analytics from "./utils/analytics";
+import { captureAttribution } from "./utils/attribution";
 import ConsentBanner from "./components/ConsentBanner";
 
 /**
@@ -239,6 +240,28 @@ function AnalyticsPageTracker() {
   return null;
 }
 
+/**
+ * Records which campaign the devotee arrived on, for every page of every
+ * visit, so the booking they eventually make can carry it.
+ *
+ * Mounted beside <ReferralCapture/> and doing a deliberately similar job, but
+ * they are not interchangeable: `?ref=` is an OFFLINE partner tie-up that pays
+ * a commission, while this is the paid/organic channel the click came from.
+ * A booking can carry both, and the ad spend report needs this one.
+ *
+ * Keyed on `location.search` as well as the pathname because that is where the
+ * UTM parameters live. Unlike <ReferralCapture/> this does NOT strip them from
+ * the URL — GA4 and the ad platforms read the same parameters off the address
+ * bar, and removing them would break their own attribution.
+ */
+function AttributionCapture() {
+  const location = useLocation();
+  useEffect(() => {
+    captureAttribution();
+  }, [location.pathname, location.search]);
+  return null;
+}
+
 // Captures ?ref=CODE from URL on any page and stores in localStorage for 2 days
 function ReferralCapture() {
   const location = useLocation();
@@ -298,6 +321,7 @@ function App() {
       <ScrollToTop />
       <AnalyticsPageTracker />
       <ConsentBanner />
+      <AttributionCapture />
       <ReferralCapture />
       <AppDownloadModal />
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>}>

@@ -12,6 +12,7 @@ import { reportServerPurchase } from "../../utils/serverAnalytics";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 import { resolveUser } from "../../utils/resolveUser";
+import { readAttribution } from "../../utils/marketingAttribution";
 
 // ── Razorpay setup ──
 const isProduction = process.env.PAYMENT_MODE === "production";
@@ -92,6 +93,9 @@ export const createLiveBooking: RequestHandler = async (req, res) => {
       phone,
       wish,
     } = req.body;
+
+    // Which campaign brought this devotee in, whitelisted and clipped.
+    const attribution = readAttribution(req);
 
     if (!pujaSlug || !devoteeName || !phone || amount == null) {
       res.status(400).json({
@@ -174,6 +178,10 @@ export const createLiveBooking: RequestHandler = async (req, res) => {
       gotra,
       contactNumber: cleanPhone,
       emailId: user.email,
+      // On the pending row too, because it is this document that becomes the
+      // PoojaBooking below (the create spreads it), and a live-mandir sale
+      // has to be attributable in both collections.
+      ...(attribution && { attribution }),
     });
 
     const booking = await LiveMandirBooking.create({
@@ -194,6 +202,7 @@ export const createLiveBooking: RequestHandler = async (req, res) => {
       isFromSite: true,
       userId: user._id,
       normalBookingId: String(pendingBooking._id),
+      ...(attribution && { attribution }),
     });
 
     res.status(201).json({

@@ -6,6 +6,7 @@ import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEAD
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
 import { reportServerPurchase } from "../../utils/serverAnalytics";
 import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
+import { readAttribution } from "../../utils/marketingAttribution";
 
 const TIME_SLOTS = new Set(["9-11", "11-1", "3-5", "5-7"]);
 const TIME_SLOT_LABELS: Record<string, string> = {
@@ -109,6 +110,9 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
   try {
     const { fullName, mobileNumber, city, concern, preferredTimeSlot, type, email} = req.body;
 
+    // Which campaign brought this devotee in, whitelisted and clipped.
+    const attribution = readAttribution(req);
+
     if (!fullName || !mobileNumber || !city || !preferredTimeSlot) {
       res.status(400).json({
         success: false,
@@ -167,6 +171,7 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
       consultationType,
       isPaymentDone: false,
       razorpayOrderId: order.id,
+      ...(attribution && { attribution }),
     });
 
     res.status(201).json({

@@ -1,5 +1,9 @@
 import { Schema, Model, Types } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
+import {
+  attributionField,
+  IMarketingAttribution,
+} from "../analytics/marketingAttribution.schema";
 
 /**
  * Vedic Vivah Booking
@@ -220,6 +224,8 @@ export interface IVedicVivahBooking {
 
   // Referral / partner attribution (offline planner/venue tie-ups)
   referralCode?: string;
+  /** Which campaign brought this devotee in. See the schema for the shape. */
+  attribution?: IMarketingAttribution;
 
   // Notifications (idempotency guards)
   whatsappLeadSent?: boolean;
@@ -426,6 +432,8 @@ const vedicVivahBookingSchema = new Schema<IVedicVivahBooking>({
 
   referralCode: { type: String, default: "" },
 
+  attribution: attributionField,
+
   whatsappLeadSent: { type: Boolean, default: false },
   whatsappConfirmationSent: { type: Boolean, default: false },
 
@@ -438,6 +446,9 @@ vedicVivahBookingSchema.index({ status: 1, createdAt: -1 });
 vedicVivahBookingSchema.index({ platform: 1, createdAt: -1 });
 vedicVivahBookingSchema.index({ razorpayOrderId: 1 });
 vedicVivahBookingSchema.index({ "assignedPandits.panditId": 1, createdAt: -1 });
+// Revenue by campaign. Sparse — bookings from before campaign tracking, and
+// any that did not come through the website, carry no attribution at all.
+vedicVivahBookingSchema.index({ "attribution.last.campaign": 1, createdAt: -1 }, { sparse: true });
 
 const VedicVivahBooking: Model<IVedicVivahBooking> =
   panditJiAtRequestMongooose.model<IVedicVivahBooking>(

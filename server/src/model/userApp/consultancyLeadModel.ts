@@ -1,5 +1,9 @@
 import { Schema, Model } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
+import {
+  attributionField,
+  IMarketingAttribution,
+} from "../analytics/marketingAttribution.schema";
 
 export interface IConsultancyLead {
   fullName: string;
@@ -19,6 +23,8 @@ export interface IConsultancyLead {
   razorpayPaymentId: string;
   razorpaySignature: string;
   addedOn: Date;
+  /** Which campaign brought this devotee in. See the schema for the shape. */
+  attribution?: IMarketingAttribution;
 }
 
 const consultancyLeadSchema = new Schema<IConsultancyLead>({
@@ -40,6 +46,8 @@ const consultancyLeadSchema = new Schema<IConsultancyLead>({
   razorpayPaymentId: { type: String, trim: true },
   razorpaySignature: { type: String, trim: true },
   addedOn: { type: Date, default: Date.now },
+
+  attribution: attributionField,
 });
 
 const ConsultancyLead: Model<IConsultancyLead> = panditJiAtRequestMongooose.model<IConsultancyLead>(

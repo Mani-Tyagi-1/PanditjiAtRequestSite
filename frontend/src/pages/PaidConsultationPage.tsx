@@ -7,6 +7,7 @@ import { money } from "../utils/currency";
 import { isIndia } from "../utils/currency";
 import analytics, { type AnalyticsItem } from "../utils/analytics";
 
+import { attributionPayload } from "../utils/attribution";
 /**
  * The consultation as a GA4 line item.
  *
@@ -130,6 +131,9 @@ export default function PaidConsultationPage() {
           city: form.city,
           preferredTimeSlot: form.preferredTimeSlot,
           type: consultType,
+          // Which campaign brought this devotee in, stored on the lead. See
+          // utils/attribution.ts.
+          ...attributionPayload(),
         }),
       });
 

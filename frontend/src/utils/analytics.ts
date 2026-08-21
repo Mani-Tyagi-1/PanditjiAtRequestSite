@@ -84,7 +84,11 @@ export interface AnalyticsItem {
 export interface MetaSpec {
   /** Meta event name, e.g. "Purchase" or "Chadhava Participate Now". */
   event: string;
-  /** true → `fbq("trackCustom", ...)` instead of `fbq("track", ...)`. */
+  /**
+   * true → `fbq("trackCustom", ...)` instead of `fbq("track", ...)`.
+   * Leave unset and it is inferred from `event`: anything that is not one of
+   * Meta's standard event names is sent as a custom event automatically.
+   */
   custom?: boolean;
   /** Params exactly as Meta should receive them. */
   params?: Record<string, unknown>;
@@ -156,10 +160,44 @@ function pushEvent(event: string, payload: Record<string, unknown> = {}): void {
   layer.push({ event, ...payload });
 }
 
+/**
+ * The complete set of events Meta defines. Anything outside it must go through
+ * `trackCustom` — sending a custom name via `track` makes the Pixel log
+ * "You are sending a non-standard event" and Meta does not treat the event as
+ * reliably as a properly-declared custom one.
+ *
+ * Kept here rather than trusted to each call site: a caller that forgets
+ * `custom: true` produces a console warning nobody sees in production and a
+ * silently degraded event, so the safe default is derived from the name.
+ */
+const META_STANDARD_EVENTS = new Set([
+  "AddPaymentInfo",
+  "AddToCart",
+  "AddToWishlist",
+  "CompleteRegistration",
+  "Contact",
+  "CustomizeProduct",
+  "Donate",
+  "FindLocation",
+  "InitiateCheckout",
+  "Lead",
+  "PageView",
+  "Purchase",
+  "Schedule",
+  "Search",
+  "StartTrial",
+  "SubmitApplication",
+  "Subscribe",
+  "ViewContent",
+]);
+
 /** Send to the Meta Pixel, preserving the historical call shape exactly. */
 function pushMeta(spec?: MetaSpec): void {
   if (!isBrowser() || !spec || typeof window.fbq !== "function") return;
-  const method = spec.custom ? "trackCustom" : "track";
+  // An explicit `custom` still wins — a call site may deliberately send a
+  // standard-looking name as a custom event. Otherwise infer it from the name.
+  const isCustom = spec.custom ?? !META_STANDARD_EVENTS.has(spec.event);
+  const method = isCustom ? "trackCustom" : "track";
   const params = spec.params ?? {};
   if (spec.eventId) {
     window.fbq(method, spec.event, params, { eventID: spec.eventId });

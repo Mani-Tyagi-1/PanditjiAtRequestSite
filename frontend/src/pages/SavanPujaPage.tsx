@@ -474,25 +474,71 @@ export default function SavanPujaPage() {
             : { icon: Mountain, title: "Kashi Sankalp for you", sub: "Wherever in the world you are" },
     ];
 
-    // Main CTA goes straight to the booking page.
-    // AddToCart marks intent at the CTA tap (same convention as PujaPage.tsx);
-    // InitiateCheckout / Purchase then fire on the booking page itself, so the
-    // three funnel steps stay distinct instead of collapsing onto one trigger.
-    //
-    // AddToCart here reports the package, the only choice this page makes; the
-    // prasad box and extra Sankalp names are both chosen on the booking page,
-    // so they cannot be priced in yet. The booking's real value (package +
-    // extras) is reported by InitiateCheckout / Purchase from
-    // SavanPujaBookingPage and by the server CAPI Purchase — read those, not
-    // these, when reconciling revenue in Events Manager.
-    const openBooking = () => {
-        track("AddToCart", {
-            content_name: `${puja.poojaNameEng} — ${selectedPkg.name}`,
-            content_ids: [pujaId],
-            content_type: "product",
-            value: price,
+    /**
+     * Packages that have already reported an AddToCart, so none reports twice.
+     *
+     * Two things on this page mark intent — picking a seva card, and tapping
+     * the CTA on whichever seva is showing — and each used to report its own
+     * way: the card fired a CUSTOM `puja_package_select`, the CTA fired the
+     * standard AddToCart. That was wrong twice over. A custom event is invisible
+     * to everything Meta does with a cart-add (delivery optimisation, dynamic
+     * ads, AddToCart-based audiences), so the card's signal never counted where
+     * it mattered; and the card's handler runs on EVERY tap, re-selecting the
+     * same tier included, so a devotee comparing sevas emitted a burst of
+     * "cart adds" that would inflate the count and pollute any audience built
+     * on it.
+     *
+     * A ref rather than state: this must not re-render anything, and it must
+     * hold its value across the renders a selection causes.
+     */
+    const addedToCart = useRef(new Set<SavanPackageId>());
+
+    /**
+     * One AddToCart per seva the devotee actually settles on.
+     *
+     * Re-tapping the selected card is silent, switching tier reports the new
+     * tier, and the CTA reports only when it is the first thing to mark intent
+     * — the common case, since the page opens on DEFAULT_PACKAGE_ID and most
+     * devotees tap straight through without touching a card.
+     *
+     * Reports the package alone: the prasad box and extra Sankalp names are
+     * both chosen on the booking page, so they cannot be priced in yet. The
+     * booking's real value (package + extras) is reported by InitiateCheckout /
+     * Purchase from SavanPujaBookingPage and by the server CAPI Purchase — read
+     * those, not this, when reconciling revenue in Events Manager.
+     */
+    const reportAddToCart = (id: SavanPackageId) => {
+        if (addedToCart.current.has(id)) return;
+        addedToCart.current.add(id);
+
+        const pkg = getPackage(id);
+        // Same id/category/brand the booking page reports, so one seva reads as
+        // one product across add_to_cart → begin_checkout → purchase instead of
+        // three unrelated rows. `analytics.addToCart` builds the Meta payload
+        // (content_ids, content_type, contents, num_items, value, currency) and
+        // the GA4 `ecommerce` envelope from this one item.
+        analytics.addToCart({
+            items: [{
+                id: pujaId,
+                name: `${puja.poojaNameEng} — ${pkg.name}`,
+                price: pkg.price,
+                quantity: 1,
+                category: "Puja",
+                variant: pkg.name,
+                brand: "Savan",
+            }],
+            value: pkg.price,
             currency: "INR",
         });
+    };
+
+    // Main CTA goes straight to the booking page.
+    // AddToCart marks intent at the CTA tap (same convention as PujaPage.tsx)
+    // unless the card tap already reported this seva; InitiateCheckout /
+    // Purchase then fire on the booking page itself, so the three funnel steps
+    // stay distinct instead of collapsing onto one trigger.
+    const openBooking = () => {
+        reportAddToCart(packageId);
         track("puja_cta_click", { package: selectedPkg.id, value: price }, true);
         // Hand the chosen package to the booking page so it opens on the seva
         // the devotee picked here.
@@ -918,8 +964,13 @@ export default function SavanPujaPage() {
             <SavanPackages
               selectedId={packageId}
               onSelect={(id) => {
+                // The card calls back on every tap, re-selecting included, so
+                // the guard is here as well as inside reportAddToCart: nothing
+                // downstream should treat "tapped the seva already showing" as
+                // a fresh choice.
+                if (id === packageId) return;
                 setPackageId(id);
-                track("puja_package_select", { package: id, value: getPackage(id).price }, true);
+                reportAddToCart(id);
               }}
             />
 

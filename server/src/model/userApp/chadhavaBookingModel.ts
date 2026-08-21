@@ -1,5 +1,9 @@
 import { Schema, Model } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
+import {
+  attributionField,
+  IMarketingAttribution,
+} from "../analytics/marketingAttribution.schema";
 
 export interface IChadhavaSelection {
   code: string;
@@ -48,6 +52,8 @@ export interface IChadhavaBooking {
   addedOn: Date;
   familyMembers?: string[];
   deliveryAddress?: Record<string, any>;
+  /** Which campaign brought this devotee in. See the schema for the shape. */
+  attribution?: IMarketingAttribution;
 }
 
 const selectionSchema = new Schema<IChadhavaSelection>(
@@ -102,6 +108,11 @@ const chadhavaBookingSchema = new Schema<IChadhavaBooking>({
   addedOn: { type: Date, default: Date.now },
   familyMembers: { type: [String], default: [] },
   deliveryAddress: { type: Schema.Types.Mixed },
+
+  // Which campaign brought this devotee in. Absent on bookings made before
+  // campaign tracking existed, and on any booking that did not arrive from
+  // the website checkout.
+  attribution: attributionField,
 });
 
 const ChadhavaBooking: Model<IChadhavaBooking> =

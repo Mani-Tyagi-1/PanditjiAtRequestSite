@@ -13,6 +13,7 @@ import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
 
+import { attributionPayload } from "../utils/attribution";
 // Puja handed over from LiveMandirPujaDetailPage via navigate(..., { state }).
 // Carried in router state (not the URL) so a direct hit / refresh — which has no
 // state — redirects back to the puja rather than rendering an empty form.
@@ -272,6 +273,9 @@ export default function LiveMandirBookingPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
+                    // Which campaign brought this devotee in, so the booking itself
+                    // records the ad spend that produced it. See utils/attribution.ts.
+                    ...attributionPayload(),
                     isLiveMandir: true,
                     pujaSlug: puja.id,
                     packageName: puja.pujaName,

@@ -28,6 +28,8 @@ import {
   toMinorUnits,
 } from '../../config/currency';
 import { resolveUser } from "../../utils/resolveUser";
+import { readAttribution } from "../../utils/marketingAttribution";
+import type { IMarketingAttribution } from "../../model/analytics/marketingAttribution.schema";
 import type { Document } from "mongoose";
 
 // --- helpers ---
@@ -548,6 +550,19 @@ type CreatePendingBookingBody = {
    * same verdict.
    */
   skipMetaCapi?: boolean;
+  /**
+   * Which campaign the devotee arrived on, captured in the browser by
+   * `getAttribution()` (frontend/src/utils/attribution.ts).
+   *
+   * Sent from the client rather than derived here because the server sees
+   * only this one request: by the time checkout POSTs, the UTM parameters
+   * are several navigations in the past and the Referer header is our own
+   * domain. The browser is the only party that still remembers the ad.
+   *
+   * Untrusted, like every other field in this body — `readAttribution`
+   * whitelists and clips it before it reaches the model.
+   */
+  attribution?: IMarketingAttribution;
   // ── International checkout ──
   /** ISO-4217 the devotee wants to be billed in. `amount` stays INR regardless. */
   currency?: string;
@@ -1069,16 +1084,28 @@ export async function reconcilePoojaBookingPayment(opts: {
 
   // Amount sanity check — never confirm a booking for less than it costs.
   //
+  // What was owed at checkout is the UPFRONT figure, not the bill total: an
+  // advance booking raises its Razorpay order for ADVANCE_PERCENT and collects
+  // the balance after the puja. Comparing the captured advance against the full
+  // amount marks every one of them underpaid, and because this function returns
+  // `true` either way the webhook is acked and Razorpay never retries — the
+  // booking stays pending forever with the devotee's money already taken. This
+  // is the same `upfrontAmountOf` the browser's verify path checks against, so
+  // both routes to confirmation now agree on what was due.
+  //
   // Razorpay reports the amount in the ORDER's currency, in its smallest unit.
   // For an international booking that is cents/fils of the presentment
   // currency, not paise, so it has to be compared against `chargedAmount` —
   // comparing dollars-in-cents against rupees-in-paise would reject every
   // foreign payment as underpaid and strand a booking the devotee has paid for.
+  // (`chargedAmount` is already the converted upfront figure, since the order
+  // was raised from `payableNow`.)
   const currency = (pendingDoc as any).currency || BASE_CURRENCY;
+  const expectedUpfrontInr = upfrontAmountOf(pendingDoc);
   const expectedMajor =
     currency === BASE_CURRENCY
-      ? Number(pendingDoc.amount)
-      : Number((pendingDoc as any).chargedAmount ?? convertFromInr(Number(pendingDoc.amount), currency));
+      ? expectedUpfrontInr
+      : Number((pendingDoc as any).chargedAmount ?? convertFromInr(expectedUpfrontInr, currency));
 
   if (typeof amountPaise === 'number' && Number.isFinite(amountPaise)) {
     const expectedMinor = toMinorUnits(expectedMajor, currency);
@@ -1153,6 +1180,11 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       paymentOption,
       paymentTiming,
     } = req.body as CreatePendingBookingBody;
+
+    // Whitelisted and clipped here rather than trusted from the body — see
+    // utils/marketingAttribution.ts. Undefined when the devotee arrived with
+    // no campaign to record, which is the common case for app bookings.
+    const attribution = readAttribution(req);
 
     // ── User resolution ──────────────────────────────────────────────────────
     // One shared resolver for every flow: it searches the WHOLE users
@@ -1349,6 +1381,12 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       // silences reporting, so a stray or malformed value can never take a
       // puja out of Events Manager by accident.
       skipMetaCapi: skipMetaCapi === true,
+      // Parked on the PENDING row, not written at payment time, because the
+      // browser may never be heard from again — when the Razorpay webhook is
+      // what promotes the booking, this row is the only surviving record of
+      // where the sale came from. finalizePendingPoojaBooking spreads the
+      // whole pending document, so it carries onto the final booking for free.
+      ...(attribution && { attribution }),
       packageIncluded,
       ...(packageIncluded && {
         packageId,

@@ -17,6 +17,7 @@ import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
 
+import { attributionPayload } from "../utils/attribution";
 type Step = "details" | "success";
 
 const INPUT =
@@ -351,6 +352,9 @@ export default function KaalBhairavBookingPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
+                    // Which campaign brought this devotee in, so the booking itself
+                    // records the ad spend that produced it. See utils/attribution.ts.
+                    ...attributionPayload(),
                     userId: user?._id || (user as any)?.id,
                     // Resolve the catalog row by its stable `poojaID` string rather
                     // than a hardcoded Mongo _id, which differs between the dev and

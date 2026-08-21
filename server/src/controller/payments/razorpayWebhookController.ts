@@ -7,6 +7,7 @@ import { reconcileLiveMandirPayment } from "../userApp/liveMandirController";
 import { reconcileChadhavaPayment } from "../userApp/chadhavaController";
 import { reconcileShopifyOrderPayment } from "../userApp/shopifyOrderController";
 import { reconcilePaidConsultationPayment } from "../userApp/paidConsultationController";
+import { reconcileVedicVivahPayment } from "../userApp/vedicVivahBookingController";
 
 // -------------------------------------------------------------
 // SHARED RAZORPAY WEBHOOK
@@ -17,6 +18,7 @@ import { reconcilePaidConsultationPayment } from "../userApp/paidConsultationCon
 //   • Chadhava bookings
 //   • Shop orders
 //   • Paid consultations
+//   • Vedic Vivah Sanskar bookings
 //
 // Why this exists: the client-side "complete payment" call is not a reliable
 // signal. The devotee's money is captured by Razorpay, then the browser tab is
@@ -31,6 +33,8 @@ import { reconcilePaidConsultationPayment } from "../userApp/paidConsultationCon
 //
 // Configure in Razorpay Dashboard → Settings → Webhooks:
 //   URL     : https://<your-api-host>/api/payments/razorpay/webhook
+//             ("/api/payment/..." singular is aliased to the same handler in
+//              src/index.ts, so either spelling works.)
 //   Secret  : RAZORPAY_WEBHOOK_SECRET (see below)
 //   Events  : payment.captured, payment.failed, order.paid
 // -------------------------------------------------------------
@@ -151,6 +155,10 @@ export const razorpayWebhook: RequestHandler = async (req, res) => {
       [
         "paidConsultation",
         () => reconcilePaidConsultationPayment({ orderId, paymentId, event: eventName }),
+      ],
+      [
+        "vivah",
+        () => reconcileVedicVivahPayment({ orderId, paymentId, event: eventName, amountPaise }),
       ],
     ];
 

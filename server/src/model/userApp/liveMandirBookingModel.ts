@@ -1,5 +1,9 @@
 import { Schema, Model } from "mongoose";
 import { panditJiAtRequestMongooose } from "../../config/connectDB";
+import {
+  attributionField,
+  IMarketingAttribution,
+} from "../analytics/marketingAttribution.schema";
 
 export interface ILiveMandirBooking {
   pujaSlug: string;
@@ -24,6 +28,8 @@ export interface ILiveMandirBooking {
   addedOn: Date;
   userId?: any;
   normalBookingId?: string;
+  /** Which campaign brought this devotee in. See the schema for the shape. */
+  attribution?: IMarketingAttribution;
 }
 
 const liveMandirBookingSchema = new Schema<ILiveMandirBooking>({
@@ -58,6 +64,8 @@ const liveMandirBookingSchema = new Schema<ILiveMandirBooking>({
   addedOn: { type: Date, default: Date.now },
   userId: { type: Schema.Types.ObjectId, ref: "User", index: true },
   normalBookingId: { type: String },
+
+  attribution: attributionField,
 });
 
 const LiveMandirBooking: Model<ILiveMandirBooking> =

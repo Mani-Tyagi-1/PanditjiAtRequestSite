@@ -21,6 +21,7 @@ import {
 import PrasadBoxAddon from "../components/bankeBihari/PrasadBoxAddon";
 import PackageUpgradeNudge, { type UpgradeOffer } from "../components/bankeBihari/PackageUpgradeNudge";
 
+import { attributionPayload } from "../utils/attribution";
 type Step = "details" | "success";
 
 /**
@@ -512,6 +513,9 @@ export default function BankeBihariBookingPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
+                    // Which campaign brought this devotee in, so the booking itself
+                    // records the ad spend that produced it. See utils/attribution.ts.
+                    ...attributionPayload(),
                     userId: user?._id || (user as any)?.id,
                     // Resolve the catalog row by its stable `poojaID` string rather
                     // than a hardcoded Mongo _id, which differs between the dev and

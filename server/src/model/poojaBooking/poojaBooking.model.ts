@@ -2,6 +2,7 @@
 import { Schema, Document, Types } from 'mongoose';
 import { panditJiAtRequestMongooose } from '../../config/connectDB';
 import { IPendingPoojaBooking } from './pendingPoojaBooking.model';
+import { attributionField } from '../analytics/marketingAttribution.schema';
 
 // Extends pending model but requires payment/order IDs
 export interface IPoojaBooking
@@ -189,6 +190,12 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     // it always has — see the note on `skipMetaCapi` in
     // controller/poojaBooking/poojaBookingController.ts.
     skipMetaCapi: { type: Boolean, default: false },
+
+    // Copied off the pending row by finalizePendingPoojaBooking, which
+    // spreads the whole pending document into this one. Declared here
+    // because a field Mongoose does not know about is silently dropped on
+    // create — the spread alone would not have persisted it.
+    attribution: attributionField,
   },
   { timestamps: true },
 );
@@ -211,6 +218,9 @@ PoojaBookingSchema.index({ location: '2dsphere' }, { sparse: true });
 // Admin: at-home pujas awaiting balance / awaiting a pandit.
 PoojaBookingSchema.index({ paymentOption: 1, isPaymentDone: 1, createdAt: -1 });
 PoojaBookingSchema.index({ balanceRazorpayOrderId: 1 }, { sparse: true });
+// Revenue by campaign: the aggregation marketing actually runs over this
+// collection. Sparse because most historical bookings have no attribution.
+PoojaBookingSchema.index({ 'attribution.last.campaign': 1, createdAt: -1 }, { sparse: true });
 
 export default panditJiAtRequestMongooose.model<IPoojaBooking>(
   'PoojaBooking',

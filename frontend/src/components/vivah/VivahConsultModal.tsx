@@ -6,6 +6,7 @@ import { VIVAH_CONSULT } from "../../data/vivahContent";
 import { currentUser, humanError, pixelVivahLead } from "../../data/vivahApi";
 import { useVivahLang } from "../../i18n/vivah";
 
+import { attributionPayload } from "../../utils/attribution";
 /**
  * "Talk to a Pandit Ji — free" callback form.
  *
@@ -78,6 +79,8 @@ export default function VivahConsultModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user?._id,
+          // Which campaign brought this devotee in. See utils/attribution.ts.
+          ...attributionPayload(),
           devoteeName: name.trim(),
           whatsapp: phone.replace(/\D/g, ""),
           consultationMessage: message.trim(),

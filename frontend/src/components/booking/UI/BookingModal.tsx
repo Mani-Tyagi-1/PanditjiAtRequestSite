@@ -6,6 +6,7 @@ import API_URL from "../../../utils/apiConfig";
 import { useAbandonedCart } from "../../../utils/useAbandonedCart";
 import { money } from "../../../utils/currency";
 
+import { attributionPayload } from "../../../utils/attribution";
 // The contact number must stay a number: strip anything non-numeric and keep
 // the last 10 digits, so a pasted "+91 98765 43210" lands as "9876543210"
 // instead of failing validation at checkout.
@@ -1302,6 +1303,12 @@ export default function BookingModal({
           ritualPlace: selectedRitualPlace,
         }),
         ...(partnerRefCode && { referralCode: partnerRefCode }),
+        // Which campaign brought this devotee in. `referralCode` above is a
+        // partner tie-up that pays a commission; this is the ad channel the
+        // click came from, and a booking can carry both. Note this is stored
+        // regardless of `skipMetaCapi` below — that suppresses REPORTING a
+        // purchase to Meta, not recording where the sale came from.
+        ...attributionPayload(),
         // Bookings from the generic /puja/:id flow report NOTHING to Meta —
         // no browser pixel (all removed from this file and from PujaPage) and
         // no server CAPI Purchase. This flag is the server half: it is stored

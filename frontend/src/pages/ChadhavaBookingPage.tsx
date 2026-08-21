@@ -11,6 +11,7 @@ import analytics, { type AnalyticsItem } from "../utils/analytics";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
+import { attributionPayload } from "../utils/attribution";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
 // State handed over from ChadhavaDetailPage via navigate(..., { state }). Carried
@@ -388,7 +389,10 @@ export default function ChadhavaBookingPage() {
                     email: form.email.trim(),
                     wish: form.wish.trim(),
                     familyMembers: finalFamilyMembers,
-                    deliveryAddress: addressPayload
+                    deliveryAddress: addressPayload,
+                    // Which campaign brought this devotee in, stored on the
+                    // booking. See utils/attribution.ts.
+                    ...attributionPayload(),
                 }),
             });
             const orderData = await orderRes.json();

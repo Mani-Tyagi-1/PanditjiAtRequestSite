@@ -63,6 +63,7 @@ import { sessionToken } from "../data/vivahApi";
 import { PJAR, PjarLogo, VivahMark, VivahScope } from "../components/vivah/VivahLayout";
 import MuhuratPicker, { prettyTime } from "../components/vivah/MuhuratPicker";
 import { isIndia } from "../utils/currency";
+import { attributionPayload } from "../utils/attribution";
 import RitualSchedule, {
   suggestPlan,
   expandPlan,
@@ -725,6 +726,10 @@ export default function VivahCheckoutPage() {
   const buildPayload = (paymentOption?: "advance" | "full") => ({
     userId: currentUser()?._id,
     referralCode,
+    // `referralCode` above is the OFFLINE partner tie-up captured from ?ref=;
+    // this is the ad channel the click came from. A booking can carry both,
+    // and only this one answers "which campaign paid for this wedding?".
+    ...attributionPayload(),
     devoteeName: devoteeName.trim(),
     whatsapp: whatsapp.trim(),
     email: email.trim(),

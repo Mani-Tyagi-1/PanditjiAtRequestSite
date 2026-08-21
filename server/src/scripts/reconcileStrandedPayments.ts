@@ -31,6 +31,7 @@
  *
  *   # limit to one service while testing
  *   MODE=production npx ts-node src/scripts/reconcileStrandedPayments.ts --only=pooja
+ *   # services: pooja, liveMandir, chadhava, shop, paidConsultation, vivah
  */
 
 import "../config/loadEnv";
@@ -44,12 +45,14 @@ import ChadhavaBooking from "../model/userApp/chadhavaBookingModel";
 import ShopifyOrder from "../model/userApp/shopifyOrderModel";
 import PaidConsultation from "../model/userApp/paidConsultationModel";
 import LiveMandirBooking from "../model/userApp/liveMandirBookingModel";
+import VedicVivahBooking from "../model/userApp/vedicVivahBookingModel";
 
 import { reconcilePoojaBookingPayment } from "../controller/poojaBooking/poojaBookingController";
 import { reconcileLiveMandirPayment } from "../controller/userApp/liveMandirController";
 import { reconcileChadhavaPayment } from "../controller/userApp/chadhavaController";
 import { reconcileShopifyOrderPayment } from "../controller/userApp/shopifyOrderController";
 import { reconcilePaidConsultationPayment } from "../controller/userApp/paidConsultationController";
+import { reconcileVedicVivahPayment } from "../controller/userApp/vedicVivahBookingController";
 
 const isProduction = process.env.PAYMENT_MODE === "production";
 const razorpayKeyId = isProduction
@@ -192,6 +195,26 @@ async function main() {
     }
   }
 
+  if (wanted("vivah")) {
+    // `bookingType: consultation` leads never raise an order, so the
+    // razorpayOrderId filter already excludes them.
+    const rows = await VedicVivahBooking.find({
+      isPaymentDone: { $ne: true },
+      razorpayOrderId: { $exists: true, $ne: null },
+      ...dateFilter,
+    }).lean();
+    for (const r of rows as any[]) {
+      candidates.push({
+        service: "vivah",
+        orderId: r.razorpayOrderId,
+        label: `${r.packageName || "Vedic Vivah"} · ${r.whatsapp} · ₹${
+          r.paymentOption === "full" ? r.totalAmount : r.advanceAmount
+        }`,
+        createdAt: r.createdAt,
+      });
+    }
+  }
+
   console.log(`\n[reconcile] ${candidates.length} unconfirmed row(s) to check against Razorpay.\n`);
 
   let paid = 0;
@@ -234,6 +257,9 @@ async function main() {
           break;
         case "paidConsultation":
           await reconcilePaidConsultationPayment(opts);
+          break;
+        case "vivah":
+          await reconcileVedicVivahPayment({ ...opts, amountPaise: captured.amount });
           break;
       }
       confirmed++;

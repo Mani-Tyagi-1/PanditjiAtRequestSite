@@ -110,8 +110,14 @@ app.use("/api/affiliate", affiliateProductsRoutes);
 app.use("/api", holyPanditRoutes);
 app.use("/api", shopifyProductRoutes);
 app.use("/api", shopifyOrderRoutes);
-// Razorpay server-to-server payment confirmation for every service
+// Razorpay server-to-server payment confirmation for every service.
+// Mounted at BOTH spellings on purpose: the singular "/api/payment" is easy to
+// type into the Razorpay dashboard by mistake, and a webhook registered one
+// letter off silently 404s — every paid booking then sits unconfirmed with no
+// error anywhere except Razorpay's own delivery log. Accepting both costs
+// nothing and removes a failure mode that is invisible from this side.
 app.use("/api/payments", razorpayWebhookRoutes);
+app.use("/api/payment", razorpayWebhookRoutes);
 // Parks the browser's GA4/Ads ids against an order id so the webhook above can
 // report the purchase as the right visitor. See utils/serverAnalytics.ts.
 app.use("/api/analytics", analyticsRoutes);

@@ -34,6 +34,7 @@ import crypto from "crypto";
 import axios from "axios";
 import Razorpay from "razorpay";
 import VedicVivahBooking from "../../model/userApp/vedicVivahBookingModel";
+import { sanitizeAttribution } from "../../utils/marketingAttribution";
 import {
   loadVivahCatalog,
   NormalisedCatalog,
@@ -556,6 +557,13 @@ const buildBookingFields = (
     // token-derived userId wins over any client-sent value
     userId: resolvedUserId ?? body.userId ?? null,
     referralCode: String(body.referralCode || "").trim().toUpperCase(),
+    // Which campaign brought this yajaman in. `referralCode` above is the
+    // OFFLINE tie-up (a planner or venue handing out a code); this is the
+    // online ad that produced the click. They answer different questions and
+    // a booking can carry both.
+    ...(sanitizeAttribution(body.attribution)
+      ? { attribution: sanitizeAttribution(body.attribution) }
+      : {}),
     devoteeName: String(body.devoteeName || "").trim(),
     whatsapp: String(body.whatsapp || "").trim(),
     email: body.email || "",
@@ -984,6 +992,188 @@ export const createVedicVivahOrder: RequestHandler = async (req, res) => {
 };
 
 /* ============================================================================
+   SHARED SETTLEMENT
+   Every side effect of a paid Vivah booking lives here so the two paths that
+   can confirm a payment behave identically:
+
+     1. POST .../vivah/complete-payment — the browser right after checkout.
+     2. POST /api/payments/razorpay/webhook — Razorpay's server-to-server
+        `payment.captured`, for when the browser never made that call (popup
+        closed, app killed, network drop).
+
+   The atomic claim below matches at most once, so whichever path arrives first
+   does the side effects and the second is a no-op (`created: false`).
+   ============================================================================ */
+export async function settleVedicVivahPayment(
+  existing: any,
+  payment: { razorpayPaymentId: string; razorpaySignature?: string },
+): Promise<{ booking: any; created: boolean }> {
+  const { razorpayPaymentId, razorpaySignature } = payment;
+  const bookingId = existing._id;
+
+  // ── Claim the unpaid → paid transition ATOMICALLY ────────────────────────
+  // The browser callback and the Razorpay server webhook can both land here
+  // for the same order. A read-modify-write would let both observe
+  // `isPaymentDone === false` and double-fire the affiliate commission, the
+  // CAPI Purchase and the confirmation WhatsApp. This conditional update
+  // matches at most once, so exactly one caller does the side effects.
+  const amountPaid =
+    existing.paymentOption === "full" ? existing.totalAmount : existing.advanceAmount;
+
+  const claimed = await VedicVivahBooking.findOneAndUpdate(
+    { _id: bookingId, isPaymentDone: false },
+    {
+      $set: {
+        isPaymentDone: true,
+        status: "confirmed",
+        amountPaid,
+        razorpayPaymentId,
+        ...(razorpaySignature ? { razorpaySignature } : {}),
+      },
+    },
+    { new: true }
+  );
+
+  // Already settled by a concurrent call — report success (the payment IS
+  // verified and recorded) but skip every side effect.
+  const booking = claimed || (await VedicVivahBooking.findById(bookingId))!;
+  const vivahWasUnpaid = !!claimed;
+  const shouldSendWhatsapp = !!claimed && !booking.whatsappConfirmationSent;
+
+  // Email confirmation, exactly once. Gated on `claimed` for the same reason
+  // the WhatsApp is: the atomic update above matches at most one caller, so a
+  // replayed verify or a concurrent webhook cannot send a second receipt.
+  if (vivahWasUnpaid) {
+    void sendBookingEmailFor(booking, {
+      serviceName: (booking as any).packageName
+        ? `Vedic Vivah Sanskar — ${(booking as any).packageName}`
+        : "Vedic Vivah Sanskar",
+      mode: "offline",
+      label: "VedicVivah",
+    });
+  }
+
+  // Partner-affiliate: credit the customer's referrer once, on the first
+  // successful payment. Uses amountPaid — the money actually collected here.
+  if (vivahWasUnpaid) {
+    void sendPjarOrderToPartnerAffiliate({
+      userId: booking.userId,
+      phone: booking.whatsapp ? String(booking.whatsapp) : null,
+      orderId: booking.razorpayOrderId,
+      orderPrice: Number(booking.amountPaid),
+      productName: "VEDIC_VIVAH",
+    });
+
+    // NOTE: Meta CAPI Purchase conversion intentionally NOT sent for Vedic
+    // Vivah Sanskar — no purchase conversion is tracked for this flow.
+  }
+
+  // Converted → drop the abandonment nudge on the app server.
+  void relayNudge({
+    type: "payment_abandoned_cancel",
+    bookingId: String(booking._id),
+    userId: booking.userId ? String(booking.userId) : "",
+    whatsapp: booking.whatsapp,
+  });
+
+  // 🟢 WhatsApp "booking confirmed" (fire-and-forget)
+  if (shouldSendWhatsapp)
+    void (async () => {
+      const balance = Math.max(0, booking.totalAmount - booking.amountPaid);
+      const balanceLine = balance > 0 ? ` Shesh ₹${balance} ceremony ke baad.` : "";
+      const selection = booking.packageName
+        ? `${booking.packageName} Package — ${booking.panditCount || 1} Pandit Ji${
+            (booking.panditCount || 1) > 1 ? "s" : ""
+          }${booking.hasCoordinator ? " + Dedicated Coordinator" : ""}, sabhi rituals${
+            booking.packageGifts?.length ? ` + ${booking.packageGifts.length} shagun gifts` : ""
+          }`
+        : `Rituals: ${selectionLabel({
+            isSampooranPackage: booking.isSampooranPackage,
+            steps: booking.selectedSteps as any,
+          })}`;
+      const ok = await vivahWhatsapp(
+        booking.whatsapp,
+        booking.devoteeName || "Yajaman",
+        `Aapki *Vedic Vivah Sanskar* booking confirm ho gayi hai! 🌸 Advance ₹${booking.amountPaid} prapt hua.${balanceLine}`,
+        selection,
+        `Booking ID: ${
+          booking.razorpayOrderId || String(booking._id)
+        }. Hamari team har kadam par aapke saath hai. 🙏`,
+        "Vivah Booking"
+      );
+      if (ok) {
+        booking.whatsappConfirmationSent = true;
+        await booking.save();
+      }
+    })();
+
+  return { booking, created: vivahWasUnpaid };
+}
+
+/**
+ * Confirms a Vivah booking when Razorpay reports the money was captured.
+ *
+ * Called by the shared webhook fan-out. Returns false when the order is not a
+ * Vivah booking (so the fan-out can try the next service), true once it has
+ * been dealt with. Idempotent on razorpayOrderId.
+ */
+export async function reconcileVedicVivahPayment(opts: {
+  orderId: string;
+  paymentId?: string;
+  event: string;
+  amountPaise?: number;
+}): Promise<boolean> {
+  const { orderId, paymentId, event, amountPaise } = opts;
+
+  const booking = await VedicVivahBooking.findOne({ razorpayOrderId: orderId });
+  if (!booking) return false; // not a vivah order
+
+  // Already settled by the browser path (or an earlier webhook delivery).
+  if (booking.isPaymentDone) return true;
+
+  if (event === "payment.failed") {
+    // Keep the booking unpaid — the devotee can still retry, and the
+    // abandonment nudge relies on it staying in this state.
+    console.log(
+      `[RazorpayWebhook][Vivah] payment.failed for order=${orderId}; booking kept for retry.`,
+    );
+    return true;
+  }
+
+  if (!paymentId) {
+    console.warn(
+      `[RazorpayWebhook][Vivah] No payment id on ${event} for order=${orderId}; skipping.`,
+    );
+    return true;
+  }
+
+  // Amount sanity check. Vivah orders are raised in INR only, and what was owed
+  // at checkout is the UPFRONT figure — the advance on an advance booking, the
+  // grand total on a full one. Comparing the captured advance against the total
+  // would strand every advance booking the devotee has already paid for.
+  const expectedInr =
+    booking.paymentOption === "full" ? booking.totalAmount : booking.advanceAmount;
+  if (typeof amountPaise === "number" && Number.isFinite(amountPaise)) {
+    const expectedPaise = Math.round(Number(expectedInr) * 100);
+    if (amountPaise < expectedPaise) {
+      console.error(
+        `[RazorpayWebhook][Vivah] Amount mismatch for order=${orderId}: paid=${amountPaise} expected=${expectedPaise} INR. Not confirming.`,
+      );
+      return true;
+    }
+  }
+
+  const { created } = await settleVedicVivahPayment(booking, {
+    razorpayPaymentId: paymentId,
+  });
+
+  console.log(
+    `[RazorpayWebhook][Vivah] order=${orderId} → ${created ? "booking confirmed" : "already confirmed (no-op)"}`,
+  );
+  return true;
+}
+
+/* ============================================================================
    3) COMPLETE PAYMENT  (verify signature → confirm booking → WhatsApp)
    ============================================================================ */
 export const completeVedicVivahPayment: RequestHandler = async (req, res) => {
@@ -1020,101 +1210,13 @@ export const completeVedicVivahPayment: RequestHandler = async (req, res) => {
       return;
     }
 
-    // ── Claim the unpaid → paid transition ATOMICALLY ────────────────────────
-    // The browser callback and the Razorpay server webhook can both land here
-    // for the same order. A read-modify-write would let both observe
-    // `isPaymentDone === false` and double-fire the affiliate commission, the
-    // CAPI Purchase and the confirmation WhatsApp. This conditional update
-    // matches at most once, so exactly one caller does the side effects.
-    const amountPaid =
-      existing.paymentOption === "full" ? existing.totalAmount : existing.advanceAmount;
-
-    const claimed = await VedicVivahBooking.findOneAndUpdate(
-      { _id: bookingId, isPaymentDone: false },
-      {
-        $set: {
-          isPaymentDone: true,
-          status: "confirmed",
-          amountPaid,
-          razorpayPaymentId,
-          ...(razorpaySignature ? { razorpaySignature } : {}),
-        },
-      },
-      { new: true }
-    );
-
-    // Already settled by a concurrent call — report success (the payment IS
-    // verified and recorded) but skip every side effect.
-    const booking = claimed || (await VedicVivahBooking.findById(bookingId))!;
-    const vivahWasUnpaid = !!claimed;
-    const shouldSendWhatsapp = !!claimed && !booking.whatsappConfirmationSent;
-
-    // Email confirmation, exactly once. Gated on `claimed` for the same reason
-    // the WhatsApp is: the atomic update above matches at most one caller, so a
-    // replayed verify or a concurrent webhook cannot send a second receipt.
-    if (vivahWasUnpaid) {
-      void sendBookingEmailFor(booking, {
-        serviceName: (booking as any).packageName
-          ? `Vedic Vivah Sanskar — ${(booking as any).packageName}`
-          : "Vedic Vivah Sanskar",
-        mode: "offline",
-        label: "VedicVivah",
-      });
-    }
-
-    // Partner-affiliate: credit the customer's referrer once, on the first
-    // successful payment. Uses amountPaid — the money actually collected here.
-    if (vivahWasUnpaid) {
-      void sendPjarOrderToPartnerAffiliate({
-        userId: booking.userId,
-        phone: booking.whatsapp ? String(booking.whatsapp) : null,
-        orderId: booking.razorpayOrderId,
-        orderPrice: Number(booking.amountPaid),
-        productName: "VEDIC_VIVAH",
-      });
-
-      // NOTE: Meta CAPI Purchase conversion intentionally NOT sent for Vedic
-      // Vivah Sanskar — no purchase conversion is tracked for this flow.
-    }
-
-    // Converted → drop the abandonment nudge on the app server.
-    void relayNudge({
-      type: "payment_abandoned_cancel",
-      bookingId: String(booking._id),
-      userId: booking.userId ? String(booking.userId) : "",
-      whatsapp: booking.whatsapp,
+    // Claim the payment and fire every confirmation side effect. Shared with
+    // the Razorpay webhook path, and idempotent on the isPaymentDone flag so
+    // whichever of the two arrives second is a no-op.
+    const { booking } = await settleVedicVivahPayment(existing, {
+      razorpayPaymentId,
+      razorpaySignature,
     });
-
-    // 🟢 WhatsApp "booking confirmed" (fire-and-forget)
-    if (shouldSendWhatsapp)
-      void (async () => {
-        const balance = Math.max(0, booking.totalAmount - booking.amountPaid);
-        const balanceLine = balance > 0 ? ` Shesh ₹${balance} ceremony ke baad.` : "";
-        const selection = booking.packageName
-          ? `${booking.packageName} Package — ${booking.panditCount || 1} Pandit Ji${
-              (booking.panditCount || 1) > 1 ? "s" : ""
-            }${booking.hasCoordinator ? " + Dedicated Coordinator" : ""}, sabhi rituals${
-              booking.packageGifts?.length ? ` + ${booking.packageGifts.length} shagun gifts` : ""
-            }`
-          : `Rituals: ${selectionLabel({
-              isSampooranPackage: booking.isSampooranPackage,
-              steps: booking.selectedSteps as any,
-            })}`;
-        const ok = await vivahWhatsapp(
-          booking.whatsapp,
-          booking.devoteeName || "Yajaman",
-          `Aapki *Vedic Vivah Sanskar* booking confirm ho gayi hai! 🌸 Advance ₹${booking.amountPaid} prapt hua.${balanceLine}`,
-          selection,
-          `Booking ID: ${
-            booking.razorpayOrderId || String(booking._id)
-          }. Hamari team har kadam par aapke saath hai. 🙏`,
-          "Vivah Booking"
-        );
-        if (ok) {
-          booking.whatsappConfirmationSent = true;
-          await booking.save();
-        }
-      })();
 
     res.status(200).json({
       success: true,
@@ -1149,6 +1251,9 @@ export const createVedicVivahConsultation: RequestHandler = async (req, res) => 
     const booking = await VedicVivahBooking.create({
       platform: PLATFORM,
       userId: req.userID || req.body.userId || null,
+      ...(sanitizeAttribution(req.body.attribution)
+        ? { attribution: sanitizeAttribution(req.body.attribution) }
+        : {}),
       devoteeName,
       whatsapp,
       email: req.body.email || "",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ExternalLink, ShoppingCart, Trash2, X } from "lucide-react";
+import { ExternalLink, ShoppingCart, Trash2, X } from "lucide-react";
 import axios from "axios";
 import API_URL from "../../utils/apiConfig";
 import { money } from "../../utils/currency";

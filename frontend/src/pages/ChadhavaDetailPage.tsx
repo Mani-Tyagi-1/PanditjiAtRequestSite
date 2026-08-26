@@ -864,9 +864,9 @@ export default function ChadhavaDetailPage() {
                             <div
                                 className="text-[12.5px] text-stone-600 leading-relaxed text-left prose prose-sm max-w-none"
                                 dangerouslySetInnerHTML={{
-                                    __html: activeTab === "about"
+                                    __html: (activeTab === "about"
                                         ? chadhava.mandirSectionIntro
-                                        : chadhava.mandirSectionHistory
+                                        : chadhava.mandirSectionHistory) || ""
                                 }}
                             />
                         </div>

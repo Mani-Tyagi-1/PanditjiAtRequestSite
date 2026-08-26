@@ -280,8 +280,14 @@ export default function BankeBihariPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const arrivedFromMahakaal = (
+        // In-app navigation (ExpiredPujaRedirectPage) carries router state.
         (location.state as { showMahakaalCompletionPopup?: boolean } | null)
         ?.showMahakaalCompletionPopup === true
+        // A direct hit on the retired Mahakaal URL is answered by nginx with a
+        // 301 (see deploy/nginx-frontend.conf), which cannot carry router state
+        // — it flags the redirect with ?from=mahakaal instead. The effect below
+        // strips the param, so a reload does not re-open the popup.
+        || new URLSearchParams(location.search).get("from") === "mahakaal"
     );
     const [showMahakaalCompletionPopup, setShowMahakaalCompletionPopup] = useState(arrivedFromMahakaal);
 

@@ -27,6 +27,7 @@ import PrasadBoxNudge, { type PrasadNudge } from "../components/bankeBihari/Pras
 import { clearPujaCheckoutDraft } from "../utils/pujaCheckoutDraft";
 import { useShopifyCart } from "../context/ShopifyCartContext";
 import HeroBannerCarousel, { bannerImg } from "../components/bankeBihari/HeroBannerCarousel";
+import MahakaalCompletionPopup from "../components/bankeBihari/MahakaalCompletionPopup";
 import { useMoney, shipsPrasad } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
@@ -278,6 +279,19 @@ const FREE_BOX_TIERS = BANKE_BIHARI_PACKAGES.filter((p) => p.freePrasadBox);
 export default function BankeBihariPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const arrivedFromMahakaal = (
+        (location.state as { showMahakaalCompletionPopup?: boolean } | null)
+        ?.showMahakaalCompletionPopup === true
+    );
+    const [showMahakaalCompletionPopup, setShowMahakaalCompletionPopup] = useState(arrivedFromMahakaal);
+
+    // Consume the redirect flag so a later visit to this route cannot inherit
+    // the popup state from the previous Mahakaal redirect.
+    useEffect(() => {
+      if (!arrivedFromMahakaal) return;
+      navigate(location.pathname, { replace: true, state: null });
+    }, [arrivedFromMahakaal, location.pathname, navigate]);
+
     const { clear: clearShopCart } = useShopifyCart();
     const { user } = useAuth();
 
@@ -603,7 +617,9 @@ export default function BankeBihariPage() {
 
     return (
       <div className="min-h-screen bg-[#FFF9F2] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-[#F4DFC2]">
-        <style>{`@media (prefers-reduced-motion: reduce){.review-track{animation:none}}`}</style>
+        <style>{`
+          @media (prefers-reduced-motion: reduce){.review-track{animation:none}}
+        `}</style>
 
         <Helmet>
           <title>{`${puja.poojaNameEng} at ${puja.templeName}, Vrindavan | Pandit Ji At Request`}</title>
@@ -641,7 +657,13 @@ export default function BankeBihariPage() {
           prefillCity={(user as any)?.city || ""}
         />
 
-        {/* ── Sticky header ── */}
+        <MahakaalCompletionPopup
+          isOpen={showMahakaalCompletionPopup}
+          onClose={() => setShowMahakaalCompletionPopup(false)}
+        />
+
+        
+
         <div className="sticky top-0 z-50 bg-[#FFF9F2]/90 backdrop-blur-md border-b border-[#F4DFC2] px-4 py-3 flex items-center gap-3">
           <button
             onClick={() =>

@@ -43,30 +43,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST = resolve(__dirname, "../dist");
 const SRC = resolve(__dirname, "../src");
 
-const ROUTES = [
-  // Savan 2026. If the campaign is ever stopped again, comment this entry out
-  // together with the route in App.tsx: without that route SavanPujaPage.tsx is
-  // no longer a React.lazy chunk and routeChunkLinks() throws here, failing the
-  // build.
-  {
-    // Must match KASHI_MAHADEV_PUJA_SLUG in src/data/kashiMahadevPuja.ts and
-    // the route in App.tsx: the shell is written to dist/<path>/index.html, so
-    // a stale path here pre-renders a preload nobody ever requests and leaves
-    // the live url shell-less.
-    path: "/mahakaal-savan-somwar-puja",
-    page: "pages/SavanPujaPage.tsx",
-    // Shared image manifest — same file the page imports, so the preload and the
-    // <img> can never disagree about candidates. Read as data, not regexed.
-    images: "data/savanHeroImages.json",
-    imageKey: "hero",
-    // Origins index.html preconnects for other routes' benefit but this one never
-    // touches. A preconnect completes a DNS + TCP + TLS handshake eagerly, so one
-    // left unused is a connection opened and thrown away — worth dropping on a
-    // route we are tuning for LCP. This page self-hosts its images, so it has no
-    // use for the resizer origin.
-    dropOrigins: ["images.weserv.nl"],
-  },
-];
+const ROUTES = [];
 
 /** Reads a source file, or fails the build with a pointer to what broke. */
 function readSource(rel, route) {

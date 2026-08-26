@@ -18,9 +18,6 @@ import {
 import API_URL from "../utils/apiConfig";
 import analytics from "../utils/analytics";
 import { useAuth } from "../context/AuthContext";
-import {
-    kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, getPackage, DEFAULT_PACKAGE_ID,
-} from "../data/kashiMahadevPuja";
 // import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG } from "../data/kaalBhairavPuja";
 // import { hanumanPuja, HANUMAN_PUJA_SLUG } from "../data/hanumanPuja";
 import {
@@ -40,28 +37,6 @@ import { money } from "../utils/currency";
 
 const LOGO =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png";
-
-// ── Featured puja banner (Home, between "Book Puja" and "Our Services") ──
-// LIVE: Savan 2026 / Mahakaleshwar Rudrabhishek at Ujjain on the last Savan Somwar.
-// 👉 PASTE THE CREATIVE URL HERE. Defaults to the Ujjain banner — the same
-//    artwork the puja page's hero is cut from, so the slot can never advertise
-//    a different temple than the page it opens. Swap the string for a
-//    home-specific creative when one is ready, and update the W/H below with it.
-const FEATURED_PUJA_BANNER =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banne1.webp";
-
-// Where the banner sends the devotee. Kept next to the image so the creative and
-// its destination can never drift apart.
-const FEATURED_PUJA_HREF = `/${KASHI_MAHADEV_PUJA_SLUG}`;
-
-// Intrinsic size of the creative, used only to reserve the right amount of
-// vertical space while it loads so the sections below don't jump (CLS). Read
-// off the actual file — change these together with the URL above.
-// Read off the file itself: banne1.webp is 1672x941 (16:9). Only the RATIO
-// matters here — the <img> is w-full h-auto, so these two numbers exist purely
-// to reserve the right height while it loads.
-const FEATURED_PUJA_BANNER_W = 1672;
-const FEATURED_PUJA_BANNER_H = 941;
 
 // ── Second featured puja banner: Kaal Bhairav Kalashtami campaign ──
 // 👉 PASTE THE CREATIVE URL HERE. Defaults to the Kaal Bhairav banner so the
@@ -113,13 +88,12 @@ type Pooja = {
  * Poojas normally open the generic `/puja/:id` page, but a few have their own
  * themed page with their own packages and prasad boxes. Without this the card in
  * "Book Puja" would quietly route around all of that to a page that knows
- * nothing about them — the Savan card would show one ₹851 price with no tiers at
- * all. Falls back to the generic route, so a pooja without its own page, or an
- * older API response with no `poojaID`, behaves exactly as before.
+ * nothing about them. Falls back to the generic route, so a pooja without its
+ * own page, or an older API response with no `poojaID`, behaves exactly as
+ * before.
  */
 const THEMED_PUJA_PAGES: Record<string, string> = {
     [BANKE_BIHARI_POOJA_ID]: `/${BANKE_BIHARI_PUJA_SLUG}`,
-    [KASHI_MAHADEV_POOJA_ID]: `/${KASHI_MAHADEV_PUJA_SLUG}`,
 };
 
 const poojaHref = (p: Pooja) =>
@@ -380,53 +354,6 @@ export default function HomePage() {
                         <p className="text-[13px] text-stone-400 py-6">No poojas available right now.</p>
                     )}
                 </div>
-            </section>
-
-            {/* ── Featured puja banner ── Savan 2026 Mahakaleshwar Rudrabhishek.
-                One tappable creative into the themed puja page. It leads the
-                Janmashtami banner below because its puja date lands first —
-                keep these two ordered by date, so the slot always opens with
-                the seva a devotee can still book soonest.
-
-                `value` reports the package the puja page opens on, NOT
-                poojaPriceOnline: the page pre-selects DEFAULT_PACKAGE_ID, so
-                quoting the ₹851 catalog price here would report a different
-                number than the ViewContent that fires one tap later. */}
-            <section className="px-4">
-                <button
-                    onClick={() => {
-                        analytics.viewItem({
-                            items: [{ id: String(kashiMahadevPuja._id), name: kashiMahadevPuja.poojaNameEng, price: getPackage(DEFAULT_PACKAGE_ID).price, quantity: 1, category: "Puja" }],
-                            value: getPackage(DEFAULT_PACKAGE_ID).price,
-                            currency: "INR",
-                            meta: {
-                                event: "ViewContent",
-                                params: {
-                                    content_name: kashiMahadevPuja.poojaNameEng,
-                                    content_ids: [kashiMahadevPuja._id],
-                                    content_type: "product",
-                                    value: getPackage(DEFAULT_PACKAGE_ID).price,
-                                    currency: "INR",
-                                    source: "home_banner",
-                                },
-                            },
-                        });
-                        navigate(FEATURED_PUJA_HREF);
-                    }}
-                    aria-label={`Book ${kashiMahadevPuja.poojaNameEng} at ${kashiMahadevPuja.templeName}`}
-                    className="block w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm active:scale-[0.98] transition-transform"
-                >
-                    <img
-                        src={optimizedImg(FEATURED_PUJA_BANNER, 900)}
-                        onError={(e) => { e.currentTarget.src = FEATURED_PUJA_BANNER; }}
-                        width={FEATURED_PUJA_BANNER_W}
-                        height={FEATURED_PUJA_BANNER_H}
-                        alt={`${kashiMahadevPuja.poojaNameEng} — ${kashiMahadevPuja.occasion} at ${kashiMahadevPuja.templeName}`}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-auto object-cover"
-                    />
-                </button>
             </section>
 
             {/* ── Featured puja banner ── Banke Bihari Ji Janmashtami.

@@ -14,6 +14,7 @@ import {
     MessageCircle,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
+import analytics from "../utils/analytics";
 import { money } from "../utils/currency";
 
 // Click-to-chat support line (same number used across the site / schema).
@@ -211,15 +212,29 @@ export default function BookPujaPage() {
                                             </h3>
                                             <button
                                                 onClick={() => {
-                                                    if (window.fbq) {
-                                                        window.fbq("track", "Book Pandit Ji", {
-                                                            content_name: p.poojaNameEng,
-                                                            content_ids: [p._id],
-                                                            content_type: "pooja",
-                                                            value: p.poojaPriceOnline,
-                                                            currency: "INR",
-                                                        });
-                                                    }
+                                                    // A product clicked out of a list — the head of
+                                                    // the funnel Ads builds its audiences from.
+                                                    analytics.selectItem({
+                                                        listId: "book_puja",
+                                                        listName: "Book Puja",
+                                                        items: [{
+                                                            id: String(p._id),
+                                                            name: p.poojaNameEng,
+                                                            price: p.poojaPriceOnline,
+                                                            quantity: 1,
+                                                            category: "Puja",
+                                                        }],
+                                                        meta: {
+                                                            event: "Book Pandit Ji",
+                                                            params: {
+                                                                content_name: p.poojaNameEng,
+                                                                content_ids: [p._id],
+                                                                content_type: "pooja",
+                                                                value: p.poojaPriceOnline,
+                                                                currency: "INR",
+                                                            },
+                                                        },
+                                                    });
                                                     navigate(`/puja/${p._id}`);
                                                 }}
                                                 className="mt-2 w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[13px] font-bold py-2.5 rounded-xl active:scale-95 transition-transform"
@@ -261,12 +276,17 @@ export default function BookPujaPage() {
                         rel="noopener noreferrer"
                         aria-label="Chat with Pandit Ji on WhatsApp"
                         onClick={() => {
-                            if (window.fbq) {
-                                window.fbq("track", "Contact", {
-                                    content_name: "WhatsApp Chat",
-                                    content_type: "live_mandir_puja",
-                                });
-                            }
+                            analytics.contact({
+                                method: "whatsapp",
+                                context: "Book Puja page",
+                                meta: {
+                                    event: "Contact",
+                                    params: {
+                                        content_name: "WhatsApp Chat",
+                                        content_type: "live_mandir_puja",
+                                    },
+                                },
+                            });
                         }}
                         className="flex items-center gap-3 bg-[#E7F8EE] border border-[#25D366]/30 rounded-2xl px-4 py-3 active:scale-[0.99] transition-transform"
                     >
@@ -360,15 +380,30 @@ function LiveMandirVerticalCard({ puja, onBook }: { puja: LivePuja; onBook: () =
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (window.fbq) {
-                                window.fbq("track", "Live Mandir Book Seva", {
-                                    content_name: puja.pujaName,
-                                    content_ids: [puja.id],
-                                    content_type: "live_mandir_puja",
-                                    value: puja.price,
-                                    currency: "INR",
-                                });
-                            }
+                            // Intent to book, before any form — Meta's AddToCart
+                            // step and GA4's add_to_cart.
+                            analytics.addToCart({
+                                items: [{
+                                    id: String(puja.id),
+                                    name: puja.pujaName,
+                                    price: puja.price,
+                                    quantity: 1,
+                                    category: "Live Mandir",
+                                    brand: puja.templeName,
+                                }],
+                                value: puja.price,
+                                currency: "INR",
+                                meta: {
+                                    event: "Live Mandir Book Seva",
+                                    params: {
+                                        content_name: puja.pujaName,
+                                        content_ids: [puja.id],
+                                        content_type: "live_mandir_puja",
+                                        value: puja.price,
+                                        currency: "INR",
+                                    },
+                                },
+                            });
                             onBook();
                         }}
                         className="bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[16px] px-14 py-3 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 cursor-pointer"

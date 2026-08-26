@@ -54,6 +54,7 @@ import {
   vivahFetch,
   VivahAuthError,
   pixelVivahInitiateCheckout,
+  stashVivahOrderAttribution,
   pixelVivahLead,
   pixelVivahPurchase,
   reportPaymentAbandoned,
@@ -964,6 +965,10 @@ export default function VivahCheckoutPage() {
       }
 
       pixelVivahInitiateCheckout(serverPayable, selectionLabel);
+
+      // Lets the Razorpay webhook attribute this purchase to this visitor even
+      // if the tab is gone by the time payment settles.
+      stashVivahOrderAttribution(orderData.razorpayOrderId);
 
       const rzp = new RazorpayCtor({
         key: orderData.razorpayKeyId,

@@ -1007,7 +1007,7 @@ export default function BookingModal({
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${apiUrl}/bookings/payment-options`);
+        const res = await fetch(`${API_URL}/bookings/payment-options`);
         if (!res.ok) return;
         const data = await res.json();
         if (cancelled) return;
@@ -1092,10 +1092,10 @@ export default function BookingModal({
   // const discountPercent =
   //   originalPrice > 0 ? Math.round(((totalDiscount + couponDiscount) / (originalPrice)) * 100) : 0;
 
-  // const getCookie = (name: string): string => {
-  //   const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
-  //   return match ? match[2] : "";
-  // };
+  const getCookie = (name: string): string => {
+    const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return match ? match[2] : "";
+  };
 
   const handleCheckout = async () => {
     if (isDeathRitual) {

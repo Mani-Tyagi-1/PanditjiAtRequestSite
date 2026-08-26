@@ -6,6 +6,7 @@ import API_URL from "../utils/apiConfig";
 // Devshayani Ekadashi combo (frontend-only campaign card — remove this import
 // and the <DevshayaniComboCard/> below to disable the whole feature)
 import { DevshayaniComboCard } from "../components/DevshayaniComboCard";
+import analytics from "../utils/analytics";
 
 /**
  * Chadhava records to hide from THIS listing, by Mongo `_id`.
@@ -416,15 +417,13 @@ export default function ChadhavaPage() {
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (window.fbq) {
-                                                window.fbq("track", "Chadhava Participate Now", {
-                                                    content_name: c.deity,
-                                                    content_ids: [c.id],
-                                                    content_type: "chadhava",
-                                                    value: c.startingPrice,
-                                                    currency: "INR",
-                                                });
-                                            }
+                                            analytics.metaBridge("Chadhava Participate Now", {
+                                                content_name: c.deity,
+                                                content_ids: [c.id],
+                                                content_type: "chadhava",
+                                                value: c.startingPrice,
+                                                currency: "INR",
+                                            });
                                             navigate(`/chadhava/${c.id}`);
                                         }}
                                         className="mt-3.5 w-full bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold py-3.5 rounded-full flex items-center justify-center gap-1.5 shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-[0.985] transition-all duration-200 text-[14.5px]"

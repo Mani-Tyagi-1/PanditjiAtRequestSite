@@ -7,6 +7,7 @@ import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
 import {
     kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG, KAAL_BHAIRAV_POOJA_ID,
     EXTRA_FAMILY_MEMBER_PRICE, DEFAULT_PACKAGE_ID, getPackage, KAAL_BHAIRAV_PACKAGES,
@@ -186,6 +187,28 @@ export default function KaalBhairavBookingPage() {
     // Events Manager and the higher value can't be reconciled against the price.
     // Ids mirror the ones the server CAPI Purchase sends (built off the booking
     // name) so the deduplicated pair reports identically either way.
+    // GA4 line items for the same basket metaContents() describes. Kept next to
+    // it so the two cannot drift apart into two different revenue figures.
+    const ga4Items = (): AnalyticsItem[] => [
+        {
+            id: String(puja._id),
+            name: packageLabel,
+            price: basePrice,
+            quantity: 1,
+            category: "Puja",
+            brand: "Kaal Bhairav",
+        },
+        ...(chargedMembers > 0
+            ? [{
+                id: `${puja._id}__sankalp`,
+                name: `${puja.poojaNameEng} — Extra Sankalp Name`,
+                price: EXTRA_FAMILY_MEMBER_PRICE,
+                quantity: chargedMembers,
+                category: "Add-on",
+            }]
+            : []),
+    ];
+
     const metaContents = () => [
         { id: packageLabel, quantity: 1, item_price: basePrice },
         ...(chargedMembers > 0
@@ -238,13 +261,20 @@ export default function KaalBhairavBookingPage() {
         if (hasTrackedDetails.current) return;
         if (form.name.trim().length < 3 || !isValidPhone(form.phone, country)) return;
         hasTrackedDetails.current = true;
-        if ((window as any).fbq) {
-            (window as any).fbq("track", "CustomerDetailsFilled", {
-                content_name: puja.poojaNameEng,
-                bhaktName: form.name.trim(),
-                contactNumber: toStoredPhone(form.phone, country),
-            });
-        }
+        // Meta still receives the name and number it always has; GA4 gets only
+        // the item, because PII in a GA4 property breaches Google's terms.
+        analytics.checkoutDetailsFilled({
+            itemName: puja.poojaNameEng,
+            itemId: String(puja._id),
+            meta: {
+                event: "CustomerDetailsFilled",
+                params: {
+                    content_name: puja.poojaNameEng,
+                    bhaktName: form.name.trim(),
+                    contactNumber: toStoredPhone(form.phone, country),
+                },
+            },
+        });
     };
 
     const handleConfirm = async () => {
@@ -381,17 +411,29 @@ export default function KaalBhairavBookingPage() {
             // AddToCart already fired on the detail-page CTA that led here, so
             // this step only reports InitiateCheckout — firing both here would
             // put two funnel steps on a single trigger.
-            if ((window as any).fbq) {
+            {
                 const contents = metaContents();
-                (window as any).fbq("track", "InitiateCheckout", {
-                    content_name: puja.poojaNameEng,
-                    content_ids: [puja._id],
-                    content_type: "product",
-                    contents,
-                    num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                analytics.beginCheckout({
+                    items: ga4Items(),
                     value: totalPrice,
                     currency: "INR",
+                    meta: {
+                        event: "InitiateCheckout",
+                        params: {
+                            content_name: puja.poojaNameEng,
+                            content_ids: [puja._id],
+                            content_type: "product",
+                            contents,
+                            num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                            value: totalPrice,
+                            currency: "INR",
+                        },
+                    },
                 });
+                analytics.addPaymentInfo({ items: ga4Items(), value: totalPrice, currency: "INR" });
+                // Lets the Razorpay webhook attribute the purchase to this
+                // visitor even if the tab is gone before payment settles.
+                analytics.stashOrderAttribution(orderData.razorpayOrderId);
             }
 
             // 2) Open Razorpay checkout.
@@ -441,17 +483,27 @@ export default function KaalBhairavBookingPage() {
 
                         if (verifyData.token && verifyData.user) login(verifyData.token, verifyData.user);
 
-                        if ((window as any).fbq) {
+                        {
                             const contents = metaContents();
-                            (window as any).fbq("track", "Purchase", {
-                                content_name: puja.poojaNameEng,
-                                content_ids: [puja._id],
-                                content_type: "product",
-                                contents,
-                                num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                            analytics.purchase({
+                                transactionId: response.razorpay_order_id,
+                                items: ga4Items(),
                                 value: totalPrice,
                                 currency: "INR",
-                            }, { eventID: `puja_purchase_${response.razorpay_order_id}` });
+                                meta: {
+                                    event: "Purchase",
+                                    eventId: `puja_purchase_${response.razorpay_order_id}`,
+                                    params: {
+                                        content_name: puja.poojaNameEng,
+                                        content_ids: [puja._id],
+                                        content_type: "product",
+                                        contents,
+                                        num_items: contents.reduce((n, c) => n + c.quantity, 0),
+                                        value: totalPrice,
+                                        currency: "INR",
+                                    },
+                                },
+                            });
                         }
 
                         // Paid — drop this row out of the abandoned-lead list.
@@ -612,9 +664,15 @@ export default function KaalBhairavBookingPage() {
                                             type="button"
                                             onClick={() => {
                                                 setPackageId(pkg.id);
-                                                if ((window as any).fbq) {
-                                                    (window as any).fbq("trackCustom", "PujaPackageUpgrade", { to: pkg.id, value: pkg.price, currency: "INR" });
-                                                }
+                                                analytics.custom(
+                                                    "puja_package_upgrade",
+                                                    { package_id: pkg.id, value: pkg.price, currency: "INR" },
+                                                    {
+                                                        event: "PujaPackageUpgrade",
+                                                        custom: true,
+                                                        params: { to: pkg.id, value: pkg.price, currency: "INR" },
+                                                    },
+                                                );
                                             }}
                                             className="w-full text-left rounded-2xl border border-[#E7DAC0] bg-white shadow-sm p-3.5 transition-all active:scale-[0.99] hover:border-[#B8860B]/60"
                                         >

@@ -7,6 +7,7 @@ import API_URL from "../utils/apiConfig";
 import { decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
@@ -176,6 +177,38 @@ export default function ChadhavaBookingPage() {
     const activeFamilyCount = familyMembers.length + (familyInput.trim() ? 1 : 0);
     const familyCost = activeFamilyCount * 50;
     const total = itemsTotal + prasadPrice + familyCost;
+
+    /**
+     * GA4 line items for this chadhava basket.
+     *
+     * Each selected offering is its own row rather than one lump sum, so the
+     * product report shows WHICH offerings sell — the whole point of putting
+     * the shop's ecommerce data into GA4 in the first place. Prasad and the
+     * per-name Sankalp charge are add-on rows so the item total reconciles
+     * with `total`.
+     */
+    const chadhavaGa4Items = (): AnalyticsItem[] => {
+        // Declared above the `if (!chadhava) return null` guard so the hooks
+        // below it still run, hence the optional chaining rather than a
+        // non-null assertion — this is only ever CALLED once chadhava exists.
+        const baseId = String(chadhava?.id ?? "chadhava");
+        return [
+            ...selections.map((s) => ({
+                id: `${baseId}__${s.code}`,
+                name: s.name,
+                price: s.unitPrice,
+                quantity: s.quantity,
+                category: "Chadhava",
+                brand: chadhava?.templeName,
+            })),
+            ...(prasadPrice > 0
+                ? [{ id: `${baseId}__prasad`, name: "Prasad Box", price: prasadPrice, quantity: 1, category: "Add-on" }]
+                : []),
+            ...(familyCost > 0
+                ? [{ id: `${baseId}__sankalp`, name: "Extra Sankalp Name", price: 50, quantity: activeFamilyCount, category: "Add-on" }]
+                : []),
+        ];
+    };
 
     // Whatever delivery address the devotee has settled on so far — a selected
     // saved address, or the new-address form once they start typing into it.
@@ -394,16 +427,26 @@ export default function ChadhavaBookingPage() {
                         const verifyData = await verifyRes.json();
                         if (!verifyRes.ok) throw new Error(verifyData.message || "Payment verification failed.");
 
-                        if ((window as any).fbq) {
-                            // eventID must match server CAPI event_id for deduplication
-                            (window as any).fbq("track", "Purchase", {
-                                content_name: `Chadhava - ${chadhava.deity} - ${chadhava.templeName}`,
-                                content_ids: [chadhava.id],
-                                content_type: "chadhava",
-                                value: total,
-                                currency: "INR",
-                            }, { eventID: `chadhava_purchase_${response.razorpay_order_id}` });
-                        }
+                        analytics.purchase({
+                            // Shared with the server's webhook purchase — GA4
+                            // dedupes on this, so it must be the order id.
+                            transactionId: response.razorpay_order_id,
+                            items: chadhavaGa4Items(),
+                            value: total,
+                            currency: "INR",
+                            meta: {
+                                event: "Purchase",
+                                // eventID must match server CAPI event_id for deduplication
+                                eventId: `chadhava_purchase_${response.razorpay_order_id}`,
+                                params: {
+                                    content_name: `Chadhava - ${chadhava.deity} - ${chadhava.templeName}`,
+                                    content_ids: [chadhava.id],
+                                    content_type: "chadhava",
+                                    value: total,
+                                    currency: "INR",
+                                },
+                            },
+                        });
                         // Paid — drop this row out of the abandoned-lead list.
                         markCartConverted(orderData.bookingId);
 
@@ -427,15 +470,26 @@ export default function ChadhavaBookingPage() {
                 setSubmitting(false);
             });
 
-            if ((window as any).fbq) {
-                (window as any).fbq("track", "InitiateCheckout", {
-                    content_name: `Chadhava - ${chadhava.deity} - ${chadhava.templeName}`,
-                    content_ids: [chadhava.id],
-                    content_type: "chadhava",
-                    value: total,
-                    currency: "INR",
-                });
-            }
+            analytics.beginCheckout({
+                items: chadhavaGa4Items(),
+                value: total,
+                currency: "INR",
+                meta: {
+                    event: "InitiateCheckout",
+                    params: {
+                        content_name: `Chadhava - ${chadhava.deity} - ${chadhava.templeName}`,
+                        content_ids: [chadhava.id],
+                        content_type: "chadhava",
+                        value: total,
+                        currency: "INR",
+                    },
+                },
+            });
+            analytics.addPaymentInfo({ items: chadhavaGa4Items(), value: total, currency: "INR" });
+
+            // Lets the Razorpay webhook attribute this purchase to this visitor
+            // even if the tab is closed before payment settles.
+            analytics.stashOrderAttribution(orderData.razorpayOrderId);
 
             rzp.open();
         } catch (err: any) {

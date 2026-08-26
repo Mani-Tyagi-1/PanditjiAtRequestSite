@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import API_URL from "../utils/apiConfig";
+import analytics from "../utils/analytics";
 
 const INPUT_CLASS =
     "mt-1 w-full border border-stone-200 rounded-xl px-3.5 py-2 text-sm text-stone-700 focus:outline-none focus:border-orange-400 bg-stone-50 transition-colors";
@@ -85,10 +86,13 @@ export default function PujaEnquiryPage() {
             });
             if (!res.ok) throw new Error("Failed");
 
-            // Meta Pixel Tracking
-            if (window.fbq) {
-                window.fbq("track", "Puja Enquiry Form");
-            }
+            // The Google Ads conversion action for puja-enquiry campaigns.
+            analytics.generateLead({
+                leadType: "Puja Enquiry",
+                method: "puja_enquiry_form",
+                value: 0,
+                meta: { event: "Puja Enquiry Form" },
+            });
 
             setSubmitted(true);
         } catch {

@@ -8,6 +8,7 @@ import pendingPoojaBookingModel from "../../model/poojaBooking/pendingPoojaBooki
 import poojaBookingModel from "../../model/poojaBooking/poojaBooking.model";
 import Pooja from "../../model/userApp/poojaModel";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
+import { reportServerPurchase } from "../../utils/serverAnalytics";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 import { resolveUser } from "../../utils/resolveUser";
@@ -329,6 +330,8 @@ export const completeLiveBookingPayment: RequestHandler = async (req, res) => {
       }
     })();
 
+    void reportLiveMandirPurchase(booking);
+
     res.status(200).json({
       success: true,
       message: "Payment verified and booking confirmed",
@@ -339,6 +342,43 @@ export const completeLiveBookingPayment: RequestHandler = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to complete payment" });
   }
 };
+
+/**
+ * Report a paid Live Mandir seva to GA4 / Google Ads.
+ *
+ * Called from the browser verify path AND the webhook reconciler, so a closed
+ * tab cannot lose the sale.
+ *
+ * A Live Mandir order legitimately exists in two collections — this companion
+ * LiveMandirBooking row and the PoojaBooking the pipeline promotes — and both
+ * reconcilers run for the same order id. Reporting from both is safe only
+ * because reportServerPurchase claims exactly once per razorpayOrderId; without
+ * that guard this would double every Live Mandir conversion.
+ */
+async function reportLiveMandirPurchase(booking: any): Promise<void> {
+  const razorpayOrderId = String(booking?.razorpayOrderId || "");
+  if (!razorpayOrderId) return;
+
+  const name = String(booking?.pujaName || booking?.packageName || "LIVE_MANDIR_PUJA").trim();
+
+  await reportServerPurchase({
+    razorpayOrderId,
+    value: Number(booking?.amount || 0),
+    currency: "INR",
+    userId: String(booking?.userId || ""),
+    service: "LiveMandir",
+    items: [
+      {
+        item_id: name,
+        item_name: name,
+        item_category: "Live Mandir",
+        item_brand: String(booking?.templeName || ""),
+        quantity: 1,
+        price: Number(booking?.amount || 0),
+      },
+    ],
+  });
+}
 
 /**
  * Razorpay reconciliation for a legacy LiveMandirBooking row.
@@ -385,6 +425,9 @@ export async function reconcileLiveMandirPayment(opts: {
       orderPrice: Number((booking as any).amount),
       productName: (booking as any).pujaName || "LIVE_MANDIR",
     });
+
+    // The conversion the browser could not report because the tab was gone.
+    void reportLiveMandirPurchase(booking);
 
     console.log(`[RazorpayWebhook][LiveMandir] order=${orderId} → confirmed`);
   } else if (event === "payment.failed") {

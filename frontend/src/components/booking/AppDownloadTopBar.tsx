@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import analytics from "../../utils/analytics";
 // import { FaTimes } from "react-icons/fa";
 
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.panditJiAtReqapp";
@@ -64,9 +65,7 @@ export default function AppDownloadTopBar() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={() => {
-                                if (window.fbq) {
-                                    window.fbq("track", "App Download");
-                                }
+                                analytics.metaBridge("App Download");
                             }}
                             className="shrink-0 flex items-center gap-1.5 bg-white text-orange-700 text-[11px] font-bold px-3 py-1 rounded-full shadow-md hover:shadow-orange-200 transition-shadow z-10"
                             whileHover={{ scale: 1.06 }}

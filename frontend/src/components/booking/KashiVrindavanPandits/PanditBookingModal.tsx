@@ -7,6 +7,7 @@ import {
 import type { HolyPandit, PanditService } from "./kashiVrindavanData";
 import API_URL from "../../../utils/apiConfig";
 import { money } from "../../../utils/currency";
+import analytics from "../../../utils/analytics";
 
 interface Props {
     isOpen: boolean;
@@ -102,14 +103,12 @@ export default function PanditBookingModal({ isOpen, onClose, pandit }: Props) {
                 }),
             });
             if (!res.ok) throw new Error("Failed");
-            if (window.fbq) {
-                window.fbq("track", "Purchase", {
-                    content_name: `${pandit.name} - ${selected.name}`,
-                    content_type: "holy_pandit_booking",
-                    value: selected.price,
-                    currency: "INR",
-                });
-            }
+            analytics.metaBridge("Purchase", {
+                content_name: `${pandit.name} - ${selected.name}`,
+                content_type: "holy_pandit_booking",
+                value: selected.price,
+                currency: "INR",
+            });
             setStep("success");
         } catch {
             setError("Something went wrong. Please try again.");

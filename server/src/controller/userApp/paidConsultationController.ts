@@ -4,6 +4,7 @@ import crypto from "crypto";
 import PaidConsultation from "../../model/userApp/paidConsultationModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
+import { reportServerPurchase } from "../../utils/serverAnalytics";
 import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 
 const TIME_SLOTS = new Set(["9-11", "11-1", "3-5", "5-7"]);
@@ -192,6 +193,40 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
  *
  * Returns true when the order belonged to a paid consultation.
  */
+/**
+ * Report a paid consultation to GA4 / Google Ads.
+ *
+ * Called from both payment paths — the browser's verify call and the Razorpay
+ * webhook — so a devotee who closes the tab on the success screen is still
+ * counted. reportServerPurchase claims exactly once per order id, so reaching
+ * it twice costs nothing.
+ */
+async function reportConsultationPurchase(consultation: any): Promise<void> {
+  const razorpayOrderId = String(consultation?.razorpayOrderId || "");
+  if (!razorpayOrderId) return;
+
+  const isVideo = consultation?.consultationType === "video";
+  const name = isVideo ? "Video Call Consultation" : "Audio Call Consultation";
+
+  await reportServerPurchase({
+    razorpayOrderId,
+    value: Number(consultation?.amount || 0),
+    currency: "INR",
+    userId: String(consultation?._id || ""),
+    service: "Consultation",
+    items: [
+      {
+        item_id: isVideo ? "consultation_video" : "consultation_audio",
+        item_name: name,
+        item_category: "Consultation",
+        item_variant: isVideo ? "video" : "audio",
+        quantity: 1,
+        price: Number(consultation?.amount || 0),
+      },
+    ],
+  });
+}
+
 export async function reconcilePaidConsultationPayment(opts: {
   orderId: string;
   paymentId?: string;
@@ -210,6 +245,10 @@ export async function reconcilePaidConsultationPayment(opts: {
     await consultation.save();
 
     void sendPaidConsultationConfirmationWhatsapp(consultation);
+
+    // The conversion the browser could not report because the tab was gone.
+    void reportConsultationPurchase(consultation);
+
     console.log(`[RazorpayWebhook][Consultation] order=${orderId} → confirmed`);
   }
   // payment.failed: nothing to flip — isPaymentDone simply stays false.
@@ -317,6 +356,8 @@ export const completePaidConsultationPayment: RequestHandler = async (req, res) 
         console.error(`[MetaCAPI][Consultation] Purchase failed for orderID=${razorpayOrderId}:`, e?.response?.data || e?.message || e);
       }
     })();
+
+    void reportConsultationPurchase(consultation);
 
     res.json({
       success: true,

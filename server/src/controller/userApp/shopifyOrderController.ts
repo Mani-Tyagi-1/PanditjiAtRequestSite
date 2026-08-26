@@ -6,6 +6,7 @@ import ShopifyProduct from "../../model/userApp/shopifyProductModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendPjarOrderToPartnerAffiliate } from "../../utils/partnerAffiliateCommission";
 import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
+import { reportServerPurchase } from "../../utils/serverAnalytics";
 
 const isProduction = process.env.PAYMENT_MODE === "production";
 const razorpayKeyId = isProduction
@@ -563,6 +564,8 @@ export const completeShopifyOrderPayment: RequestHandler = async (req, res) => {
     // Fire-and-forget order confirmation on WhatsApp (exactly once)
     void sendOrderConfirmationOnce(order);
 
+    void reportShopOrderPurchase(order);
+
     res.status(200).json({
       success: true,
       message: "Payment verified and order confirmed successfully",
@@ -573,6 +576,40 @@ export const completeShopifyOrderPayment: RequestHandler = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to verify payment" });
   }
 };
+
+/**
+ * Report a paid shop order to GA4 / Google Ads.
+ *
+ * Called from both payment paths — the browser's verify call and the Razorpay
+ * webhook — so a closed tab cannot lose the sale. reportServerPurchase claims
+ * exactly once per order id, so reaching it twice is a no-op.
+ *
+ * This is the only funnel that reports a real multi-line basket, so the items
+ * array is built from the order's own line items rather than a single synthetic
+ * row: it is what makes GA4's product-performance report usable for the shop.
+ */
+async function reportShopOrderPurchase(order: any): Promise<void> {
+  const razorpayOrderId = String(order?.razorpayOrderId || "");
+  if (!razorpayOrderId) return;
+
+  const lineItems = Array.isArray(order?.items) ? order.items : [];
+
+  await reportServerPurchase({
+    razorpayOrderId,
+    value: Number(order?.totalAmount || 0),
+    currency: "INR",
+    userId: String(order?.user || ""),
+    service: "Shop",
+    items: lineItems.map((item: any) => ({
+      item_id: String(item?.shopifyProductId || item?.handle || "shop_item"),
+      item_name: String(item?.title || "Shop Item"),
+      item_category: "Shop",
+      ...(item?.variantId && { item_variant: String(item.variantId) }),
+      quantity: Number(item?.qty) || 1,
+      price: Number(item?.price) || 0,
+    })),
+  });
+}
 
 /**
  * Razorpay reconciliation for a shop order. Called by the shared webhook
@@ -599,6 +636,10 @@ export async function reconcileShopifyOrderPayment(opts: {
     await order.save();
     // Confirmation WhatsApp via reconciliation path (exactly once).
     void sendOrderConfirmationOnce(order);
+
+    // The conversion the browser could not report because the tab was gone.
+    void reportShopOrderPurchase(order);
+
     console.log(`[RazorpayWebhook][Shop] order=${orderId} → confirmed`);
   } else if (event === "payment.failed") {
     order.paymentStatus = "failed";

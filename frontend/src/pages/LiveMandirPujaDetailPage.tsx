@@ -7,14 +7,16 @@ import {
 import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
+import analytics from "../utils/analytics";
 import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
 import { money } from "../utils/currency";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
-    if (typeof window !== "undefined" && typeof window.fbq === "function") {
-        window.fbq(custom ? "trackCustom" : "track", event, params);
-    }
+    // Delegates to utils/analytics: Meta receives exactly what this helper
+    // always sent, and GA4 / Google Ads receive a mapped equivalent. The
+    // signature is unchanged, so every call site on this page still works.
+    analytics.metaBridge(event, params, custom);
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");

@@ -16,6 +16,7 @@ import {
     User,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
+import analytics from "../utils/analytics";
 import { useAuth } from "../context/AuthContext";
 import {
     kashiMahadevPuja, KASHI_MAHADEV_PUJA_SLUG, KASHI_MAHADEV_POOJA_ID, getPackage, DEFAULT_PACKAGE_ID,
@@ -394,13 +395,21 @@ export default function HomePage() {
             <section className="px-4">
                 <button
                     onClick={() => {
-                        window.fbq?.("track", "ViewContent", {
-                            content_name: kashiMahadevPuja.poojaNameEng,
-                            content_ids: [kashiMahadevPuja._id],
-                            content_type: "product",
+                        analytics.viewItem({
+                            items: [{ id: String(kashiMahadevPuja._id), name: kashiMahadevPuja.poojaNameEng, price: getPackage(DEFAULT_PACKAGE_ID).price, quantity: 1, category: "Puja" }],
                             value: getPackage(DEFAULT_PACKAGE_ID).price,
                             currency: "INR",
-                            source: "home_banner",
+                            meta: {
+                                event: "ViewContent",
+                                params: {
+                                    content_name: kashiMahadevPuja.poojaNameEng,
+                                    content_ids: [kashiMahadevPuja._id],
+                                    content_type: "product",
+                                    value: getPackage(DEFAULT_PACKAGE_ID).price,
+                                    currency: "INR",
+                                    source: "home_banner",
+                                },
+                            },
                         });
                         navigate(FEATURED_PUJA_HREF);
                     }}
@@ -427,13 +436,21 @@ export default function HomePage() {
             <section className="px-4">
                 <button
                     onClick={() => {
-                        window.fbq?.("track", "ViewContent", {
-                            content_name: bankeBihariPuja.poojaNameEng,
-                            content_ids: [bankeBihariPuja._id],
-                            content_type: "product",
+                        analytics.viewItem({
+                            items: [{ id: String(bankeBihariPuja._id), name: bankeBihariPuja.poojaNameEng, price: bankeBihariPuja.poojaPriceOnline, quantity: 1, category: "Puja" }],
                             value: bankeBihariPuja.poojaPriceOnline,
                             currency: "INR",
-                            source: "home_banner",
+                            meta: {
+                                event: "ViewContent",
+                                params: {
+                                    content_name: bankeBihariPuja.poojaNameEng,
+                                    content_ids: [bankeBihariPuja._id],
+                                    content_type: "product",
+                                    value: bankeBihariPuja.poojaPriceOnline,
+                                    currency: "INR",
+                                    source: "home_banner",
+                                },
+                            },
                         });
                         navigate(JANMASHTAMI_HREF);
                     }}
@@ -473,12 +490,17 @@ export default function HomePage() {
                             key={label}
                             onClick={() => {
                                 if (label === "Chat") {
-                                    if (window.fbq) {
-                                        window.fbq("track", "Instant Chat Request", {
-                                            content_name: "Instant Chat",
-                                            content_type: "consultation",
-                                        });
-                                    }
+                                    analytics.contact({
+                                        method: "chat",
+                                        context: "Instant Chat quick action",
+                                        meta: {
+                                            event: "Instant Chat Request",
+                                            params: {
+                                                content_name: "Instant Chat",
+                                                content_type: "consultation",
+                                            },
+                                        },
+                                    });
                                     window.open("https://play.google.com/store/apps/details?id=com.panditJiAtReqapp&hl=en_IN", "_blank");
                                 } else {
                                     navigate(path);

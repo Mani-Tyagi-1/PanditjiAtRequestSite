@@ -55,6 +55,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import analytics from "../../../utils/analytics";
 
 interface PujaCardProps {
     id?: string | number;
@@ -80,13 +81,11 @@ export default function PujaCard({
     const navigate = useNavigate();
 
     const handleCardClick = () => {
-        if (window.fbq) {
-            window.fbq("track", "ViewContent", {
-                content_ids: [id],
-                content_name: title,
-                content_type: "product",
-            });
-        }
+        analytics.metaBridge("ViewContent", {
+            content_ids: [id],
+            content_name: title,
+            content_type: "product",
+        });
         navigate(id ? `/puja/${id}` : '/puja');
         window.scrollTo(0, 0);
     };

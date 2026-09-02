@@ -4,7 +4,7 @@ import crypto from "crypto";
 import PaidConsultation from "../../model/userApp/paidConsultationModel";
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from "../../utils/whatsapp";
 import { sendMetaPurchaseEvent } from "../../utils/metaCapiServices";
-import { reportServerPurchase } from "../../utils/serverAnalytics";
+import { reportServerPurchase, getStoredAttribution } from "../../utils/serverAnalytics";
 import { sendBookingEmailFor } from "../../utils/sendBookingEmail";
 import { readAttribution } from "../../utils/marketingAttribution";
 
@@ -206,7 +206,27 @@ export const createPaidConsultationOrder: RequestHandler = async (req, res) => {
  * counted. reportServerPurchase claims exactly once per order id, so reaching
  * it twice costs nothing.
  */
-async function reportConsultationPurchase(consultation: any): Promise<void> {
+/**
+ * Every purchase report for a paid consultation — GA4 + Google Ads AND Meta
+ * CAPI — so both confirmation paths report identically.
+ *
+ * `http` is the browser's request context and exists only on the verify call.
+ * The webhook has none, so it falls back to the row the browser parked against
+ * this order id before checkout. That fallback is not optional: Meta refuses a
+ * `website` event with no user agent, and a webhook-confirmed consultation has
+ * no browser pixel event to fall back on — so without it the sale reaches Meta
+ * from neither side.
+ */
+async function reportConsultationPurchase(
+  consultation: any,
+  http?: {
+    clientIp?: string | null;
+    userAgent?: string;
+    fbp?: string;
+    fbc?: string;
+    eventSourceUrl?: string | null;
+  },
+): Promise<void> {
   const razorpayOrderId = String(consultation?.razorpayOrderId || "");
   if (!razorpayOrderId) return;
 
@@ -230,6 +250,40 @@ async function reportConsultationPurchase(consultation: any): Promise<void> {
       },
     ],
   });
+
+  // META CAPI Purchase — dedup with the browser pixel via eventId.
+  if (!isProduction) {
+    console.log(`[MetaCAPI][Consultation] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
+    return;
+  }
+  try {
+    const stashed = http ? null : await getStoredAttribution(razorpayOrderId);
+    await sendMetaPurchaseEvent({
+      orderID: razorpayOrderId,
+      eventId: `consultation_purchase_${razorpayOrderId}`,
+      value: Number(consultation?.amount || 0),
+      currency: "INR",
+      contentId: name,
+      actionSource: "website",
+      phone: String(consultation?.mobileNumber || ""),
+      externalId: String(consultation?._id || ""),
+      clientIp: http?.clientIp ?? stashed?.clientIp ?? null,
+      userAgent: http?.userAgent || stashed?.userAgent || "",
+      fbp: http?.fbp || stashed?.fbp || "",
+      fbc: http?.fbc || stashed?.fbc || "",
+      eventSourceUrl:
+        http?.eventSourceUrl ||
+        stashed?.eventSourceUrl ||
+        process.env.META_DEFAULT_EVENT_SOURCE_URL ||
+        null,
+    });
+    console.log(`[MetaCAPI][Consultation] Purchase sent for orderID=${razorpayOrderId}`);
+  } catch (e: any) {
+    console.error(
+      `[MetaCAPI][Consultation] Purchase failed for orderID=${razorpayOrderId}:`,
+      e?.response?.data || e?.message || e,
+    );
+  }
 }
 
 export async function reconcilePaidConsultationPayment(opts: {
@@ -326,43 +380,20 @@ export const completePaidConsultationPayment: RequestHandler = async (req, res) 
 
     void sendPaidConsultationConfirmationWhatsapp(consultation);
 
-    // META CAPI Purchase (fire-and-forget) — dedup with browser pixel via eventId.
-    void (async () => {
-      if (!isProduction) {
-        console.log(`[MetaCAPI][Consultation] Skipped (PAYMENT_MODE != production) for orderID=${razorpayOrderId}`);
-        return;
-      }
-      try {
-        const forwardedFor = req.headers["x-forwarded-for"];
-        const clientIp = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(",")[0]) || req.ip || null;
+    // GA4 + Google Ads + Meta CAPI, all inside reportConsultationPurchase so
+    // this path and the webhook reconciler report the same thing. The browser
+    // context is passed through here; the webhook falls back to the stash.
+    const forwardedFor = req.headers["x-forwarded-for"];
+    const clientIp =
+      (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(",")[0]) || req.ip || null;
 
-        const isVideo = (consultation as any).consultationType === "video";
-
-        await sendMetaPurchaseEvent({
-          orderID: String(razorpayOrderId),
-          eventId: `consultation_purchase_${razorpayOrderId}`,
-          value: Number((consultation as any).amount || 0),
-          currency: "INR",
-          contentId: isVideo ? "Video Call Consultation" : "Audio Call Consultation",
-          actionSource: "website",
-          phone: String((consultation as any).mobileNumber || ""),
-          externalId: String((consultation as any)._id || ""),
-          clientIp,
-          userAgent: String(req.headers["user-agent"] || ""),
-          fbp: String(req.headers["x-fbp"] || (req as any).cookies?._fbp || ""),
-          fbc: String(req.headers["x-fbc"] || (req as any).cookies?._fbc || ""),
-          eventSourceUrl:
-            String(req.headers["x-event-source-url"] || "") ||
-            process.env.META_DEFAULT_EVENT_SOURCE_URL ||
-            null,
-        });
-        console.log(`[MetaCAPI][Consultation] Purchase sent for orderID=${razorpayOrderId}`);
-      } catch (e: any) {
-        console.error(`[MetaCAPI][Consultation] Purchase failed for orderID=${razorpayOrderId}:`, e?.response?.data || e?.message || e);
-      }
-    })();
-
-    void reportConsultationPurchase(consultation);
+    void reportConsultationPurchase(consultation, {
+      clientIp,
+      userAgent: String(req.headers["user-agent"] || ""),
+      fbp: String(req.headers["x-fbp"] || (req as any).cookies?._fbp || ""),
+      fbc: String(req.headers["x-fbc"] || (req as any).cookies?._fbc || ""),
+      eventSourceUrl: String(req.headers["x-event-source-url"] || "") || null,
+    });
 
     res.json({
       success: true,

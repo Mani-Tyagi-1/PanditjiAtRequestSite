@@ -14,7 +14,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
-import { reportServerPurchase } from '../../utils/serverAnalytics';
+import { reportServerPurchase, getStoredAttribution } from '../../utils/serverAnalytics';
 import { tryConsumeAppReferralOrder } from '../../utils/partnerAffiliateReferralCap';
 import { sendWhatsappMessage, sendOrderConfirmationTemplate, ORDER_TEMPLATE_HEADER_IMAGE } from '../../utils/whatsapp';
 import { sendBookingConfirmationEmail } from '../../utils/emailService';
@@ -792,6 +792,11 @@ export async function finalizePendingPoojaBooking(
           : []),
       ];
 
+      // Browser context, or the row the browser parked against this order id
+      // before opening Razorpay. Only looked up when ctx.http is absent, so the
+      // client path costs no extra query.
+      const stashed = ctx.http ? null : await getStoredAttribution(razorpayOrderId);
+
       await sendMetaPurchaseEvent({
         orderID: String(finalBooking.razorpayOrderId || razorpayOrderId),
         // Dedup key — the webhook and the browser path must not double-count
@@ -806,12 +811,19 @@ export async function finalizePendingPoojaBooking(
         phone: String((finalBooking as any).userPhone || ''),
         email: (finalBooking as any).userEmail || null,
         externalId: String((finalBooking as any).userId || ''),
-        clientIp: ctx.http?.clientIp ?? null,
-        userAgent: ctx.http?.userAgent || '',
-        fbp: ctx.http?.fbp || '',
-        fbc: ctx.http?.fbc || '',
+        clientIp: ctx.http?.clientIp ?? stashed?.clientIp ?? null,
+        // sendMetaPurchaseEvent REFUSES a website event with no user agent —
+        // it throws before the request is even built. Only the browser path
+        // supplies ctx.http, so without this fallback every webhook-confirmed
+        // purchase died here, and those are exactly the ones with no browser
+        // pixel event to fall back on. The stash is what the browser parked at
+        // create-pending precisely so this path could replay it.
+        userAgent: ctx.http?.userAgent || stashed?.userAgent || '',
+        fbp: ctx.http?.fbp || stashed?.fbp || '',
+        fbc: ctx.http?.fbc || stashed?.fbc || '',
         eventSourceUrl:
           ctx.http?.eventSourceUrl ||
+          stashed?.eventSourceUrl ||
           process.env.META_DEFAULT_EVENT_SOURCE_URL ||
           null,
       });

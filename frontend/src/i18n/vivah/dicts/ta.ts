@@ -210,7 +210,7 @@ const ta: Record<string, string> = {
   "footer.terms": "விதிமுறைகள்",
   "footer.securePay": "100% பாதுகாப்பான கட்டணங்கள்",
   "footer.privacyProtected": "தனியுரிமை பாதுகாக்கப்படுகிறது",
-  "footer.trustedBy": "15,000+ குடும்பங்களின் நம்பிக்கை",
+  "footer.trustedBy": "100+ குடும்பங்களின் நம்பிக்கை",
   "footer.rights": "அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.",
 
   "consult.title": "பண்டிட் ஜியுடன் பேசுங்கள் — இலவசம்",

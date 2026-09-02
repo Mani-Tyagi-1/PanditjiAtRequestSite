@@ -210,7 +210,7 @@ const hi: Record<string, string> = {
   "footer.terms": "नियम व शर्तें",
   "footer.securePay": "100% सुरक्षित भुगतान",
   "footer.privacyProtected": "गोपनीयता सुरक्षित",
-  "footer.trustedBy": "15,000+ परिवारों का विश्वास",
+  "footer.trustedBy": "100+ परिवारों का विश्वास",
   "footer.rights": "सर्वाधिकार सुरक्षित।",
 
   "consult.title": "पंडित जी से बात करें — निःशुल्क",

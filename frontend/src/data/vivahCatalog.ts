@@ -194,7 +194,7 @@ const RITUAL_IMAGE: Record<string, string> = {
 export const DEFAULT_VIVAH_PACKAGES: VivahPackage[] = [
   {
     packageId: "shubh-vivah",
-    name: "Shubh Vivah",
+    name: "Shubh Vivah111",
     hindiName: "शुभ विवाह",
     tagline: "Every sacred ritual, one dedicated Pandit Ji",
     badge: "",

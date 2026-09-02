@@ -210,7 +210,7 @@ const kn: Record<string, string> = {
   "footer.terms": "ನಿಯಮ ಮತ್ತು ಷರತ್ತುಗಳು",
   "footer.securePay": "100% ಸುರಕ್ಷಿತ ಪಾವತಿ",
   "footer.privacyProtected": "ಗೌಪ್ಯತೆ ರಕ್ಷಿತ",
-  "footer.trustedBy": "15,000+ ಕುಟುಂಬಗಳ ವಿಶ್ವಾಸ",
+  "footer.trustedBy": "100+ ಕುಟುಂಬಗಳ ವಿಶ್ವಾಸ",
   "footer.rights": "ಎಲ್ಲ ಹಕ್ಕುಗಳು ಕಾಯ್ದಿರಿಸಲಾಗಿವೆ.",
 
   "consult.title": "ಪಂಡಿತ್ ಜಿ ಜೊತೆ ಮಾತನಾಡಿ — ಉಚಿತ",

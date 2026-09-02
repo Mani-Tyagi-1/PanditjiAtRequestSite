@@ -226,7 +226,7 @@ const en: Record<string, string> = {
   "footer.terms": "Terms & Conditions",
   "footer.securePay": "100% Secure Payments",
   "footer.privacyProtected": "Privacy Protected",
-  "footer.trustedBy": "Trusted by 15,000+ Families",
+  "footer.trustedBy": "Trusted by 100+ Families",
   "footer.rights": "All rights reserved.",
 
   // ── Consult modal ──

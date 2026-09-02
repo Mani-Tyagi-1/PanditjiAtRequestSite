@@ -210,7 +210,7 @@ const te: Record<string, string> = {
   "footer.terms": "నియమాలు & షరతులు",
   "footer.securePay": "100% సురక్షిత చెల్లింపులు",
   "footer.privacyProtected": "గోప్యత రక్షితం",
-  "footer.trustedBy": "15,000+ కుటుంబాల నమ్మకం",
+  "footer.trustedBy": "100+ కుటుంబాల నమ్మకం",
   "footer.rights": "సర్వ హక్కులూ రక్షితం.",
 
   "consult.title": "పండిట్ జీతో మాట్లాడండి — ఉచితం",

@@ -34,7 +34,12 @@ import {
   VIVAH_TESTIMONIALS,
   initialsOf,
 } from "../data/vivahContent";
-import { fmtINR, VIVAH_IMG, type Ritual, type VivahPackage } from "../data/vivahCatalog";
+import {
+  fmtINR,
+  VIVAH_IMG,
+  type Ritual,
+  type VivahPackage,
+} from "../data/vivahCatalog";
 import { useVivahCatalog, useDwellNudge, currentUser } from "../data/vivahApi";
 import { useVivahLang, hreflangLinks, tfmt } from "../i18n/vivah";
 import VivahPackageCards from "../components/vivah/VivahPackageCards";
@@ -43,7 +48,15 @@ import VivahRitualCards from "../components/vivah/VivahRitualCards";
 import VivahKashi from "../components/vivah/VivahKashi";
 import RitualDrawer from "../components/vivah/RitualDrawer";
 import VivahConsultModal from "../components/vivah/VivahConsultModal";
-import { Btn, Card, Head, Medallion, Orn, Section, Wrap } from "../components/vivah/ui";
+import {
+  Btn,
+  Card,
+  Head,
+  Medallion,
+  Orn,
+  Section,
+  Wrap,
+} from "../components/vivah/ui";
 import {
   AnimatePresence,
   AnimatedTotal,
@@ -56,7 +69,12 @@ import {
   useLift,
   useTap,
 } from "../components/vivah/motion";
-import { PJAR, VivahFooter, VivahHeader, VivahScope } from "../components/vivah/VivahLayout";
+import {
+  PJAR,
+  VivahFooter,
+  VivahHeader,
+  VivahScope,
+} from "../components/vivah/VivahLayout";
 import SafeSection, {
   StaticGuidesBackup,
   StaticPackagesBackup,
@@ -72,7 +90,7 @@ import { Link } from "react-router-dom";
     Labels are dictionary keys, resolved with t() at render. */
 const HERO_STATS = [
   { Icon: Users, value: "1,800+", label: "hero.stat.pandits" },
-  { Icon: Flower2, value: "15,000+", label: "hero.stat.vivahs" },
+  { Icon: Flower2, value: "100+", label: "hero.stat.vivahs" },
   { Icon: Star, value: "4.9★", label: "hero.stat.families" },
   { Icon: ShieldCheck, value: "100%", label: "hero.stat.purity" },
 ];
@@ -147,7 +165,9 @@ const FEATURED_GUIDES = (BLOG_DATA as any).posts.slice(0, 4) as {
 }[];
 
 const scrollTo = (sel: string) =>
-  document.querySelector(sel)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  document
+    .querySelector(sel)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
 
 /* ========================================================================== */
 /*                                   PAGE                                     */
@@ -186,7 +206,9 @@ export default function VivahPage() {
   // 5-minute dwell → WhatsApp nudge, cancelled the moment the family converts.
   const cancelNudge = useDwellNudge(
     user?.name || "",
-    String(user?.phone || "").replace(/\D/g, "").slice(-10)
+    String(user?.phone || "")
+      .replace(/\D/g, "")
+      .slice(-10),
   );
 
   // Verified Pandit Jis — same endpoint & filtering the rest of the site uses.
@@ -198,8 +220,11 @@ export default function VivahPage() {
         const live: PanditCard[] = data.data
           .filter((p: Pandit) => {
             if (p.isActive === false || p.isVerified !== true) return false;
-            const n = `${p.prefix || ""} ${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
-            return !n.includes("nirmanyu thakur") && !n.includes("vansh bhandari");
+            const n =
+              `${p.prefix || ""} ${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
+            return (
+              !n.includes("nirmanyu thakur") && !n.includes("vansh bhandari")
+            );
           })
           .slice(0, 5)
           .map((p: Pandit) => ({
@@ -208,7 +233,9 @@ export default function VivahPage() {
               .replace(/\s+/g, " ")
               .trim(),
             years: Number(p.experienceInYears) || 0,
-            note: [p.location?.city, p.location?.state].filter(Boolean).join(", "),
+            note: [p.location?.city, p.location?.state]
+              .filter(Boolean)
+              .join(", "),
             image: p.profileImage,
           }));
         if (live.length) setPandits(live);
@@ -220,11 +247,11 @@ export default function VivahPage() {
 
   const selectedList = useMemo(
     () => catalog.rituals.filter((r) => selected.has(r.slug)),
-    [catalog.rituals, selected]
+    [catalog.rituals, selected],
   );
   const selectedTotal = useMemo(
     () => selectedList.reduce((s, r) => s + (r.price || 0), 0),
-    [selectedList]
+    [selectedList],
   );
 
   const toggleRitual = (slug: string) =>
@@ -254,13 +281,15 @@ export default function VivahPage() {
    */
   const coverageFor = (pkg: VivahPackage) => {
     const wanted =
-      !pkg.includesAllRituals && pkg.ritualSlugs?.length ? new Set(pkg.ritualSlugs) : null;
+      !pkg.includesAllRituals && pkg.ritualSlugs?.length
+        ? new Set(pkg.ritualSlugs)
+        : null;
     return catalog.rituals
       .filter(
         (r) =>
           !wanted ||
           wanted.has(r.slug) ||
-          (r.componentSlugs || []).some((c) => wanted.has(c))
+          (r.componentSlugs || []).some((c) => wanted.has(c)),
       )
       .map(asSelected);
   };
@@ -291,7 +320,9 @@ export default function VivahPage() {
           name: r.titleEng,
           price: r.price || 0,
           samagriPrice: r.samagriPrice || 0,
-          ...(r.componentSlugs?.length ? { componentSlugs: r.componentSlugs } : {}),
+          ...(r.componentSlugs?.length
+            ? { componentSlugs: r.componentSlugs }
+            : {}),
         })),
         isSampooranPackage: false,
         samagriNeeded: true,
@@ -326,7 +357,11 @@ export default function VivahPage() {
 
   const openPackageDetail = (pkg: VivahPackage) =>
     navigate(`/vedic-vivah/package/${pkg.packageId}`, {
-      state: { pkg, ritualNames: catalog.rituals.map((r) => r.titleEng), ...catalogContext },
+      state: {
+        pkg,
+        ritualNames: catalog.rituals.map((r) => r.titleEng),
+        ...catalogContext,
+      },
     });
 
   /**
@@ -350,13 +385,24 @@ export default function VivahPage() {
       <Helmet>
         <title>{seoTitle}</title>
         <meta name="description" content={seoDesc} />
-        <link rel="canonical" href="https://panditjiatrequest.com/vedic-vivah" />
+        <link
+          rel="canonical"
+          href="https://panditjiatrequest.com/vedic-vivah"
+        />
         {hreflangLinks("/vedic-vivah").map((l) => (
-          <link key={l.hrefLang} rel="alternate" hrefLang={l.hrefLang} href={l.href} />
+          <link
+            key={l.hrefLang}
+            rel="alternate"
+            hrefLang={l.hrefLang}
+            href={l.href}
+          />
         ))}
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDesc} />
-        <meta property="og:image" content={catalog.seo?.ogImage || VIVAH_IMG.banner} />
+        <meta
+          property="og:image"
+          content={catalog.seo?.ogImage || VIVAH_IMG.banner}
+        />
         {/* Service + Offers + FAQ — the three types answer engines look for. */}
         <script type="application/ld+json">
           {JSON.stringify({
@@ -406,12 +452,8 @@ export default function VivahPage() {
         <div className="relative bg-viv-deep min-h-[480px] sm:min-h-0 sm:aspect-[2244/701] w-full flex items-center overflow-hidden">
           {/* Two crops from the supplied artwork: the tall one frames the havan
               on a phone, the wide one keeps the mandap in view on a desktop. */}
-          <div
-            className="viv-art-hero-mobile absolute inset-0 bg-cover bg-center sm:hidden"
-          />
-          <div
-            className="viv-art-hero-desktop absolute inset-0 bg-cover bg-center hidden sm:block"
-          />
+          <div className="viv-art-hero-mobile absolute inset-0 bg-cover bg-center sm:hidden" />
+          <div className="viv-art-hero-desktop absolute inset-0 bg-cover bg-center hidden sm:block" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(33,9,8,0.9)_0%,rgba(33,9,8,0.42)_46%,rgba(33,9,8,0.88)_100%)] sm:bg-[linear-gradient(100deg,rgba(33,9,8,0.96)_0%,rgba(33,9,8,0.9)_34%,rgba(33,9,8,0.45)_58%,rgba(33,9,8,0.12)_78%)]" />
           <Wrap className="relative py-10 sm:py-12 lg:py-16">
             <div className="max-w-[620px]">
@@ -427,7 +469,10 @@ export default function VivahPage() {
                   Its translation is dropped on a phone; the mantra itself is
                   the part that has to be there. */}
               <div className="mt-3 sm:mt-4 max-w-[480px]">
-                <blockquote lang="sa" className="display viv-shloka-cream text-[13px] sm:text-[16px] leading-[1.65] sm:leading-[1.7]">
+                <blockquote
+                  lang="sa"
+                  className="display viv-shloka-cream text-[13px] sm:text-[16px] leading-[1.65] sm:leading-[1.7]"
+                >
                   {VIVAH_SHLOKAS.mangal.deva}
                 </blockquote>
                 <p className="hidden sm:block text-[10.5px] text-viv-cream/55 italic mt-1.5">
@@ -467,74 +512,77 @@ export default function VivahPage() {
       {/* ───────────────────── HOW WOULD YOU LIKE TO BEGIN ───────────────────── */}
       <Wrap className="relative -mt-8 lg:-mt-10 z-10">
         <Reveal y={30}>
-        <Card className="viv-mandala bg-[position:center] px-4 sm:px-8 py-5 sm:py-6 lg:py-8 !bg-viv-sheet">
-          <p className="display text-center text-[12.5px] sm:text-[16px] italic text-viv-maroon/85 leading-relaxed max-w-[760px] mx-auto">
-            {t("begin.reassure")}
-          </p>
+          <Card className="viv-mandala bg-[position:center] px-4 sm:px-8 py-5 sm:py-6 lg:py-8 !bg-viv-sheet">
+            <p className="display text-center text-[12.5px] sm:text-[16px] italic text-viv-maroon/85 leading-relaxed max-w-[760px] mx-auto">
+              {t("begin.reassure")}
+            </p>
 
-          <Shloka
-            compact
-            deva={VIVAH_SHLOKAS.ganesh.deva}
-            translit={VIVAH_SHLOKAS.ganesh.translit}
-            meaning={VIVAH_SHLOKAS.ganesh.meaning}
-          />
-          <div className="mt-2 flex items-center justify-center gap-3">
-            <span className="h-px flex-1 max-w-[160px] bg-gradient-to-r from-transparent to-viv-gold/50" />
-            <h2 className="text-[17px] sm:text-[24px] text-viv-ink text-center leading-tight">
-              {t("begin.title")}
-            </h2>
-            <span className="h-px flex-1 max-w-[160px] bg-gradient-to-l from-transparent to-viv-gold/50" />
-          </div>
+            <Shloka
+              compact
+              deva={VIVAH_SHLOKAS.ganesh.deva}
+              translit={VIVAH_SHLOKAS.ganesh.translit}
+              meaning={VIVAH_SHLOKAS.ganesh.meaning}
+            />
+            <div className="mt-2 flex items-center justify-center gap-3">
+              <span className="h-px flex-1 max-w-[160px] bg-gradient-to-r from-transparent to-viv-gold/50" />
+              <h2 className="text-[17px] sm:text-[24px] text-viv-ink text-center leading-tight">
+                {t("begin.title")}
+              </h2>
+              <span className="h-px flex-1 max-w-[160px] bg-gradient-to-l from-transparent to-viv-gold/50" />
+            </div>
 
-          <Stagger className="mt-4 sm:mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3" gap={0.06}>
-            {[
-              {
-                Icon: BookOpen,
-                title: t("begin.viewPkg"),
-                sub: t("begin.viewPkgSub"),
-                run: () => scrollTo("#packages"),
-              },
-              {
-                Icon: MessageCircle,
-                title: t("begin.talk"),
-                sub: t("begin.talkSub"),
-                run: () => setConsultOpen(true),
-              },
-              {
-                Icon: CalendarCheck,
-                title: t("begin.date"),
-                sub: t("begin.dateSub"),
-                run: () => scrollTo("#packages"),
-              },
-              {
-                Icon: ClipboardCheck,
-                title: t("begin.start"),
-                sub: t("begin.startSub"),
-                run: () => scrollTo("#rituals"),
-              },
-            ].map(({ Icon, title, sub, run }, fi) => (
-              <RevealItem key={fi} className="h-full">
-                <motion.button
-                  onClick={run}
-                  {...lift}
-                  className="w-full h-full bg-white border border-viv-hair rounded-xl px-2.5 sm:px-3 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2.5 text-center sm:text-left hover:border-viv-gold hover:shadow-[0_8px_20px_-14px_rgba(90,40,10,0.45)] transition-colors"
-                >
-                  <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-viv-gold shrink-0" />
-                  <span className="min-w-0">
-                    <span className="block text-[12px] sm:text-[12.5px] font-semibold text-viv-ink leading-snug">
-                      {title}
-                    </span>
-                    {/* Two lines per tile don't fit two-up on a phone — the
+            <Stagger
+              className="mt-4 sm:mt-5 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3"
+              gap={0.06}
+            >
+              {[
+                {
+                  Icon: BookOpen,
+                  title: t("begin.viewPkg"),
+                  sub: t("begin.viewPkgSub"),
+                  run: () => scrollTo("#packages"),
+                },
+                {
+                  Icon: MessageCircle,
+                  title: t("begin.talk"),
+                  sub: t("begin.talkSub"),
+                  run: () => setConsultOpen(true),
+                },
+                {
+                  Icon: CalendarCheck,
+                  title: t("begin.date"),
+                  sub: t("begin.dateSub"),
+                  run: () => scrollTo("#packages"),
+                },
+                {
+                  Icon: ClipboardCheck,
+                  title: t("begin.start"),
+                  sub: t("begin.startSub"),
+                  run: () => scrollTo("#rituals"),
+                },
+              ].map(({ Icon, title, sub, run }, fi) => (
+                <RevealItem key={fi} className="h-full">
+                  <motion.button
+                    onClick={run}
+                    {...lift}
+                    className="w-full h-full bg-white border border-viv-hair rounded-xl px-2.5 sm:px-3 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2.5 text-center sm:text-left hover:border-viv-gold hover:shadow-[0_8px_20px_-14px_rgba(90,40,10,0.45)] transition-colors"
+                  >
+                    <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-viv-gold shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-[12px] sm:text-[12.5px] font-semibold text-viv-ink leading-snug">
+                        {title}
+                      </span>
+                      {/* Two lines per tile don't fit two-up on a phone — the
                         label already says where each choice leads. */}
-                    <span className="hidden sm:block text-[11px] text-viv-muted leading-snug">
-                      {sub}
+                      <span className="hidden sm:block text-[11px] text-viv-muted leading-snug">
+                        {sub}
+                      </span>
                     </span>
-                  </span>
-                </motion.button>
-              </RevealItem>
-            ))}
-          </Stagger>
-        </Card>
+                  </motion.button>
+                </RevealItem>
+              ))}
+            </Stagger>
+          </Card>
         </Reveal>
       </Wrap>
 
@@ -549,7 +597,10 @@ export default function VivahPage() {
             className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 leading-relaxed"
           >
             {t("notice.pricing")}{" "}
-            <button onClick={() => setConsultOpen(true)} className="font-bold underline">
+            <button
+              onClick={() => setConsultOpen(true)}
+              className="font-bold underline"
+            >
               {t("notice.callback")}
             </button>{" "}
             {t("notice.walk")}
@@ -561,7 +612,9 @@ export default function VivahPage() {
       <Section id="packages">
         <SafeSection
           name="packages"
-          fallback={<StaticPackagesBackup onBook={() => setConsultOpen(true)} />}
+          fallback={
+            <StaticPackagesBackup onBook={() => setConsultOpen(true)} />
+          }
         >
           <VivahPackageCards
             packages={catalog.packages}
@@ -594,12 +647,12 @@ export default function VivahPage() {
       {/* ────────────────────── RITUAL JOURNEY ────────────────────── */}
       <Section id="rituals">
         <SafeSection name="rituals">
-        <VivahRitualCards
-          rituals={catalog.rituals}
-          selected={selected}
-          onView={setDrawerRitual}
-          onToggle={toggleRitual}
-        />
+          <VivahRitualCards
+            rituals={catalog.rituals}
+            selected={selected}
+            onView={setDrawerRitual}
+            onToggle={toggleRitual}
+          />
         </SafeSection>
       </Section>
 
@@ -607,16 +660,16 @@ export default function VivahPage() {
       {kashi && kashi.enabled !== false && kashi.isActive !== false && (
         <Section id="kashi" className="bg-viv-tint/40">
           <SafeSection name="kashi">
-          <VivahKashi
-            kashi={kashi}
-            packages={catalog.packages}
-            advancePercent={catalog.advancePercent}
-            panditName={kashiPanditName}
-            onPanditNameChange={setKashiPanditName}
-            packageId={kashiPackageId}
-            onPackageIdChange={setKashiPackageId}
-            onContinue={continueWithKashi}
-          />
+            <VivahKashi
+              kashi={kashi}
+              packages={catalog.packages}
+              advancePercent={catalog.advancePercent}
+              panditName={kashiPanditName}
+              onPanditNameChange={setKashiPanditName}
+              packageId={kashiPackageId}
+              onPackageIdChange={setKashiPackageId}
+              onContinue={continueWithKashi}
+            />
           </SafeSection>
         </Section>
       )}
@@ -639,34 +692,37 @@ export default function VivahPage() {
                   {...lift}
                   className="h-full bg-white border border-viv-hair rounded-2xl shadow-[0_2px_14px_-8px_rgba(90,40,10,0.16)] hover:border-viv-gold transition-colors p-3 sm:p-4 text-center"
                 >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full overflow-hidden border border-viv-hair bg-viv-gold-pale flex items-center justify-center">
-                  {p.image ? (
-                    <img
-                      src={p.image}
-                      alt=""
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="display text-[18px] text-viv-maroon">
-                      {initialsOf(p.name)}
-                    </span>
-                  )}
-                </div>
-                <p className="display text-[13px] sm:text-[14px] text-viv-ink mt-2 sm:mt-2.5 leading-snug">
-                  {p.name}
-                </p>
-                {p.years > 0 && (
-                  <p className="text-[11px] text-viv-muted mt-0.5">{tfmt(t("pandits.years"), { n: p.years })}</p>
-                )}
-                {p.note && (
-                  <p className="text-[10.5px] text-viv-muted-2 mt-1 leading-snug line-clamp-2">
-                    {p.note}
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full overflow-hidden border border-viv-hair bg-viv-gold-pale flex items-center justify-center">
+                    {p.image ? (
+                      <img
+                        src={p.image}
+                        alt=""
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="display text-[18px] text-viv-maroon">
+                        {initialsOf(p.name)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="display text-[13px] sm:text-[14px] text-viv-ink mt-2 sm:mt-2.5 leading-snug">
+                    {p.name}
                   </p>
-                )}
-                <p className="text-[11px] font-semibold text-viv-gold mt-2 inline-flex items-center gap-1">
-                  <BadgeCheck className="w-3.5 h-3.5" /> {t("pandits.verified")}
-                </p>
+                  {p.years > 0 && (
+                    <p className="text-[11px] text-viv-muted mt-0.5">
+                      {tfmt(t("pandits.years"), { n: p.years })}
+                    </p>
+                  )}
+                  {p.note && (
+                    <p className="text-[10.5px] text-viv-muted-2 mt-1 leading-snug line-clamp-2">
+                      {p.note}
+                    </p>
+                  )}
+                  <p className="text-[11px] font-semibold text-viv-gold mt-2 inline-flex items-center gap-1">
+                    <BadgeCheck className="w-3.5 h-3.5" />{" "}
+                    {t("pandits.verified")}
+                  </p>
                 </motion.div>
               </RevealItem>
             ))}
@@ -683,54 +739,64 @@ export default function VivahPage() {
       {/* ────────────────────── ELITE EXPERIENCE ────────────────────── */}
       <Wrap className="py-2">
         <Reveal>
-        <div
-          className="viv-art-elite relative rounded-[18px] overflow-hidden bg-viv-maroon-900 bg-cover bg-center"
-        >
-          <div className="absolute inset-0 bg-[linear-gradient(95deg,rgba(50,17,16,0.97)_0%,rgba(50,17,16,0.94)_42%,rgba(50,17,16,0.4)_64%,rgba(50,17,16,0.2)_100%)]" />
-          <div className="relative p-5 sm:p-6 lg:p-9 max-w-[720px]">
-            <h2 className="text-[21px] sm:text-[26px] lg:text-[32px] text-viv-cream leading-tight">
-              {t("elite.title")}
-            </h2>
-            <p className="text-[12px] sm:text-[12.5px] text-viv-cream/65 mt-1.5">{t("elite.sub")}</p>
-            {/* Two shlokas already open the page; this one is decorative, so a
+          <div className="viv-art-elite relative rounded-[18px] overflow-hidden bg-viv-maroon-900 bg-cover bg-center">
+            <div className="absolute inset-0 bg-[linear-gradient(95deg,rgba(50,17,16,0.97)_0%,rgba(50,17,16,0.94)_42%,rgba(50,17,16,0.4)_64%,rgba(50,17,16,0.2)_100%)]" />
+            <div className="relative p-5 sm:p-6 lg:p-9 max-w-[720px]">
+              <h2 className="text-[21px] sm:text-[26px] lg:text-[32px] text-viv-cream leading-tight">
+                {t("elite.title")}
+              </h2>
+              <p className="text-[12px] sm:text-[12.5px] text-viv-cream/65 mt-1.5">
+                {t("elite.sub")}
+              </p>
+              {/* Two shlokas already open the page; this one is decorative, so a
                 phone doesn't need a third block of Sanskrit. */}
-            <blockquote lang="sa" className="hidden sm:block display viv-shloka-cream text-[14px] leading-[1.7] mt-3 max-w-[520px]">
-              {VIVAH_SHLOKAS.blessing.deva}
-            </blockquote>
-            <Stagger className="mt-4 sm:mt-5 grid sm:grid-cols-2 gap-2.5 sm:gap-3" gap={0.06}>
-              {VIVAH_ELITE.map((e, i) => {
-                const Icon = ELITE_ICON[i % ELITE_ICON.length];
-                return (
-                  <RevealItem
-                    key={e.title}
-                    className={`gap-3 border border-viv-gold/22 bg-black/25 rounded-lg p-3 sm:p-3.5 ${
-                      i < ELITE_ON_PHONE || allElite ? "flex" : "hidden sm:flex"
-                    }`}
-                  >
-                    <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-viv-gold-lt shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-[12.5px] sm:text-[13px] font-semibold text-viv-cream leading-snug">
-                        {i < 4 ? t(`elite.f${i + 1}t`) : e.title}
-                      </p>
-                      <p className="text-[11px] text-viv-cream/60 mt-1 leading-snug">
-                        {i < 4 ? t(`elite.f${i + 1}d`) : e.text}
-                      </p>
-                    </div>
-                  </RevealItem>
-                );
-              })}
-            </Stagger>
-            {VIVAH_ELITE.length > ELITE_ON_PHONE && !allElite && (
-              <button
-                onClick={() => setAllElite(true)}
-                className="sm:hidden mt-3 text-[12px] font-semibold text-viv-gold-lt inline-flex items-center gap-1"
+              <blockquote
+                lang="sa"
+                className="hidden sm:block display viv-shloka-cream text-[14px] leading-[1.7] mt-3 max-w-[520px]"
               >
-                {tfmt(t("elite.showAll"), { n: VIVAH_ELITE.length - ELITE_ON_PHONE })}
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            )}
+                {VIVAH_SHLOKAS.blessing.deva}
+              </blockquote>
+              <Stagger
+                className="mt-4 sm:mt-5 grid sm:grid-cols-2 gap-2.5 sm:gap-3"
+                gap={0.06}
+              >
+                {VIVAH_ELITE.map((e, i) => {
+                  const Icon = ELITE_ICON[i % ELITE_ICON.length];
+                  return (
+                    <RevealItem
+                      key={e.title}
+                      className={`gap-3 border border-viv-gold/22 bg-black/25 rounded-lg p-3 sm:p-3.5 ${
+                        i < ELITE_ON_PHONE || allElite
+                          ? "flex"
+                          : "hidden sm:flex"
+                      }`}
+                    >
+                      <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5 text-viv-gold-lt shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-[12.5px] sm:text-[13px] font-semibold text-viv-cream leading-snug">
+                          {i < 4 ? t(`elite.f${i + 1}t`) : e.title}
+                        </p>
+                        <p className="text-[11px] text-viv-cream/60 mt-1 leading-snug">
+                          {i < 4 ? t(`elite.f${i + 1}d`) : e.text}
+                        </p>
+                      </div>
+                    </RevealItem>
+                  );
+                })}
+              </Stagger>
+              {VIVAH_ELITE.length > ELITE_ON_PHONE && !allElite && (
+                <button
+                  onClick={() => setAllElite(true)}
+                  className="sm:hidden mt-3 text-[12px] font-semibold text-viv-gold-lt inline-flex items-center gap-1"
+                >
+                  {tfmt(t("elite.showAll"), {
+                    n: VIVAH_ELITE.length - ELITE_ON_PHONE,
+                  })}
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
         </Reveal>
       </Wrap>
 
@@ -738,35 +804,35 @@ export default function VivahPage() {
       <Section id="how-it-works" tight>
         <Wrap>
           <Reveal>
-          <Card className="!bg-viv-sheet px-4 sm:px-7 py-5 sm:py-7">
-            <h2 className="text-[18px] sm:text-[26px] text-viv-ink text-center leading-tight">
-              {t("trust.title")}
-            </h2>
-            <Orn className="mb-4 sm:mb-6" />
-            <Stagger
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-2.5 gap-y-1 sm:gap-3"
-              gap={0.05}
-            >
-              {TRUST_FIVE.map(({ Icon, title, sub }) => (
-                <RevealItem
-                  key={title}
-                  className="flex items-center gap-2.5 sm:gap-3 px-0.5 sm:px-1 py-2"
-                >
-                  <Medallion size={38} className="sm:!w-[42px] sm:!h-[42px]">
-                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  </Medallion>
-                  <span className="min-w-0">
-                    <span className="display block text-[12px] sm:text-[13px] text-viv-ink leading-snug">
-                      {t(title)}
+            <Card className="!bg-viv-sheet px-4 sm:px-7 py-5 sm:py-7">
+              <h2 className="text-[18px] sm:text-[26px] text-viv-ink text-center leading-tight">
+                {t("trust.title")}
+              </h2>
+              <Orn className="mb-4 sm:mb-6" />
+              <Stagger
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-2.5 gap-y-1 sm:gap-3"
+                gap={0.05}
+              >
+                {TRUST_FIVE.map(({ Icon, title, sub }) => (
+                  <RevealItem
+                    key={title}
+                    className="flex items-center gap-2.5 sm:gap-3 px-0.5 sm:px-1 py-2"
+                  >
+                    <Medallion size={38} className="sm:!w-[42px] sm:!h-[42px]">
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </Medallion>
+                    <span className="min-w-0">
+                      <span className="display block text-[12px] sm:text-[13px] text-viv-ink leading-snug">
+                        {t(title)}
+                      </span>
+                      <span className="block text-[10.5px] sm:text-[11px] text-viv-muted leading-snug">
+                        {t(sub)}
+                      </span>
                     </span>
-                    <span className="block text-[10.5px] sm:text-[11px] text-viv-muted leading-snug">
-                      {t(sub)}
-                    </span>
-                  </span>
-                </RevealItem>
-              ))}
-            </Stagger>
-          </Card>
+                  </RevealItem>
+                ))}
+              </Stagger>
+            </Card>
           </Reveal>
         </Wrap>
       </Section>
@@ -779,33 +845,41 @@ export default function VivahPage() {
             <Orn className="mb-6" />
           </Reveal>
 
-          <Stagger className="grid md:grid-cols-3 gap-3 sm:gap-4" dep={allReviews}>
-            {(allReviews ? VIVAH_TESTIMONIALS : VIVAH_TESTIMONIALS.slice(0, 3)).map((tm, ti) => (
+          <Stagger
+            className="grid md:grid-cols-3 gap-3 sm:gap-4"
+            dep={allReviews}
+          >
+            {(allReviews
+              ? VIVAH_TESTIMONIALS
+              : VIVAH_TESTIMONIALS.slice(0, 3)
+            ).map((tm, ti) => (
               <RevealItem key={tm.id} className="h-full">
                 <motion.div
                   {...lift}
                   className="h-full bg-viv-sheet border border-viv-hair rounded-2xl shadow-[0_2px_14px_-8px_rgba(90,40,10,0.16)] p-4 sm:p-5"
                 >
-                <span className="display text-[34px] leading-none text-viv-gold/60">“</span>
-                <p className="text-[12.5px] italic text-viv-ink/85 leading-relaxed -mt-3">
-                  {ti < 5 ? t(`story.${ti + 1}.q`) : tm.quote}
-                </p>
-                <div className="flex items-center gap-3 mt-4">
-                  <span
-                    className="w-10 h-10 rounded-full flex items-center justify-center display text-[13px] text-white shrink-0"
-                    style={{ backgroundColor: tm.accent }}
-                  >
-                    {initialsOf(tm.name)}
+                  <span className="display text-[34px] leading-none text-viv-gold/60">
+                    “
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-[12.5px] font-semibold text-viv-maroon leading-snug">
-                      {tm.name}
+                  <p className="text-[12.5px] italic text-viv-ink/85 leading-relaxed -mt-3">
+                    {ti < 5 ? t(`story.${ti + 1}.q`) : tm.quote}
+                  </p>
+                  <div className="flex items-center gap-3 mt-4">
+                    <span
+                      className="w-10 h-10 rounded-full flex items-center justify-center display text-[13px] text-white shrink-0"
+                      style={{ backgroundColor: tm.accent }}
+                    >
+                      {initialsOf(tm.name)}
                     </span>
-                    <span className="block text-[11px] text-viv-muted leading-snug">
-                      {tc(tm.ritual)}
+                    <span className="min-w-0">
+                      <span className="block text-[12.5px] font-semibold text-viv-maroon leading-snug">
+                        {tm.name}
+                      </span>
+                      <span className="block text-[11px] text-viv-muted leading-snug">
+                        {tc(tm.ritual)}
+                      </span>
                     </span>
-                  </span>
-                </div>
+                  </div>
                 </motion.div>
               </RevealItem>
             ))}
@@ -813,7 +887,11 @@ export default function VivahPage() {
 
           <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
             {VIVAH_TESTIMONIALS.length > 3 && (
-              <Btn variant="maroon" size="sm" onClick={() => setAllReviews((v) => !v)}>
+              <Btn
+                variant="maroon"
+                size="sm"
+                onClick={() => setAllReviews((v) => !v)}
+              >
                 {allReviews ? t("stories.fewer") : t("stories.more")}
                 <ChevronRight
                   className={`w-3.5 h-3.5 transition-transform ${allReviews ? "rotate-90" : ""}`}
@@ -821,7 +899,9 @@ export default function VivahPage() {
               </Btn>
             )}
             <span className="inline-flex items-center gap-1.5 text-[12px] text-viv-muted">
-              <span className="text-[15px] font-semibold text-viv-ink">4.9</span>
+              <span className="text-[15px] font-semibold text-viv-ink">
+                4.9
+              </span>
               <span className="text-viv-gold">★★★★★</span>
               {t("stories.from")}
             </span>
@@ -890,32 +970,37 @@ export default function VivahPage() {
       {/* ─────────────────── TALK TO A PANDIT JI ─────────────────── */}
       <Wrap className="py-2">
         <Reveal>
-        <div className="rounded-[18px] border border-viv-hair bg-gradient-to-r from-viv-tint to-viv-tint-2 px-4 sm:px-7 py-5 sm:py-6 grid lg:grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-5">
-          <div>
-            <h2 className="text-[19px] sm:text-[22px] text-viv-maroon leading-tight">
-              {t("talk.title")}
-            </h2>
-            <p className="text-[12px] sm:text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">
-              {t("talk.sub")}
-            </p>
-          </div>
-          <Btn variant="maroon" size="lg" onClick={() => setConsultOpen(true)} className="w-full lg:w-auto">
-            <MessageCircle className="w-4 h-4" /> {t("talk.cta")} →
-          </Btn>
-          <div className="flex flex-wrap justify-start lg:justify-end gap-x-4 sm:gap-x-6 gap-y-2">
-            {[t("talk.chip1"), t("talk.chip2"), t("talk.chip3")].map((l) => (
-              <span
-                key={l}
-                className="inline-flex items-center gap-2 text-[11.5px] text-viv-ink/80"
-              >
-                <span className="w-5 h-5 rounded-full border border-viv-gold/50 flex items-center justify-center">
-                  <span className="w-1.5 h-1.5 rounded-full bg-viv-gold" />
+          <div className="rounded-[18px] border border-viv-hair bg-gradient-to-r from-viv-tint to-viv-tint-2 px-4 sm:px-7 py-5 sm:py-6 grid lg:grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-5">
+            <div>
+              <h2 className="text-[19px] sm:text-[22px] text-viv-maroon leading-tight">
+                {t("talk.title")}
+              </h2>
+              <p className="text-[12px] sm:text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">
+                {t("talk.sub")}
+              </p>
+            </div>
+            <Btn
+              variant="maroon"
+              size="lg"
+              onClick={() => setConsultOpen(true)}
+              className="w-full lg:w-auto"
+            >
+              <MessageCircle className="w-4 h-4" /> {t("talk.cta")} →
+            </Btn>
+            <div className="flex flex-wrap justify-start lg:justify-end gap-x-4 sm:gap-x-6 gap-y-2">
+              {[t("talk.chip1"), t("talk.chip2"), t("talk.chip3")].map((l) => (
+                <span
+                  key={l}
+                  className="inline-flex items-center gap-2 text-[11.5px] text-viv-ink/80"
+                >
+                  <span className="w-5 h-5 rounded-full border border-viv-gold/50 flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-viv-gold" />
+                  </span>
+                  {l}
                 </span>
-                {l}
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
         </Reveal>
       </Wrap>
 
@@ -923,86 +1008,94 @@ export default function VivahPage() {
       <Section id="about" tight>
         <Wrap>
           <Reveal>
-          <Card className="!bg-viv-sheet p-4 sm:p-7 grid lg:grid-cols-[1.15fr_1fr] gap-4 sm:gap-6">
-            <div className="flex gap-4">
-              <Medallion size={46} className="hidden sm:inline-flex">
-                <Landmark className="w-5 h-5" />
-              </Medallion>
-              <div className="min-w-0">
-                <h2 className="text-[19px] sm:text-[25px] text-viv-ink leading-tight">
-                  {t("about.title")}
-                </h2>
-                <p className="text-[12px] sm:text-[12.5px] text-viv-muted mt-2 leading-relaxed line-clamp-4 sm:line-clamp-none">
-                  {t("about.intro")}
-                </p>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
-                  <button
-                    onClick={() => setAboutOpen((v) => !v)}
-                    className="text-[12.5px] font-semibold text-viv-orange inline-flex items-center gap-1 hover:underline"
-                  >
-                    {aboutOpen ? t("about.less") : t("about.more")}
-                    <ChevronRight
-                      className={`w-3.5 h-3.5 transition-transform ${aboutOpen ? "rotate-90" : ""}`}
-                    />
-                  </button>
-                  <Btn variant="ghost" size="sm" to="/vedic-vivah/guides">
-                    {t("about.guidesBtn")}
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Btn>
+            <Card className="!bg-viv-sheet p-4 sm:p-7 grid lg:grid-cols-[1.15fr_1fr] gap-4 sm:gap-6">
+              <div className="flex gap-4">
+                <Medallion size={46} className="hidden sm:inline-flex">
+                  <Landmark className="w-5 h-5" />
+                </Medallion>
+                <div className="min-w-0">
+                  <h2 className="text-[19px] sm:text-[25px] text-viv-ink leading-tight">
+                    {t("about.title")}
+                  </h2>
+                  <p className="text-[12px] sm:text-[12.5px] text-viv-muted mt-2 leading-relaxed line-clamp-4 sm:line-clamp-none">
+                    {t("about.intro")}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+                    <button
+                      onClick={() => setAboutOpen((v) => !v)}
+                      className="text-[12.5px] font-semibold text-viv-orange inline-flex items-center gap-1 hover:underline"
+                    >
+                      {aboutOpen ? t("about.less") : t("about.more")}
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 transition-transform ${aboutOpen ? "rotate-90" : ""}`}
+                      />
+                    </button>
+                    <Btn variant="ghost" size="sm" to="/vedic-vivah/guides">
+                      {t("about.guidesBtn")}
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Btn>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="grid sm:grid-cols-1 gap-2.5 content-start">
-              {KNOW_TILES.map(({ Icon, title, sub }) => (
-                <button
-                  key={title}
-                  onClick={() => setAboutOpen(true)}
-                  className="flex items-center gap-3 bg-white border border-viv-hair rounded-xl px-3.5 py-3 text-left hover:border-viv-gold transition-colors"
-                >
-                  <Medallion size={38}>
-                    <Icon className="w-4 h-4" />
-                  </Medallion>
-                  <span className="min-w-0">
-                    <span className="display block text-[13px] text-viv-ink leading-snug">
-                      {t(title)}
+              <div className="grid sm:grid-cols-1 gap-2.5 content-start">
+                {KNOW_TILES.map(({ Icon, title, sub }) => (
+                  <button
+                    key={title}
+                    onClick={() => setAboutOpen(true)}
+                    className="flex items-center gap-3 bg-white border border-viv-hair rounded-xl px-3.5 py-3 text-left hover:border-viv-gold transition-colors"
+                  >
+                    <Medallion size={38}>
+                      <Icon className="w-4 h-4" />
+                    </Medallion>
+                    <span className="min-w-0">
+                      <span className="display block text-[13px] text-viv-ink leading-snug">
+                        {t(title)}
+                      </span>
+                      <span className="block text-[11px] text-viv-muted">
+                        {t(sub)}
+                      </span>
                     </span>
-                    <span className="block text-[11px] text-viv-muted">{t(sub)}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <AnimatePresence initial={false}>
-              {aboutOpen && (
-              <motion.div key="about" {...collapse} className="lg:col-span-2">
-              <div className="border-t border-viv-hair pt-5 space-y-5 mt-1">
-                {VIVAH_ABOUT.sections.map((s, si) => (
-                  <div key={s.heading}>
-                    <h3 className="display text-[17px] text-viv-maroon">
-                      {si < 4 ? t(`about.s${si + 1}h`) : s.heading}
-                    </h3>
-                    <p className="text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">
-                      {si < 4 ? t(`about.s${si + 1}b`) : s.body}
-                    </p>
-                    {s.shloka && (
-                      <div className="mt-3 bg-viv-tint border border-viv-hair rounded-xl p-4">
-                        <p className="text-[14.5px] text-viv-ink leading-relaxed">
-                          {s.shloka.devanagari}
-                        </p>
-                        <p className="text-[12px] italic text-viv-muted mt-1.5">
-                          {s.shloka.transliteration}
-                        </p>
-                        <p className="text-[12px] text-viv-muted mt-1.5">{s.shloka.meaning}</p>
-                      </div>
-                    )}
-                  </div>
+                  </button>
                 ))}
               </div>
-              </motion.div>
-              )}
-            </AnimatePresence>
-          </Card>
+
+              <AnimatePresence initial={false}>
+                {aboutOpen && (
+                  <motion.div
+                    key="about"
+                    {...collapse}
+                    className="lg:col-span-2"
+                  >
+                    <div className="border-t border-viv-hair pt-5 space-y-5 mt-1">
+                      {VIVAH_ABOUT.sections.map((s, si) => (
+                        <div key={s.heading}>
+                          <h3 className="display text-[17px] text-viv-maroon">
+                            {si < 4 ? t(`about.s${si + 1}h`) : s.heading}
+                          </h3>
+                          <p className="text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">
+                            {si < 4 ? t(`about.s${si + 1}b`) : s.body}
+                          </p>
+                          {s.shloka && (
+                            <div className="mt-3 bg-viv-tint border border-viv-hair rounded-xl p-4">
+                              <p className="text-[14.5px] text-viv-ink leading-relaxed">
+                                {s.shloka.devanagari}
+                              </p>
+                              <p className="text-[12px] italic text-viv-muted mt-1.5">
+                                {s.shloka.transliteration}
+                              </p>
+                              <p className="text-[12px] text-viv-muted mt-1.5">
+                                {s.shloka.meaning}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
           </Reveal>
         </Wrap>
       </Section>
@@ -1016,7 +1109,10 @@ export default function VivahPage() {
               <Orn className="mb-6" />
             </Reveal>
 
-            <Stagger className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5" gap={0.05}>
+            <Stagger
+              className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5"
+              gap={0.05}
+            >
               {FEATURED_GUIDES.map((g) => (
                 <RevealItem key={g.slug} className="h-full">
                   <motion.article {...lift} className="h-full">
@@ -1041,7 +1137,9 @@ export default function VivahPage() {
                       </div>
                       <div className="p-3 sm:p-3.5 flex-1 flex flex-col">
                         <h3 className="display text-[13px] sm:text-[15px] text-viv-ink leading-snug line-clamp-2">
-                          {lang === "hi" && g.hindiTitle ? g.hindiTitle : g.title}
+                          {lang === "hi" && g.hindiTitle
+                            ? g.hindiTitle
+                            : g.title}
                         </h3>
                         {/* Two titles in a half-width card is one too many. */}
                         {g.hindiTitle && lang !== "hi" && (
@@ -1050,9 +1148,12 @@ export default function VivahPage() {
                           </p>
                         )}
                         <span className="flex items-center justify-between mt-auto pt-2.5 sm:pt-3 text-[10.5px] sm:text-[11px]">
-                          <span className="text-viv-muted-2">{g.minutes} {t("blog.min")}</span>
+                          <span className="text-viv-muted-2">
+                            {g.minutes} {t("blog.min")}
+                          </span>
                           <span className="inline-flex items-center gap-1 font-semibold text-viv-orange">
-                            {t("blog.read")} <ChevronRight className="w-3 h-3" />
+                            {t("blog.read")}{" "}
+                            <ChevronRight className="w-3 h-3" />
                           </span>
                         </span>
                       </div>
@@ -1064,7 +1165,9 @@ export default function VivahPage() {
 
             <div className="text-center mt-6">
               <Btn variant="maroon" size="md" to="/vedic-vivah/guides">
-                {tfmt(t("guides.seeAll"), { n: String((BLOG_DATA as any).posts.length) })}
+                {tfmt(t("guides.seeAll"), {
+                  n: String((BLOG_DATA as any).posts.length),
+                })}
                 <ChevronRight className="w-3.5 h-3.5" />
               </Btn>
             </div>
@@ -1074,30 +1177,33 @@ export default function VivahPage() {
 
       {/* ───────────────────────── HELP TILES ───────────────────────── */}
       <Wrap className="pb-8 sm:pb-10">
-        <Stagger className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3" gap={0.05}>
+        <Stagger
+          className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3"
+          gap={0.05}
+        >
           {HELP_TILES.map(({ Icon, title, sub, action }) => (
             <RevealItem key={title} className="h-full">
-            <motion.button
-              {...lift}
-              onClick={() => {
-                if (action === "consult") setConsultOpen(true);
-                else if (action === "account") navigate("/account?tab=vivah");
-                else scrollTo("#packages");
-              }}
-              className="w-full h-full flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-3 bg-white border border-viv-hair rounded-xl px-2.5 sm:px-3.5 py-3 sm:py-3.5 text-center sm:text-left hover:border-viv-gold transition-colors"
-            >
-              <Medallion size={34} className="sm:!w-[38px] sm:!h-[38px]">
-                <Icon className="w-4 h-4" />
-              </Medallion>
-              <span className="min-w-0">
-                <span className="display block text-[12px] sm:text-[13px] text-viv-ink leading-snug">
-                  {t(title)}
+              <motion.button
+                {...lift}
+                onClick={() => {
+                  if (action === "consult") setConsultOpen(true);
+                  else if (action === "account") navigate("/account?tab=vivah");
+                  else scrollTo("#packages");
+                }}
+                className="w-full h-full flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-3 bg-white border border-viv-hair rounded-xl px-2.5 sm:px-3.5 py-3 sm:py-3.5 text-center sm:text-left hover:border-viv-gold transition-colors"
+              >
+                <Medallion size={34} className="sm:!w-[38px] sm:!h-[38px]">
+                  <Icon className="w-4 h-4" />
+                </Medallion>
+                <span className="min-w-0">
+                  <span className="display block text-[12px] sm:text-[13px] text-viv-ink leading-snug">
+                    {t(title)}
+                  </span>
+                  <span className="block text-[10.5px] sm:text-[11px] text-viv-muted leading-snug">
+                    {t(sub)}
+                  </span>
                 </span>
-                <span className="block text-[10.5px] sm:text-[11px] text-viv-muted leading-snug">
-                  {t(sub)}
-                </span>
-              </span>
-            </motion.button>
+              </motion.button>
             </RevealItem>
           ))}
         </Stagger>
@@ -1116,11 +1222,17 @@ export default function VivahPage() {
             <Wrap className="py-3 flex items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-[11.5px] text-viv-cream/70 truncate">
-                  {tfmt(t(selectedList.length > 1 ? "bar.addedN" : "bar.added1"), { n: selectedList.length })}
+                  {tfmt(
+                    t(selectedList.length > 1 ? "bar.addedN" : "bar.added1"),
+                    { n: selectedList.length },
+                  )}
                   {kashiPremium > 0 ? ` ${t("bar.kashi")}` : ""}
                 </p>
                 <p className="text-[18px] font-semibold text-viv-cream leading-tight">
-                  <AnimatedTotal value={selectedTotal + kashiPremium} format={fmtINR} />
+                  <AnimatedTotal
+                    value={selectedTotal + kashiPremium}
+                    format={fmtINR}
+                  />
                 </p>
               </div>
               <motion.div {...tap}>
@@ -1160,7 +1272,8 @@ export default function VivahPage() {
 
       {/* Hidden lock glyph keeps the trust vocabulary consistent for a11y tools. */}
       <span className="sr-only">
-        <Lock className="w-3 h-3" /> Payments are processed securely by Razorpay.
+        <Lock className="w-3 h-3" /> Payments are processed securely by
+        Razorpay.
       </span>
     </VivahScope>
   );

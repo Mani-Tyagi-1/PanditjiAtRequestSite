@@ -327,7 +327,8 @@ function App() {
             <Route path="/shri-durga-mata-puja-home" element={<Navigate to="/puja" replace />} />
             <Route path="/shri-durga-mata-puja-home/booking" element={<Navigate to="/puja" replace />} />
             {/* Retired Ujjain Savan Rudrabhishek campaign. Each historical link
-              goes directly to Janmashtami and marks that visit for its notice. */}
+              goes directly to the Banke Bihari Sharad Purnima puja and marks
+              that visit for its notice. */}
             <Route path="/mahakaal-savan-somwar-puja" element={<ExpiredPujaRedirectPage />} />
             <Route path="/mahakaal-savan-somwar-puja/booking" element={<ExpiredPujaRedirectPage />} />
             <Route path="/mahakaal-savan-somwar-puja/*" element={<ExpiredPujaRedirectPage />} />
@@ -343,7 +344,7 @@ function App() {
             {/* Short alias — easier to type/share in ads & WhatsApp */}
             <Route path="/kaal-bhairav-puja" element={<Navigate to="/kashi-kaal-bhairav-puja" replace />} />
             <Route path="/kaal-bhairav-puja/booking" element={<Navigate to="/kashi-kaal-bhairav-puja/booking" replace />} />
-            {/* Banke Bihari — Janmashtami puja at Shri Banke Bihari Ji Mandir, Vrindavan */}
+            {/* Banke Bihari — Sharad Purnima puja at Shri Banke Bihari Ji Mandir, Vrindavan */}
             <Route path="/vrindavan-banke-bihari-puja" element={<BankeBihariPage />} />
             <Route path="/vrindavan-banke-bihari-puja/booking" element={<BankeBihariBookingPage />} />
             {/* Short aliases — easier to type/share in ads & WhatsApp */}

@@ -54,7 +54,7 @@ function tabFromParam(v: string | null): BookingKind {
 const PUJA_TYPES = [
     "Rudrabhishek", "Satyanarayan", "Griha Pravesh", "Havan", "Lakshmi",
     "Ganesh", "Navgraha", "Mahamrityunjay", "Kaal Bhairav", "Hanuman",
-    "Janmashtami", "Chadhava", "Vivah", "Katha", "Puja", "Pooja",
+    "Sharad Purnima", "Janmashtami", "Chadhava", "Vivah", "Katha", "Puja", "Pooja",
 ];
 
 function pujaTypeOf(b: any): string {

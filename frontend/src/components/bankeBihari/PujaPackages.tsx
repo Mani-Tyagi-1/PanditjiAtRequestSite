@@ -76,8 +76,8 @@ export default function PujaPackages({
 
     return (
         <div className="space-y-2.5">
-            <div className="rounded-2xl border border-[#F4DFC2] bg-[#FFF8F0] px-3 py-2.5">
-                <p className="mb-1.5 flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#D63D72]">
+            <div className="rounded-2xl border border-[#E6E1F5] bg-[#F5F3FC] px-3 py-2.5">
+                <p className="mb-1.5 flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#4C3F91]">
                     <Sparkles className="w-3 h-3 text-[#E7B63A]" />
                     In every seva
                 </p>
@@ -151,13 +151,13 @@ function PackageCard({
         <div
             className={`relative rounded-2xl border transition-all ${
                 selected
-                    ? "border-[#D63D72] bg-[#FFF1F5] ring-1 ring-[#F8B5CB] shadow-md"
-                    : "border-[#F4DFC2] bg-white shadow-sm hover:border-[#F8A9C4]"
+                    ? "border-[#4C3F91] bg-[#F1EEFB] ring-1 ring-[#C9C3ED] shadow-md"
+                    : "border-[#E6E1F5] bg-white shadow-sm hover:border-[#C3BBEA]"
             }`}
         >
             {/* Corner badge (Most Popular / Best Value) */}
             {pkg.badge && (
-                <span className="absolute -top-2 left-3 z-10 rounded-full bg-gradient-to-r from-[#D63D72] to-[#E7B63A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">
+                <span className="absolute -top-2 left-3 z-10 rounded-full bg-gradient-to-r from-[#4C3F91] to-[#E7B63A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">
                     {pkg.badge}
                 </span>
             )}
@@ -168,23 +168,23 @@ function PackageCard({
                 onClick={() => onChoose(pkg.id)}
                 aria-pressed={selected}
                 aria-expanded={open}
-                className="w-full text-left rounded-2xl px-3 pt-3.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] cursor-pointer active:scale-[0.995] transition-transform"
+                className="w-full text-left rounded-2xl px-3 pt-3.5 pb-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[#4C3F91] cursor-pointer active:scale-[0.995] transition-transform"
             >
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-2 min-w-0">
                         <span
                             className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                                selected ? "border-[#D63D72] bg-[#D63D72]" : "border-[#E0CDB4]"
+                                selected ? "border-[#4C3F91] bg-[#4C3F91]" : "border-[#D8D2ED]"
                             }`}
                         >
                             {selected && <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />}
                         </span>
                         <div className="min-w-0">
-                            <p className="text-[14px] font-bold leading-tight text-[#5C1A34]">{pkg.name}</p>
-                            <p className="text-[10.5px] leading-tight mt-0.5 text-[#7A3E55]">{pkg.tagline}</p>
+                            <p className="text-[14px] font-bold leading-tight text-[#262454]">{pkg.name}</p>
+                            <p className="text-[10.5px] leading-tight mt-0.5 text-[#4F4A85]">{pkg.tagline}</p>
                         </div>
                     </div>
-                    <p className="shrink-0 text-[18px] font-extrabold leading-none text-[#D63D72]">
+                    <p className="shrink-0 text-[18px] font-extrabold leading-none text-[#4C3F91]">
                         {money(pkg.price)}
                     </p>
                 </div>
@@ -199,10 +199,10 @@ function PackageCard({
                     higher tier dropping the cheaper tier's offerings. Pictures,
                     not a comma list — seven item names in a row is exactly what
                     made the ₹11000 card unreadable. */}
-                <div className={`mt-2 pt-2 border-t ${selected ? "border-[#F8B5CB]" : "border-[#F4DFC2]"}`}>
+                <div className={`mt-2 pt-2 border-t ${selected ? "border-[#C9C3ED]" : "border-[#E6E1F5]"}`}>
                     {pkg.freeFamilyMembers > 0 && (
                         <Line icon={<Users className="w-3.5 h-3.5 shrink-0 mt-px text-[#2E8B57]" />}>
-                            <b className="text-[#5C1A34]">
+                            <b className="text-[#262454]">
                                 {pkg.freeFamilyMembers} family Sankalp
                                 {pkg.freeFamilyMembers > 1 ? "s" : ""} free
                             </b>
@@ -210,7 +210,7 @@ function PackageCard({
                     )}
                     {allOfferings.length > 0 && (
                         <div className={pkg.freeFamilyMembers > 0 ? "mt-2" : ""}>
-                            <p className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#D63D72] mb-1.5">
+                            <p className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#4C3F91] mb-1.5">
                                 <Sparkles className="w-3 h-3 text-[#E7B63A]" />
                                 Offered in your name
                             </p>
@@ -250,10 +250,10 @@ function PackageCard({
                         // card is the visual language of a placeholder or a
                         // disabled field — precisely the wrong signal for the
                         // one optional thing on this page we want noticed.
-                        className={`relative flex-1 min-w-0 flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] cursor-pointer transition-colors ${
+                        className={`relative flex-1 min-w-0 flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-[#4C3F91] cursor-pointer transition-colors ${
                             boxOn
-                                ? "border-[#D63D72] bg-white"
-                                : "border-[#E7B63A] bg-gradient-to-r from-[#FFF6E3] to-[#FFEAD0] shadow-[0_2px_10px_rgba(231,182,58,.28)] hover:border-[#D63D72]"
+                                ? "border-[#4C3F91] bg-white"
+                                : "border-[#E7B63A] bg-gradient-to-r from-[#FFF6E3] to-[#FFEAD0] shadow-[0_2px_10px_rgba(231,182,58,.28)] hover:border-[#4C3F91]"
                         }`}
                     >
                         {/* A slow breathing ring, and ONLY on the selected card:
@@ -269,7 +269,7 @@ function PackageCard({
                         )}
                         <span
                             className={`shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                boxOn ? "border-[#D63D72] bg-[#D63D72]" : "border-[#E7B63A] bg-[#F7C547]"
+                                boxOn ? "border-[#4C3F91] bg-[#4C3F91]" : "border-[#E7B63A] bg-[#F7C547]"
                             }`}
                         >
                             {boxOn ? (
@@ -278,7 +278,7 @@ function PackageCard({
                                 <Plus className="w-2.5 h-2.5 text-[#5A3600]" strokeWidth={3.5} />
                             )}
                         </span>
-                        <span className="flex-1 min-w-0 text-[11px] font-bold leading-snug text-[#5C1A34]">
+                        <span className="flex-1 min-w-0 text-[11px] font-bold leading-snug text-[#262454]">
                             {boxOn ? "Prasad Box added" : "Add Prasad Box"}
                             <span className={`font-normal ${boxOn ? "text-[#8A8A8A]" : "text-[#8A5A12]"}`}>
                                 {" "}
@@ -286,7 +286,7 @@ function PackageCard({
                             </span>
                         </span>
                         {boxOn ? (
-                            <span className="shrink-0 text-[11.5px] font-bold text-[#D63D72]">
+                            <span className="shrink-0 text-[11.5px] font-bold text-[#4C3F91]">
                                 +{money(PRASAD_BOX_PRICE)}
                             </span>
                         ) : (
@@ -312,10 +312,10 @@ function PackageCard({
                     onClick={() => onOpenChange(!open)}
                     aria-expanded={open}
                     aria-label={open ? "Hide box contents" : `See what's in the ${freeBox ? freeBox.name : "Prasad Box"}`}
-                    className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] cursor-pointer ${
+                    className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-lg border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#4C3F91] cursor-pointer ${
                         open
-                            ? "border-[#F8B5CB] bg-[#FFF1F5] text-[#D63D72]"
-                            : "border-[#F4DFC2] bg-white text-[#8A8A8A] hover:border-[#F8A9C4] hover:text-[#D63D72]"
+                            ? "border-[#C9C3ED] bg-[#F1EEFB] text-[#4C3F91]"
+                            : "border-[#E6E1F5] bg-white text-[#8A8A8A] hover:border-[#C3BBEA] hover:text-[#4C3F91]"
                     }`}
                 >
                     <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -335,7 +335,7 @@ function PackageCard({
                             summary line above, and the ₹151-per-extra-name rule
                             is stated once under the whole package list — saying
                             either again here was pure repetition. */}
-                        <div className="pt-2.5 border-t border-[#F8B5CB]">
+                        <div className="pt-2.5 border-t border-[#C9C3ED]">
                             <Block
                                 title={freeBox ? `${freeBox.name} — free` : `Prasad Box — ${money(PRASAD_BOX_PRICE)}`}
                             >
@@ -367,7 +367,7 @@ function Line({ icon, children }: { icon?: React.ReactNode; children: React.Reac
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
     return (
         <div>
-            <p className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#D63D72] mb-1">
+            <p className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-wide text-[#4C3F91] mb-1">
                 <PackageOpen className="w-3 h-3 text-[#E7B63A]" />
                 {title}
             </p>

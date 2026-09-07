@@ -136,8 +136,8 @@ export default function HeroBannerCarousel({
                         aria-current={i === index}
                         className={`h-1.5 rounded-full transition-all ${
                             i === index
-                                ? "w-4 bg-[#D63D72]"
-                                : "w-1.5 bg-[#5C1A34]/30 hover:bg-[#5C1A34]/50"
+                                ? "w-4 bg-[#4C3F91]"
+                                : "w-1.5 bg-[#262454]/30 hover:bg-[#262454]/50"
                         }`}
                     />
                 ))}

@@ -40,8 +40,8 @@ const UPGRADE_NUDGE_DELAY_MS = 2500;
 const UPGRADE_NUDGE_VISIBLE_MS = 11000;
 
 const INPUT =
-    "w-full bg-[#FFF2E4] border border-[#F4DFC2] rounded-xl px-4 py-3 text-sm text-[#5C1A34] placeholder-[#8A8A8A] focus:outline-none focus:border-[#D63D72] focus:ring-2 focus:ring-[#F8B5CB] transition-all";
-const LABEL = "text-[11px] font-bold text-[#7A3E55] uppercase tracking-wide mb-1.5 block";
+    "w-full bg-[#F3F0FB] border border-[#E6E1F5] rounded-xl px-4 py-3 text-sm text-[#262454] placeholder-[#8A8A8A] focus:outline-none focus:border-[#4C3F91] focus:ring-2 focus:ring-[#C9C3ED] transition-all";
+const LABEL = "text-[11px] font-bold text-[#4F4A85] uppercase tracking-wide mb-1.5 block";
 
 // Meta's browser pixel drops _fbp / _fbc; both are forwarded to the server so
 // its CAPI Purchase can be matched and deduplicated against the browser event.
@@ -130,7 +130,7 @@ export default function BankeBihariBookingPage() {
         gotra: "",
         phone: "",
         email: "",
-        // Janmashtami's main seva is performed around the Nishith Kaal
+        // Sharad Purnima's main seva is performed around the Nishith Kaal
         // (midnight) muhurat, so the booking is stamped near that hour.
         time: "23:30",
         // Extra people taken during the Sankalp alongside the main devotee.
@@ -318,7 +318,7 @@ export default function BankeBihariBookingPage() {
     const boxLabel = shippedBox
         ? `${shippedBox.name}${selectedPkg.freePrasadBox ? " (free)" : ` (paid add-on ${money(PRASAD_BOX_PRICE)})`}: ${shipList.join(", ")}`
         : "";
-    // e.g. "Shree Banke Bihari Ji Janmashtami Mahapuja — Shringar Seva [Premium Prasad Box (free): Dry prasad…]"
+    // e.g. "Shree Banke Bihari Ji Sharad Purnima Mahapuja — Shringar Seva [Premium Prasad Box (free): Dry prasad…]"
     const packageLabel = `${puja.poojaNameEng} — ${selectedPkg.name}${boxLabel ? ` [${boxLabel}]` : ""}`;
 
     // Line-item breakdown reported to Meta alongside `value`. The package price
@@ -729,7 +729,7 @@ export default function BankeBihariBookingPage() {
                     contact: isIndia ? phoneDigits : `+${phoneDigits}`,
                     email: form.email.trim() || `user${phoneDigits}@panditjiatrequest.com`,
                 },
-                theme: { color: "#D63D72" },
+                theme: { color: "#4C3F91" },
                 handler: async (response: any) => {
                     try {
                         setSubmitting(true);
@@ -832,12 +832,12 @@ export default function BankeBihariBookingPage() {
     }, [resumeCheckout, step]);
 
     return (
-        <div className="bbb-page min-h-screen bg-[#FFF9F2] w-full max-w-md mx-auto border-x border-[#F4DFC2] relative pb-28">
+        <div className="bbb-page min-h-screen bg-[#FAF8FF] w-full max-w-md mx-auto border-x border-[#E6E1F5] relative pb-28">
             <CheckoutRecommendationsSheet
                 isOpen={showCheckoutRecommendations}
                 source="banke_bihari_checkout_recommendations"
-                shopTags={["krishna", "janmashtami", "banke bihari", "radha krishna", "vrindavan"]}
-                pujaTerms={["krishna", "janmashtami", "banke bihari", "radha", "radha krishna", "vrindavan", "gopal", "laddu gopal"]}
+                shopTags={["krishna", "sharad purnima", "banke bihari", "radha krishna", "vrindavan"]}
+                pujaTerms={["krishna", "sharad purnima", "banke bihari", "radha", "radha krishna", "vrindavan", "gopal", "laddu gopal"]}
                 excludePoojaID={BANKE_BIHARI_POOJA_ID}
                 recommendedProductId="6a83fa6eb744c5f101fa8162"
                 recommendedPujaId="6865a255380dcc9b941768a7"
@@ -877,18 +877,18 @@ export default function BankeBihariBookingPage() {
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#F4DFC2] px-4 py-3 flex items-center gap-3">
+            <div className="sticky top-0 z-40 bg-[#FAF8FF]/95 backdrop-blur-md border-b border-[#E6E1F5] px-4 py-3 flex items-center gap-3">
                 <button
                     onClick={() => (location.key !== "default" ? navigate(-1) : navigate(`/${BANKE_BIHARI_PUJA_SLUG}`))}
                     aria-label="Go back"
-                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#F4DFC2] shadow-sm active:scale-90 transition-transform shrink-0"
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#E6E1F5] shadow-sm active:scale-90 transition-transform shrink-0"
                 >
-                    <ArrowLeft className="w-4 h-4 text-[#5C1A34]" />
+                    <ArrowLeft className="w-4 h-4 text-[#262454]" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-[15px] font-bold text-[#5C1A34] leading-tight truncate">Complete Your Janmashtami Seva</h1>
-                    <p className="text-[11px] text-[#7A3E55] flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-[#D63D72] shrink-0" />
+                    <h1 className="text-[15px] font-bold text-[#262454] leading-tight truncate">Complete Your Sharad Purnima Seva</h1>
+                    <p className="text-[11px] text-[#4F4A85] flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-[#4C3F91] shrink-0" />
                         <span className="truncate">{puja.templeName} · {puja.templeLocation}</span>
                     </p>
                 </div>
@@ -925,7 +925,7 @@ export default function BankeBihariBookingPage() {
                 onDismiss={() => setUpgradeOffer(null)}
             />
 
-            {/* Janmashtami occasion ribbon — peacock green & gold */}
+            {/* Sharad Purnima occasion ribbon — peacock green & gold */}
             <div className="bg-gradient-to-r from-[#1F7A50] via-[#2E8B57] to-[#1F7A50] text-center py-2 px-4 border-y border-[#E7B63A]/40">
                 <p className="text-[10.5px] font-bold tracking-[0.16em] uppercase text-[#F6D36A]">
                     {puja.occasion} · {puja.pujaDate} · ॐ नमो भगवते वासुदेवाय
@@ -936,13 +936,13 @@ export default function BankeBihariBookingPage() {
     the visitor's IP on the server, so there is no manual override on
     screen. Left here, commented, so bringing it back is one uncomment
     (plus its import above).
-                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#F4DFC2] bg-[#FFF2E4]">
-                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#7A3E55]">
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#E6E1F5] bg-[#F3F0FB]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-[#4F4A85]">
                         Paying from
                     </span>
                     <CountryPicker
-                        className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
-                        accentClass="text-[#D63D72]"
+                        className="bg-white border border-[#E6E1F5] text-[#262454] hover:border-[#4C3F91]"
+                        accentClass="text-[#4C3F91]"
                     />
                 </div>
 */}
@@ -952,21 +952,21 @@ export default function BankeBihariBookingPage() {
                 {step === "details" ? (
                     <div className="space-y-6">
                         {/* Order summary — reflects the chosen package + extras */}
-                        <div className="bg-white border border-[#F4DFC2] rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,.07)]">
+                        <div className="bg-white border border-[#E6E1F5] rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,.07)]">
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                    <p className="text-[13.5px] font-bold text-[#5C1A34] leading-snug">{puja.poojaNameEng}</p>
-                                    <p className="text-[11px] text-[#D63D72] font-semibold mt-0.5">{selectedPkg.name} package</p>
+                                    <p className="text-[13.5px] font-bold text-[#262454] leading-snug">{puja.poojaNameEng}</p>
+                                    <p className="text-[11px] text-[#4C3F91] font-semibold mt-0.5">{selectedPkg.name} package</p>
                                 </div>
-                                <span className="flex items-center gap-1 shrink-0 bg-[#FFF2E4] border border-[#E7B63A]/40 text-[#5C1A34] rounded-full px-2 py-0.5 text-[11px] font-bold">
+                                <span className="flex items-center gap-1 shrink-0 bg-[#F3F0FB] border border-[#E7B63A]/40 text-[#262454] rounded-full px-2 py-0.5 text-[11px] font-bold">
                                     ★ {puja.rating}
                                 </span>
                             </div>
 
-                            <div className="mt-2.5 pt-2.5 border-t border-[#F4DFC2] space-y-2">
+                            <div className="mt-2.5 pt-2.5 border-t border-[#E6E1F5] space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[12.5px] text-[#555555] font-medium">{selectedPkg.name}</span>
-                                    <span className="text-[13px] font-bold text-[#5C1A34]">{money(basePrice)}</span>
+                                    <span className="text-[13px] font-bold text-[#262454]">{money(basePrice)}</span>
                                 </div>
 
                                 {/* Offerings made in your name — shown as "Included"
@@ -997,7 +997,7 @@ export default function BankeBihariBookingPage() {
                                     {selectedPkg.freePrasadBox ? (
                                         <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">Free</span>
                                     ) : prasadCost > 0 ? (
-                                        <span className="text-[13px] font-bold text-[#5C1A34] shrink-0">+{money(prasadCost)}</span>
+                                        <span className="text-[13px] font-bold text-[#262454] shrink-0">+{money(prasadCost)}</span>
                                     ) : (
                                         <span className="text-[11px] font-semibold text-[#8A8A8A] shrink-0">Not added</span>
                                     )}
@@ -1017,30 +1017,30 @@ export default function BankeBihariBookingPage() {
                                 {chargedMembers > 0 && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-[12.5px] text-[#555555] font-medium flex items-center gap-1.5">
-                                            <Users className="w-3.5 h-3.5 text-[#D63D72]" />
+                                            <Users className="w-3.5 h-3.5 text-[#4C3F91]" />
                                             Extra Sankalp × {chargedMembers}
                                         </span>
-                                        <span className="text-[13px] font-bold text-[#5C1A34]">+{money(familyCost)}</span>
+                                        <span className="text-[13px] font-bold text-[#262454]">+{money(familyCost)}</span>
                                     </div>
                                 )}
 
                                 {shopSubtotal > 0 && (
                                     <div className="flex items-center justify-between">
                                         <span className="min-w-0 truncate pr-3 text-[12.5px] text-[#555555] font-medium">{shopCartItems.map((line) => `${line.product.title}${line.qty > 1 ? ` ×${line.qty}` : ""}`).join(", ") || "Shop additions"}</span>
-                                        <span className="text-[13px] font-bold text-[#5C1A34]">{money(shopSubtotal)}</span>
+                                        <span className="text-[13px] font-bold text-[#262454]">{money(shopSubtotal)}</span>
                                     </div>
                                 )}
 
                                 {selectedRelatedPuja && (
                                     <div className="flex items-center justify-between">
                                         <span className="min-w-0 truncate pr-3 text-[12.5px] text-[#555555] font-medium">{selectedRelatedPuja.poojaNameEng}</span>
-                                        <span className="text-[13px] font-bold text-[#5C1A34]">{money(selectedRelatedPuja.poojaPriceOffline || 0)}</span>
+                                        <span className="text-[13px] font-bold text-[#262454]">{money(selectedRelatedPuja.poojaPriceOffline || 0)}</span>
                                     </div>
                                 )}
 
-                                <div className="flex items-baseline justify-between pt-2 border-t border-[#F4DFC2]">
+                                <div className="flex items-baseline justify-between pt-2 border-t border-[#E6E1F5]">
                                     <span className="text-[10px] font-bold uppercase tracking-wide text-[#8A8A8A]">Total</span>
-                                    <span className="text-xl font-extrabold text-[#D63D72]">{money(payablePrice)}</span>
+                                    <span className="text-xl font-extrabold text-[#4C3F91]">{money(payablePrice)}</span>
                                 </div>
                             </div>
                         </div>
@@ -1054,10 +1054,10 @@ export default function BankeBihariBookingPage() {
 
                         {/* Step 1: Devotee Details */}
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#F4DFC2]">
-                                <span className="w-7 h-7 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center font-bold text-sm">01</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#E6E1F5]">
+                                <span className="w-7 h-7 rounded-full bg-[#F1EEFB] border border-[#C9C3ED] text-[#4C3F91] flex items-center justify-center font-bold text-sm">01</span>
                                 <div>
-                                    <h3 className="font-bold text-[#5C1A34] text-[14px]">Devotee Details</h3>
+                                    <h3 className="font-bold text-[#262454] text-[14px]">Devotee Details</h3>
                                     <p className="text-[11px] text-[#8A8A8A]">For the main Sankalp</p>
                                 </div>
                             </div>
@@ -1070,7 +1070,7 @@ export default function BankeBihariBookingPage() {
                                         onChange={(phone) => setForm((f) => ({ ...f, phone }))}
                                         onBlur={trackCustomerDetails}
                                         inputClass={INPUT}
-                                        prefixClass="text-[#D63D72]"
+                                        prefixClass="text-[#4C3F91]"
                                     />
                                     <p className="text-[10.5px] text-[#8A8A8A] mt-1">
                                         We WhatsApp your puja video and updates here.
@@ -1120,10 +1120,10 @@ export default function BankeBihariBookingPage() {
 
                         {/* Step 2: Family Sankalp — free up to the package allowance, then ₹151 each */}
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#F4DFC2]">
-                                <span className="w-7 h-7 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center font-bold text-sm">02</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#E6E1F5]">
+                                <span className="w-7 h-7 rounded-full bg-[#F1EEFB] border border-[#C9C3ED] text-[#4C3F91] flex items-center justify-center font-bold text-sm">02</span>
                                 <div>
-                                    <h3 className="font-bold text-[#5C1A34] text-[14px]">Family Sankalp</h3>
+                                    <h3 className="font-bold text-[#262454] text-[14px]">Family Sankalp</h3>
                                     <p className="text-[11px] text-[#8A8A8A]">
                                         {selectedPkg.freeFamilyMembers > 0
                                             ? `${selectedPkg.freeFamilyMembers} free in ${selectedPkg.name} · ${money(EXTRA_FAMILY_MEMBER_PRICE)} each after`
@@ -1149,7 +1149,7 @@ export default function BankeBihariBookingPage() {
                                 "not added yet" warning — until it is. */}
                             <div
                                 className={`rounded-2xl border p-3 space-y-2.5 transition-colors ${
-                                    pendingFamilyName ? "border-[#D63D72] bg-[#FFF1F5]" : "border-[#F4DFC2] bg-white"
+                                    pendingFamilyName ? "border-[#4C3F91] bg-[#F1EEFB]" : "border-[#E6E1F5] bg-white"
                                 }`}
                             >
                                 <div className="grid grid-cols-2 gap-2">
@@ -1179,7 +1179,7 @@ export default function BankeBihariBookingPage() {
                                     type="button"
                                     onClick={addFamilyMember}
                                     disabled={!pendingFamilyName}
-                                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#E63B74] to-[#FF6A88] hover:from-[#D22E65] hover:to-[#F04B73] disabled:from-[#F4DFC2] disabled:to-[#F4DFC2] disabled:text-[#8A8A8A] text-white font-bold text-[13px] py-2.5 transition-all active:scale-95 disabled:active:scale-100 cursor-pointer disabled:cursor-not-allowed"
+                                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#5B4FA0] to-[#8B7FD1] hover:from-[#3B3178] hover:to-[#6D61B9] disabled:from-[#E6E1F5] disabled:to-[#E6E1F5] disabled:text-[#8A8A8A] text-white font-bold text-[13px] py-2.5 transition-all active:scale-95 disabled:active:scale-100 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     <Plus className="w-4 h-4" />
                                     {pendingFamilyName
@@ -1190,7 +1190,7 @@ export default function BankeBihariBookingPage() {
                                 {/* The whole point of this block: make "typed but not
                                     added" impossible to mistake for "added". */}
                                 {pendingFamilyName && (
-                                    <p className="flex items-start gap-1.5 text-[11px] font-semibold text-[#D63D72] leading-snug">
+                                    <p className="flex items-start gap-1.5 text-[11px] font-semibold text-[#4C3F91] leading-snug">
                                         <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
                                         {pendingFamilyName} is not added yet — tap the Add button above to include them in the Sankalp.
                                     </p>
@@ -1202,11 +1202,11 @@ export default function BankeBihariBookingPage() {
                                     {form.familyMembers.map((m, idx) => (
                                         <div
                                             key={`${m.name}-${idx}`}
-                                            className="flex items-center gap-2 bg-[#FFF2E4] border border-[#F4DFC2] rounded-xl px-3 py-2"
+                                            className="flex items-center gap-2 bg-[#F3F0FB] border border-[#E6E1F5] rounded-xl px-3 py-2"
                                         >
                                             <Check className="w-3.5 h-3.5 text-[#2E8B57] shrink-0" strokeWidth={3} />
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-[12.5px] font-bold text-[#5C1A34] truncate">{m.name}</p>
+                                                <p className="text-[12.5px] font-bold text-[#262454] truncate">{m.name}</p>
                                                 <p className="text-[10.5px] text-[#8A8A8A] truncate">
                                                     Gotra: {m.gotra || "Kashyap (default)"}
                                                 </p>
@@ -1214,13 +1214,13 @@ export default function BankeBihariBookingPage() {
                                             {idx < selectedPkg.freeFamilyMembers ? (
                                                 <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">FREE</span>
                                             ) : (
-                                                <span className="text-[11px] font-bold text-[#D63D72] shrink-0">+{money(EXTRA_FAMILY_MEMBER_PRICE)}</span>
+                                                <span className="text-[11px] font-bold text-[#4C3F91] shrink-0">+{money(EXTRA_FAMILY_MEMBER_PRICE)}</span>
                                             )}
                                             <button
                                                 type="button"
                                                 onClick={() => removeFamilyMember(idx)}
                                                 aria-label={`Remove ${m.name}`}
-                                                className="text-[#8A8A8A] hover:text-[#D63D72] transition-colors shrink-0"
+                                                className="text-[#8A8A8A] hover:text-[#4C3F91] transition-colors shrink-0"
                                             >
                                                 <X className="w-4 h-4" />
                                             </button>
@@ -1231,7 +1231,7 @@ export default function BankeBihariBookingPage() {
 
                             {form.familyMembers.length > 0 && (
                                 <p className="flex items-center gap-1.5 text-[11px] text-[#8A8A8A]">
-                                    <Users className="w-3.5 h-3.5 text-[#D63D72] shrink-0" />
+                                    <Users className="w-3.5 h-3.5 text-[#4C3F91] shrink-0" />
                                     {form.familyMembers.length} member{form.familyMembers.length > 1 ? "s" : ""} added
                                     {chargedMembers > 0 ? ` · +${money(familyCost)}` : " · all free"}
                                 </p>
@@ -1250,10 +1250,10 @@ export default function BankeBihariBookingPage() {
                             the detail page must not have to wonder where the
                             option went, and must never be charged for it. */}
                         {!prasadShippable ? (
-                            <div className="flex items-start gap-2.5 rounded-2xl border border-[#F4DFC2] bg-[#FFF2E4] px-3.5 py-3">
+                            <div className="flex items-start gap-2.5 rounded-2xl border border-[#E6E1F5] bg-[#F3F0FB] px-3.5 py-3">
                                 <Gift className="w-4 h-4 text-[#E7B63A] shrink-0 mt-px" />
-                                <p className="text-[11.5px] text-[#7A3E55] leading-snug">
-                                    <b className="text-[#5C1A34]">Prasad box ships within India only.</b>{" "}
+                                <p className="text-[11.5px] text-[#4F4A85] leading-snug">
+                                    <b className="text-[#262454]">Prasad box ships within India only.</b>{" "}
                                     It is not part of your total, and no delivery address is
                                     needed. Your seva, Sankalp and video are unaffected —
                                     the recording reaches you on WhatsApp as usual.
@@ -1261,10 +1261,10 @@ export default function BankeBihariBookingPage() {
                             </div>
                         ) : (
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#F4DFC2]">
-                                <span className="w-7 h-7 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center font-bold text-sm">03</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#E6E1F5]">
+                                <span className="w-7 h-7 rounded-full bg-[#F1EEFB] border border-[#C9C3ED] text-[#4C3F91] flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
-                                    <h3 className="font-bold text-[#5C1A34] text-[14px]">Prasad Box</h3>
+                                    <h3 className="font-bold text-[#262454] text-[14px]">Prasad Box</h3>
                                     <p className="text-[11px] text-[#8A8A8A]">
                                         {selectedPkg.freePrasadBox
                                             ? `Included free with ${selectedPkg.name}`
@@ -1306,10 +1306,10 @@ export default function BankeBihariBookingPage() {
                             box there is nothing to courier, so this step is hidden. */}
                         {needsDelivery && (
                         <div className="space-y-3 pb-6">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#F4DFC2]">
-                                <span className="w-7 h-7 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center font-bold text-sm">04</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-[#E6E1F5]">
+                                <span className="w-7 h-7 rounded-full bg-[#F1EEFB] border border-[#C9C3ED] text-[#4C3F91] flex items-center justify-center font-bold text-sm">04</span>
                                 <div>
-                                    <h3 className="font-bold text-[#5C1A34] text-[14px]">Delivery Address</h3>
+                                    <h3 className="font-bold text-[#262454] text-[14px]">Delivery Address</h3>
                                     <p className="text-[11px] text-[#8A8A8A]">Where we courier your {shippedBox?.name}</p>
                                 </div>
                             </div>
@@ -1329,24 +1329,24 @@ export default function BankeBihariBookingPage() {
                                     {addresses.map((addr) => (
                                         <label
                                             key={addr._id}
-                                            className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-[#D63D72] bg-[#FFF1F5]" : "border-[#F4DFC2]"}`}
+                                            className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-[#4C3F91] bg-[#F1EEFB]" : "border-[#E6E1F5]"}`}
                                         >
                                             <input
                                                 type="radio"
                                                 name="addressSelect"
                                                 checked={selectedAddressId === addr._id}
                                                 onChange={() => setSelectedAddressId(addr._id)}
-                                                className="mt-1 text-[#D63D72] focus:ring-[#D63D72] border-[#F4DFC2]"
+                                                className="mt-1 text-[#4C3F91] focus:ring-[#4C3F91] border-[#E6E1F5]"
                                             />
                                             <div className="text-[12.5px] text-[#555555] leading-relaxed">
-                                                <span className="font-bold text-[11px] text-[#D63D72] uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
+                                                <span className="font-bold text-[11px] text-[#4C3F91] uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
                                                 {addr.addressLine1 || addr.houseNo}, {addr.addressLine2 || addr.street}, {addr.city}, {addr.state} - {addr.pincode}
                                             </div>
                                         </label>
                                     ))}
                                     <button
                                         onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
-                                        className="text-[#D63D72] hover:text-[#B92C5C] text-xs font-bold pt-1 block cursor-pointer"
+                                        className="text-[#4C3F91] hover:text-[#3B3178] text-xs font-bold pt-1 block cursor-pointer"
                                     >
                                         + Add New Address
                                     </button>
@@ -1354,9 +1354,9 @@ export default function BankeBihariBookingPage() {
                             )}
 
                             {(!user || showNewAddressForm) && (
-                                <div className="bg-white border border-[#F4DFC2] rounded-2xl p-4 shadow-sm space-y-3">
-                                    <div className="flex items-center justify-between pb-1 border-b border-[#F4DFC2]">
-                                        <span className="text-[12px] font-bold text-[#5C1A34]">Delivery Address Details</span>
+                                <div className="bg-white border border-[#E6E1F5] rounded-2xl p-4 shadow-sm space-y-3">
+                                    <div className="flex items-center justify-between pb-1 border-b border-[#E6E1F5]">
+                                        <span className="text-[12px] font-bold text-[#262454]">Delivery Address Details</span>
                                         {user && addresses.length > 0 && (
                                             <button
                                                 onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
@@ -1457,14 +1457,14 @@ export default function BankeBihariBookingPage() {
                         >
                             <Check className="w-10 h-10 text-[#F6D36A]" strokeWidth={3} />
                         </motion.div>
-                        <h3 className="bbb-serif font-bold text-[#5C1A34] mt-5 text-2xl">
+                        <h3 className="bbb-serif font-bold text-[#262454] mt-5 text-2xl">
                             Booking Confirmed! 🙏
                         </h3>
                         <p className="text-[13px] text-[#555555] mt-2 max-w-[280px] leading-relaxed">
-                            Your <span className="font-semibold text-[#5C1A34]">{puja.poojaNameEng}</span> at <span className="font-semibold text-[#5C1A34]">{puja.templeName}</span> is booked for <span className="font-semibold text-[#5C1A34]">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
+                            Your <span className="font-semibold text-[#262454]">{puja.poojaNameEng}</span> at <span className="font-semibold text-[#262454]">{puja.templeName}</span> is booked for <span className="font-semibold text-[#262454]">{puja.pujaDate}</span>. Our team will WhatsApp you the puja video with your name &amp; gotra shortly.
                         </p>
-                        <p className="text-[13px] font-serif font-bold text-[#D63D72] mt-3">ॐ नमो भगवते वासुदेवाय</p>
-                        <button onClick={() => navigate("/account?tab=live")} className="mt-6 w-full bg-gradient-to-r from-[#E63B74] to-[#FF6A88] text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
+                        <p className="text-[13px] font-serif font-bold text-[#4C3F91] mt-3">ॐ नमो भगवते वासुदेवाय</p>
+                        <button onClick={() => navigate("/account?tab=live")} className="mt-6 w-full bg-gradient-to-r from-[#5B4FA0] to-[#8B7FD1] text-white font-bold py-3.5 rounded-2xl active:scale-95 transition-transform cursor-pointer">
                             Done
                         </button>
                     </motion.div>
@@ -1473,19 +1473,19 @@ export default function BankeBihariBookingPage() {
 
             {/* Sticky Footer */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#F4DFC2] px-5 py-4">
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-[#E6E1F5] px-5 py-4">
                     {error && (
-                        <p className="text-[#B92C5C] text-[12px] font-semibold mb-3 text-center">{error}</p>
+                        <p className="text-[#3B3178] text-[12px] font-semibold mb-3 text-center">{error}</p>
                     )}
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[10px] text-[#8A8A8A] font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D63D72]">{money(payablePrice)}</span>
+                            <span className="text-[20px] font-extrabold text-[#4C3F91]">{money(payablePrice)}</span>
                         </div>
                         <button
                             onClick={() => { void handleConfirm(); }}
                             disabled={submitting}
-                            className="flex items-center gap-1.5 bg-gradient-to-r from-[#E63B74] to-[#FF6A88] hover:from-[#D22E65] hover:to-[#F04B73] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-[#D63D72]/25 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                            className="flex items-center gap-1.5 bg-gradient-to-r from-[#5B4FA0] to-[#8B7FD1] hover:from-[#3B3178] hover:to-[#6D61B9] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-[#4C3F91]/25 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
                         >
                             {submitting ? (
                                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>

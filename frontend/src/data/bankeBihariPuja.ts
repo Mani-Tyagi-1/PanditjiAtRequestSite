@@ -1,11 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  Shree Banke Bihari Ji Janmashtami Mahapuja — FRONTEND-ONLY puja detail data.
+//  Shree Banke Bihari Ji Sharad Purnima Mahapuja — FRONTEND-ONLY puja detail data.
 //
 //  This is an ONLINE puja: the puja is performed on the devotee's behalf by
 //  verified pandits at Shri Banke Bihari Ji Mandir (Vrindavan, Mathura, Uttar
-//  Pradesh) on KRISHNA JANMASHTAMI — Friday, 4 September 2026. The devotee
-//  receives the puja video (with their name & gotra) on WhatsApp and can have
-//  blessed prasad couriered home. Nobody visits the devotee's home.
+//  Pradesh) on SHARAD PURNIMA — Sunday, 25 October 2026, the moonlit night of
+//  Krishna Ji's Maha Raas. The devotee receives the puja video (with their
+//  name & gotra) on WhatsApp and can have blessed prasad couriered home.
+//  Nobody visits the devotee's home.
 //
 //  Shaped like a backend pooja document so it can be handed straight to the
 //  dedicated page — no fetch-by-id call is made for the CONTENT.
@@ -68,14 +69,17 @@ export const PRASAD_BOX_PRICE = 501;
 export const EXTRA_FAMILY_MEMBER_PRICE = 151;
 
 /**
- * Krishna Janmashtami 2026 — Bhadrapada Krishna Ashtami.
+ * Sharad Purnima 2026 — Ashwin Purnima, the night of Krishna Ji's Maha Raas.
+ *
+ * The purnima tithi runs 25 Oct 11:55 AM IST → 26 Oct 9:41 AM IST; the night
+ * observance (Nishith Kaal) therefore falls on the night of Sunday 25 October.
  *
  * ⚠️  Confirm against the panchang before the campaign goes live; if the
  *     tithi resolves to a different day, update this AND the dates written
  *     into `poojaDescription` / `faqs` below, plus `specialDate` in
  *     server/src/scripts/seedBankeBihariPuja.ts.
  */
-export const BANKE_BIHARI_PUJA_DATE = "September 4, 2026";
+export const BANKE_BIHARI_PUJA_DATE = "October 25, 2026";
 
 // ── Prasad box ────────────────────────────────────────────────────────────
 //
@@ -225,22 +229,9 @@ export const PEACOCK_FEATHER_IMAGE =
     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/peacock%20feather%20(2).webp";
 
 /**
- * Mid-page CTA artwork — a fully designed strip (Laddu Gopal Ji, the headline
- * "Seek the blessings of Banke Bihari Ji on this Janmashtami", a gold "Proceed
- * to Payment" button and a trust line), so the page renders it on its own with
- * no overlaid copy or container chrome.
- *
- * Exported on an oversized 1536×1024 canvas with a wide transparent margin, so
- * it must be requested through `optimizedImg(..., { trim: true })` — untrimmed,
- * the empty margin lays out as ~40% dead vertical space. Trimmed it is 2.49:1.
- */
-export const CTA_BANNER_IMAGE =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/banke%20bihari%20ji%20cta.webp";
-
-/**
  * Bansuri-and-mor-pankh motif — Krishna Ji's flute laid across a peacock feather
- * with plumeria and gold tassels. The page's signature Janmashtami ornament,
- * used as a centred section divider.
+ * with plumeria and gold tassels. The page's signature ornament, evoking the
+ * Maha Raas of Sharad Purnima, used as a centred section divider.
  *
  * Same oversized 1536×1024 canvas as the other artwork, so it also wants
  * `optimizedImg(..., { trim: true })`; trimmed it is 1.67:1. Verified to have a
@@ -264,7 +255,7 @@ export const MAKHAN_MATKI_IMAGE =
 /**
  * Slide 0 of the hero carousel, and the artwork this puja is represented by
  * everywhere else: `poojaCardImage`, `poojaMainImage`, the page's `og:image`
- * and LCP preload, and the Janmashtami slot on the Home page.
+ * and LCP preload, and this puja's slot on the Home page.
  *
  * Every consumer serves it through `optimizedImg`/`bannerImg`, which resizes to
  * display width and re-encodes to WebP at the edge — so the ~2.6 MB PNG origin
@@ -273,7 +264,7 @@ export const MAKHAN_MATKI_IMAGE =
  * fallback cheap too.
  */
 export const BANNER_IMG =
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banke%20Bihariji%20banner1.png";
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/shrad%20purnima%201.png.webp";
 
 /**
  * ▶ PASTE EXTRA HERO BANNERS HERE ◀
@@ -288,12 +279,11 @@ export const BANNER_IMG =
  *
  * Same 2:1-ish crop as the first banner for all of them — the hero band is a
  * fixed height, so a portrait image will be cropped to fit, not letterboxed.
- * All three below are 1672x941 (16:9), so the band crops each identically.
+ * Both below are 1672x941 (16:9), so the band crops each identically.
  */
 export const BANNER_IMAGES: string[] = [
     BANNER_IMG,
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banke%20Bihariji%20banner2.png",
-    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Banke%20Bihariji%20banner3.png",
+    "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/shrad%20purnima%202.png.webp",
 ];
 
 
@@ -314,10 +304,10 @@ export const BANKE_BIHARI_PACKAGES: PujaPackage[] = [
     {
         id: "makhan",
         name: "Makhan Bhog Seva",
-        tagline: "The essential Janmashtami seva",
+        tagline: "The essential Sharad Purnima seva",
         price: 1100,
         core: [
-            "Janmashtami Mahapuja performed in your name",
+            "Sharad Purnima Mahapuja performed in your name",
             "Personalised Sankalp with your name & gotra",
             "Full puja video shared on WhatsApp",
         ],
@@ -437,14 +427,14 @@ export const bankeBihariPuja = {
     // also carry the puja name, so a stable string is fine here.
     _id: BANKE_BIHARI_POOJA_ID,
     poojaID: BANKE_BIHARI_POOJA_ID,
-    poojaNameEng: "Shree Banke Bihari Ji Janmashtami Mahapuja",
-    poojaNameHindi: "श्री बांके बिहारी जी जन्माष्टमी महापूजा",
+    poojaNameEng: "Shree Banke Bihari Ji Sharad Purnima Mahapuja",
+    poojaNameHindi: "श्री बांके बिहारी जी शरद पूर्णिमा महापूजा",
     poojaMode: "online", // performed at Shri Banke Bihari Ji Mandir on your behalf
     poojaPriceOnline: 1100,
     poojaPriceOffline: 1100,
     poojaGods: [] as string[],
-    // Banner / card artwork — the designed Janmashtami banner (opaque, no
-    // transparent margin). The hero renders it with `object-cover`.
+    // Banner / card artwork — the designed banner (opaque, no transparent
+    // margin). The hero renders it with `object-cover`.
     poojaCardImage: BANNER_IMG,
     poojaMainImage: BANNER_IMG,
     // The hero carousel reads this. [0] stays the LCP/og image.
@@ -458,18 +448,18 @@ export const bankeBihariPuja = {
     templeLocation: "Vrindavan, Mathura",
     rating: 4.6,
     devoteesLabel: "13K+",
-    /** Scheduled date of this puja — Krishna Janmashtami 2026. */
+    /** Scheduled date of this puja — Sharad Purnima 2026. */
     pujaDate: BANKE_BIHARI_PUJA_DATE,
-    /** Janmashtami framing shown in the hero. */
-    occasion: "Krishna Janmashtami",
-    occasionHindi: "जन्माष्टमी",
+    /** Sharad Purnima framing shown in the hero. */
+    occasion: "Sharad Purnima",
+    occasionHindi: "शरद पूर्णिमा",
     /** Short outcome bullets shown in the "Why perform this puja" card. */
     benefits: [
         "Banke Bihari Ji is the most loving swaroop of Shri Krishna Ji — his kripa fulfils every heartfelt wish",
-        "Janmashtami seva at Vrindavan brings prem, shanti and happiness into the home",
+        "Sharad Purnima seva at Vrindavan — the moonlit night of Krishna Ji's Maha Raas — brings prem, shanti and happiness into the home",
         "Removes rukawat in marriage, love and family relationships",
         "Blesses children with good health, buddhi, sanskaar and a bright future",
-        "As Yogeshwar Krishna Ji, brings abundance, growth and success in business",
+        "On the night Goddess Lakshmi herself is said to walk the earth, this seva invites abundance, growth and success in business",
         "Frees the mind from chinta and grants bhakti, contentment and inner peace",
     ],
 
@@ -483,37 +473,37 @@ export const bankeBihariPuja = {
     samagriDetails: [] as any[],
     samagriPrice: 0,
     poojaBenefitsDescription:
-        "Verified pandits perform the Janmashtami Mahapuja on your behalf at Shri Banke Bihari Ji Mandir in Vrindavan with traditional Vedic vidhi.<br>\r\nA personalised Sankalp is done in your name and gotra so the seva is dedicated to you and your family.<br>\r\nOfferings include Panchamrit abhishek, makhan-mishri bhog, peetambar vastra, tulsi archana, vaijayanti mala and mor pankh, with Krishna Ji mantra japa and the midnight Janmashtami aarti.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and blessed prasad couriered to your home.<br>",
+        "Verified pandits perform the Sharad Purnima Mahapuja on your behalf at Shri Banke Bihari Ji Mandir in Vrindavan with traditional Vedic vidhi.<br>\r\nA personalised Sankalp is done in your name and gotra so the seva is dedicated to you and your family.<br>\r\nOfferings include Panchamrit abhishek, makhan-mishri bhog, peetambar vastra, tulsi archana, vaijayanti mala and mor pankh, with Krishna Ji mantra japa and the moonlit Raas Purnima aarti.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and blessed prasad couriered to your home.<br>",
     poojaDescription: [
         {
             headingId: "1",
             heading: "Purpose of Puja",
             description:
-                "<p>To seek the <strong>kripa</strong> of <strong>Shri Banke Bihari Ji</strong> — the enchanting swaroop of <strong>Shri Krishna Ji</strong> who resides in <strong>Vrindavan</strong> and is worshipped as the deity who never refuses a devotee who comes with love.</p><p>This online seva is performed on your behalf at his mandir in <strong>Vrindavan</strong> on <strong>Krishna Janmashtami</strong> — the night of his avataran — to invite prem, prosperity, family harmony and the fulfilment of your heart's wish.</p>",
+                "<p>To seek the <strong>kripa</strong> of <strong>Shri Banke Bihari Ji</strong> — the enchanting swaroop of <strong>Shri Krishna Ji</strong> who resides in <strong>Vrindavan</strong> and is worshipped as the deity who never refuses a devotee who comes with love.</p><p>This online seva is performed on your behalf at his mandir in <strong>Vrindavan</strong> on <strong>Sharad Purnima</strong> — the moonlit night on which Krishna Ji is believed to have performed his eternal <strong>Maha Raas</strong> with Radha Rani and the gopis — to invite prem, prosperity, family harmony and the fulfilment of your heart's wish.</p>",
         },
         {
             headingId: "2",
             heading: "Best Time to Perform",
             description:
-                "<p><strong>Day:</strong> Friday, 4 September 2026 — <strong>Krishna Janmashtami</strong>, the Ashtami of Bhadrapada Krishna Paksha.</p><p>The <strong>Nishith Kaal</strong> (midnight muhurat) of Janmashtami — the very moment of Kanha Ji's birth — is held to be the most powerful time of the entire year to invoke Shri Krishna. Seva offered at <strong>Vrindavan</strong> on this night is believed to carry manifold merit.</p>",
+                "<p><strong>Day:</strong> Sunday, 25 October 2026 — <strong>Sharad Purnima</strong>, the full moon of Ashwin Purnima, also known as Raas Purnima and Kojagari Purnima.</p><p>The <strong>Nishith Kaal</strong> (midnight muhurat), when the full moon shines brightest and is believed to shower amrit over the earth, is held to be the most powerful time of the year to invoke Shri Krishna. Seva offered at <strong>Vrindavan</strong> on this night is believed to carry manifold merit.</p>",
         },
         {
             headingId: "3",
             heading: "Benefits of Puja",
             description:
-                "<p>• <strong>Kripa</strong> of Banke Bihari Ji — the fulfilment of your heartfelt wish.</p><p> • Brings <strong>prem, shanti</strong> and happiness into the home.</p><p> • Removes <strong>rukawat</strong> in marriage, love and family relationships.</p><p> • Blesses <strong>children</strong> with health, buddhi and sanskaar.</p><p> • As <strong>Yogeshwar Krishna Ji</strong>, brings growth and success in business.</p><p> • Frees the mind from chinta and grants <strong>bhakti</strong> and contentment.</p>",
+                "<p>• <strong>Kripa</strong> of Banke Bihari Ji — the fulfilment of your heartfelt wish.</p><p> • Brings <strong>prem, shanti</strong> and happiness into the home.</p><p> • Removes <strong>rukawat</strong> in marriage, love and family relationships.</p><p> • Blesses <strong>children</strong> with health, buddhi and sanskaar.</p><p> • Invites the <strong>kripa of Goddess Lakshmi</strong>, believed to walk the earth this night, bringing growth and success in business.</p><p> • Frees the mind from chinta and grants <strong>bhakti</strong> and contentment.</p>",
         },
         {
             headingId: "4",
             heading: "What is performed",
             description:
-                "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Banke Bihari Ji Mandir, Vrindavan</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Panchamrit abhishek</strong> of Laddu Gopal Ji, <strong>makhan-mishri bhog</strong>, tulsi archana, <strong>Krishna Ji mantra japa</strong> and the midnight <strong>Janmashtami aarti</strong>.</p><p>The entire seva is dedicated specifically to you and your family, and is recorded for you.</p>",
+                "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Banke Bihari Ji Mandir, Vrindavan</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Panchamrit abhishek</strong> of Laddu Gopal Ji, <strong>makhan-mishri bhog</strong>, tulsi archana, <strong>Krishna Ji mantra japa</strong> and the moonlit midnight <strong>Raas Purnima aarti</strong>.</p><p>The entire seva is dedicated specifically to you and your family, and is recorded for you.</p>",
         },
         {
             headingId: "5",
             heading: "Offerings made on your behalf",
             description:
-                "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha Ji</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and murli offered at his charan</p><p> • <strong>Krishna Ji mantra japa</strong> and the midnight Janmashtami aarti</p>",
+                "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha Ji</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and murli offered at his charan</p><p> • <strong>Krishna Ji mantra japa</strong> and the moonlit midnight Raas Purnima aarti</p>",
         },
         {
             headingId: "6",
@@ -525,19 +515,19 @@ export const bankeBihariPuja = {
             headingId: "7",
             heading: "Colours Preferred",
             description:
-                "<p><strong>Peela (yellow)</strong> and <strong>Mor-pankhi (peacock green-blue)</strong></p><p>Yellow is the colour of Krishna Ji's <strong>peetambar</strong>, marking joy, auspiciousness and abundance, while peacock green-blue reflects the <strong>mor pankh</strong> he wears in his crown. Together they are the most auspicious colours for his worship.</p>",
+                "<p><strong>Safed (white)</strong> and <strong>Chandi (silver)</strong></p><p>White is the colour of the full Sharad moon and marks purity and peace, while silver echoes the glow of Chandrama himself. Together they are the most auspicious colours for worship on this moonlit night.</p>",
         },
         {
             headingId: "8",
             heading: "Things to remember",
             description:
-                "<p>• Share the correct name &amp; gotra for an accurate Sankalp.</p><p> • Keep a vrat on Janmashtami if your health allows, and break it after midnight.</p><p> • Chant <strong>ॐ नमो भगवते वासुदेवाय</strong> through the day if you can.</p><p> • Offering makhan-mishri and tulsi dal at home multiplies the merit.</p><p> • Watch the puja video shared with you and offer prayers sincerely.</p>",
+                "<p>• Share the correct name &amp; gotra for an accurate Sankalp.</p><p> • Keep a vrat on Sharad Purnima if your health allows, and break it after moonrise.</p><p> • Chant <strong>ॐ नमो भगवते वासुदेवाय</strong> through the day if you can.</p><p> • Placing a bowl of kheer under the open moonlight overnight and taking it as prasad the next morning is a cherished custom of this night.</p><p> • Watch the puja video shared with you and offer prayers sincerely.</p>",
         },
     ],
     faqs: [
         {
             question: "When exactly is this puja performed?",
-            answer: "On Friday, 4 September 2026 — Krishna Janmashtami. The main seva is performed around the Nishith Kaal (midnight muhurat), and the exact timing is confirmed with you on WhatsApp before the puja begins.",
+            answer: "On Sunday, 25 October 2026 — Sharad Purnima. The main seva is performed around the Nishith Kaal (midnight muhurat), and the exact timing is confirmed with you on WhatsApp before the puja begins.",
         },
         {
             question: "Will I get the puja video?",
@@ -548,8 +538,8 @@ export const bankeBihariPuja = {
             answer: "Banke Bihari Ji is the beloved swaroop of Shri Krishna Ji worshipped at Vrindavan. 'Banke' means bent in three places (tribhanga) and 'Bihari' means the supreme enjoyer. He is known as the deity of prem and kripa, who fulfils the wishes of anyone who comes to him with love.",
         },
         {
-            question: "Why is Vrindavan special for Janmashtami puja?",
-            answer: "Vrindavan is Krishna Ji's own leela bhoomi — the land of his childhood, his raas and his makhan chori. Seva offered here on Janmashtami, the night of his avataran, is held to be among the most meritorious worship a devotee can offer.",
+            question: "Why is Vrindavan special for Sharad Purnima puja?",
+            answer: "Vrindavan is Krishna Ji's own leela bhoomi — the land of his childhood, his raas and his makhan chori. Sharad Purnima is believed to be the very night Krishna Ji performed the divine Maha Raas with Radha Rani and the gopis here, so seva offered at Vrindavan on this night is held to be among the most meritorious worship a devotee can offer.",
         },
         {
             question: "Is the prasad box included?",

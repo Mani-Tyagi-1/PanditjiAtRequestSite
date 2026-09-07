@@ -39,7 +39,7 @@ export default function MahakaalCompletionPopup({
                             <Check className="h-4 w-4 text-[#FFD98A]" strokeWidth={3} />
                         </span>
                         <p className="min-w-0 flex-1 text-[12px] font-semibold leading-snug">
-                           🙏 This sacred puja has concluded with divine blessings. May the Divine’s grace always be with you and your loved ones. Continue your devotion with Krishna Janmashtami Sewa.
+                           🙏 This sacred puja has concluded with divine blessings. May the Divine’s grace always be with you and your loved ones. Continue your devotion with Sharad Purnima Sewa.
                         </p>
                         <button
                             type="button"

@@ -72,9 +72,9 @@ type ToneSpec = {
 
 const TONES: Record<Tone, ToneSpec> = {
     pink: {
-        frame: "border-[#F8B5CB] bg-white",
-        icon: "text-[#D63D72]",
-        label: "text-[#5C1A34]",
+        frame: "border-[#C9C3ED] bg-white",
+        icon: "text-[#4C3F91]",
+        label: "text-[#262454]",
         hiFrame: "border-[#E7B63A] bg-white ring-2 ring-[#E7B63A]",
         hiLabel: "text-[#8A5A12]",
     },
@@ -86,9 +86,9 @@ const TONES: Record<Tone, ToneSpec> = {
         hiLabel: "text-[#8A5A12]",
     },
     sand: {
-        frame: "border-[#E0CDB4] bg-[#FFF8F0]",
+        frame: "border-[#D8D2ED] bg-[#F5F3FC]",
         icon: "text-[#8A5A12]",
-        label: "text-[#5C1A34]",
+        label: "text-[#262454]",
         hiFrame: "border-[#E7B63A] bg-white ring-2 ring-[#E7B63A]",
         hiLabel: "text-[#8A5A12]",
     },
@@ -97,7 +97,7 @@ const TONES: Record<Tone, ToneSpec> = {
     // label colour is unreadable on a magenta fill.
     onDark: {
         frame: "border-white/50 bg-white",
-        icon: "text-[#D63D72]",
+        icon: "text-[#4C3F91]",
         label: "text-white",
         hiFrame: "border-[#F7C547] bg-white ring-2 ring-[#F7C547]",
         hiLabel: "text-[#FFD98A]",
@@ -139,7 +139,7 @@ export function ItemTile({
                 ) : (
                     <span
                         className="w-full h-full flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg,#FFF8F0 0%,#FFECCF 55%,#FFE9D8 100%)" }}
+                        style={{ background: "linear-gradient(135deg,#F5F3FC 0%,#E9E4F9 55%,#E9E4F9 100%)" }}
                     >
                         <Icon className={`w-5 h-5 ${t.icon}`} />
                     </span>

@@ -70,7 +70,7 @@ function redirectHtml(to) {
 <script>window.location.replace(${JSON.stringify(to)});</script>
 </head>
 <body>
-<p>This puja has concluded. Redirecting to <a href="${href}">Krishna Janmashtami Sewa</a>…</p>
+<p>This puja has concluded. Redirecting to <a href="${href}">Sharad Purnima Sewa</a>…</p>
 </body>
 </html>
 `;

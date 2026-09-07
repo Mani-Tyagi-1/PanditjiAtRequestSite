@@ -1,6 +1,6 @@
 /**
- * Seeds the "Shree Banke Bihari Ji Janmashtami Mahapuja" (Shri Banke Bihari Ji
- * Mandir, Vrindavan) catalog entry.
+ * Seeds the "Shree Banke Bihari Ji Sharad Purnima Mahapuja" (Shri Banke Bihari
+ * Ji Mandir, Vrindavan) catalog entry.
  *
  * WHY THIS EXISTS
  * ───────────────
@@ -9,7 +9,7 @@
  * document — the server reads `poojaNameEng` off that document and stamps it
  * onto the booking, the WhatsApp/email confirmation, the pandit notification,
  * the admin record and the referral entry. Without its own catalog row the
- * puja has to borrow another puja's `_id`, and every Janmashtami booking is
+ * puja has to borrow another puja's `_id`, and every Sharad Purnima booking is
  * reported under that other puja's name.
  *
  * The document is keyed on `poojaID: "RF_BIHARI_01"` — a stable string, not a
@@ -54,8 +54,8 @@ const BANNER =
  */
 const BANKE_BIHARI_PUJA = {
   poojaID: POOJA_ID,
-  poojaNameEng: "Shree Banke Bihari Ji Janmashtami Mahapuja",
-  poojaNameHindi: "श्री बांके बिहारी जी जन्माष्टमी महापूजा",
+  poojaNameEng: "Shree Banke Bihari Ji Sharad Purnima Mahapuja",
+  poojaNameHindi: "श्री बांके बिहारी जी शरद पूर्णिमा महापूजा",
   poojaMode: "online" as const,
   poojaPriceOnline: 1100,
   poojaPriceOffline: 1100,
@@ -64,47 +64,47 @@ const BANKE_BIHARI_PUJA = {
   poojaGods: ["Shri Krishna Ji", "Banke Bihari Ji", "Laddu Gopal Ji"],
   benefits: [
     "Banke Bihari Ji is the most loving swaroop of Shri Krishna Ji — his kripa fulfils every heartfelt wish",
-    "Janmashtami seva at Vrindavan brings prem, shanti and happiness into the home",
+    "Sharad Purnima seva at Vrindavan — the moonlit night of Krishna Ji's Maha Raas — brings prem, shanti and happiness into the home",
     "Removes rukawat in marriage, love and family relationships",
     "Blesses children with good health, buddhi, sanskaar and a bright future",
-    "As Yogeshwar Krishna Ji, brings abundance, growth and success in business",
+    "On the night Goddess Lakshmi herself is said to walk the earth, this seva invites abundance, growth and success in business",
     "Frees the mind from chinta and grants bhakti, contentment and inner peace",
   ],
-  tags: ["Janmashtami", "Banke Bihari", "Vrindavan", "Krishna"],
+  tags: ["Sharad Purnima", "Raas Purnima", "Banke Bihari", "Vrindavan", "Krishna"],
   // Dakshina must stay <= the price: the booking controller derives the stored
   // pooja price as (amount - panditDakshina).
   panditDakshina: 251,
   samagriDetails: [] as any[],
   samagriPrice: 0,
-  // Krishna Janmashtami 2026 — confirm against the panchang before launch and
+  // Sharad Purnima 2026 — confirm against the panchang before launch and
   // keep in sync with BANKE_BIHARI_PUJA_DATE in the frontend data file.
-  specialDate: new Date("2026-09-04T00:00:00.000Z"),
+  specialDate: new Date("2026-10-25T00:00:00.000Z"),
   poojaBenefitsDescription:
-    "Verified pandits perform the Janmashtami Mahapuja on your behalf at Shri Banke Bihari Ji Mandir in Vrindavan with traditional Vedic vidhi.<br>\r\nA personalised Sankalp is done in your name and gotra so the seva is dedicated to you and your family.<br>\r\nOfferings include Panchamrit abhishek, makhan-mishri bhog, peetambar vastra, tulsi archana, vaijayanti mala and mor pankh, with Krishna Ji mantra japa and the midnight Janmashtami aarti.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and blessed prasad couriered to your home.<br>",
+    "Verified pandits perform the Sharad Purnima Mahapuja on your behalf at Shri Banke Bihari Ji Mandir in Vrindavan with traditional Vedic vidhi.<br>\r\nA personalised Sankalp is done in your name and gotra so the seva is dedicated to you and your family.<br>\r\nOfferings include Panchamrit abhishek, makhan-mishri bhog, peetambar vastra, tulsi archana, vaijayanti mala and mor pankh, with Krishna Ji mantra japa and the moonlit Raas Purnima aarti.<br>\r\nYou receive the puja video with your name &amp; gotra on WhatsApp, and blessed prasad couriered to your home.<br>",
   poojaDescription: [
     {
       headingId: "1",
       heading: "Purpose of Puja",
       description:
-        "<p>To seek the <strong>kripa</strong> of <strong>Shri Banke Bihari Ji</strong> — the enchanting swaroop of <strong>Shri Krishna Ji</strong> who resides in <strong>Vrindavan</strong> and is worshipped as the deity who never refuses a devotee who comes with love.</p><p>This online seva is performed on your behalf at his mandir in <strong>Vrindavan</strong> on <strong>Krishna Janmashtami</strong> — the night of his avataran — to invite prem, prosperity, family harmony and the fulfilment of your heart's wish.</p>",
+        "<p>To seek the <strong>kripa</strong> of <strong>Shri Banke Bihari Ji</strong> — the enchanting swaroop of <strong>Shri Krishna Ji</strong> who resides in <strong>Vrindavan</strong> and is worshipped as the deity who never refuses a devotee who comes with love.</p><p>This online seva is performed on your behalf at his mandir in <strong>Vrindavan</strong> on <strong>Sharad Purnima</strong> — the moonlit night on which Krishna Ji is believed to have performed his eternal <strong>Maha Raas</strong> with Radha Rani and the gopis — to invite prem, prosperity, family harmony and the fulfilment of your heart's wish.</p>",
     },
     {
       headingId: "2",
       heading: "Best Time to Perform",
       description:
-        "<p><strong>Day:</strong> Friday, 4 September 2026 — <strong>Krishna Janmashtami</strong>, the Ashtami of Bhadrapada Krishna Paksha.</p><p>The <strong>Nishith Kaal</strong> (midnight muhurat) of Janmashtami — the very moment of Kanha Ji's birth — is held to be the most powerful time of the entire year to invoke Shri Krishna Ji.</p>",
+        "<p><strong>Day:</strong> Sunday, 25 October 2026 — <strong>Sharad Purnima</strong>, the full moon of Ashwin Purnima, also known as Raas Purnima and Kojagari Purnima.</p><p>The <strong>Nishith Kaal</strong> (midnight muhurat), when the full moon shines brightest and is believed to shower amrit over the earth, is held to be the most powerful time of the year to invoke Shri Krishna Ji.</p>",
     },
     {
       headingId: "3",
       heading: "What is performed",
       description:
-        "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Banke Bihari Ji Mandir, Vrindavan</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Panchamrit abhishek</strong> of Laddu Gopal Ji, <strong>makhan-mishri bhog</strong>, tulsi archana, <strong>Krishna Ji mantra japa</strong> and the midnight <strong>Janmashtami aarti</strong>.</p>",
+        "<p>Verified pandits perform the complete Vedic vidhi at <strong>Shri Banke Bihari Ji Mandir, Vrindavan</strong> — <strong>Sankalp in your name &amp; gotra</strong>, <strong>Panchamrit abhishek</strong> of Laddu Gopal Ji, <strong>makhan-mishri bhog</strong>, tulsi archana, <strong>Krishna Ji mantra japa</strong> and the moonlit midnight <strong>Raas Purnima aarti</strong>.</p>",
     },
     {
       headingId: "4",
       heading: "Offerings made on your behalf",
       description:
-        "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha Ji</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and bansuri offered at his charan</p><p> • <strong>Krishna Ji mantra japa</strong> and the midnight Janmashtami aarti</p>",
+        "<p>• <strong>Panchamrit abhishek</strong> — milk, dahi, ghee, honey and sugar</p><p> • <strong>Makhan-mishri</strong> bhog, the offering dearest to Kanha Ji</p><p> • <strong>Peetambar vastra</strong> and chandan shringar</p><p> • <strong>Tulsi dal</strong> archana and vaijayanti mala</p><p> • <strong>Mor pankh</strong> and bansuri offered at his charan</p><p> • <strong>Krishna Ji mantra japa</strong> and the moonlit midnight Raas Purnima aarti</p>",
     },
     {
       headingId: "5",
@@ -117,7 +117,7 @@ const BANKE_BIHARI_PUJA = {
     {
       question: "When exactly is this puja performed?",
       answer:
-        "On Friday, 4 September 2026 — Krishna Janmashtami. The main seva is performed around the Nishith Kaal (midnight muhurat), and the exact timing is confirmed with you on WhatsApp before the puja begins.",
+        "On Sunday, 25 October 2026 — Sharad Purnima. The main seva is performed around the Nishith Kaal (midnight muhurat), and the exact timing is confirmed with you on WhatsApp before the puja begins.",
     },
     {
       question: "Will I get the puja video?",
@@ -133,6 +133,11 @@ const BANKE_BIHARI_PUJA = {
       question: "Is the prasad box included?",
       answer:
         "The prasad box is FREE in the ₹5100 Shringar Seva (dry prasad, murli, jaap counter, Radha naam tulsi mala, mor pankh, a small handi for Laddu Gopal Ji and 3 Laddu Gopal Ji dresses) and in the ₹11000 Raj Bhog Seva, which also adds a brass Laddu Gopal Ji idol and carries 5 Laddu Gopal Ji dresses. In the ₹1100 and ₹2100 packages it is an optional ₹501 add-on chosen during booking.",
+    },
+    {
+      question: "Why is Vrindavan special for Sharad Purnima puja?",
+      answer:
+        "Vrindavan is Krishna Ji's own leela bhoomi — the land of his childhood, his raas and his makhan chori. Sharad Purnima is believed to be the very night Krishna Ji performed the divine Maha Raas with Radha Rani and the gopis here, so seva offered at Vrindavan on this night is held to be among the most meritorious worship a devotee can offer.",
     },
   ],
   isActive: true,

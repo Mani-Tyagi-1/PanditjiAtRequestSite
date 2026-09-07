@@ -97,7 +97,7 @@ export default function PackageUpgradeNudge({
                         className="rounded-2xl px-3 pt-2 pb-3 ring-1 ring-white/25 shadow-[0_16px_40px_rgba(0,0,0,.36)] cursor-grab active:cursor-grabbing"
                         style={{
                             background:
-                                "linear-gradient(105deg,#7E1B40 0%,#B82A5C 45%,#D63D72 100%)",
+                                "linear-gradient(105deg,#241F4A 0%,#4A3D8F 45%,#4C3F91 100%)",
                         }}
                     >
                         {/* Grabber — advertises that this can be swiped away,

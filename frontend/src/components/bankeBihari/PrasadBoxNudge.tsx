@@ -73,7 +73,7 @@ export default function PrasadBoxNudge({
                         The first version used the page's own tinted-card palette
                         — pale green on ivory, white on ivory — which is correct
                         for a card that BELONGS to the page and exactly wrong for
-                        one that has to interrupt it. On a #FFF9F2 background a
+                        one that has to interrupt it. On a #FAF8FF background a
                         #EDF9F0 panel is invisible. These two fills appear nowhere
                         else in the column, so the toast reads as a layer on top
                         of the page rather than another block in it. */}
@@ -83,7 +83,7 @@ export default function PrasadBoxNudge({
                         className="pointer-events-auto flex items-center gap-2.5 rounded-2xl px-3 py-2.5 ring-1 ring-white/25 shadow-[0_14px_36px_rgba(0,0,0,.34)]"
                         style={{
                             background: isOffer
-                                ? "linear-gradient(100deg,#B82A5C 0%,#D63D72 55%,#F05C83 100%)"
+                                ? "linear-gradient(100deg,#4A3D8F 0%,#4C3F91 55%,#7A6FC4 100%)"
                                 : "linear-gradient(100deg,#186043 0%,#1F7A50 55%,#2E8B57 100%)",
                         }}
                     >

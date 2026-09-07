@@ -16,7 +16,7 @@ import { optimizedImg } from "../utils/img";
 import analytics from "../utils/analytics";
 import {
     bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, DEFAULT_PACKAGE_ID, getPackage,
-    PEACOCK_FEATHER_IMAGE, CTA_BANNER_IMAGE, FLUTE_FEATHER_IMAGE,
+    PEACOCK_FEATHER_IMAGE, FLUTE_FEATHER_IMAGE,
     PRASAD_BOX_PRICE, EXTRA_FAMILY_MEMBER_PRICE, PRASAD_BOXES, BANKE_BIHARI_PACKAGES,
     canAddPrasadBox, prasadBoxCost, packageOfferings, packageTotal, shippedPrasadBox,
     type PujaPackageId,
@@ -68,20 +68,20 @@ const PRASAD_NUDGE_DELAY_MS = 3500;
  */
 const PACKAGES_SCROLL_OFFSET = 70;
 
-// Banke Bihari Janmashtami online-puja devotee reviews (auto-scrolling marquee).
+// Banke Bihari Sharad Purnima online-puja devotee reviews (auto-scrolling marquee).
 type Review = { name: string; rating: number; date: string; text: string; verified: boolean };
 const PLACEHOLDER_REVIEWS: Review[] = [
-    { name: "Ashok Mishra", rating: 5, date: "1 week ago", text: "Pichli seva ka experience achha tha, is baar Janmashtami bhi yahin se book ki. 🙏", verified: true },
+    { name: "Ashok Mishra", rating: 5, date: "1 week ago", text: "Pichli seva ka experience achha tha, is baar Sharad Purnima bhi yahin se book ki. 🙏", verified: true },
     { name: "Meher Prakash", rating: 5, date: "3 weeks ago", text: "Booking process simple tha aur support bhi achha mila.", verified: true },
     { name: "Ashu Dogra", rating: 4, date: "2 weeks ago", text: "Kashi Rudrabhishek ke baad trust bana, ab Vrindavan ki seva bhi book kar di.", verified: true },
     { name: "Sourav Sahoo", rating: 5, date: "1 month ago", text: "Sab details clearly mil gayi thi, isliye bina soche booking kar di.", verified: true },
     { name: "Amit Beriha", rating: 4, date: "5 days ago", text: "Pehle bhi seva karwayi thi, experience sahi raha tha.", verified: true },
-    { name: "Dr. Rahul Singh", rating: 5, date: "2 months ago", text: "Kashi wali puja ka video time par mila tha, isliye Janmashtami seva bhi book ki.", verified: true },
+    { name: "Dr. Rahul Singh", rating: 5, date: "2 months ago", text: "Kashi wali puja ka video time par mila tha, isliye Sharad Purnima seva bhi book ki.", verified: true },
     { name: "Anshul Sharma", rating: 5, date: "3 weeks ago", text: "Team ka response quick tha. Booking karna kaafi easy laga.", verified: true },
     { name: "Shripad Hebbar", rating: 4, date: "1 month ago", text: "Sab kuch transparent laga. Achha experience raha.", verified: true },
     { name: "Deepti Gupta", rating: 5, date: "2 weeks ago", text: "Kashi mein seva achhi lagi thi, ab Banke Bihari Ji ke liye bhi booking kar di. 🙏", verified: true },
     { name: "Sapna Saxena", rating: 4, date: "6 days ago", text: "Website use karna easy tha aur booking jaldi ho gayi.", verified: true },
-    { name: "Sunita Sharma", rating: 5, date: "1 month ago", text: "Pehle Rudrabhishek karwaya tha, sab sahi raha. Is baar Janmashtami seva bhi book ki.", verified: true },
+    { name: "Sunita Sharma", rating: 5, date: "1 month ago", text: "Pehle Rudrabhishek karwaya tha, sab sahi raha. Is baar Sharad Purnima seva bhi book ki.", verified: true },
     { name: "Rekha Sharma", rating: 4, date: "3 weeks ago", text: "Kashi ki puja aur video se bharosa bana, ab Vrindavan ki seva bhi yahin se li.", verified: true },
 ];
 
@@ -128,9 +128,9 @@ function PeacockFeather({ className = "", flip = false }: { className?: string; 
 }
 
 /**
- * Bansuri-and-mor-pankh section divider — the page's signature Janmashtami
- * ornament. Purely decorative, so it is `aria-hidden` and contributes no
- * accessible name.
+ * Bansuri-and-mor-pankh section divider — the page's signature ornament,
+ * evoking Krishna Ji's moonlit Maha Raas on Sharad Purnima. Purely
+ * decorative, so it is `aria-hidden` and contributes no accessible name.
  *
  * The artwork already carries its own flowers and tassels, so it is centred on
  * bare page background with no flanking rules — adding them made the band read
@@ -153,13 +153,13 @@ function FluteDivider({ className = "w-44", opacity = "" }: { className?: string
     );
 }
 
-// ── Small UI pieces (Janmashtami palette: ivory, Krishna pink, temple gold) ──
+// ── Small UI pieces (Sharad Purnima palette: moonlit ivory, indigo dusk, temple gold) ──
 function Stars({ value, className = "w-3.5 h-3.5" }: { value: number; className?: string }) {
     const full = Math.round(value);
     return (
         <span className="inline-flex items-center gap-0.5" role="img" aria-label={`Rated ${value} out of 5`}>
             {[1, 2, 3, 4, 5].map((i) => (
-                <Star key={i} className={`${className} ${i <= full ? "text-[#E7B63A] fill-[#E7B63A]" : "text-[#F4DFC2]"}`} />
+                <Star key={i} className={`${className} ${i <= full ? "text-[#E7B63A] fill-[#E7B63A]" : "text-[#E6E1F5]"}`} />
             ))}
         </span>
     );
@@ -171,7 +171,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
     const [open, setOpen] = useState(defaultOpen);
     const panelId = useId();
     return (
-        <div className={`bg-white border rounded-2xl overflow-hidden transition-colors ${open ? "border-[#D63D72]/45" : "border-[#F4DFC2]"}`}>
+        <div className={`bg-white border rounded-2xl overflow-hidden transition-colors ${open ? "border-[#4C3F91]/45" : "border-[#E6E1F5]"}`}>
             <button
                 type="button"
                 aria-expanded={open}
@@ -181,14 +181,14 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
                     setOpen(next);
                     if (next) track("puja_accordion_open", { section: title }, true);
                 }}
-                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-[#D63D72] outline-none"
+                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-[#4C3F91] outline-none"
             >
-                <span className="flex items-center gap-2 text-[14px] font-bold text-[#5C1A34]">
+                <span className="flex items-center gap-2 text-[14px] font-bold text-[#262454]">
                     {icon}{title}
                 </span>
-                <ChevronDown className={`w-4 h-4 text-[#D63D72] shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-[#4C3F91] shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
-            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-[#555555] leading-relaxed border-t border-[#F4DFC2]">
+            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-[#555555] leading-relaxed border-t border-[#E6E1F5]">
                 {children}
             </div>
         </div>
@@ -197,7 +197,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
 
 function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
-        <h3 className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-[#D63D72] mb-2.5">
+        <h3 className="flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wider text-[#4C3F91] mb-2.5">
             {icon}{children}
         </h3>
     );
@@ -210,9 +210,9 @@ function ReviewMarquee({ reviews }: { reviews: Review[] }) {
             <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
             <div className="review-track flex gap-2.5">
                 {items.map((r, i) => (
-                    <div key={i} className="shrink-0 w-56 bg-white border border-[#F4DFC2] rounded-xl p-3 shadow-sm">
+                    <div key={i} className="shrink-0 w-56 bg-white border border-[#E6E1F5] rounded-xl p-3 shadow-sm">
                         <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-[#5C1A34] text-[12px]">{r.name}</span>
+                            <span className="font-bold text-[#262454] text-[12px]">{r.name}</span>
                             {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-[#2E8B57] shrink-0" />}
                             <span className="ml-auto text-[9px] text-[#8A8A8A]">{r.date}</span>
                         </div>
@@ -251,11 +251,11 @@ function HeroCountdown({ target }: { target: number }) {
     const min = Math.floor((remaining % 3600000) / 60000);
     const sec = Math.floor((remaining % 60000) / 1000);
     return (
-        <div className="absolute bottom-2 right-2 z-10 rounded-lg bg-[#FFF1F5]/95 backdrop-blur-sm border border-[#F8B5CB] px-2.5 py-1.5 shadow-lg text-right">
-            <p className="text-[7.5px] font-bold uppercase tracking-wider text-[#7A3E55] leading-none mb-0.5">
-                Janmashtami seva closes in
+        <div className="absolute bottom-2 right-2 z-10 rounded-lg bg-[#F1EEFB]/95 backdrop-blur-sm border border-[#C9C3ED] px-2.5 py-1.5 shadow-lg text-right">
+            <p className="text-[7.5px] font-bold uppercase tracking-wider text-[#4F4A85] leading-none mb-0.5">
+                Sharad Purnima seva closes in
             </p>
-            <p className="text-[12px] font-bold text-[#D63D72] tabular-nums leading-none">
+            <p className="text-[12px] font-bold text-[#4C3F91] tabular-nums leading-none">
                 {days}d {pad2(hrs)}h {pad2(min)}m {pad2(sec)}s
             </p>
         </div>
@@ -263,11 +263,12 @@ function HeroCountdown({ target }: { target: number }) {
 }
 
 // ── Page ───────────────────────────────────────────────────────
-// FRONTEND-ONLY Shree Banke Bihari Ji Janmashtami Mahapuja — an online puja
+// FRONTEND-ONLY Shree Banke Bihari Ji Sharad Purnima Mahapuja — an online puja
 // performed on the devotee's behalf at Shri Banke Bihari Ji Mandir, Vrindavan
-// on Krishna Janmashtami. Renders entirely from frontend data but carries a
-// distinct festive-temple theme (ivory / Krishna-pink / temple-gold palette,
-// peacock-feather and lotus motifs, Janmashtami offerings).
+// on Sharad Purnima, the moonlit night of Krishna Ji's Maha Raas. Renders
+// entirely from frontend data but carries a distinct festive-temple theme
+// (moonlit ivory / indigo-dusk / temple-gold palette, peacock-feather and
+// lotus motifs, Sharad Purnima offerings).
 // All data comes from src/data/bankeBihariPuja.ts.
 /**
  * The sevas whose prasad box is free — read from the packages rather than
@@ -530,7 +531,7 @@ export default function BankeBihariPage() {
             : { icon: Flower2, title: "Vrindavan Sankalp for you", sub: "Wherever in the world you are" },
     ];
 
-    // The sacred offerings made during the Janmashtami seva.
+    // The sacred offerings made during the Sharad Purnima seva.
     //
     // Panchamrit and tulsi archana are part of the Vedic vidhi itself, so they
     // are offered in EVERY package; everything after them is unlocked by the
@@ -577,7 +578,7 @@ export default function BankeBihariPage() {
     // NOTE: takes an argument, so every call site must wrap it in an arrow —
     // passing it bare as onClick would hand it the click event as `source`.
     const openBooking = (source: "sticky_cta" | "mid_page_cta_banner") => {
-        // Start a fresh form and add-on cart for a new Janmashtami booking.
+        // Start a fresh form and add-on cart for a new Sharad Purnima booking.
         clearPujaCheckoutDraft("banke-bihari");
         clearShopCart();
         track("AddToCart", {
@@ -622,7 +623,7 @@ export default function BankeBihariPage() {
     };
 
     return (
-      <div className="min-h-screen bg-[#FFF9F2] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-[#F4DFC2]">
+      <div className="min-h-screen bg-[#FAF8FF] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-[#E6E1F5]">
         <style>{`
           @media (prefers-reduced-motion: reduce){.review-track{animation:none}}
         `}</style>
@@ -631,18 +632,18 @@ export default function BankeBihariPage() {
           <title>{`${puja.poojaNameEng} at ${puja.templeName}, Vrindavan | Pandit Ji At Request`}</title>
           <meta
             name="description"
-            content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Janmashtami seva performed on your behalf at ${mandirName} on ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
+            content={`Book online ${puja.poojaNameEng} (${puja.poojaNameHindi}) — Sharad Purnima seva performed on your behalf at ${mandirName} on ${puja.pujaDate}. ${puja.benefits.slice(0, 2).join(", ")}. Verified pandits, puja video on WhatsApp.`}
           />
           <link rel="canonical" href={`https://panditjiatrequest.com/${BANKE_BIHARI_PUJA_SLUG}`} />
           {/* Social share preview (WhatsApp / Facebook / X) for ad & organic shares. */}
           <meta property="og:type" content="product" />
           <meta property="og:site_name" content="Pandit Ji At Request" />
-          <meta property="og:title" content={`${puja.poojaNameEng} — Janmashtami Puja at ${puja.templeName}, Vrindavan`} />
-          <meta property="og:description" content={`Krishna Janmashtami seva performed on your behalf at ${mandirName}. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹1100.`} />
+          <meta property="og:title" content={`${puja.poojaNameEng} — Sharad Purnima Puja at ${puja.templeName}, Vrindavan`} />
+          <meta property="og:description" content={`Sharad Purnima seva performed on your behalf at ${mandirName}, the moonlit night of Krishna Ji's Maha Raas. Sankalp in your name & gotra, puja video on WhatsApp. Packages from ₹1100.`} />
           <meta property="og:url" content={`https://panditjiatrequest.com/${BANKE_BIHARI_PUJA_SLUG}`} />
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content={`${puja.poojaNameEng} — Janmashtami Puja at Vrindavan`} />
-          <meta name="twitter:description" content={`Janmashtami seva at ${mandirName}. Packages from ₹1100, puja video on WhatsApp.`} />
+          <meta name="twitter:title" content={`${puja.poojaNameEng} — Sharad Purnima Puja at Vrindavan`} />
+          <meta name="twitter:description" content={`Sharad Purnima seva at ${mandirName}. Packages from ₹1100, puja video on WhatsApp.`} />
           {/* Image tags & the LCP preload are only emitted once the banner
               artwork exists — an empty og:image is worse than none. */}
           {image && <meta property="og:image" content={image} />}
@@ -670,29 +671,29 @@ export default function BankeBihariPage() {
 
         
 
-        <div className="sticky top-0 z-50 bg-[#FFF9F2]/90 backdrop-blur-md border-b border-[#F4DFC2] px-4 py-3 flex items-center gap-3">
+        <div className="sticky top-0 z-50 bg-[#FAF8FF]/90 backdrop-blur-md border-b border-[#E6E1F5] px-4 py-3 flex items-center gap-3">
           <button
             onClick={() =>
               location.key !== "default" ? navigate(-1) : navigate("/")
             }
             aria-label="Go back"
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#F4DFC2] shadow-sm active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#E6E1F5] shadow-sm active:scale-90 transition-transform"
           >
-            <ArrowLeft className="w-4 h-4 text-[#5C1A34]" />
+            <ArrowLeft className="w-4 h-4 text-[#262454]" />
           </button>
-          <h1 className="text-sm font-bold text-[#5C1A34] truncate flex-1">
+          <h1 className="text-sm font-bold text-[#262454] truncate flex-1">
             {puja.poojaNameEng}
           </h1>
           <button
             onClick={handleShare}
             disabled={isSharing}
             aria-label="Share"
-            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#F4DFC2] shadow-sm active:scale-90 transition-transform disabled:opacity-60"
+            className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-[#E6E1F5] shadow-sm active:scale-90 transition-transform disabled:opacity-60"
           >
             {shareCopied ? (
               <Check className="w-4 h-4 text-[#2E8B57]" />
             ) : (
-              <Share2 className="w-4 h-4 text-[#5C1A34]" />
+              <Share2 className="w-4 h-4 text-[#262454]" />
             )}
           </button>
         </div>
@@ -706,7 +707,7 @@ export default function BankeBihariPage() {
           alt={puja.poojaNameEng}
           intervalMs={3000}
           className="h-56 border-b border-[#E7B63A]/40"
-          style={{ background: "linear-gradient(135deg,#FFF8F0 0%,#FFECCF 35%,#FFF3E4 100%)" }}
+          style={{ background: "linear-gradient(135deg,#F5F3FC 0%,#E9E4F9 35%,#F3F0FB 100%)" }}
         >
           {/* Compact live countdown, tucked into the hero's bottom-right. */}
           <HeroCountdown target={targetTs} />
@@ -715,10 +716,10 @@ export default function BankeBihariPage() {
         <div className="px-4 pt-3 pb-4 space-y-4">
           {/* ── Puja name + meta ── */}
           <div>
-            <h2 className="text-xl font-bold font-serif text-[#5C1A34] leading-tight">
+            <h2 className="text-xl font-bold font-serif text-[#262454] leading-tight">
               {puja.poojaNameEng}
             </h2>
-            <p className="text-[13px] text-[#D63D72] font-medium mt-0.5">
+            <p className="text-[13px] text-[#4C3F91] font-medium mt-0.5">
               {puja.poojaNameHindi}
             </p>
             {/* Meta on two tight rows. The deity chip is gone — the title
@@ -731,7 +732,7 @@ export default function BankeBihariPage() {
               </span>
               <span className="flex items-center gap-1 text-[12px]">
                 <Stars value={puja.rating} />
-                <span className="font-bold text-[#5C1A34]">{puja.rating}</span>
+                <span className="font-bold text-[#262454]">{puja.rating}</span>
                 <span className="text-[#8A8A8A]">
                   · {puja.devoteesLabel} devotees
                 </span>
@@ -739,11 +740,11 @@ export default function BankeBihariPage() {
             </div>
             <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[12px] text-[#555555]">
               <span className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#D63D72] shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-[#4C3F91] shrink-0" />
                 {puja.templeName}, Vrindavan
               </span>
               <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#D63D72] shrink-0" />
+                <Calendar className="w-3.5 h-3.5 text-[#4C3F91] shrink-0" />
                 {puja.pujaDate}
               </span>
             </div>
@@ -781,8 +782,8 @@ export default function BankeBihariPage() {
                     Prices in
                   </span>
                   <CountryPicker
-                    className="bg-white border border-[#F4DFC2] text-[#5C1A34] hover:border-[#D63D72]"
-                    accentClass="text-[#D63D72]"
+                    className="bg-white border border-[#E6E1F5] text-[#262454] hover:border-[#4C3F91]"
+                    accentClass="text-[#4C3F91]"
                   />
                 </div>
 */}
@@ -819,10 +820,10 @@ export default function BankeBihariPage() {
             {/* Running total, so the two price-changing choices on this page
                 (package + prasad box) always add up in front of the devotee
                 rather than only in the sticky bar. */}
-            <div className="mt-3 rounded-2xl border border-[#F4DFC2] bg-white p-3 shadow-sm">
+            <div className="mt-3 rounded-2xl border border-[#E6E1F5] bg-white p-3 shadow-sm">
               <div className="flex items-center justify-between text-[12.5px] text-[#555555]">
                 <span>{selectedPkg.name}</span>
-                <span className="font-bold text-[#5C1A34]">
+                <span className="font-bold text-[#262454]">
                   {money(selectedPkg.price)}
                 </span>
               </div>
@@ -836,18 +837,18 @@ export default function BankeBihariPage() {
                 {selectedPkg.freePrasadBox ? (
                   <span className="text-[11px] font-bold text-[#2E8B57]">FREE</span>
                 ) : prasadBoxAdded ? (
-                  <span className="font-bold text-[#5C1A34]">
+                  <span className="font-bold text-[#262454]">
                     +{money(prasadBoxCost(selectedPkg, true))}
                   </span>
                 ) : (
                   <span className="text-[11px] font-semibold text-[#8A8A8A]">Not added</span>
                 )}
               </div>
-              <div className="mt-2 pt-2 border-t border-[#F4DFC2] flex items-baseline justify-between">
+              <div className="mt-2 pt-2 border-t border-[#E6E1F5] flex items-baseline justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wide text-[#8A8A8A]">
                   Total today
                 </span>
-                <span className="text-[19px] font-extrabold text-[#D63D72]">
+                <span className="text-[19px] font-extrabold text-[#4C3F91]">
                   {money(price)}
                 </span>
               </div>
@@ -868,30 +869,6 @@ export default function BankeBihariPage() {
               block it decorated. HERO_VALUE_IMAGE is kept as the paste-slot for
               that ornament. */}
 
-          {/* ── Mid-page CTA banner ──
-              The artwork carries its own bar, copy, button and trust line, so it
-              gets no container chrome of its own — no card, border or padding.
-              It reads "Proceed to Payment", so it MUST act like the CTA it
-              depicts: the whole strip is one button into the booking flow.
-              `alt` repeats the baked-in copy, which is the only way a screen
-              reader can reach it. Trimmed via the resizer because the source
-              canvas carries a wide transparent margin. */}
-          <button
-            type="button"
-            onClick={() => openBooking("mid_page_cta_banner")}
-            className="block w-full active:scale-[0.99] transition-transform outline-none focus-visible:ring-2 focus-visible:ring-[#D63D72] rounded-2xl"
-          >
-            <img
-              src={optimizedImg(CTA_BANNER_IMAGE, 900, 80, { trim: true })}
-              onError={(e) => { e.currentTarget.src = CTA_BANNER_IMAGE; }}
-              alt="Seek the blessings of Banke Bihari Ji on this Janmashtami — proceed to payment"
-              width={900}
-              height={361}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-auto"
-            />
-          </button>
           {/* ── Auto-scrolling devotee reviews ── */}
           <div>
             <SectionTitle icon={<Star className="w-3.5 h-3.5 text-[#E7B63A]" />}>
@@ -907,25 +884,25 @@ export default function BankeBihariPage() {
             name &amp; gotra on WhatsApp
           </div>
 
-          {/* ── Janmashtami offerings ── */}
+          {/* ── Sharad Purnima offerings ── */}
           <div>
             <SectionTitle icon={<Flower2 className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               What is offered in your name
             </SectionTitle>
-            <p className="-mt-1.5 mb-2 text-[11px] text-[#7A3E55]">
-              With your selected <b className="text-[#5C1A34]">{selectedPkg.name}</b>
+            <p className="-mt-1.5 mb-2 text-[11px] text-[#4F4A85]">
+              With your selected <b className="text-[#262454]">{selectedPkg.name}</b>
               {isTopPackage ? " — the fullest set of offerings" : " — higher packages offer more"}
             </p>
             <div className="grid grid-cols-4 gap-2">
               {offerings.map(({ icon: Icon, label, sub }) => (
                 <div
                   key={label}
-                  className="bg-white border border-[#F4DFC2] rounded-xl p-2 text-center shadow-sm"
+                  className="bg-white border border-[#E6E1F5] rounded-xl p-2 text-center shadow-sm"
                 >
-                  <div className="w-7 h-7 mx-auto rounded-full bg-gradient-to-br from-[#FFE9D8] to-[#F8A9C4]/60 flex items-center justify-center mb-1">
-                    <Icon className="w-3.5 h-3.5 text-[#D63D72]" />
+                  <div className="w-7 h-7 mx-auto rounded-full bg-gradient-to-br from-[#E9E4F9] to-[#C3BBEA]/60 flex items-center justify-center mb-1">
+                    <Icon className="w-3.5 h-3.5 text-[#4C3F91]" />
                   </div>
-                  <p className="text-[10.5px] font-bold text-[#5C1A34] leading-tight">{label}</p>
+                  <p className="text-[10.5px] font-bold text-[#262454] leading-tight">{label}</p>
                   <p className="text-[8.5px] text-[#8A8A8A] leading-tight mt-0.5">{sub}</p>
                 </div>
               ))}
@@ -959,17 +936,17 @@ export default function BankeBihariPage() {
                   <div
                     key={tier}
                     className={`rounded-2xl border p-3 shadow-sm ${
-                      free ? "border-[#A7D8B6] bg-[#EDF9F0]" : "border-[#E0CDB4] bg-white"
+                      free ? "border-[#A7D8B6] bg-[#EDF9F0]" : "border-[#D8D2ED] bg-white"
                     }`}
                   >
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-[12.5px] font-bold text-[#5C1A34]">{box.name}</p>
+                      <p className="text-[12.5px] font-bold text-[#262454]">{box.name}</p>
                       <p className={`text-[10px] font-bold uppercase tracking-wide shrink-0 ${free ? "text-[#1F7A50]" : "text-[#8A5A12]"}`}>
                         {how}
                       </p>
                     </div>
                     {parent && (
-                      <p className="mt-1.5 text-[11px] font-semibold text-[#7A3E55]">
+                      <p className="mt-1.5 text-[11px] font-semibold text-[#4F4A85]">
                         Everything in the {parent.name}, plus:
                       </p>
                     )}
@@ -997,8 +974,8 @@ export default function BankeBihariPage() {
 
           {/* ── How it works ── */}
           <div
-            className="rounded-2xl border border-[#F4DFC2] p-3.5 shadow-[0_10px_30px_rgba(0,0,0,.07)]"
-            style={{ background: "linear-gradient(135deg,#FFF8F0 0%,#FFF2E4 55%,#FFE9D8 100%)" }}
+            className="rounded-2xl border border-[#E6E1F5] p-3.5 shadow-[0_10px_30px_rgba(0,0,0,.07)]"
+            style={{ background: "linear-gradient(135deg,#F5F3FC 0%,#F3F0FB 55%,#E9E4F9 100%)" }}
           >
             <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               How your seva will happen
@@ -1006,7 +983,7 @@ export default function BankeBihariPage() {
             <div className="space-y-2.5">
               {[
                 "Enter your name, gotra and phone number",
-                `Pandit ji performs the Janmashtami seva at ${puja.templeName}`,
+                `Pandit ji performs the Sharad Purnima seva at ${puja.templeName}`,
                 "Sankalp is taken in your name & gotra",
                 "Puja video is shared with you on WhatsApp",
                 !prasadShippable
@@ -1016,7 +993,7 @@ export default function BankeBihariPage() {
                     : "Add the prasad box if you'd like blessed prasad couriered home",
               ].map((step, i) => (
                 <div key={i} className="flex items-start gap-2.5">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-[#FFF1F5] border border-[#F8B5CB] text-[#D63D72] flex items-center justify-center text-[11px] font-bold mt-0.5">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-[#F1EEFB] border border-[#C9C3ED] text-[#4C3F91] flex items-center justify-center text-[11px] font-bold mt-0.5">
                     {i + 1}
                   </span>
                   <span className="text-[12.5px] text-[#555555] leading-snug">{step}</span>
@@ -1027,8 +1004,8 @@ export default function BankeBihariPage() {
 
           {/* ── Why perform this puja ── */}
           <div
-            className="rounded-2xl border border-[#F4DFC2] p-3 shadow-[0_10px_30px_rgba(0,0,0,.07)]"
-            style={{ background: "linear-gradient(135deg,#FFF8F0 0%,#FFF2E4 55%,#FFE9D8 100%)" }}
+            className="rounded-2xl border border-[#E6E1F5] p-3 shadow-[0_10px_30px_rgba(0,0,0,.07)]"
+            style={{ background: "linear-gradient(135deg,#F5F3FC 0%,#F3F0FB 55%,#E9E4F9 100%)" }}
           >
             <SectionTitle icon={<Heart className="w-3.5 h-3.5 text-[#E7B63A]" />}>
               Why perform this seva
@@ -1052,7 +1029,7 @@ export default function BankeBihariPage() {
               });
               setIsEnquiryOpen(true);
             }}
-            className="w-full flex items-center justify-center gap-1.5 text-[#8A8A8A] hover:text-[#D63D72] font-semibold text-[12.5px] py-1"
+            className="w-full flex items-center justify-center gap-1.5 text-[#8A8A8A] hover:text-[#4C3F91] font-semibold text-[12.5px] py-1"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Need help? Chat on WhatsApp
@@ -1085,12 +1062,12 @@ export default function BankeBihariPage() {
               {whatYouGet.map(({ icon: Icon, title, sub }) => (
                 <div
                   key={title}
-                  className="bg-white border border-[#F4DFC2] rounded-xl p-2.5 text-center shadow-sm"
+                  className="bg-white border border-[#E6E1F5] rounded-xl p-2.5 text-center shadow-sm"
                 >
-                  <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#FFE9D8] to-[#F8A9C4]/60 flex items-center justify-center mb-1.5">
-                    <Icon className="w-4 h-4 text-[#D63D72]" />
+                  <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-[#E9E4F9] to-[#C3BBEA]/60 flex items-center justify-center mb-1.5">
+                    <Icon className="w-4 h-4 text-[#4C3F91]" />
                   </div>
-                  <p className="text-[11px] font-bold text-[#5C1A34] leading-tight">{title}</p>
+                  <p className="text-[11px] font-bold text-[#262454] leading-tight">{title}</p>
                   <p className="text-[9.5px] text-[#8A8A8A] leading-tight mt-0.5">{sub}</p>
                 </div>
               ))}
@@ -1138,8 +1115,8 @@ export default function BankeBihariPage() {
           <FluteDivider className="w-32" opacity="opacity-70" />
 
           {/* ── Footer / ecosystem ── */}
-          <footer className="pt-3 mt-2 border-t border-[#F4DFC2] text-[11px] text-[#8A8A8A] space-y-2">
-            <p className="font-bold text-[#5C1A34]">PanditJiAtRequest</p>
+          <footer className="pt-3 mt-2 border-t border-[#E6E1F5] text-[11px] text-[#8A8A8A] space-y-2">
+            <p className="font-bold text-[#262454]">PanditJiAtRequest</p>
             <p>1031, Tricity Trade Tower, Zirakpur, Punjab 140603, India</p>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               <button onClick={() => navigate("/privacypolicy")} className="underline">
@@ -1189,7 +1166,7 @@ export default function BankeBihariPage() {
         {/* ── Sticky bottom CTA (the theme's "payment bar") ── */}
         <div
           className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto shadow-[0_-6px_24px_rgba(0,0,0,.14)]"
-          style={{ background: "linear-gradient(90deg,#D63D72,#F05C83,#F4B03E)" }}
+          style={{ background: "linear-gradient(90deg,#4C3F91,#7A6FC4,#F4B03E)" }}
         >
           <div className="px-4 pt-2 pb-2.5">
             <div className="flex items-center gap-3">

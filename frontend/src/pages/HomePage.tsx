@@ -52,20 +52,20 @@ const LOGO =
 //     "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Hanuman%20gari%20ji%20banner.webp";
 // const FEATURED_PUJA_3_HREF = `/${HANUMAN_PUJA_SLUG}`;
 
-// ── LIVE featured puja banner: Banke Bihari Ji Janmashtami campaign ──
+// ── LIVE featured puja banner: Banke Bihari Ji Sharad Purnima campaign ──
 // 👉 PASTE A DEDICATED HOME CREATIVE HERE. It defaults to the puja page's own
 //    hero banner, so the slot is never broken.
-const JANMASHTAMI_BANNER = BANNER_IMG;
+const SHARAD_PURNIMA_BANNER = BANNER_IMG;
 
 // Where the banner sends the devotee. Kept next to the image so the creative and
 // its destination can never drift apart.
-const JANMASHTAMI_HREF = `/${BANKE_BIHARI_PUJA_SLUG}`;
+const SHARAD_PURNIMA_HREF = `/${BANKE_BIHARI_PUJA_SLUG}`;
 
 // Intrinsic size of the creative, used only to reserve the right amount of
 // vertical space while it loads so the sections below don't jump (CLS). Read off
 // the actual file — change these together with the URL above.
-const JANMASHTAMI_BANNER_W = 1672;
-const JANMASHTAMI_BANNER_H = 941;
+const SHARAD_PURNIMA_BANNER_W = 1672;
+const SHARAD_PURNIMA_BANNER_H = 941;
 
 
 type Pooja = {
@@ -356,7 +356,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── Featured puja banner ── Banke Bihari Ji Janmashtami.
+            {/* ── Featured puja banner ── Banke Bihari Ji Sharad Purnima.
                 One tappable creative into the themed puja page. ViewContent
                 fires here as well as on the puja page itself, so the home
                 banner's own contribution to the funnel is measurable. */}
@@ -379,16 +379,16 @@ export default function HomePage() {
                                 },
                             },
                         });
-                        navigate(JANMASHTAMI_HREF);
+                        navigate(SHARAD_PURNIMA_HREF);
                     }}
                     aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
                     className="block w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm active:scale-[0.98] transition-transform"
                 >
                     <img
-                        src={optimizedImg(JANMASHTAMI_BANNER, 900)}
-                        onError={(e) => { e.currentTarget.src = JANMASHTAMI_BANNER; }}
-                        width={JANMASHTAMI_BANNER_W}
-                        height={JANMASHTAMI_BANNER_H}
+                        src={optimizedImg(SHARAD_PURNIMA_BANNER, 900)}
+                        onError={(e) => { e.currentTarget.src = SHARAD_PURNIMA_BANNER; }}
+                        width={SHARAD_PURNIMA_BANNER_W}
+                        height={SHARAD_PURNIMA_BANNER_H}
                         alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
                         loading="lazy"
                         decoding="async"

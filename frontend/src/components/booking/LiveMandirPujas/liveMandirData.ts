@@ -43,6 +43,27 @@ export interface LiveMandirReview {
     text: string;
     verified?: boolean;
 }
+export const NAVRATRI_PUJA_DUMMY: LiveMandirPuja = {
+    id: "navratri-puja",
+    pujaName: "Navratri Maha Puja",
+    pujaNameHindi: "नवरात्रि महा पूजा",
+    templeName: "Maa Durga Mandir",
+    templeLocation: "India",
+    deity: "Maa Durga",
+    image: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/astro/navratripujaa.png",
+    status: "upcoming",
+    scheduledDate: "October 11, 2026",
+    scheduledTime: "10:00 AM",
+    durationMins: 60,
+    price: 1100,
+    originalPrice: 1500,
+    rating: 4.9,
+    devoteesJoined: 1500,
+    benefits: ["Divine blessings", "Protection", "Wish fulfilment"],
+    tags: ["Most Popular", "Navratri"],
+    templeAbout: "Navratri is a nine-night festival dedicated to Maa Durga, celebrating her divine power and the triumph of good over evil. Seek her blessings for a prosperous and happy life.",
+    includes: ["Sankalp in your name", "Live Darshan", "Special Archana", "Prasad delivery"],
+};
 
 export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
     {

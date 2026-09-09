@@ -8,7 +8,7 @@ import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
 import analytics from "../utils/analytics";
-import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
+import { type LiveMandirPuja, type LiveMandirReview, NAVRATRI_PUJA_DUMMY } from "../components/booking/LiveMandirPujas/liveMandirData";
 import { money } from "../utils/currency";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
@@ -183,6 +183,12 @@ export default function LiveMandirPujaDetailPage() {
     const [templeTab, setTempleTab] = useState<"about" | "history">("about");
 
     const fetchPujaDetails = async () => {
+        if (slug === "navratri-puja") {
+            setPuja(NAVRATRI_PUJA_DUMMY);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
         try {
@@ -276,6 +282,12 @@ export default function LiveMandirPujaDetailPage() {
         ? new Date(targetTs).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
         : puja.scheduledDate;
 
+    const isNavratri = puja.id === "navratri-puja";
+    const themeBg = isNavratri ? "bg-[#FFFDD0]" : "bg-[#FFFAF3]";
+    const themeBorder = isNavratri ? "border-[#FFD700]" : "border-orange-100";
+    const themeTextMain = isNavratri ? "text-[#B31B1B]" : "text-orange-600";
+    const themeBtn = isNavratri ? "bg-gradient-to-r from-[#B31B1B] to-[#FF671F]" : "bg-gradient-to-r from-orange-500 to-red-500";
+
     const statusLabel = puja.status === "live" ? "LIVE NOW" : puja.status === "upcoming" ? "UPCOMING" : "DAILY SEVA";
     const mandirName = `${puja.templeName}${puja.templeLocation && puja.templeLocation !== puja.templeName ? `, ${puja.templeLocation}` : ""}`;
     const reviews = puja.reviews?.length ? puja.reviews : seededReviews(slug ?? puja.id, 9);
@@ -288,14 +300,14 @@ export default function LiveMandirPujaDetailPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
+        <div className={`min-h-screen ${themeBg} pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x ${themeBorder}`}>
             <Helmet>
                 <title>{`${puja.pujaName} at ${puja.templeName} | Pandit Ji At Request`}</title>
                 <meta name="description" content={`Book online ${puja.pujaName} at ${puja.templeName}. ${puja.benefits.slice(0, 3).join(", ")}. Verified pandits, live video proof.`} />
             </Helmet>
 
             {/* ── Sticky header ── */}
-            <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3">
+            <div className={`sticky top-0 z-50 ${themeBg}/90 backdrop-blur-md border-b ${themeBorder} px-4 py-3 flex items-center gap-3`}>
                 <button onClick={() => navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
@@ -504,11 +516,11 @@ export default function LiveMandirPujaDetailPage() {
                     <div className="flex items-center gap-3">
                         <div className="shrink-0">
                             <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
-                            <span className="text-[19px] font-extrabold text-orange-600">{money(puja.price)}</span>
+                            <span className={`text-[19px] font-extrabold ${themeTextMain}`}>{money(puja.price)}</span>
                         </div>
                         <button
                             onClick={openBooking}
-                            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+                            className={`flex-1 ${themeBtn} text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none`}
                         >Participate Now</button>
                     </div>
                     <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-stone-400">

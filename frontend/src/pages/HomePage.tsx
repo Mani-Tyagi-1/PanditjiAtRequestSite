@@ -67,6 +67,12 @@ const SHARAD_PURNIMA_HREF = `/${BANKE_BIHARI_PUJA_SLUG}`;
 const SHARAD_PURNIMA_BANNER_W = 1672;
 const SHARAD_PURNIMA_BANNER_H = 941;
 
+// ── Navratri Pooja Banner ──
+// 👉 PASTE THE NAVRATRI CREATIVE URL HERE.
+const NAVRATRI_BANNER = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/astro/navratripujaa.png"; // Placeholder image URL
+const NAVRATRI_HREF = "/live-mandir-puja/navratri-puja"; // Navratri live mandir pooja
+
+
 
 type Pooja = {
     _id: string;
@@ -112,6 +118,7 @@ export default function HomePage() {
     const [poojas, setPoojas] = useState<Pooja[]>([]);
     const [loading, setLoading] = useState(true);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [currentBanner, setCurrentBanner] = useState(0);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [allPoojas, setAllPoojas] = useState<Pooja[]>([]);
@@ -139,6 +146,14 @@ export default function HomePage() {
             }
         };
         fetchPoojas();
+    }, []);
+
+    // Auto-sliding logic for banners
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentBanner((prev) => (prev + 1) % 2); // 2 is the total number of banners
+        }, 4000);
+        return () => clearInterval(timer);
     }, []);
 
     // Loose token matching for search
@@ -191,7 +206,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <img src={LOGO} alt="Pandit Ji At Request" className="h-11 w-auto object-contain" />
-{/* Currency switcher — HIDDEN. The country is resolved automatically from
+                        {/* Currency switcher — HIDDEN. The country is resolved automatically from
     the visitor's IP on the server, so there is no manual override on
     screen. Left here, commented, so bringing it back is one uncomment
     (plus its import above).
@@ -216,7 +231,7 @@ export default function HomePage() {
                         >
                             <User className="w-6 h-6 text-stone-700" />
                         </button>
-                         <button
+                        <button
                             onClick={() => setIsMenuOpen(true)}
                             className="p-1.5 rounded-xl hover:bg-orange-50 active:scale-95 transition-transform cursor-pointer"
                         >
@@ -356,48 +371,85 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* ── Featured puja banner ── Banke Bihari Ji Sharad Purnima.
-                One tappable creative into the themed puja page. ViewContent
-                fires here as well as on the puja page itself, so the home
-                banner's own contribution to the funnel is measurable. */}
+            {/* ── Featured puja banner slider ── Banke Bihari Ji & Navratri Pooja */}
             <section className="px-4">
-                <button
-                    onClick={() => {
-                        analytics.viewItem({
-                            items: [{ id: String(bankeBihariPuja._id), name: bankeBihariPuja.poojaNameEng, price: bankeBihariPuja.poojaPriceOnline, quantity: 1, category: "Puja" }],
-                            value: bankeBihariPuja.poojaPriceOnline,
-                            currency: "INR",
-                            meta: {
-                                event: "ViewContent",
-                                params: {
-                                    content_name: bankeBihariPuja.poojaNameEng,
-                                    content_ids: [bankeBihariPuja._id],
-                                    content_type: "product",
+                <div className="relative w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm">
+                    <div
+                        className="flex transition-transform duration-500 ease-in-out"
+                        style={{ transform: `translateX(-${currentBanner * 100}%)` }}
+                    >
+                        {/* Slide 1: Banke Bihari */}
+                        <button
+                            onClick={() => {
+                                analytics.viewItem({
+                                    items: [{ id: String(bankeBihariPuja._id), name: bankeBihariPuja.poojaNameEng, price: bankeBihariPuja.poojaPriceOnline, quantity: 1, category: "Puja" }],
                                     value: bankeBihariPuja.poojaPriceOnline,
                                     currency: "INR",
-                                    source: "home_banner",
-                                },
-                            },
-                        });
-                        navigate(SHARAD_PURNIMA_HREF);
-                    }}
-                    aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
-                    className="block w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm active:scale-[0.98] transition-transform"
-                >
-                    <img
-                        src={optimizedImg(SHARAD_PURNIMA_BANNER, 900)}
-                        onError={(e) => { e.currentTarget.src = SHARAD_PURNIMA_BANNER; }}
-                        width={SHARAD_PURNIMA_BANNER_W}
-                        height={SHARAD_PURNIMA_BANNER_H}
-                        alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-auto object-cover"
-                    />
-                </button>
+                                    meta: {
+                                        event: "ViewContent",
+                                        params: {
+                                            content_name: bankeBihariPuja.poojaNameEng,
+                                            content_ids: [bankeBihariPuja._id],
+                                            content_type: "product",
+                                            value: bankeBihariPuja.poojaPriceOnline,
+                                            currency: "INR",
+                                            source: "home_banner",
+                                        },
+                                    },
+                                });
+                                navigate(SHARAD_PURNIMA_HREF);
+                            }}
+                            aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
+                            className="block w-full shrink-0 active:scale-[0.98] transition-transform"
+                        >
+                            <img
+                                src={optimizedImg(SHARAD_PURNIMA_BANNER, 900)}
+                                onError={(e) => { e.currentTarget.src = SHARAD_PURNIMA_BANNER; }}
+                                width={SHARAD_PURNIMA_BANNER_W}
+                                height={SHARAD_PURNIMA_BANNER_H}
+                                alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
+                                loading="eager"
+                                decoding="async"
+                                className="w-full h-auto object-cover"
+                            />
+                        </button>
+
+                        {/* Slide 2: Navratri Pooja */}
+                        <button
+                            onClick={() => {
+                                // Add analytics event if needed
+                                navigate(NAVRATRI_HREF);
+                            }}
+                            aria-label="Book Navratri Pooja"
+                            className="block w-full shrink-0 active:scale-[0.98] transition-transform"
+                        >
+                            <img
+                                src={optimizedImg(NAVRATRI_BANNER, 900)}
+                                onError={(e) => { e.currentTarget.src = NAVRATRI_BANNER; }}
+                                width={SHARAD_PURNIMA_BANNER_W} // Assuming same aspect ratio
+                                height={SHARAD_PURNIMA_BANNER_H}
+                                alt="Navratri Pooja"
+                                loading="lazy"
+                                decoding="async"
+                                className="w-full h-auto object-cover"
+                            />
+                        </button>
+                    </div>
+
+                    {/* Dots indicator */}
+                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
+                        {[0, 1].map((idx) => (
+                            <div
+                                key={idx}
+                                className={`h-1.5 rounded-full transition-all duration-300 ${currentBanner === idx ? "w-4 bg-white" : "w-1.5 bg-white/50"
+                                    }`}
+                            />
+                        ))}
+                    </div>
+                </div>
             </section>
 
-             {/* ── Our Services ── */}
+            {/* ── Our Services ── */}
             <OurServices />
 
             {/* ── Sacred Chadhava Sewa ── */}
@@ -542,19 +594,19 @@ export default function HomePage() {
                                         // { label: "Free consultation", href: "/free-consultation", icon: "🙏" },
                                         { label: "Paid consultation", href: "/paid-consultation", icon: "📞" },
                                     ]
-                                    .filter(link => isLoggedIn || (link.label !== "Profile" && link.label !== "My Bookings"))
-                                    .map((link) => (
-                                        <li key={link.label}>
-                                            <Link
-                                                to={link.href}
-                                                onClick={() => setIsMenuOpen(false)}
-                                                className="flex items-center gap-3 px-3 py-3 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
-                                            >
-                                                <span className="text-base">{link.icon}</span>
-                                                <span className="text-sm font-medium">{link.label}</span>
-                                            </Link>
-                                        </li>
-                                    ))}
+                                        .filter(link => isLoggedIn || (link.label !== "Profile" && link.label !== "My Bookings"))
+                                        .map((link) => (
+                                            <li key={link.label}>
+                                                <Link
+                                                    to={link.href}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-stone-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
+                                                >
+                                                    <span className="text-base">{link.icon}</span>
+                                                    <span className="text-sm font-medium">{link.label}</span>
+                                                </Link>
+                                            </li>
+                                        ))}
                                 </ul>
                             </nav>
 

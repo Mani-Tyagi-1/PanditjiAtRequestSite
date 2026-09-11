@@ -18,6 +18,14 @@ import PhoneField from "../components/checkout/PhoneField";
 // state — redirects back to the puja rather than rendering an empty form.
 interface BookingState {
     puja: LiveMandirPuja;
+    fromAdminBanner?: boolean;
+    adminTheme?: {
+        primary: string;
+        dark: string;
+        background: string;
+        backgroundAlt: string;
+        border: string;
+    } | null;
 }
 
 type Step = "details" | "success";
@@ -31,6 +39,16 @@ function resolveScheduledDate(label: string): string {
     if (norm === "tomorrow") return new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString();
     const parsed = new Date(label);
     return isNaN(parsed.getTime()) ? today.toISOString() : parsed.toISOString();
+}
+
+function displayScheduledDate(value: string): string {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+    });
 }
 
 const INPUT =
@@ -48,6 +66,7 @@ export default function LiveMandirBookingPage() {
     const location = useLocation();
     const state = location.state as BookingState | null;
     const puja = state?.puja ?? null;
+    const adminTheme = state?.fromAdminBanner ? state.adminTheme : null;
 
     const [step, setStep] = useState<Step>("details");
     const [submitting, setSubmitting] = useState(false);
@@ -267,8 +286,9 @@ export default function LiveMandirBookingPage() {
         setSubmitting(true);
 
         try {
+            const bookingEndpoint = adminTheme ? "generalpooja-bookings" : "bookings";
             // 1. Create booking order via unified endpoint
-            const res = await fetch(`${API_URL}/bookings/create-pending`, {
+            const res = await fetch(`${API_URL}/${bookingEndpoint}/create-pending`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
@@ -324,7 +344,7 @@ export default function LiveMandirBookingPage() {
                     try {
                         setSubmitting(true);
                         // 3. Verify payment signature
-                        const verifyRes = await fetch(`${API_URL}/bookings/complete-booking`, {
+                        const verifyRes = await fetch(`${API_URL}/${bookingEndpoint}/complete-booking`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(encryptPayload({
@@ -420,7 +440,10 @@ export default function LiveMandirBookingPage() {
     };
 
     return (
-        <div className="lmb-page min-h-screen bg-[#FFFAF3] w-full max-w-md mx-auto border-x border-orange-100 relative pb-28">
+        <div
+            className="lmb-page min-h-screen bg-[#FFFAF3] w-full max-w-md mx-auto border-x border-orange-100 relative pb-28"
+            style={adminTheme ? { backgroundColor: adminTheme.background, backgroundImage: `linear-gradient(145deg, ${adminTheme.background}, ${adminTheme.backgroundAlt}, ${adminTheme.background})`, borderColor: adminTheme.border } : undefined}
+        >
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .lmb-page { font-family: 'DM Sans', sans-serif; }
@@ -431,7 +454,7 @@ export default function LiveMandirBookingPage() {
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3">
+            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3" style={adminTheme ? { backgroundColor: adminTheme.background, borderColor: adminTheme.border } : undefined}>
                 <button
                     onClick={() => navigate(-1)}
                     aria-label="Go back"
@@ -475,6 +498,9 @@ export default function LiveMandirBookingPage() {
                             <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
                                 <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
                                 <span className="text-xl font-bold text-stone-900">{money(basePrice)}</span>
+                                {puja.originalPrice ? (
+                                    <span className="text-sm font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span>
+                                ) : null}
                             </div>
                         </div>
 
@@ -588,7 +614,7 @@ export default function LiveMandirBookingPage() {
                                 </div>
                             </div>
                             <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
-                                <span className="text-sm font-semibold text-stone-800">{puja.scheduledDate}</span>
+                                <span className="text-sm font-semibold text-stone-800">{displayScheduledDate(puja.scheduledDate)}</span>
                                 <span className="text-[12px] text-stone-500">{puja.scheduledTime}</span>
                             </div>
                         </div>
@@ -757,12 +783,13 @@ export default function LiveMandirBookingPage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D85C0E]">{money(totalPrice)}</span>
+                            <span className="text-[20px] font-extrabold text-[#D85C0E]" style={adminTheme ? { color: adminTheme.dark } : undefined}>{money(totalPrice)}</span>
                         </div>
                         <button
                             onClick={handleConfirm}
                             disabled={submitting}
                             className="flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                            style={adminTheme ? { backgroundImage: `linear-gradient(100deg, ${adminTheme.dark}, ${adminTheme.primary})` } : undefined}
                         >
                             {submitting ? (
                                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>

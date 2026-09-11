@@ -29,7 +29,7 @@ export const navratriPuja: LiveMandirPuja = {
 };
 
 const mapGeneralPooja = (data: any): LiveMandirPuja => {
-    const hasDiscount = Boolean(data.discountPrice && data.discountPrice < data.price);
+    const hasDiscountPrice = Number.isFinite(Number(data.discountPrice)) && Number(data.discountPrice) > 0;
     return {
         id: data._id,
         pujaName: data.name,
@@ -42,8 +42,8 @@ const mapGeneralPooja = (data: any): LiveMandirPuja => {
         scheduledDate: data.pujaDate || "",
         scheduledTime: data.startTime || "",
         durationMins: Number.parseInt(data.duration || "0", 10) || 60,
-        price: hasDiscount ? data.discountPrice : data.price,
-        originalPrice: hasDiscount ? data.price : undefined,
+        price: hasDiscountPrice ? Number(data.discountPrice) : Number(data.price),
+        originalPrice: hasDiscountPrice ? Number(data.price) : undefined,
         rating: 5,
         devoteesJoined: 0,
         benefits: data.benefits || [],

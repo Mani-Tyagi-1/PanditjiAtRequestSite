@@ -16,6 +16,7 @@ import {
 
 import { createAnyFileUpload } from '../../utils/createAnyFileUpload';
 import { decryptRequest } from '../../utils/encryption';
+import { createGeneralPoojaPending, completeGeneralPoojaBooking } from '../../controller/poojaBooking/generalPoojaBookingController';
 
 const router = Router();
 
@@ -24,6 +25,8 @@ const router = Router();
 router.post('/bookings/create-pending', decryptRequest ,createPendingBooking); 
 // ⚠️ New endpoint for payment completion
 router.post('/bookings/complete-booking', decryptRequest,completePoojaBooking); 
+router.post('/generalpooja-bookings/create-pending', decryptRequest, createGeneralPoojaPending);
+router.post('/generalpooja-bookings/complete-booking', decryptRequest, completeGeneralPoojaBooking);
 
 // This route still works as before (fetches active/confirmed bookings)
 router.get('/bookings/get-pending-poojabookings/:userPhone', getPendingBookingsByUserPhone);

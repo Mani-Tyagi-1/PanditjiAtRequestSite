@@ -413,7 +413,7 @@ export default function HomePage() {
                         </button>
 
                         {adminBannerPoojas.map((puja) => (
-                            <button key={puja.id} onClick={() => navigate(`/live-mandir-puja/${puja.id}`)} aria-label={`Book ${puja.pujaName}`} className="block w-full shrink-0 active:scale-[0.98] transition-transform">
+                            <button key={puja.id} onClick={() => navigate(`/live-mandir-puja/${puja.id}`, { state: { fromAdminBanner: true } })} aria-label={`Book ${puja.pujaName}`} className="block w-full shrink-0 active:scale-[0.98] transition-transform">
                                 <img src={optimizedImg(puja.image, 900)} onError={(e) => { e.currentTarget.src = puja.image; }} width={SHARAD_PURNIMA_BANNER_W} height={SHARAD_PURNIMA_BANNER_H} alt={puja.pujaName} loading="lazy" decoding="async" className="w-full h-auto object-cover" />
                             </button>
                         ))}

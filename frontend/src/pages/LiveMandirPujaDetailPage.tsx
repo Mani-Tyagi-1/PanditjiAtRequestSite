@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useId } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo, useId, type CSSProperties } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Video, Gift, Calendar, Mountain, Sparkles,
     Star, Clock, Lock, ChevronDown, MessageCircle, Phone, Flame, BadgeCheck,
@@ -18,6 +18,31 @@ function track(event: string, params?: Record<string, unknown>, custom = false) 
     // always sent, and GA4 / Google Ads receive a mapped equivalent. The
     // signature is unchanged, so every call site on this page still works.
     analytics.metaBridge(event, params, custom);
+}
+
+function adminBannerTheme(color: string | undefined) {
+    if (!color || !/^#[0-9a-f]{6}$/i.test(color)) return null;
+    const value = Number.parseInt(color.slice(1), 16);
+    const rgb = [value >> 16, (value >> 8) & 255, value & 255].map((channel) => channel / 255);
+    const max = Math.max(...rgb), min = Math.min(...rgb), delta = max - min;
+    const lightness = (max + min) / 2;
+    let hue = 0;
+    if (delta) {
+        if (max === rgb[0]) hue = 60 * (((rgb[1] - rgb[2]) / delta) % 6);
+        else if (max === rgb[1]) hue = 60 * ((rgb[2] - rgb[0]) / delta + 2);
+        else hue = 60 * ((rgb[0] - rgb[1]) / delta + 4);
+    }
+    hue = (hue + 360) % 360;
+    const saturation = delta ? delta / (1 - Math.abs(2 * lightness - 1)) * 100 : 0;
+    const chroma = Math.max(36, Math.min(88, saturation));
+    const hsl = (s: number, l: number) => `hsl(${Math.round(hue)} ${Math.round(s)}% ${Math.round(l)}%)`;
+    return {
+        primary: color,
+        dark: hsl(chroma, Math.max(25, Math.min(40, lightness * 100 - 14))),
+        background: hsl(Math.max(10, chroma * .22), 98),
+        backgroundAlt: hsl(Math.max(14, chroma * .32), 95),
+        border: hsl(Math.max(15, chroma * .35), 87),
+    };
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -178,6 +203,7 @@ function ReviewMarquee({ reviews }: { reviews: LiveMandirReview[] }) {
 export default function LiveMandirPujaDetailPage() {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const [puja, setPuja] = useState<LiveMandirPuja | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -239,13 +265,16 @@ export default function LiveMandirPujaDetailPage() {
 
     const openBooking = () => {
         if (!puja) return;
+        const fromAdminBanner = Boolean((location.state as { fromAdminBanner?: boolean } | null)?.fromAdminBanner);
         track("InitiateCheckout", {
             content_name: puja.pujaName,
             content_ids: [puja.id],
             value: puja.price,
             currency: "INR",
         });
-        navigate(`/live-mandir-puja/${slug}/booking`, { state: { puja } });
+        navigate(`/live-mandir-puja/${slug}/booking`, {
+            state: { puja, fromAdminBanner, adminTheme: fromAdminBanner ? adminBannerTheme(puja.theme) : null },
+        });
     };
 
     if (loading) {
@@ -286,10 +315,18 @@ export default function LiveMandirPujaDetailPage() {
         : puja.scheduledDate;
 
     const isNavratri = puja.id === "navratri-puja";
+    const selectedTheme = (location.state as { fromAdminBanner?: boolean } | null)?.fromAdminBanner
+        ? adminBannerTheme(puja.theme)
+        : null;
     const themeBg = isNavratri ? "bg-[#FFFDD0]" : "bg-[#FFFAF3]";
     const themeBorder = isNavratri ? "border-[#FFD700]" : "border-orange-100";
     const themeTextMain = isNavratri ? "text-[#B31B1B]" : "text-orange-600";
     const themeBtn = isNavratri ? "bg-gradient-to-r from-[#B31B1B] to-[#FF671F]" : "bg-gradient-to-r from-orange-500 to-red-500";
+    const themedPageStyle = selectedTheme ? {
+        backgroundColor: selectedTheme.background,
+        backgroundImage: `linear-gradient(145deg, ${selectedTheme.background}, ${selectedTheme.backgroundAlt}, ${selectedTheme.background})`,
+        borderColor: selectedTheme.border,
+    } as CSSProperties : undefined;
 
     const statusLabel = puja.status === "live" ? "LIVE NOW" : puja.status === "upcoming" ? "UPCOMING" : "DAILY SEVA";
     const mandirName = `${puja.templeName}${puja.templeLocation && puja.templeLocation !== puja.templeName ? `, ${puja.templeLocation}` : ""}`;
@@ -303,14 +340,14 @@ export default function LiveMandirPujaDetailPage() {
     ];
 
     return (
-        <div className={`min-h-screen ${themeBg} pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x ${themeBorder}`}>
+        <div className={`min-h-screen ${themeBg} pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x ${themeBorder}`} style={themedPageStyle}>
             <Helmet>
                 <title>{`${puja.pujaName} at ${puja.templeName} | Pandit Ji At Request`}</title>
                 <meta name="description" content={`Book online ${puja.pujaName} at ${puja.templeName}. ${puja.benefits.slice(0, 3).join(", ")}. Verified pandits, live video proof.`} />
             </Helmet>
 
             {/* ── Sticky header ── */}
-            <div className={`sticky top-0 z-50 ${themeBg}/90 backdrop-blur-md border-b ${themeBorder} px-4 py-3 flex items-center gap-3`}>
+            <div className={`sticky top-0 z-50 ${themeBg}/90 backdrop-blur-md border-b ${themeBorder} px-4 py-3 flex items-center gap-3`} style={selectedTheme ? { backgroundColor: selectedTheme.background, borderColor: selectedTheme.border } : undefined}>
                 <button onClick={() => navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
@@ -513,11 +550,13 @@ export default function LiveMandirPujaDetailPage() {
                     <div className="flex items-center gap-3">
                         <div className="shrink-0">
                             <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
-                            <span className={`text-[19px] font-extrabold ${themeTextMain}`}>{money(puja.price)}</span>
+                            <span className={`text-[19px] font-extrabold ${themeTextMain}`} style={selectedTheme ? { color: selectedTheme.dark } : undefined}>{money(puja.price)}</span>
+                            {puja.originalPrice ? <span className="ml-1.5 text-xs font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span> : null}
                         </div>
                         <button
                             onClick={openBooking}
                             className={`flex-1 ${themeBtn} text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none`}
+                            style={selectedTheme ? { backgroundImage: `linear-gradient(100deg, ${selectedTheme.dark}, ${selectedTheme.primary})` } : undefined}
                         >Participate Now</button>
                     </div>
                     <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-stone-400">

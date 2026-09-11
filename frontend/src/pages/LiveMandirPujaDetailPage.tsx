@@ -8,7 +8,8 @@ import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
 import analytics from "../utils/analytics";
-import { type LiveMandirPuja, type LiveMandirReview, NAVRATRI_PUJA_DUMMY } from "../components/booking/LiveMandirPujas/liveMandirData";
+import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
+import { fetchGeneralPooja, fetchNavratriPuja } from "../data/navratriPuja";
 import { money } from "../utils/currency";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
@@ -183,15 +184,17 @@ export default function LiveMandirPujaDetailPage() {
     const [templeTab, setTempleTab] = useState<"about" | "history">("about");
 
     const fetchPujaDetails = async () => {
-        if (slug === "navratri-puja") {
-            setPuja(NAVRATRI_PUJA_DUMMY);
-            setLoading(false);
-            return;
-        }
-
         setLoading(true);
         setError(null);
         try {
+            if (slug === "navratri-puja") {
+                setPuja(await fetchNavratriPuja());
+                return;
+            }
+            if (slug && /^[a-f\d]{24}$/i.test(slug)) {
+                setPuja(await fetchGeneralPooja(slug));
+                return;
+            }
             const res = await fetch(`${API_URL}/live-mandir-pujas/${slug}`);
             if (!res.ok) throw new Error("Puja not found or server error");
             const json = await res.json();
@@ -412,12 +415,10 @@ export default function LiveMandirPujaDetailPage() {
                     <SectionTitle icon={<Flame className="w-3.5 h-3.5 text-orange-400" />}>Puja details</SectionTitle>
                     <div className="space-y-2">
                         <Accordion title="What is performed" defaultOpen>
-                            {/* TODO: replace with authentic ritual detail / mantras / offerings from the API */}
-                            <p>The {puja.pujaName} is performed by a verified pandit at {puja.templeName} with the complete Vedic vidhi — sankalp, invocation of {puja.deity}, mantra chanting, and offerings. A <strong>personalized Sankalp is performed in your name &amp; gotra</strong>, so the puja is dedicated specifically to you and your family.</p>
+                            <p>{puja.whatIsPerformed || `The ${puja.pujaName} is performed with complete Vedic rituals.`}</p>
                         </Accordion>
                         <Accordion title="Offerings & samagri">
-                            {/* TODO: replace with the real samagri/offerings list from the API */}
-                            <p>All required samagri and offerings are arranged on your behalf. You receive prasad and post-puja guidance after the ceremony.</p>
+                            <p>{puja.offeringsSamagri || "All required samagri and offerings are arranged on your behalf."}</p>
                         </Accordion>
                     </div>
                 </div>
@@ -441,12 +442,8 @@ export default function LiveMandirPujaDetailPage() {
                             </div>
                             <div role="tabpanel" className="text-[12.5px] text-stone-600 leading-relaxed">
                                 {templeTab === "about"
-                                    ? (puja.templeAbout
-                                        /* TODO: wire templeAbout from API */
-                                        || `${puja.templeName} is a revered shrine of ${puja.deity}, drawing devotees who seek blessings through authentic Vedic worship.`)
-                                    : (puja.templeHistory
-                                        /* TODO: wire templeHistory from API */
-                                        || `Detailed history of ${puja.templeName} will appear here once available.`)}
+                                    ? (puja.templeAbout || `${puja.templeName} is a revered shrine of ${puja.deity}.`)
+                                    : (puja.templeHistory || `Detailed history of ${puja.templeName} will appear here once available.`)}
                             </div>
                         </div>
                     </div>

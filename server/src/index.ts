@@ -48,6 +48,7 @@ import seoRoutes from "./routes/seoRoutes";
 import affiliateProductsRoutes from "./routes/userAppRoutes/affiliateProductsRoutes";
 import razorpayWebhookRoutes from "./routes/payments/razorpayWebhookRoutes";
 import analyticsRoutes from "./routes/analytics/analyticsRoutes";
+import generalPoojaRoutes from "./routes/userAppRoutes/generalPoojaRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -102,6 +103,7 @@ app.use("/api", paidConsultationRoutes);
 app.use("/api", panditDirectBookingEnquiryRoutes);
 app.use("/api/whatsapp", whatsappRoutes);
 app.use("/api", liveMandirRoutes);
+app.use("/api", generalPoojaRoutes);
 app.use("/api", chadhavaRoutes);
 app.use("/api", vivahRoutes);
 app.use("/api", kashiRoutes);

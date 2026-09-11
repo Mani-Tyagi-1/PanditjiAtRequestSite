@@ -23,6 +23,8 @@ import { useAuth } from "../context/AuthContext";
 import {
     bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, BANKE_BIHARI_POOJA_ID, BANNER_IMG,
 } from "../data/bankeBihariPuja";
+import { fetchAdminGeneralPoojas } from "../data/navratriPuja";
+import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
 import { optimizedImg } from "../utils/img";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
@@ -66,13 +68,6 @@ const SHARAD_PURNIMA_HREF = `/${BANKE_BIHARI_PUJA_SLUG}`;
 // the actual file — change these together with the URL above.
 const SHARAD_PURNIMA_BANNER_W = 1672;
 const SHARAD_PURNIMA_BANNER_H = 941;
-
-// ── Navratri Pooja Banner ──
-// 👉 PASTE THE NAVRATRI CREATIVE URL HERE.
-const NAVRATRI_BANNER = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/astro/navratripujaa.png"; // Placeholder image URL
-const NAVRATRI_HREF = "/live-mandir-puja/navratri-puja"; // Navratri live mandir pooja
-
-
 
 type Pooja = {
     _id: string;
@@ -119,6 +114,7 @@ export default function HomePage() {
     const [loading, setLoading] = useState(true);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentBanner, setCurrentBanner] = useState(0);
+    const [adminBannerPoojas, setAdminBannerPoojas] = useState<LiveMandirPuja[]>([]);
 
     const [searchQuery, setSearchQuery] = useState("");
     const [allPoojas, setAllPoojas] = useState<Pooja[]>([]);
@@ -146,15 +142,17 @@ export default function HomePage() {
             }
         };
         fetchPoojas();
+        void fetchAdminGeneralPoojas().then(setAdminBannerPoojas).catch(() => undefined);
     }, []);
 
     // Auto-sliding logic for banners
     useEffect(() => {
+        const totalSlides = 1 + adminBannerPoojas.length;
         const timer = setInterval(() => {
-            setCurrentBanner((prev) => (prev + 1) % 2); // 2 is the total number of banners
+            setCurrentBanner((prev) => (prev + 1) % totalSlides);
         }, 4000);
         return () => clearInterval(timer);
-    }, []);
+    }, [adminBannerPoojas.length]);
 
     // Loose token matching for search
     useEffect(() => {
@@ -414,31 +412,16 @@ export default function HomePage() {
                             />
                         </button>
 
-                        {/* Slide 2: Navratri Pooja */}
-                        <button
-                            onClick={() => {
-                                // Add analytics event if needed
-                                navigate(NAVRATRI_HREF);
-                            }}
-                            aria-label="Book Navratri Pooja"
-                            className="block w-full shrink-0 active:scale-[0.98] transition-transform"
-                        >
-                            <img
-                                src={optimizedImg(NAVRATRI_BANNER, 900)}
-                                onError={(e) => { e.currentTarget.src = NAVRATRI_BANNER; }}
-                                width={SHARAD_PURNIMA_BANNER_W} // Assuming same aspect ratio
-                                height={SHARAD_PURNIMA_BANNER_H}
-                                alt="Navratri Pooja"
-                                loading="lazy"
-                                decoding="async"
-                                className="w-full h-auto object-cover"
-                            />
-                        </button>
+                        {adminBannerPoojas.map((puja) => (
+                            <button key={puja.id} onClick={() => navigate(`/live-mandir-puja/${puja.id}`)} aria-label={`Book ${puja.pujaName}`} className="block w-full shrink-0 active:scale-[0.98] transition-transform">
+                                <img src={optimizedImg(puja.image, 900)} onError={(e) => { e.currentTarget.src = puja.image; }} width={SHARAD_PURNIMA_BANNER_W} height={SHARAD_PURNIMA_BANNER_H} alt={puja.pujaName} loading="lazy" decoding="async" className="w-full h-auto object-cover" />
+                            </button>
+                        ))}
                     </div>
 
                     {/* Dots indicator */}
                     <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
-                        {[0, 1].map((idx) => (
+                        {Array.from({ length: 1 + adminBannerPoojas.length }, (_, idx) => (
                             <div
                                 key={idx}
                                 className={`h-1.5 rounded-full transition-all duration-300 ${currentBanner === idx ? "w-4 bg-white" : "w-1.5 bg-white/50"

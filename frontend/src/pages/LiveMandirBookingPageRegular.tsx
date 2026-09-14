@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star, User, Mail, Users, Calendar, Clock, Home, Building, Map, Mailbox, Info, ShieldCheck, Bell } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star } from "lucide-react";
 import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
@@ -10,12 +10,12 @@ import { useAuth } from "../context/AuthContext";
 import { useAbandonedCart } from "../utils/useAbandonedCart";
 import analytics, { type AnalyticsItem } from "../utils/analytics";
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
-// import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
+// import CountryPicker from "../components/checkout/CountryPicker";  // hidden ÔÇö see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
 
 // Puja handed over from LiveMandirPujaDetailPage via navigate(..., { state }).
-// Carried in router state (not the URL) so a direct hit / refresh — which has no
-// state — redirects back to the puja rather than rendering an empty form.
+// Carried in router state (not the URL) so a direct hit / refresh ÔÇö which has no
+// state ÔÇö redirects back to the puja rather than rendering an empty form.
 interface BookingState {
     puja: LiveMandirPuja;
     fromAdminBanner?: boolean;
@@ -51,14 +51,11 @@ function displayScheduledDate(value: string): string {
     });
 }
 
-import LiveMandirBookingPageRegular from "./LiveMandirBookingPageRegular";
+const INPUT =
+    "w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all";
+const LABEL = "text-[11px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block";
 
-const INPUT = "w-full bg-transparent px-3 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none";
-const INPUT_WRAPPER = "flex border border-stone-200 rounded-lg overflow-hidden bg-white focus-within:border-[#6b0504] focus-within:ring-1 focus-within:ring-[#6b0504]/20 transition-all t-focus-within";
-const ICON_CONTAINER = "px-3 bg-stone-50 border-r border-stone-200 flex items-center text-[#6b0504] shrink-0 t-text-dark";
-const LABEL = "text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1.5 block";
-
-function AdminLiveMandirBookingPage() {
+export default function LiveMandirBookingPageRegular() {
     // Where the devotee is paying from. `money` renders every price below in
     // their currency; `toInr` converts a list price into the INR this sale is
     // actually worth, which is what the booking records and the server bills.
@@ -88,7 +85,6 @@ function AdminLiveMandirBookingPage() {
     });
 
     const [familyInput, setFamilyInput] = useState("");
-    const [familyGotraInput, setFamilyGotraInput] = useState("");
 
     // Address states
     const [addresses, setAddresses] = useState<any[]>([]);
@@ -103,7 +99,7 @@ function AdminLiveMandirBookingPage() {
         saveAs: "Home"
     });
 
-    // No router state (direct URL / refresh) → bounce back to the puja.
+    // No router state (direct URL / refresh) ÔåÆ bounce back to the puja.
     useEffect(() => {
         if (!puja) navigate(slug ? `/live-mandir-puja/${slug}` : "/", { replace: true });
     }, [puja, slug, navigate]);
@@ -118,7 +114,7 @@ function AdminLiveMandirBookingPage() {
         }));
     }, [user]);
 
-    // Blessed prasad is couriered within India only — see `shipsPrasad`. Gated
+    // Blessed prasad is couriered within India only ÔÇö see `shipsPrasad`. Gated
     // on the DERIVED value so one guard turns the whole feature off: no bill
     // line, no delivery step, no courier instruction on the booking, and a
     // devotee who switched country cannot be left paying for a parcel that will
@@ -155,7 +151,7 @@ function AdminLiveMandirBookingPage() {
         document.body.appendChild(script);
     }, []);
 
-    // Dynamic pricing — computed above the `!puja` guard so the abandoned-cart
+    // Dynamic pricing ÔÇö computed above the `!puja` guard so the abandoned-cart
     // draft below (a hook, so it must run before any early return) can carry the
     // running total.
     const basePrice = puja?.price ?? 0;
@@ -164,7 +160,7 @@ function AdminLiveMandirBookingPage() {
     const totalPrice = basePrice + familyCost + prasadCost;
 
     // GA4 line items for this seva. Add-ons are separate rows so the item total
-    // reconciles with `totalPrice` — a single lump row would show the base
+    // reconciles with `totalPrice` ÔÇö a single lump row would show the base
     // price against an inflated order value and read as a tracking bug.
     const liveMandirGa4Items = (): AnalyticsItem[] => [
         {
@@ -183,7 +179,7 @@ function AdminLiveMandirBookingPage() {
             : []),
     ];
 
-    // Whatever delivery address the devotee has settled on so far — a selected
+    // Whatever delivery address the devotee has settled on so far ÔÇö a selected
     // saved address, or the new-address form once they start typing into it.
     // Kept out of the abandoned-cart draft while it is still blank.
     const draftAddress = !prasadAdded
@@ -217,13 +213,11 @@ function AdminLiveMandirBookingPage() {
 
     const addFamilyMember = () => {
         if (familyInput.trim()) {
-            const val = familyGotraInput.trim() ? `${familyInput.trim()} (${familyGotraInput.trim()})` : familyInput.trim();
             setForm(f => ({
                 ...f,
-                familyMembers: [...f.familyMembers, val]
+                familyMembers: [...f.familyMembers, familyInput.trim()]
             }));
             setFamilyInput("");
-            setFamilyGotraInput("");
         }
     };
 
@@ -250,7 +244,7 @@ function AdminLiveMandirBookingPage() {
         const phoneDigits = toStoredPhone(form.phone, country);
 
         if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-            setError("Please enter a valid email — it's how we send your booking confirmation.");
+            setError("Please enter a valid email ÔÇö it's how we send your booking confirmation.");
             return;
         }
 
@@ -306,7 +300,7 @@ function AdminLiveMandirBookingPage() {
                     gotra: form.gotra.trim(),
                     phone: phoneDigits,
                     emailId: form.email.trim(),
-                    // Marked-up INR — the value of this sale, not the
+                    // Marked-up INR ÔÇö the value of this sale, not the
                     // India list price. See utils/currency `inrEquivalent`.
                     amount: toInr(totalPrice),
                     currency,
@@ -333,12 +327,12 @@ function AdminLiveMandirBookingPage() {
             // 2. Open Razorpay checkout widget
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                // Straight from the order the server just created — deriving
+                // Straight from the order the server just created ÔÇö deriving
                 // these again is the one place display and charge could drift.
                 amount: orderData.amountMinor ?? toInr(totalPrice) * 100,
                 currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
-                description: `${puja.pujaName} — ${puja.templeName}`,
+                description: `${puja.pujaName} ÔÇö ${puja.templeName}`,
                 order_id: orderData.razorpayOrderId,
                 prefill: {
                     name: form.name.trim(),
@@ -389,7 +383,7 @@ function AdminLiveMandirBookingPage() {
                                 },
                             },
                         });
-                        // Paid — drop this row out of the abandoned-lead list.
+                        // Paid ÔÇö drop this row out of the abandoned-lead list.
                         markCartConverted(orderData.bookingId);
 
                         setStep("success");
@@ -447,161 +441,151 @@ function AdminLiveMandirBookingPage() {
 
     return (
         <div
-            className={`lmb-page min-h-screen ${adminTheme ? '' : 'bg-[#FFFAF3]'} w-full max-w-md mx-auto border-x ${adminTheme ? '' : 'border-orange-100'} relative pb-28`}
-            style={adminTheme ? {
-                backgroundColor: adminTheme.background,
-                backgroundImage: `linear-gradient(145deg, ${adminTheme.background}, ${adminTheme.backgroundAlt}, ${adminTheme.background})`,
-                borderColor: adminTheme.border,
-                '--theme-primary': adminTheme.primary,
-                '--theme-dark': adminTheme.dark,
-                '--theme-bg': adminTheme.background,
-                '--theme-bg-alt': adminTheme.backgroundAlt,
-                '--theme-border': adminTheme.border,
-            } as React.CSSProperties : undefined}
+            className="lmb-page min-h-screen bg-[#FFFAF3] w-full max-w-md mx-auto border-x border-orange-100 relative pb-28"
+            style={adminTheme ? { backgroundColor: adminTheme.background, backgroundImage: `linear-gradient(145deg, ${adminTheme.background}, ${adminTheme.backgroundAlt}, ${adminTheme.background})`, borderColor: adminTheme.border } : undefined}
         >
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
                 .lmb-page { font-family: 'DM Sans', sans-serif; }
                 .lmb-serif { font-family: 'Cormorant Garamond', serif; }
-                ${adminTheme ? `
-                .t-text { color: var(--theme-primary) !important; }
-                .t-text-dark { color: var(--theme-dark) !important; }
-                .t-bg { background-color: var(--theme-bg) !important; }
-                .t-bg-alt { background-color: var(--theme-bg-alt) !important; }
-                .t-border { border-color: var(--theme-border) !important; }
-                .t-border-active { border-color: var(--theme-primary) !important; }
-                .t-ring { --tw-ring-color: var(--theme-primary) !important; }
-                .t-gradient { background-image: linear-gradient(100deg, var(--theme-dark), var(--theme-primary)) !important; }
-                .t-focus-within:focus-within { border-color: var(--theme-dark) !important; --tw-ring-color: color-mix(in srgb, var(--theme-dark) 20%, transparent) !important; }
-                ` : ''}
             `}</style>
             <Helmet>
-                <title>{`Complete your booking — ${puja.pujaName} at ${puja.templeName} | Pandit Ji At Request`}</title>
+                <title>{`Complete your booking ÔÇö ${puja.pujaName} at ${puja.templeName} | Pandit Ji At Request`}</title>
             </Helmet>
 
-            {/* Header Top */}
-            <div className="px-4 py-4 flex items-center gap-4">
+            {/* Header */}
+            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3" style={adminTheme ? { backgroundColor: adminTheme.background, borderColor: adminTheme.border } : undefined}>
                 <button
                     onClick={() => navigate(-1)}
                     aria-label="Go back"
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-stone-200 shadow-sm active:scale-90 transition-transform shrink-0"
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform shrink-0"
                 >
-                    <ArrowLeft className="w-5 h-5 text-stone-700" />
+                    <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
-                <div className="flex-1 min-w-0">
-                    <h1 className="text-[17px] font-bold text-stone-900 leading-tight truncate">Complete Your Mandir Puja</h1>
-                    <p className="text-[11px] text-stone-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3.5 h-3.5 text-orange-500 t-text shrink-0" />
-                        <span className="truncate">{puja.templeName}{puja.templeLocation && puja.templeLocation !== puja.templeName ? ` · ${puja.templeLocation}` : ""}</span>
+                <div className="min-w-0">
+                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Mandir Puja</h1>
+                    <p className="text-[11px] text-stone-500 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-orange-500 shrink-0" />
+                        <span className="truncate">{puja.templeName}{puja.templeLocation ? ` ┬À ${puja.templeLocation}` : ""}</span>
                     </p>
                 </div>
             </div>
 
+{/* Currency switcher ÔÇö HIDDEN. The country is resolved automatically from
+    the visitor's IP on the server, so there is no manual override on
+    screen. Left here, commented, so bringing it back is one uncomment
+    (plus its import above).
+                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#FFE3C2] bg-[#FFFAF3]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
+                    <CountryPicker className="bg-white border border-[#FFE3C2] text-stone-700" accentClass="text-orange-600" />
+                </div>
+*/}
+
             {/* Content */}
-            <div className="px-4 space-y-4 pt-1 relative z-20">
+            <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         {/* Base Puja price info */}
-                        <div className="bg-white border border-stone-100 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1 min-w-0 pr-4">
-                                    <h2 className="text-[16px] font-bold text-stone-900 leading-tight truncate">{puja.pujaName}</h2>
-                                    {puja.pujaNameHindi && <p className="text-[13px] text-orange-500 t-text font-medium mt-1">{puja.pujaNameHindi}</p>}
-                                </div>
-                                <span className="flex items-center gap-1 bg-orange-50/50 t-bg-alt t-text text-orange-500 rounded-lg px-2 py-1 text-[11px] font-bold shrink-0">
-                                    <Star className="w-3 h-3 fill-current" /> 4.5
+                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
+                            <div className="flex items-start justify-between gap-2">
+                                <p className="text-[13.5px] font-bold text-stone-800 leading-snug">{puja.pujaName}</p>
+                                <span className="flex items-center gap-1 shrink-0 bg-amber-50 text-amber-700 rounded-full px-2 py-0.5 text-[11px] font-bold">
+                                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                    4.5
                                 </span>
                             </div>
-
-                            <div className="h-px bg-stone-100 w-full mb-3" />
-
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">BASE SEVA</span>
-                                <span className="text-[20px] font-extrabold text-stone-900">{money(basePrice)}</span>
+                            {puja.pujaNameHindi && <p className="text-[11.5px] text-orange-500 font-medium mt-0.5">{puja.pujaNameHindi}</p>}
+                            <div className="flex items-baseline gap-2 mt-2.5 pt-2.5 border-t border-orange-100/60">
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-stone-400">Base Seva</span>
+                                <span className="text-xl font-bold text-stone-900">{money(basePrice)}</span>
                                 {puja.originalPrice ? (
-                                    <span className="text-[12px] font-semibold text-stone-400 line-through ml-1">{money(puja.originalPrice)}</span>
+                                    <span className="text-sm font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span>
                                 ) : null}
                             </div>
                         </div>
 
                         {/* Step 1: Devotee Details */}
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50 t-border">
-                                <span className="w-7 h-7 rounded-full bg-[#6b0504] text-white t-bg-alt t-text-dark flex items-center justify-center font-bold text-sm" style={adminTheme ? { backgroundColor: adminTheme.dark } : undefined}>01</span>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
+                                <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">01</span>
                                 <div>
-                                    <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Devotee Details</h3>
+                                    <h3 className="font-bold text-stone-800 text-[14px]">Devotee Details</h3>
                                     <p className="text-[11px] text-stone-400">For the main Sankalp</p>
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                {/* Mobile Number input */}
+                                {/* Mobile Number input (required if user not logged in or edit allowed) */}
                                 <div>
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">MOBILE NUMBER *</label>
+                                    <label className={LABEL}>Mobile Number *</label>
                                     <PhoneField
                                         country={country}
                                         value={form.phone}
                                         onChange={(phone) => setForm((f) => ({ ...f, phone }))}
-                                        inputClass="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within pl-14"
-                                        prefixClass="text-orange-500 t-text font-bold text-[13px]"
+                                        inputClass={INPUT}
+                                        prefixClass="text-orange-600"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">DEVOTEE'S NAME *</label>
+                                    <label className={LABEL}>Devotee's Name *</label>
                                     <input
                                         value={form.name}
                                         onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
-                                        placeholder="Devotee's Name"
-                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                        placeholder="Name for main Sankalp"
+                                        className={INPUT}
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">GOTRA</label>
+                                    <label className={LABEL}>Gotra</label>
                                     <input
                                         value={form.gotra}
                                         onChange={(e) => setForm(f => ({ ...f, gotra: e.target.value }))}
                                         placeholder="e.g. Kashyap"
-                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                        className={INPUT}
+                                    />
+                                </div>
+                                <div>
+                                    {/* Email ÔÇö REQUIRED outside India, optional at home. Abroad
+    there is no OTP to log in with, so the confirmation email
+    is the devotee's only record of the booking. In India
+    WhatsApp already covers that. */}
+                                    <label className={LABEL}>
+                                        Email {isIndia ? <span className="font-normal normal-case opacity-70">(optional)</span> : "*"}
+                                    </label>
+                                    <input
+                                        value={form.email}
+                                        onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                                        placeholder={isIndia ? "For a copy of your booking" : "For your booking confirmation"}
+                                        type="email"
+                                        inputMode="email"
+                                        autoComplete="email"
+                                        className={INPUT}
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Step 3: Family Sankalp */}
+                        {/* Step 2: Family Sankalp */}
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50 t-border">
-                                <span className="w-7 h-7 rounded-full bg-[#6b0504] text-white t-bg-alt t-text-dark flex items-center justify-center font-bold text-sm" style={adminTheme ? { backgroundColor: adminTheme.dark } : undefined}>02</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
+                                <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">02</span>
                                 <div>
-                                    <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Family Sankalp</h3>
+                                    <h3 className="font-bold text-stone-800 text-[14px]">Family Sankalp</h3>
                                     <p className="text-[11px] text-stone-400">Add members at {money(101)} each</p>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <div className={`${INPUT_WRAPPER}`}>
-                                    <div className={ICON_CONTAINER}><Users className="w-4 h-4" /></div>
-                                    <input
-                                        value={familyInput}
-                                        onChange={(e) => setFamilyInput(e.target.value)}
-                                        placeholder="Name"
-                                        className={INPUT}
-                                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addFamilyMember(); } }}
-                                    />
-                                </div>
-                                <div className={`${INPUT_WRAPPER}`}>
-                                    <div className={ICON_CONTAINER}><span className="text-lg font-bold leading-none mb-1">ॐ</span></div>
-                                    <input
-                                        value={familyGotraInput}
-                                        onChange={(e) => setFamilyGotraInput(e.target.value)}
-                                        placeholder="Gotra"
-                                        className={INPUT}
-                                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addFamilyMember(); } }}
-                                    />
-                                </div>
+                            <div className="flex gap-2">
+                                <input
+                                    value={familyInput}
+                                    onChange={(e) => setFamilyInput(e.target.value)}
+                                    placeholder="Family member's name"
+                                    className={INPUT}
+                                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addFamilyMember(); } }}
+                                />
                                 <button
                                     onClick={addFamilyMember}
-                                    className={`w-full py-2.5 mt-1 rounded-lg bg-[#6b0504] hover:bg-[#8a0b09] t-gradient text-white flex items-center justify-center font-bold text-[13px] transition-all cursor-pointer shadow-sm`}
-                                    style={adminTheme ? { backgroundImage: `linear-gradient(100deg, ${adminTheme.dark}, ${adminTheme.primary})` } : undefined}
+                                    className="w-12 h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
                                 >
-                                    <Plus className="w-4 h-4 mr-1.5" /> Add Family Member
+                                    <Plus className="w-5 h-5" />
                                 </button>
                             </div>
 
@@ -609,9 +593,9 @@ function AdminLiveMandirBookingPage() {
                             {form.familyMembers.length > 0 && (
                                 <div className="flex flex-wrap gap-2 pt-1">
                                     {form.familyMembers.map((m, idx) => (
-                                        <span key={idx} className="flex items-center gap-1.5 bg-orange-50 border border-orange-100 text-orange-850 t-bg-alt t-border t-text-dark text-xs px-3 py-1.5 rounded-full">
+                                        <span key={idx} className="flex items-center gap-1.5 bg-orange-50 border border-orange-100 text-orange-850 text-xs px-3 py-1.5 rounded-full">
                                             {m}
-                                            <button onClick={() => removeFamilyMember(idx)} className="text-orange-400 t-text hover:opacity-75 transition-opacity">
+                                            <button onClick={() => removeFamilyMember(idx)} className="text-orange-400 hover:text-orange-600 transition-colors">
                                                 <X className="w-3.5 h-3.5" />
                                             </button>
                                         </span>
@@ -620,26 +604,41 @@ function AdminLiveMandirBookingPage() {
                             )}
                         </div>
 
-                        {/* Step 3: Prasad Delivery */}
+                        {/* Step 3: Puja Date */}
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50 t-border">
-                                <span className="w-7 h-7 rounded-full bg-[#6b0504] text-white t-bg-alt t-text-dark flex items-center justify-center font-bold text-sm" style={adminTheme ? { backgroundColor: adminTheme.dark } : undefined}>03</span>
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
+                                <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">03</span>
                                 <div>
-                                    <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Prasad Delivery</h3>
+                                    <h3 className="font-bold text-stone-800 text-[14px]">Puja Date</h3>
+                                    <p className="text-[11px] text-stone-400">Scheduled date for this puja</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
+                                <span className="text-sm font-semibold text-stone-800">{displayScheduledDate(puja.scheduledDate)}</span>
+                                <span className="text-[12px] text-stone-500">{puja.scheduledTime}</span>
+                            </div>
+                        </div>
+
+                        {/* Step 4: Prasad Delivery */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50">
+                                <span className="w-7 h-7 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">04</span>
+                                <div>
+                                    <h3 className="font-bold text-stone-800 text-[14px]">Prasad Delivery</h3>
                                     <p className="text-[11px] text-stone-400">Optional delivery at your address</p>
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-3 bg-white border border-orange-100 t-border rounded-xl p-3 shadow-sm cursor-pointer select-none overflow-hidden relative">
+                            <label className="flex items-center gap-3 bg-white border border-orange-100 rounded-2xl p-4 shadow-sm cursor-pointer select-none">
                                 <input
                                     type="checkbox"
                                     checked={form.prasadAdded}
                                     onChange={(e) => setForm(f => ({ ...f, prasadAdded: e.target.checked }))}
-                                    className="w-5 h-5 rounded text-[#6b0504] t-text focus:ring-[#6b0504] t-ring border-stone-300 t-border"
+                                    className="w-4 h-4 rounded text-orange-500 focus:ring-orange-400 border-orange-200"
                                 />
-                                <div className="flex-1">
-                                    <p className="text-[13px] font-bold text-stone-850">Add Sacred Prasad</p>
-                                    <p className="text-[11px] text-stone-500 mt-0.5">Blessed at the Mandir · +{money(501)}</p>
+                                <div>
+                                    <p className="text-xs font-bold text-stone-800">Add Sacred Prasad</p>
+                                    <p className="text-[11px] text-stone-400 mt-0.5">Blessed at the Mandir ┬À +{money(501)}</p>
                                 </div>
                             </label>
 
@@ -652,24 +651,24 @@ function AdminLiveMandirBookingPage() {
                                             {addresses.map(addr => (
                                                 <label
                                                     key={addr._id}
-                                                    className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-orange-500 t-border-active bg-orange-50/20" : "border-stone-100"}`}
+                                                    className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-orange-500 bg-orange-50/20" : "border-stone-100"}`}
                                                 >
                                                     <input
                                                         type="radio"
                                                         name="addressSelect"
                                                         checked={selectedAddressId === addr._id}
                                                         onChange={() => setSelectedAddressId(addr._id)}
-                                                        className="mt-1 text-orange-500 t-text focus:ring-orange-400 t-ring border-orange-200 t-border"
+                                                        className="mt-1 text-orange-500 focus:ring-orange-400 border-orange-200"
                                                     />
                                                     <div className="text-[12.5px] text-stone-700 leading-relaxed">
-                                                        <span className="font-bold text-[11px] text-orange-600 t-text-dark uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
+                                                        <span className="font-bold text-[11px] text-orange-600 uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
                                                         {addr.addressLine1 || addr.houseNo}, {addr.addressLine2 || addr.street}, {addr.city}, {addr.state} - {addr.pincode}
                                                     </div>
                                                 </label>
                                             ))}
                                             <button
                                                 onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
-                                                className="text-orange-600 t-text-dark hover:opacity-80 text-xs font-bold pt-1 block cursor-pointer transition-opacity"
+                                                className="text-orange-600 hover:text-orange-700 text-xs font-bold pt-1 block cursor-pointer"
                                             >
                                                 + Add New Address
                                             </button>
@@ -678,9 +677,9 @@ function AdminLiveMandirBookingPage() {
 
                                     {/* Address Input fields */}
                                     {(!user || showNewAddressForm) && (
-                                        <div className="bg-white border border-stone-100 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] space-y-4">
-                                            <div className="flex items-center justify-between pb-2 border-b border-stone-50">
-                                                <span className="text-[13px] font-bold text-stone-900">Delivery Address Details</span>
+                                        <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm space-y-3">
+                                            <div className="flex items-center justify-between pb-1 border-b border-stone-50">
+                                                <span className="text-[12px] font-bold text-stone-850">Delivery Address Details</span>
                                                 {user && addresses.length > 0 && (
                                                     <button
                                                         onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
@@ -690,55 +689,53 @@ function AdminLiveMandirBookingPage() {
                                                     </button>
                                                 )}
                                             </div>
-                                            <div className="space-y-3">
+                                            <div>
+                                                <label className={LABEL}>House/Flat No *</label>
+                                                <input
+                                                    value={newAddress.houseNo}
+                                                    onChange={(e) => setNewAddress(a => ({ ...a, houseNo: e.target.value }))}
+                                                    placeholder="e.g. 73a VIP Road"
+                                                    className={INPUT}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className={LABEL}>Area/Street *</label>
+                                                <input
+                                                    value={newAddress.street}
+                                                    onChange={(e) => setNewAddress(a => ({ ...a, street: e.target.value }))}
+                                                    placeholder="e.g. Zirakpur"
+                                                    className={INPUT}
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
                                                 <div>
-                                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">HOUSE/FLAT NO *</label>
+                                                    <label className={LABEL}>City *</label>
                                                     <input
-                                                        value={newAddress.houseNo}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, houseNo: e.target.value }))}
-                                                        placeholder="e.g. 73a VIP Road"
-                                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">AREA/STREET *</label>
-                                                    <input
-                                                        value={newAddress.street}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, street: e.target.value }))}
+                                                        value={newAddress.city}
+                                                        onChange={(e) => setNewAddress(a => ({ ...a, city: e.target.value }))}
                                                         placeholder="e.g. Zirakpur"
-                                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                        className={INPUT}
                                                     />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">CITY *</label>
-                                                        <input
-                                                            value={newAddress.city}
-                                                            onChange={(e) => setNewAddress(a => ({ ...a, city: e.target.value }))}
-                                                            placeholder="e.g. Zirakpur"
-                                                            className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">STATE *</label>
-                                                        <input
-                                                            value={newAddress.state}
-                                                            onChange={(e) => setNewAddress(a => ({ ...a, state: e.target.value }))}
-                                                            placeholder="e.g. Punjab"
-                                                            className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
-                                                        />
-                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">PINCODE *</label>
+                                                    <label className={LABEL}>State *</label>
                                                     <input
-                                                        value={newAddress.pincode}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, pincode: e.target.value.replace(/\D/g, "") }))}
-                                                        placeholder="6-digit pincode"
-                                                        inputMode="numeric"
-                                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                        value={newAddress.state}
+                                                        onChange={(e) => setNewAddress(a => ({ ...a, state: e.target.value }))}
+                                                        placeholder="e.g. Punjab"
+                                                        className={INPUT}
                                                     />
                                                 </div>
+                                            </div>
+                                            <div>
+                                                <label className={LABEL}>Pincode *</label>
+                                                <input
+                                                    value={newAddress.pincode}
+                                                    onChange={(e) => setNewAddress(a => ({ ...a, pincode: e.target.value.replace(/\D/g, "") }))}
+                                                    placeholder="6-digit pincode"
+                                                    inputMode="numeric"
+                                                    className={INPUT}
+                                                />
                                             </div>
                                         </div>
                                     )}
@@ -762,7 +759,7 @@ function AdminLiveMandirBookingPage() {
                             <Check className="w-10 h-10 text-white" strokeWidth={3} />
                         </motion.div>
                         <h3 className="lmb-serif font-bold text-stone-850 mt-5 text-2xl">
-                            Booking Confirmed! 🙏
+                            Booking Confirmed! ­ƒÖÅ
                         </h3>
                         <p className="text-[13px] text-stone-500 mt-2 max-w-[280px] leading-relaxed">
                             Your <span className="font-semibold text-stone-700">{puja.pujaName}</span> at{" "}
@@ -777,24 +774,25 @@ function AdminLiveMandirBookingPage() {
 
             {/* Sticky Footer */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFFAF3] border-t border-[#F2E0C4] px-4 py-3 pb-4 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] rounded-t-3xl t-bg">
-                    {/* Error is shown here */}
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-stone-100 px-5 py-4">
+                    {/* Error is shown here (always visible) so the user gets feedback
+                        even when the form is not scrolled to the bottom. */}
                     {error && (
-                        <p className="text-red-500 text-[12px] font-semibold mb-2 text-center">{error}</p>
+                        <p className="text-red-500 text-[12px] font-semibold mb-3 text-center">{error}</p>
                     )}
                     <div className="flex items-center justify-between">
                         <div>
-                            <span className="text-[10px] text-stone-500 font-bold uppercase block tracking-wider">TOTAL TO PAY</span>
-                            <span className={`text-[18px] font-extrabold ${adminTheme ? 't-text-dark' : 'text-[#6b0504]'}`}>{money(totalPrice)}</span>
-                            <div className="text-[9px] text-stone-400 mt-0.5 flex items-center gap-1 font-medium">Incl. all charges <Info className="w-2.5 h-2.5" /></div>
+                            <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
+                            <span className="text-[20px] font-extrabold text-[#D85C0E]" style={adminTheme ? { color: adminTheme.dark } : undefined}>{money(totalPrice)}</span>
                         </div>
                         <button
                             onClick={handleConfirm}
                             disabled={submitting}
-                            className={`flex items-center gap-2 ${adminTheme ? 't-gradient text-white' : 'bg-[#6b0504] hover:bg-[#8a0b09] text-white'} font-bold text-[13px] px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer`}
+                            className="flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                            style={adminTheme ? { backgroundImage: `linear-gradient(100deg, ${adminTheme.dark}, ${adminTheme.primary})` } : undefined}
                         >
                             {submitting ? (
-                                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
+                                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> ProcessingÔÇª</>
                             ) : (
                                 <>Offer With Devotion <ChevronRight className="w-4 h-4" /></>
                             )}
@@ -804,16 +802,4 @@ function AdminLiveMandirBookingPage() {
             )}
         </div>
     );
-}
-
-export default function LiveMandirBookingPage() {
-    const location = useLocation();
-    const state = location.state as BookingState | null;
-    const adminTheme = state?.fromAdminBanner ? state.adminTheme : null;
-
-    if (adminTheme) {
-        return <AdminLiveMandirBookingPage />;
-    } else {
-        return <LiveMandirBookingPageRegular />;
-    }
 }

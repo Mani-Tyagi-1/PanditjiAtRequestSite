@@ -9,7 +9,7 @@ import API_URL from "../utils/apiConfig";
 import { optimizedImg } from "../utils/img";
 import analytics from "../utils/analytics";
 import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
-import { fetchGeneralPooja, fetchNavratriPuja } from "../data/navratriPuja";
+import { fetchGeneralPooja } from "../data/navratriPuja";
 import { money } from "../utils/currency";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
@@ -144,7 +144,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
     const [open, setOpen] = useState(defaultOpen);
     const panelId = useId();
     return (
-        <div className={`bg-white border rounded-2xl overflow-hidden transition-colors ${open ? "border-orange-300" : "border-orange-100"}`}>
+        <div className={`bg-white border rounded-2xl overflow-hidden transition-colors ${open ? "border-orange-300 t-border-active" : "border-orange-100 t-border"}`}>
             <button
                 type="button"
                 aria-expanded={open}
@@ -154,14 +154,14 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
                     setOpen(next);
                     if (next) track("puja_accordion_open", { section: title }, true);
                 }}
-                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-orange-400 outline-none"
+                className="w-full px-3.5 py-3 flex items-center justify-between text-left focus-visible:ring-2 focus-visible:ring-orange-400 t-ring outline-none"
             >
                 <span className="flex items-center gap-2 text-[14px] font-bold text-stone-800">
                     {icon}{title}
                 </span>
-                <ChevronDown className={`w-4 h-4 text-orange-500 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-orange-500 t-text shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
-            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-stone-600 leading-relaxed border-t border-orange-50">
+            <div id={panelId} hidden={!open} className="px-3.5 pb-3.5 pt-1 text-[12.5px] text-stone-600 leading-relaxed border-t border-orange-50 t-border-light">
                 {children}
             </div>
         </div>
@@ -184,7 +184,7 @@ function ReviewMarquee({ reviews }: { reviews: LiveMandirReview[] }) {
             <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
             <div className="review-track flex gap-2.5">
                 {items.map((r, i) => (
-                    <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 rounded-xl p-3 shadow-sm">
+                    <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 t-border rounded-xl p-3 shadow-sm">
                         <div className="flex items-center gap-1.5">
                             <span className="font-bold text-stone-800 text-[12px]">{r.name}</span>
                             {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
@@ -213,10 +213,6 @@ export default function LiveMandirPujaDetailPage() {
         setLoading(true);
         setError(null);
         try {
-            if (slug === "navratri-puja") {
-                setPuja(await fetchNavratriPuja());
-                return;
-            }
             if (slug && /^[a-f\d]{24}$/i.test(slug)) {
                 setPuja(await fetchGeneralPooja(slug));
                 return;
@@ -265,7 +261,7 @@ export default function LiveMandirPujaDetailPage() {
 
     const openBooking = () => {
         if (!puja) return;
-        const fromAdminBanner = Boolean((location.state as { fromAdminBanner?: boolean } | null)?.fromAdminBanner);
+        const isFromAdmin = Boolean((location.state as { fromAdminBanner?: boolean } | null)?.fromAdminBanner) || Boolean(slug && /^[a-f\d]{24}$/i.test(slug));
         track("InitiateCheckout", {
             content_name: puja.pujaName,
             content_ids: [puja.id],
@@ -273,7 +269,7 @@ export default function LiveMandirPujaDetailPage() {
             currency: "INR",
         });
         navigate(`/live-mandir-puja/${slug}/booking`, {
-            state: { puja, fromAdminBanner, adminTheme: fromAdminBanner ? adminBannerTheme(puja.theme) : null },
+            state: { puja, fromAdminBanner: isFromAdmin, adminTheme: adminBannerTheme(puja.theme) },
         });
     };
 
@@ -314,18 +310,20 @@ export default function LiveMandirPujaDetailPage() {
         ? new Date(targetTs).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
         : puja.scheduledDate;
 
-    const isNavratri = puja.id === "navratri-puja";
-    const selectedTheme = (location.state as { fromAdminBanner?: boolean } | null)?.fromAdminBanner
-        ? adminBannerTheme(puja.theme)
-        : null;
-    const themeBg = isNavratri ? "bg-[#FFFDD0]" : "bg-[#FFFAF3]";
-    const themeBorder = isNavratri ? "border-[#FFD700]" : "border-orange-100";
-    const themeTextMain = isNavratri ? "text-[#B31B1B]" : "text-orange-600";
-    const themeBtn = isNavratri ? "bg-gradient-to-r from-[#B31B1B] to-[#FF671F]" : "bg-gradient-to-r from-orange-500 to-red-500";
+    const selectedTheme = adminBannerTheme(puja.theme);
+    const themeBg = "bg-[#FFFAF3]";
+    const themeBorder = "border-orange-100";
+    const themeTextMain = "text-orange-600";
+    const themeBtn = "bg-gradient-to-r from-orange-500 to-red-500";
     const themedPageStyle = selectedTheme ? {
         backgroundColor: selectedTheme.background,
         backgroundImage: `linear-gradient(145deg, ${selectedTheme.background}, ${selectedTheme.backgroundAlt}, ${selectedTheme.background})`,
         borderColor: selectedTheme.border,
+        '--theme-primary': selectedTheme.primary,
+        '--theme-dark': selectedTheme.dark,
+        '--theme-bg': selectedTheme.background,
+        '--theme-bg-alt': selectedTheme.backgroundAlt,
+        '--theme-border': selectedTheme.border,
     } as CSSProperties : undefined;
 
     const statusLabel = puja.status === "live" ? "LIVE NOW" : puja.status === "upcoming" ? "UPCOMING" : "DAILY SEVA";
@@ -340,15 +338,32 @@ export default function LiveMandirPujaDetailPage() {
     ];
 
     return (
-        <div className={`min-h-screen ${themeBg} pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x ${themeBorder}`} style={themedPageStyle}>
+        <div className={`min-h-screen ${selectedTheme ? '' : themeBg} pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x ${selectedTheme ? '' : themeBorder}`} style={themedPageStyle}>
+            {selectedTheme && (
+                <style>{`
+                    .t-text { color: var(--theme-primary) !important; }
+                    .t-text-dark { color: var(--theme-dark) !important; }
+                    .t-bg { background-color: var(--theme-bg) !important; }
+                    .t-bg-alt { background-color: var(--theme-bg-alt) !important; }
+                    .t-border { border-color: var(--theme-border) !important; }
+                    .t-border-active { border-color: var(--theme-primary) !important; }
+                    .t-border-light { border-color: color-mix(in srgb, var(--theme-border) 40%, transparent) !important; }
+                    .t-ring { --tw-ring-color: var(--theme-primary) !important; }
+                    .t-fill { fill: var(--theme-primary) !important; }
+                    .t-gradient { background-image: linear-gradient(100deg, var(--theme-dark), var(--theme-primary)) !important; }
+                    .t-tab-active { background-color: var(--theme-primary) !important; color: white !important; }
+                    .t-tab-inactive { background-color: var(--theme-bg-alt) !important; color: var(--theme-dark) !important; }
+                    .t-icon-bg { background: linear-gradient(to bottom right, var(--theme-bg-alt), var(--theme-bg)) !important; }
+                `}</style>
+            )}
             <Helmet>
                 <title>{`${puja.pujaName} at ${puja.templeName} | Pandit Ji At Request`}</title>
                 <meta name="description" content={`Book online ${puja.pujaName} at ${puja.templeName}. ${puja.benefits.slice(0, 3).join(", ")}. Verified pandits, live video proof.`} />
             </Helmet>
 
             {/* ── Sticky header ── */}
-            <div className={`sticky top-0 z-50 ${themeBg}/90 backdrop-blur-md border-b ${themeBorder} px-4 py-3 flex items-center gap-3`} style={selectedTheme ? { backgroundColor: selectedTheme.background, borderColor: selectedTheme.border } : undefined}>
-                <button onClick={() => navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform">
+            <div className={`sticky top-0 z-50 ${selectedTheme ? '' : themeBg + '/90'} backdrop-blur-md border-b ${selectedTheme ? '' : themeBorder} px-4 py-3 flex items-center gap-3 t-bg`} style={selectedTheme ? { backgroundColor: 'color-mix(in srgb, var(--theme-bg) 95%, transparent)', borderColor: selectedTheme.border } : undefined}>
+                <button onClick={() => navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 t-border shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <h1 className="text-sm font-bold text-stone-800 truncate">{puja.pujaName}</h1>
@@ -356,7 +371,7 @@ export default function LiveMandirPujaDetailPage() {
 
             {/* ── Hero banner ── */}
             <div className="relative h-52 overflow-hidden p-2 rounded-[10px]">
-                <img src={optimizedImg(puja.image, 800)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={`${puja.pujaName} at ${puja.templeName}`} loading="eager" fetchPriority="high" decoding="async" className="w-full h-full object-cover rounded-[10px]" />
+                <img src={optimizedImg(puja.image, 800)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={`${puja.pujaName} at ${puja.templeName}`} loading="eager" fetchPriority="high" decoding="async" className="w-full h-full object-cover rounded-[10px] shadow-sm" />
                 <span className="absolute top-3 left-3 bg-red-500 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
                     {statusLabel}
                 </span>
@@ -366,9 +381,9 @@ export default function LiveMandirPujaDetailPage() {
                 {/* ── Puja name + meta (rating / temple / date) ── */}
                 <div>
                     <h2 className="text-xl font-bold font-serif text-stone-900 leading-tight">{puja.pujaName}</h2>
-                    <p className="text-[13px] text-orange-500 font-medium mt-0.5">{puja.pujaNameHindi}</p>
+                    <p className="text-[13px] text-orange-500 t-text font-medium mt-0.5">{puja.pujaNameHindi}</p>
                     <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
-                        <span className="bg-orange-100 text-orange-700 text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{puja.deity}</span>
+                        <span className="bg-orange-100 text-orange-700 t-bg-alt t-text-dark text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{puja.deity}</span>
                         <span className="flex items-center gap-1 text-[12px]">
                             <Stars value={puja.rating} />
                             <span className="font-bold text-stone-700">{puja.rating}</span>
@@ -376,14 +391,14 @@ export default function LiveMandirPujaDetailPage() {
                         </span>
                     </div>
                     <div className="flex items-center gap-3 mt-1.5 text-[12px] text-stone-500">
-                        <span className="flex items-center gap-1"><Mountain className="w-3.5 h-3.5 text-orange-500" />{mandirName}</span>
-                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-orange-500" />{displayDate}</span>
+                        <span className="flex items-center gap-1"><Mountain className="w-3.5 h-3.5 text-orange-500 t-text" />{mandirName}</span>
+                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-orange-500 t-text" />{displayDate}</span>
                     </div>
                 </div>
 
                 {/* ── Countdown (honest — real puja date) — compact single row ── */}
-                <div className="flex  items-center justify-center gap-6 bg-white border border-orange-100 rounded-xl px-3 py-2 shadow-sm">
-                    <span className="text-[10.5px] font-bold text-orange-600 leading-tight shrink-0">Bookings close soon</span>
+                <div className="flex  items-center justify-center gap-6 bg-white border border-orange-100 t-border rounded-xl px-3 py-2 shadow-sm">
+                    <span className="text-[10.5px] font-bold text-orange-600 t-text-dark leading-tight shrink-0">Bookings close soon</span>
                     {cd ? (
                         <div className="flex items-center gap-1">
                             {[
@@ -419,8 +434,8 @@ export default function LiveMandirPujaDetailPage() {
                 </div>
 
                 {/* ── Why perform this puja (quick outcomes) ── */}
-                <div className="rounded-2xl border border-orange-100 bg-white p-3 shadow-sm">
-                    <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-orange-400" />}>Why perform this puja</SectionTitle>
+                <div className="rounded-2xl border border-orange-100 t-border bg-white p-3 shadow-sm">
+                    <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-orange-400 t-text" />}>Why perform this puja</SectionTitle>
                     <div className="grid grid-cols-1 gap-1.5">
                         {puja.benefits.slice(0, 4).map((b, i) => (
                             <div key={i} className="flex items-start gap-2 text-[12.5px] text-stone-700">
@@ -432,14 +447,14 @@ export default function LiveMandirPujaDetailPage() {
                 </div>
 
                 {/* ── Mandir card ── */}
-                <div className="flex items-center gap-3 rounded-2xl border border-orange-100 bg-white p-3 shadow-sm">
+                <div className="flex items-center gap-3 rounded-2xl border border-orange-100 t-border bg-white p-3 shadow-sm">
                     <div className="w-11 h-11 rounded-full border border-amber-200 bg-white overflow-hidden shrink-0 flex items-center justify-center">
                         {puja.image ? <img src={optimizedImg(puja.image, 96)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={puja.templeName} loading="lazy" className="w-full h-full object-cover" /> : <Mountain className="w-6 h-6 text-amber-600/70" />}
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="text-[14px] font-bold text-stone-900 leading-snug truncate">{mandirName}</h3>
                         <div className="flex items-center gap-1.5 mt-0.5 text-[11.5px]">
-                            <Calendar className="w-3 h-3 text-orange-500 shrink-0" />
+                            <Calendar className="w-3 h-3 text-orange-500 t-text shrink-0" />
                             <span className="text-stone-700 font-medium">{displayDate}</span>
                             {puja.durationMins ? <span className="text-stone-400">· <Clock className="w-3 h-3 inline -mt-0.5" /> {puja.durationMins} min</span> : null}
                         </div>
@@ -449,7 +464,7 @@ export default function LiveMandirPujaDetailPage() {
 
                 {/* ── Puja details (accordion, expanded) ── */}
                 <div>
-                    <SectionTitle icon={<Flame className="w-3.5 h-3.5 text-orange-400" />}>Puja details</SectionTitle>
+                    <SectionTitle icon={<Flame className="w-3.5 h-3.5 text-orange-400 t-text" />}>Puja details</SectionTitle>
                     <div className="space-y-2">
                         <Accordion title="What is performed" defaultOpen>
                             <p>{puja.whatIsPerformed || `The ${puja.pujaName} is performed with complete Vedic rituals.`}</p>
@@ -462,8 +477,8 @@ export default function LiveMandirPujaDetailPage() {
 
                 {/* ── Temple details (About / History tabs) ── */}
                 <div>
-                    <SectionTitle icon={<Mountain className="w-3.5 h-3.5 text-orange-400" />}>Temple details</SectionTitle>
-                    <div className="rounded-2xl border border-orange-100 bg-white overflow-hidden shadow-sm">
+                    <SectionTitle icon={<Mountain className="w-3.5 h-3.5 text-orange-400 t-text" />}>Temple details</SectionTitle>
+                    <div className="rounded-2xl border border-orange-100 t-border bg-white overflow-hidden shadow-sm">
                         <img src={optimizedImg(puja.image, 640)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={puja.templeName} loading="lazy" className="w-full h-32 object-cover" />
                         <div className="p-3">
                             <div role="tablist" aria-label="Temple information" className="flex gap-2 mb-2">
@@ -473,7 +488,7 @@ export default function LiveMandirPujaDetailPage() {
                                         role="tab"
                                         aria-selected={templeTab === tab}
                                         onClick={() => setTempleTab(tab)}
-                                        className={`text-[12px] font-semibold px-3 py-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-orange-400 outline-none ${templeTab === tab ? "bg-orange-500 text-white" : "bg-orange-50 text-orange-600"}`}
+                                        className={`text-[12px] font-semibold px-3 py-1 rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-orange-400 t-ring outline-none ${templeTab === tab ? "bg-orange-500 text-white t-tab-active" : "bg-orange-50 text-orange-600 t-tab-inactive"}`}
                                     >{tab === "about" ? "About" : "History"}</button>
                                 ))}
                             </div>
@@ -488,12 +503,12 @@ export default function LiveMandirPujaDetailPage() {
 
                 {/* ── What you'll get ── */}
                 <div>
-                    <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-orange-400" />}>What you'll get</SectionTitle>
+                    <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-orange-400 t-text" />}>What you'll get</SectionTitle>
                     <div className="grid grid-cols-3 gap-2">
                         {whatYouGet.map(({ icon: Icon, title, sub }) => (
-                            <div key={title} className="bg-white border border-orange-100 rounded-xl p-2.5 text-center shadow-sm">
-                                <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 flex items-center justify-center mb-1.5">
-                                    <Icon className="w-4 h-4 text-orange-600" />
+                            <div key={title} className="bg-white border border-orange-100 t-border rounded-xl p-2.5 text-center shadow-sm">
+                                <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 t-icon-bg flex items-center justify-center mb-1.5">
+                                    <Icon className="w-4 h-4 text-orange-600 t-text-dark" />
                                 </div>
                                 <p className="text-[11px] font-bold text-stone-800 leading-tight">{title}</p>
                                 <p className="text-[9.5px] text-stone-400 leading-tight mt-0.5">{sub}</p>
@@ -505,10 +520,10 @@ export default function LiveMandirPujaDetailPage() {
                 {/* ── Video proof gallery (only if real videos exist) ── */}
                 {videos.length ? (
                     <div>
-                        <SectionTitle icon={<Video className="w-3.5 h-3.5 text-orange-400" />}>Video proof of performed pujas</SectionTitle>
+                        <SectionTitle icon={<Video className="w-3.5 h-3.5 text-orange-400 t-text" />}>Video proof of performed pujas</SectionTitle>
                         <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
                             {videos.map((src, i) => (
-                                <video key={i} src={src} controls playsInline preload="none" className="shrink-0 w-60 h-36 rounded-2xl border border-orange-100 object-cover bg-black" />
+                                <video key={i} src={src} controls playsInline preload="none" className="shrink-0 w-60 h-36 rounded-2xl border border-orange-100 t-border object-cover bg-black" />
                             ))}
                         </div>
                     </div>
@@ -522,24 +537,24 @@ export default function LiveMandirPujaDetailPage() {
                         { icon: Gift, label: "Prasad at Home" },
                         { icon: ShieldCheck, label: "Verified Pandit" },
                     ].map(({ icon: Icon, label }) => (
-                        <div key={label} className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm">
-                            <Icon className="w-4 h-4 text-orange-500" />
+                        <div key={label} className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm hover:shadow-md transition-shadow">
+                            <Icon className="w-4 h-4 text-orange-500 t-text" />
                             <span className="text-[9.5px] font-semibold text-stone-500 leading-tight">{label}</span>
                         </div>
                     ))}
                 </div>
 
                 {/* ── Footer / ecosystem ── */}
-                <footer className="pt-3 mt-2 border-t border-orange-100 text-[11px] text-stone-500 space-y-2">
+                <footer className="pt-3 mt-2 border-t border-orange-100 t-border text-[11px] text-stone-500 space-y-2">
                     {/* TODO: confirm registered legal entity name */}
                     <p className="font-bold text-stone-700">PanditJiAtRequest</p>
                     <p>1031, Tricity Trade Tower, Zirakpur, Punjab 140603, India</p>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
-                        <button onClick={() => navigate("/privacypolicy")} className="underline">Privacy Policy</button>
-                        <button onClick={() => navigate("/termsandconditions")} className="underline">Terms</button>
-                        <a href="tel:+919056955311" className="inline-flex items-center gap-1"><Phone className="w-3 h-3" />Support</a>
-                        <a href="https://wa.me/919056955311" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3" />WhatsApp</a>
-                        <a href="https://x.com/AtRequest50649" target="_blank" rel="noopener noreferrer" className="underline">X / Twitter</a>
+                        <button onClick={() => navigate("/privacypolicy")} className="underline hover:text-stone-700 transition-colors">Privacy Policy</button>
+                        <button onClick={() => navigate("/termsandconditions")} className="underline hover:text-stone-700 transition-colors">Terms</button>
+                        <a href="tel:+919056955311" className="inline-flex items-center gap-1 hover:text-stone-700 transition-colors"><Phone className="w-3 h-3" />Support</a>
+                        <a href="https://wa.me/919056955311" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-stone-700 transition-colors"><MessageCircle className="w-3 h-3" />WhatsApp</a>
+                        <a href="https://x.com/AtRequest50649" target="_blank" rel="noopener noreferrer" className="underline hover:text-stone-700 transition-colors">X / Twitter</a>
                     </div>
                 </footer>
             </div>
@@ -550,13 +565,12 @@ export default function LiveMandirPujaDetailPage() {
                     <div className="flex items-center gap-3">
                         <div className="shrink-0">
                             <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
-                            <span className={`text-[19px] font-extrabold ${themeTextMain}`} style={selectedTheme ? { color: selectedTheme.dark } : undefined}>{money(puja.price)}</span>
+                            <span className={`text-[19px] font-extrabold ${selectedTheme ? 't-text-dark' : themeTextMain}`}>{money(puja.price)}</span>
                             {puja.originalPrice ? <span className="ml-1.5 text-xs font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span> : null}
                         </div>
                         <button
                             onClick={openBooking}
-                            className={`flex-1 ${themeBtn} text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 outline-none`}
-                            style={selectedTheme ? { backgroundImage: `linear-gradient(100deg, ${selectedTheme.dark}, ${selectedTheme.primary})` } : undefined}
+                            className={`flex-1 ${selectedTheme ? 't-gradient' : themeBtn} text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 t-ring outline-none`}
                         >Participate Now</button>
                     </div>
                     <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-stone-400">

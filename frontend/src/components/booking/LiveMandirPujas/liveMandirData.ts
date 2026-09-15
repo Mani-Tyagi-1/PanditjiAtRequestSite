@@ -6,6 +6,18 @@
 //  UI needs to change.
 // ─────────────────────────────────────────────────────────────
 
+export interface LiveMandirPackage {
+    id: string;
+    name: string;
+    price: number;
+    strikePrice?: number;
+    description?: string;
+    bulletPoints?: string[];
+    images?: string[];
+    freePersons?: number;
+    freePrasad?: boolean;
+}
+
 export interface LiveMandirPuja {
     id: string;
     pujaName: string;
@@ -36,6 +48,8 @@ export interface LiveMandirPuja {
     ratingCount?: number;
     reviews?: LiveMandirReview[];
     theme?: string;
+    packages?: LiveMandirPackage[];
+    prasadBoxEnabled?: boolean;
 }
 
 // (kept exported for typing placeholder + API review data)

@@ -11,6 +11,7 @@ import analytics from "../utils/analytics";
 import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
 import { fetchGeneralPooja } from "../data/navratriPuja";
 import { money } from "../utils/currency";
+import AdminPujaPackages from "../components/booking/LiveMandirPujas/AdminPujaPackages";
 
 // ── analytics (Meta Pixel — the project's existing convention) ──
 function track(event: string, params?: Record<string, unknown>, custom = false) {
@@ -208,6 +209,17 @@ export default function LiveMandirPujaDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [templeTab, setTempleTab] = useState<"about" | "history">("about");
+    const [selectedPackageId, setSelectedPackageId] = useState<string>("");
+    const [prasadAdded, setPrasadAdded] = useState(false);
+
+    // Once puja is loaded, set the default selected package to the first one if not already set
+    useEffect(() => {
+        if (puja?.packages && puja.packages.length > 0 && !selectedPackageId) {
+            setSelectedPackageId(puja.packages[0].id);
+        }
+    }, [puja, selectedPackageId]);
+
+    const isFromAdmin = Boolean((location.state as { fromAdminBanner?: boolean } | null)?.fromAdminBanner) || Boolean(slug && /^[a-f\d]{24}$/i.test(slug));
 
     const fetchPujaDetails = async () => {
         setLoading(true);
@@ -261,7 +273,6 @@ export default function LiveMandirPujaDetailPage() {
 
     const openBooking = () => {
         if (!puja) return;
-        const isFromAdmin = Boolean((location.state as { fromAdminBanner?: boolean } | null)?.fromAdminBanner) || Boolean(slug && /^[a-f\d]{24}$/i.test(slug));
         track("InitiateCheckout", {
             content_name: puja.pujaName,
             content_ids: [puja.id],
@@ -269,7 +280,7 @@ export default function LiveMandirPujaDetailPage() {
             currency: "INR",
         });
         navigate(`/live-mandir-puja/${slug}/booking`, {
-            state: { puja, fromAdminBanner: isFromAdmin, adminTheme: adminBannerTheme(puja.theme) },
+            state: { puja, fromAdminBanner: isFromAdmin, adminTheme: adminBannerTheme(puja.theme), preselectedPackageId: selectedPackageId, preselectedPrasadAdded: prasadAdded },
         });
     };
 
@@ -433,6 +444,23 @@ export default function LiveMandirPujaDetailPage() {
                     <ReviewMarquee reviews={reviews} />
                 </div>
 
+                {/* ── Choose your puja package (Admin only) ── */}
+                {isFromAdmin && puja.packages && puja.packages.length > 0 && (
+                    <div className="rounded-2xl border border-orange-100 t-border bg-white p-3 shadow-sm">
+                        <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-orange-400 t-text" />}>Choose your puja package</SectionTitle>
+                        <p className="text-[11px] text-stone-400 mb-1 -mt-1">Select the package that best suits your devotion</p>
+                        <AdminPujaPackages
+                            packages={puja.packages}
+                            selectedId={selectedPackageId}
+                            onSelect={setSelectedPackageId}
+                            prasadBoxEnabled={puja.prasadBoxEnabled}
+                            selectedTheme={selectedTheme}
+                            prasadAdded={prasadAdded}
+                            onPrasadToggle={setPrasadAdded}
+                        />
+                    </div>
+                )}
+
                 {/* ── Why perform this puja (quick outcomes) ── */}
                 <div className="rounded-2xl border border-orange-100 t-border bg-white p-3 shadow-sm">
                     <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-orange-400 t-text" />}>Why perform this puja</SectionTitle>
@@ -565,8 +593,14 @@ export default function LiveMandirPujaDetailPage() {
                     <div className="flex items-center gap-3">
                         <div className="shrink-0">
                             <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
-                            <span className={`text-[19px] font-extrabold ${selectedTheme ? 't-text-dark' : themeTextMain}`}>{money(puja.price)}</span>
-                            {puja.originalPrice ? <span className="ml-1.5 text-xs font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span> : null}
+                            <span className={`text-[19px] font-extrabold ${selectedTheme ? 't-text-dark' : themeTextMain}`}>
+                                {money((isFromAdmin && puja.packages && puja.packages.length > 0 ? (puja.packages.find(p => p.id === selectedPackageId)?.price || puja.price) : puja.price) + ((prasadAdded && !(puja.packages?.find(p => p.id === selectedPackageId)?.freePrasad)) ? 501 : 0))}
+                            </span>
+                            {isFromAdmin && puja.packages && puja.packages.find(p => p.id === selectedPackageId)?.strikePrice ? (
+                                <span className="ml-1.5 text-xs font-semibold text-stone-400 line-through">
+                                    {money(puja.packages.find(p => p.id === selectedPackageId)!.strikePrice! + ((prasadAdded && !(puja.packages?.find(p => p.id === selectedPackageId)?.freePrasad)) ? 501 : 0))}
+                                </span>
+                            ) : (puja.originalPrice && !isFromAdmin ? <span className="ml-1.5 text-xs font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span> : null)}
                         </div>
                         <button
                             onClick={openBooking}

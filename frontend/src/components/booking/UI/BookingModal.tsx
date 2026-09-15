@@ -710,28 +710,28 @@ export default function BookingModal({
   const addrUserId = user?._id || user?.id || phoneUserData?._id || phoneUserData?.id;
 
   const fetchSavedAddresses = useCallback(async () => {
-      if (!addrUserId) return;
-      setIsLoadingAddresses(true);
-      try {
-        const apiUrl = API_URL;
-        const userId = addrUserId;
-        const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
+    if (!addrUserId) return;
+    setIsLoadingAddresses(true);
+    try {
+      const apiUrl = API_URL;
+      const userId = addrUserId;
+      const res = await fetch(`${apiUrl}/addresses?userId=${userId}`);
 
-        if (res.ok) {
-          const data = await res.json();
-          const decrypted = decryptData(data.encrypted);
+      if (res.ok) {
+        const data = await res.json();
+        const decrypted = decryptData(data.encrypted);
 
-          if (Array.isArray(decrypted)) {
-            setSavedAddresses(decrypted);
-          }
-        } else {
-          console.error("Failed to fetch saved addresses, status:", res.status);
+        if (Array.isArray(decrypted)) {
+          setSavedAddresses(decrypted);
         }
-      } catch (err) {
-        console.error("Failed to fetch saved addresses error:", err);
-      } finally {
-        setIsLoadingAddresses(false);
+      } else {
+        console.error("Failed to fetch saved addresses, status:", res.status);
       }
+    } catch (err) {
+      console.error("Failed to fetch saved addresses error:", err);
+    } finally {
+      setIsLoadingAddresses(false);
+    }
   }, [addrUserId]);
 
   useEffect(() => {
@@ -1661,11 +1661,10 @@ export default function BookingModal({
                               key={place.id}
                               type="button"
                               onClick={() => setSelectedRitualPlace(place.id)}
-                              className={`relative overflow-hidden rounded-2xl border text-left transition-all ${
-                                selected
-                                  ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
-                                  : "bg-white border-stone-200 hover:border-orange-200"
-                              }`}
+                              className={`relative overflow-hidden rounded-2xl border text-left transition-all ${selected
+                                ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
+                                : "bg-white border-stone-200 hover:border-orange-200"
+                                }`}
                             >
                               <div className="w-30 h-18 bg-orange-50">
                                 {place.imageUrl ? (
@@ -1828,11 +1827,10 @@ export default function BookingModal({
                               key={place.id}
                               type="button"
                               onClick={() => setSelectedRitualPlace(place.id)}
-                              className={`relative rounded-2xl border px-2 py-3 text-center transition-all ${
-                                selected
-                                  ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
-                                  : "bg-white border-stone-200 hover:border-orange-200"
-                              }`}
+                              className={`relative rounded-2xl border px-2 py-3 text-center transition-all ${selected
+                                ? "bg-orange-50 border-orange-500 ring-1 ring-orange-500"
+                                : "bg-white border-stone-200 hover:border-orange-200"
+                                }`}
                             >
                               <span className="block text-xl mb-1">{place.icon}</span>
                               <span className={`block text-xs font-bold ${selected ? "text-orange-600" : "text-stone-600"}`}>
@@ -2584,8 +2582,8 @@ export default function BookingModal({
                     <div
                       key={idx}
                       className={`relative overflow-hidden group transition-colors rounded-2xl p-5 border-2 border-dashed ${isUsed
-                          ? "bg-stone-100 border-stone-200 opacity-60 grayscale"
-                          : "bg-orange-50/50 border-orange-200 hover:border-orange-400"
+                        ? "bg-stone-100 border-stone-200 opacity-60 grayscale"
+                        : "bg-orange-50/50 border-orange-200 hover:border-orange-400"
                         }`}
                     >
                       {!isUsed && <div className="absolute -right-2 -top-2 w-12 h-12 bg-orange-100 rounded-full blur-2xl opacity-50 group-hover:opacity-100 transition-opacity" />}
@@ -2593,8 +2591,8 @@ export default function BookingModal({
                       <div className="relative">
                         <div className="flex items-center justify-between mb-2">
                           <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${isUsed
-                              ? "bg-stone-200 text-stone-500 border-stone-300"
-                              : "bg-white text-orange-600 border-orange-200"
+                            ? "bg-stone-200 text-stone-500 border-stone-300"
+                            : "bg-white text-orange-600 border-orange-200"
                             }`}>
                             {coupon.code}
                           </span>
@@ -2622,8 +2620,8 @@ export default function BookingModal({
                           onClick={() => !isUsed && handleApplyCoupon(coupon)}
                           disabled={isUsed}
                           className={`w-full font-bold py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] shadow-sm ${isUsed
-                              ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none"
-                              : "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
+                            ? "bg-stone-300 text-stone-500 cursor-not-allowed shadow-none"
+                            : "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
                             }`}
                         >
                           {isUsed ? "Coupon Used" : "Apply Coupon"}

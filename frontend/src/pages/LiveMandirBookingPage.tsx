@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star, User, Mail, Users, Calendar, Clock, Home, Building, Map, Mailbox, Info, ShieldCheck, Bell } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star, User, Mail, Users, Calendar, Clock, Home, Building, Map, Mailbox, Info, ShieldCheck, Bell, Flower2, Gift } from "lucide-react";
 import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
+import AdminPujaPackages from "../components/booking/LiveMandirPujas/AdminPujaPackages";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
@@ -26,6 +27,7 @@ interface BookingState {
         backgroundAlt: string;
         border: string;
     } | null;
+    preselectedPackageId?: string;
 }
 
 type Step = "details" | "success";
@@ -84,7 +86,7 @@ function AdminLiveMandirBookingPage() {
         members: "",
         wish: "",
         familyMembers: [] as string[],
-        prasadAdded: false,
+        prasadAdded: (state as any)?.preselectedPrasadAdded || false,
     });
 
     const [familyInput, setFamilyInput] = useState("");
@@ -118,12 +120,18 @@ function AdminLiveMandirBookingPage() {
         }));
     }, [user]);
 
+    // We assume puja and puja.packages are available from state
+    const packages = puja?.packages || [];
+    const [selectedPackageId, setSelectedPackageId] = useState<string>(state?.preselectedPackageId || (packages.length > 0 ? packages[0].id : ""));
+    const selectedPkg = packages.find(p => p.id === selectedPackageId) || packages[0];
+
     // Blessed prasad is couriered within India only — see `shipsPrasad`. Gated
     // on the DERIVED value so one guard turns the whole feature off: no bill
     // line, no delivery step, no courier instruction on the booking, and a
     // devotee who switched country cannot be left paying for a parcel that will
     // never be sent.
-    const prasadAdded = isIndia && form.prasadAdded;
+    const isPrasadIncluded = selectedPkg?.freePrasad || form.prasadAdded;
+    const prasadAdded = isIndia && isPrasadIncluded;
 
     // Load saved addresses if logged in and Prasad is added
     useEffect(() => {
@@ -158,9 +166,9 @@ function AdminLiveMandirBookingPage() {
     // Dynamic pricing — computed above the `!puja` guard so the abandoned-cart
     // draft below (a hook, so it must run before any early return) can carry the
     // running total.
-    const basePrice = puja?.price ?? 0;
+    const basePrice = selectedPkg ? selectedPkg.price : (puja?.price || 0);
     const familyCost = form.familyMembers.length * 101;
-    const prasadCost = prasadAdded ? 501 : 0;
+    const prasadCost = (prasadAdded && !selectedPkg?.freePrasad) ? 501 : 0;
     const totalPrice = basePrice + familyCost + prasadCost;
 
     // GA4 line items for this seva. Add-ons are separate rows so the item total
@@ -300,7 +308,7 @@ function AdminLiveMandirBookingPage() {
                 body: JSON.stringify(encryptPayload({
                     isLiveMandir: true,
                     pujaSlug: puja.id,
-                    packageName: puja.pujaName,
+                    packageName: `${puja.pujaName} - ${selectedPkg?.name || "Standard"}`,
                     templeName: puja.templeName,
                     bhaktName: form.name.trim(),
                     gotra: form.gotra.trim(),
@@ -470,6 +478,7 @@ function AdminLiveMandirBookingPage() {
                 .t-bg-alt { background-color: var(--theme-bg-alt) !important; }
                 .t-border { border-color: var(--theme-border) !important; }
                 .t-border-active { border-color: var(--theme-primary) !important; }
+                .t-border-light { border-color: color-mix(in srgb, var(--theme-primary) 25%, transparent) !important; }
                 .t-ring { --tw-ring-color: var(--theme-primary) !important; }
                 .t-gradient { background-image: linear-gradient(100deg, var(--theme-dark), var(--theme-primary)) !important; }
                 .t-focus-within:focus-within { border-color: var(--theme-dark) !important; --tw-ring-color: color-mix(in srgb, var(--theme-dark) 20%, transparent) !important; }
@@ -501,26 +510,66 @@ function AdminLiveMandirBookingPage() {
             <div className="px-4 space-y-4 pt-1 relative z-20">
                 {step === "details" ? (
                     <div className="space-y-4">
-                        {/* Base Puja price info */}
-                        <div className="bg-white border border-stone-100 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] relative">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1 min-w-0 pr-4">
-                                    <h2 className="text-[16px] font-bold text-stone-900 leading-tight truncate">{puja.pujaName}</h2>
-                                    {puja.pujaNameHindi && <p className="text-[13px] text-orange-500 t-text font-medium mt-1">{puja.pujaNameHindi}</p>}
+                        {/* Order summary — reflects the chosen package + extras */}
+                        <div className={`bg-white border rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,.07)] relative ${adminTheme ? 't-border' : 'border-stone-200'}`}>
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 pr-2">
+                                    <h2 className={`text-[15px] font-bold leading-snug ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>{puja.pujaName}</h2>
+                                    <p className={`text-[12px] font-medium mt-1 ${adminTheme ? 't-text' : 'text-[#4C3F91]'}`}>{selectedPkg.name} package</p>
                                 </div>
-                                <span className="flex items-center gap-1 bg-orange-50/50 t-bg-alt t-text text-orange-500 rounded-lg px-2 py-1 text-[11px] font-bold shrink-0">
-                                    <Star className="w-3 h-3 fill-current" /> 4.5
+                                <span className={`flex items-center gap-1 shrink-0 border rounded-full px-2 py-0.5 text-[11px] font-bold ${adminTheme ? 't-bg-alt t-border-light t-text-dark' : 'bg-orange-50 border-orange-100 text-[#4C3F91]'}`}>
+                                    ★ 4.6
                                 </span>
                             </div>
 
-                            <div className="h-px bg-stone-100 w-full mb-3" />
+                            <div className={`mt-3 pt-3 border-t space-y-2.5 ${adminTheme ? 't-border-light' : 'border-stone-100'}`}>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[13px] text-stone-600 font-medium">{selectedPkg.name}</span>
+                                    <span className={`text-[14px] font-bold ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>{money(basePrice)}</span>
+                                </div>
 
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">BASE SEVA</span>
-                                <span className="text-[20px] font-extrabold text-stone-900">{money(basePrice)}</span>
-                                {puja.originalPrice ? (
-                                    <span className="text-[12px] font-semibold text-stone-400 line-through ml-1">{money(puja.originalPrice)}</span>
-                                ) : null}
+                                {/* Offerings made in your name — shown as "Included" */}
+                                {selectedPkg.images && selectedPkg.images.length > 0 && (
+                                    <div className="flex items-start justify-between gap-2">
+                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-start gap-2 min-w-0">
+                                            <Flower2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                            <span className="leading-snug">Offerings in your name</span>
+                                        </span>
+                                        <span className="text-[12px] font-bold text-emerald-600 shrink-0">Included</span>
+                                    </div>
+                                )}
+
+                                {/* Prasad box summary */}
+                                {puja.prasadBoxEnabled && (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-2 min-w-0">
+                                            <Gift className={`w-4 h-4 shrink-0 ${adminTheme ? 't-text' : 'text-amber-500'}`} />
+                                            <span className="truncate">Prasad Box</span>
+                                        </span>
+                                        {selectedPkg.freePrasad ? (
+                                            <span className="text-[12px] font-bold text-emerald-600 shrink-0">Free</span>
+                                        ) : prasadCost > 0 ? (
+                                            <span className={`text-[14px] font-bold shrink-0 ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>+{money(prasadCost)}</span>
+                                        ) : (
+                                            <span className="text-[12px] font-semibold text-stone-400 shrink-0">Not added</span>
+                                        )}
+                                    </div>
+                                )}
+
+                                {familyCost > 0 && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-2">
+                                            <Users className={`w-4 h-4 ${adminTheme ? 't-text' : 'text-orange-500'}`} />
+                                            Extra Sankalp × {form.familyMembers.length}
+                                        </span>
+                                        <span className={`text-[14px] font-bold ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>+{money(familyCost)}</span>
+                                    </div>
+                                )}
+
+                                <div className={`flex items-baseline justify-between pt-3 border-t ${adminTheme ? 't-border-light' : 'border-stone-100'}`}>
+                                    <span className="text-[11px] font-bold uppercase tracking-widest text-stone-500">TOTAL</span>
+                                    <span className={`text-[22px] font-extrabold ${adminTheme ? 't-text-dark' : 'text-[#4C3F91]'}`}>{money(totalPrice)}</span>
+                                </div>
                             </div>
                         </div>
 
@@ -620,31 +669,17 @@ function AdminLiveMandirBookingPage() {
                             )}
                         </div>
 
-                        {/* Step 3: Prasad Delivery */}
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50 t-border">
-                                <span className="w-7 h-7 rounded-full bg-[#6b0504] text-white t-bg-alt t-text-dark flex items-center justify-center font-bold text-sm" style={adminTheme ? { backgroundColor: adminTheme.dark } : undefined}>03</span>
-                                <div>
-                                    <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Prasad Delivery</h3>
-                                    <p className="text-[11px] text-stone-400">Optional delivery at your address</p>
+                        {/* Step 3: Prasad Delivery Address */}
+                        {prasadAdded && (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50 t-border">
+                                    <span className="w-7 h-7 rounded-full bg-[#6b0504] text-white t-bg-alt t-text-dark flex items-center justify-center font-bold text-sm" style={adminTheme ? { backgroundColor: adminTheme.dark } : undefined}>03</span>
+                                    <div>
+                                        <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Delivery Address</h3>
+                                        <p className="text-[11px] text-stone-400">Where should we deliver the Sacred Prasad?</p>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <label className="flex items-center gap-3 bg-white border border-orange-100 t-border rounded-xl p-3 shadow-sm cursor-pointer select-none overflow-hidden relative">
-                                <input
-                                    type="checkbox"
-                                    checked={form.prasadAdded}
-                                    onChange={(e) => setForm(f => ({ ...f, prasadAdded: e.target.checked }))}
-                                    className="w-5 h-5 rounded text-[#6b0504] t-text focus:ring-[#6b0504] t-ring border-stone-300 t-border"
-                                />
-                                <div className="flex-1">
-                                    <p className="text-[13px] font-bold text-stone-850">Add Sacred Prasad</p>
-                                    <p className="text-[11px] text-stone-500 mt-0.5">Blessed at the Mandir · +{money(501)}</p>
-                                </div>
-                            </label>
-
-                            {/* Addresses List if Prasad checked */}
-                            {form.prasadAdded && (
                                 <div className="space-y-3 pt-2">
                                     {user && addresses.length > 0 && !showNewAddressForm && (
                                         <div className="space-y-2">
@@ -743,8 +778,8 @@ function AdminLiveMandirBookingPage() {
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <motion.div

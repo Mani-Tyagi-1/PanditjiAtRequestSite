@@ -8,6 +8,17 @@ const GeneralPoojaSchema = new Schema({
   discountPrice: Number, whatIsPerformed: String, vidhi: String, offeringsSamagri: String,
   benefits: [String], templeName: String, templeLocation: String, templeAddress: String,
   templeImage: String, templeAbout: String, templeHistory: String, theme: String,
+  prasadBoxEnabled: { type: Boolean, default: false },
+  packages: [{
+    name: String,
+    price: Number,
+    strikePrice: Number,
+    description: String,
+    bulletPoints: [String],
+    images: [String],
+    freePersons: Number,
+    freePrasad: Boolean
+  }]
 }, { timestamps: true, collection: "generalpoojas" });
 
 export default panditJiAtRequestMongooose.model("GeneralPooja", GeneralPoojaSchema);

@@ -26,6 +26,18 @@ const mapGeneralPooja = (data: any): LiveMandirPuja => {
         templeAbout: data.templeAbout,
         templeHistory: data.templeHistory,
         theme: data.theme,
+        prasadBoxEnabled: data.prasadBoxEnabled,
+        packages: Array.isArray(data.packages) ? data.packages.map((pkg: any) => ({
+            id: pkg._id,
+            name: pkg.name,
+            price: Number(pkg.price) || 0,
+            strikePrice: pkg.strikePrice ? Number(pkg.strikePrice) : undefined,
+            description: pkg.description,
+            bulletPoints: pkg.bulletPoints || [],
+            images: pkg.images || [],
+            freePersons: pkg.freePersons,
+            freePrasad: pkg.freePrasad,
+        })) : undefined,
     };
 };
 

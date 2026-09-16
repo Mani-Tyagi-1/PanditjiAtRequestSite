@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star, User, Mail, Users, Calendar, Clock, Home, Building, Map, Mailbox, Info, ShieldCheck, Bell, Flower2, Gift } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star, User, Mail, Users, Calendar, Clock, Home, Building, Map, Mailbox, Info, ShieldCheck, Bell, Flower2, Gift, Sparkles } from "lucide-react";
 import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
 import AdminPujaPackages from "../components/booking/LiveMandirPujas/AdminPujaPackages";
 import API_URL from "../utils/apiConfig";
@@ -122,8 +122,8 @@ function AdminLiveMandirBookingPage() {
 
     // We assume puja and puja.packages are available from state
     const packages = puja?.packages || [];
-    const [selectedPackageId, setSelectedPackageId] = useState<string>(state?.preselectedPackageId || (packages.length > 0 ? packages[0].id : ""));
-    const selectedPkg = packages.find(p => p.id === selectedPackageId) || packages[0];
+    const [selectedPackageId, setSelectedPackageId] = useState<string>(state?.preselectedPackageId || (packages.length > 1 ? packages[1].id : (packages.length > 0 ? packages[0].id : "")));
+    const selectedPkg = packages.find(p => p.id === selectedPackageId) || (packages.length > 1 ? packages[1] : packages[0]);
 
     // Blessed prasad is couriered within India only — see `shipsPrasad`. Gated
     // on the DERIVED value so one guard turns the whole feature off: no bill
@@ -167,7 +167,8 @@ function AdminLiveMandirBookingPage() {
     // draft below (a hook, so it must run before any early return) can carry the
     // running total.
     const basePrice = selectedPkg ? selectedPkg.price : (puja?.price || 0);
-    const familyCost = form.familyMembers.length * 101;
+    const chargedMembers = Math.max(0, form.familyMembers.length - (selectedPkg.freePersons || 0));
+    const familyCost = chargedMembers * 101;
     const prasadCost = (prasadAdded && !selectedPkg?.freePrasad) ? 501 : 0;
     const totalPrice = basePrice + familyCost + prasadCost;
 
@@ -187,7 +188,7 @@ function AdminLiveMandirBookingPage() {
             ? [{ id: `${puja?.id}__prasad`, name: "Prasad Box", price: 501, quantity: 1, category: "Add-on" }]
             : []),
         ...(familyCost > 0
-            ? [{ id: `${puja?.id}__sankalp`, name: "Extra Sankalp Name", price: 101, quantity: form.familyMembers.length, category: "Add-on" }]
+            ? [{ id: `${puja?.id}__sankalp`, name: "Extra Sankalp Name", price: 101, quantity: chargedMembers, category: "Add-on" }]
             : []),
     ];
 
@@ -556,11 +557,22 @@ function AdminLiveMandirBookingPage() {
                                     </div>
                                 )}
 
+                                {/* Free Family Sankalps included in package */}
+                                {(selectedPkg.freePersons || 0) > 0 && (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-2 min-w-0">
+                                            <Users className={`w-4 h-4 shrink-0 ${adminTheme ? 't-text' : 'text-orange-500'}`} />
+                                            <span className="truncate">{selectedPkg.freePersons} family Sankalp</span>
+                                        </span>
+                                        <span className="text-[12px] font-bold text-emerald-600 shrink-0">Free</span>
+                                    </div>
+                                )}
+
                                 {familyCost > 0 && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-2">
                                             <Users className={`w-4 h-4 ${adminTheme ? 't-text' : 'text-orange-500'}`} />
-                                            Extra Sankalp × {form.familyMembers.length}
+                                            Extra Sankalp × {chargedMembers}
                                         </span>
                                         <span className={`text-[14px] font-bold ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>+{money(familyCost)}</span>
                                     </div>
@@ -621,10 +633,25 @@ function AdminLiveMandirBookingPage() {
                                 <span className="w-7 h-7 rounded-full bg-[#6b0504] text-white t-bg-alt t-text-dark flex items-center justify-center font-bold text-sm" style={adminTheme ? { backgroundColor: adminTheme.dark } : undefined}>02</span>
                                 <div>
                                     <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Family Sankalp</h3>
-                                    <p className="text-[11px] text-stone-400">Add members at {money(101)} each</p>
+                                    <p className="text-[11px] text-stone-400">
+                                        {(selectedPkg.freePersons || 0) > 0
+                                            ? `${selectedPkg.freePersons} free in ${selectedPkg.name} · ${money(101)} each after`
+                                            : `Add members at ${money(101)} each`}
+                                    </p>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2">
+
+                            {/* Free-allowance meter */}
+                            {(selectedPkg.freePersons || 0) > 0 && (
+                                <div className="flex items-center gap-1.5 bg-[#EDF9F0] border border-[#A7D8B6] rounded-xl px-3 py-2 text-[11.5px] font-semibold text-[#1F7A50]">
+                                    <Sparkles className="w-3.5 h-3.5 text-[#2E8B57] shrink-0" />
+                                    {Math.max(0, (selectedPkg.freePersons || 0) - form.familyMembers.length) > 0
+                                        ? `${Math.max(0, (selectedPkg.freePersons || 0) - form.familyMembers.length)} free family Sankalp${Math.max(0, (selectedPkg.freePersons || 0) - form.familyMembers.length) > 1 ? "s" : ""} left in your package`
+                                        : `Free members used — extra names add ${money(101)} each`}
+                                </div>
+                            )}
+
+                            <div className="flex flex-col gap-2 pt-1">
                                 <div className={`${INPUT_WRAPPER}`}>
                                     <div className={ICON_CONTAINER}><Users className="w-4 h-4" /></div>
                                     <input
@@ -656,128 +683,162 @@ function AdminLiveMandirBookingPage() {
 
                             {/* Render Family List */}
                             {form.familyMembers.length > 0 && (
-                                <div className="flex flex-wrap gap-2 pt-1">
+                                <div className="space-y-2 pt-1">
                                     {form.familyMembers.map((m, idx) => (
-                                        <span key={idx} className="flex items-center gap-1.5 bg-orange-50 border border-orange-100 text-orange-850 t-bg-alt t-border t-text-dark text-xs px-3 py-1.5 rounded-full">
-                                            {m}
-                                            <button onClick={() => removeFamilyMember(idx)} className="text-orange-400 t-text hover:opacity-75 transition-opacity">
-                                                <X className="w-3.5 h-3.5" />
+                                        <div
+                                            key={`${m}-${idx}`}
+                                            className={`flex items-center gap-2 rounded-xl px-3 py-2 ${adminTheme ? 'bg-orange-50/50 border border-orange-100 t-bg-alt t-border-light' : 'bg-stone-50 border border-stone-100'}`}
+                                        >
+                                            <Check className="w-3.5 h-3.5 text-[#2E8B57] shrink-0" strokeWidth={3} />
+                                            <div className="min-w-0 flex-1">
+                                                <p className={`text-[12.5px] font-bold truncate ${adminTheme ? 't-text-dark' : 'text-stone-800'}`}>{m}</p>
+                                            </div>
+                                            {idx < (selectedPkg.freePersons || 0) ? (
+                                                <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">FREE</span>
+                                            ) : (
+                                                <span className={`text-[11px] font-bold shrink-0 ${adminTheme ? 't-text' : 'text-orange-600'}`}>+{money(101)}</span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFamilyMember(idx)}
+                                                className="text-[#8A8A8A] hover:text-red-500 transition-colors shrink-0"
+                                            >
+                                                <X className="w-4 h-4" />
                                             </button>
-                                        </span>
+                                        </div>
                                     ))}
                                 </div>
                             )}
                         </div>
 
                         {/* Step 3: Prasad Delivery Address */}
-                        {prasadAdded && (
+                        {puja.prasadBoxEnabled && isIndia && (
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2.5 pb-2 border-b border-orange-100/50 t-border">
                                     <span className="w-7 h-7 rounded-full bg-[#6b0504] text-white t-bg-alt t-text-dark flex items-center justify-center font-bold text-sm" style={adminTheme ? { backgroundColor: adminTheme.dark } : undefined}>03</span>
                                     <div>
-                                        <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Delivery Address</h3>
-                                        <p className="text-[11px] text-stone-400">Where should we deliver the Sacred Prasad?</p>
+                                        <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Prasad Delivery</h3>
+                                        <p className="text-[11px] text-stone-400">Optional delivery at your address</p>
                                     </div>
                                 </div>
 
-                                <div className="space-y-3 pt-2">
-                                    {user && addresses.length > 0 && !showNewAddressForm && (
-                                        <div className="space-y-2">
-                                            <p className={LABEL}>Select Delivery Address</p>
-                                            {addresses.map(addr => (
-                                                <label
-                                                    key={addr._id}
-                                                    className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-orange-500 t-border-active bg-orange-50/20" : "border-stone-100"}`}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name="addressSelect"
-                                                        checked={selectedAddressId === addr._id}
-                                                        onChange={() => setSelectedAddressId(addr._id)}
-                                                        className="mt-1 text-orange-500 t-text focus:ring-orange-400 t-ring border-orange-200 t-border"
-                                                    />
-                                                    <div className="text-[12.5px] text-stone-700 leading-relaxed">
-                                                        <span className="font-bold text-[11px] text-orange-600 t-text-dark uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
-                                                        {addr.addressLine1 || addr.houseNo}, {addr.addressLine2 || addr.street}, {addr.city}, {addr.state} - {addr.pincode}
-                                                    </div>
-                                                </label>
-                                            ))}
-                                            <button
-                                                onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
-                                                className="text-orange-600 t-text-dark hover:opacity-80 text-xs font-bold pt-1 block cursor-pointer transition-opacity"
-                                            >
-                                                + Add New Address
-                                            </button>
+                                {!selectedPkg?.freePrasad && (
+                                    <label className={`flex items-center gap-3 bg-white border rounded-2xl p-4 shadow-sm cursor-pointer select-none ${adminTheme ? 't-border' : 'border-stone-100'}`}>
+                                        <input
+                                            type="checkbox"
+                                            checked={form.prasadAdded}
+                                            onChange={(e) => setForm(f => ({ ...f, prasadAdded: e.target.checked }))}
+                                            className="w-4 h-4 rounded text-orange-500 t-text focus:ring-orange-400 t-ring border-orange-200 t-border"
+                                            style={adminTheme ? { accentColor: adminTheme.primary } : { accentColor: '#f97316' }}
+                                        />
+                                        <div>
+                                            <p className={`text-xs font-bold ${adminTheme ? 't-text-dark' : 'text-stone-800'}`}>Add Sacred Prasad</p>
+                                            <p className="text-[11px] text-stone-400 mt-0.5">Blessed at the Mandir · +{money(501)}</p>
                                         </div>
-                                    )}
+                                    </label>
+                                )}
 
-                                    {/* Address Input fields */}
-                                    {(!user || showNewAddressForm) && (
-                                        <div className="bg-white border border-stone-100 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] space-y-4">
-                                            <div className="flex items-center justify-between pb-2 border-b border-stone-50">
-                                                <span className="text-[13px] font-bold text-stone-900">Delivery Address Details</span>
-                                                {user && addresses.length > 0 && (
-                                                    <button
-                                                        onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
-                                                        className="text-stone-400 hover:text-stone-600 text-xs font-medium cursor-pointer"
+                                {prasadAdded && (
+                                    <div className="space-y-3 pt-2">
+                                        {user && addresses.length > 0 && !showNewAddressForm && (
+                                            <div className="space-y-2">
+                                                <p className={LABEL}>Select Delivery Address</p>
+                                                {addresses.map(addr => (
+                                                    <label
+                                                        key={addr._id}
+                                                        className={`flex items-start gap-3 bg-white border rounded-2xl p-3.5 shadow-xs cursor-pointer transition-all ${selectedAddressId === addr._id ? "border-orange-500 t-border-active bg-orange-50/20" : "border-stone-100"}`}
                                                     >
-                                                        Cancel
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">HOUSE/FLAT NO *</label>
-                                                    <input
-                                                        value={newAddress.houseNo}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, houseNo: e.target.value }))}
-                                                        placeholder="e.g. 73a VIP Road"
-                                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">AREA/STREET *</label>
-                                                    <input
-                                                        value={newAddress.street}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, street: e.target.value }))}
-                                                        placeholder="e.g. Zirakpur"
-                                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">CITY *</label>
                                                         <input
-                                                            value={newAddress.city}
-                                                            onChange={(e) => setNewAddress(a => ({ ...a, city: e.target.value }))}
+                                                            type="radio"
+                                                            name="addressSelect"
+                                                            checked={selectedAddressId === addr._id}
+                                                            onChange={() => setSelectedAddressId(addr._id)}
+                                                            className="mt-1 text-orange-500 t-text focus:ring-orange-400 t-ring border-orange-200 t-border"
+                                                            style={adminTheme ? { accentColor: adminTheme.primary } : { accentColor: '#f97316' }}
+                                                        />
+                                                        <div className="text-[12.5px] text-stone-700 leading-relaxed">
+                                                            <span className="font-bold text-[11px] text-orange-600 t-text-dark uppercase tracking-wider block mb-0.5">{addr.addressName || addr.saveAs}</span>
+                                                            {addr.addressLine1 || addr.houseNo}, {addr.addressLine2 || addr.street}, {addr.city}, {addr.state} - {addr.pincode}
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                                <button
+                                                    onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
+                                                    className="text-orange-600 t-text-dark hover:opacity-80 text-xs font-bold pt-1 block cursor-pointer transition-opacity"
+                                                >
+                                                    + Add New Address
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Address Input fields */}
+                                        {(!user || showNewAddressForm) && (
+                                            <div className="bg-white border border-stone-100 rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.04)] space-y-4">
+                                                <div className="flex items-center justify-between pb-2 border-b border-stone-50">
+                                                    <span className="text-[13px] font-bold text-stone-900">Delivery Address Details</span>
+                                                    {user && addresses.length > 0 && (
+                                                        <button
+                                                            onClick={() => { setShowNewAddressForm(false); setSelectedAddressId(addresses[0]._id); }}
+                                                            className="text-stone-400 hover:text-stone-600 text-xs font-medium cursor-pointer"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">HOUSE/FLAT NO *</label>
+                                                        <input
+                                                            value={newAddress.houseNo}
+                                                            onChange={(e) => setNewAddress(a => ({ ...a, houseNo: e.target.value }))}
+                                                            placeholder="e.g. 73a VIP Road"
+                                                            className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">AREA/STREET *</label>
+                                                        <input
+                                                            value={newAddress.street}
+                                                            onChange={(e) => setNewAddress(a => ({ ...a, street: e.target.value }))}
                                                             placeholder="e.g. Zirakpur"
                                                             className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
                                                         />
                                                     </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">CITY *</label>
+                                                            <input
+                                                                value={newAddress.city}
+                                                                onChange={(e) => setNewAddress(a => ({ ...a, city: e.target.value }))}
+                                                                placeholder="e.g. Zirakpur"
+                                                                className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">STATE *</label>
+                                                            <input
+                                                                value={newAddress.state}
+                                                                onChange={(e) => setNewAddress(a => ({ ...a, state: e.target.value }))}
+                                                                placeholder="e.g. Punjab"
+                                                                className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                            />
+                                                        </div>
+                                                    </div>
                                                     <div>
-                                                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">STATE *</label>
+                                                        <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">PINCODE *</label>
                                                         <input
-                                                            value={newAddress.state}
-                                                            onChange={(e) => setNewAddress(a => ({ ...a, state: e.target.value }))}
-                                                            placeholder="e.g. Punjab"
+                                                            value={newAddress.pincode}
+                                                            onChange={(e) => setNewAddress(a => ({ ...a, pincode: e.target.value.replace(/\D/g, "") }))}
+                                                            placeholder="6-digit pincode"
+                                                            inputMode="numeric"
                                                             className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
                                                         />
                                                     </div>
                                                 </div>
-                                                <div>
-                                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">PINCODE *</label>
-                                                    <input
-                                                        value={newAddress.pincode}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, pincode: e.target.value.replace(/\D/g, "") }))}
-                                                        placeholder="6-digit pincode"
-                                                        inputMode="numeric"
-                                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
-                                                    />
-                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

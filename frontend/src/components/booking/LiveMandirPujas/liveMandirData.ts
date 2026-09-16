@@ -31,6 +31,7 @@ export interface LiveMandirPuja {
     scheduledDate: string;   // human label e.g. "Tomorrow" / "Mon, 16 Jun"
     scheduledTime: string;   // e.g. "06:00 AM"
     durationMins: number;
+    durationString?: string;
     price: number;
     originalPrice?: number;
     rating: number;

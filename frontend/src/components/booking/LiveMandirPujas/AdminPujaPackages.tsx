@@ -70,7 +70,7 @@ export default function AdminPujaPackages({
                                 <img
                                     src={pkg.images[0]}
                                     alt={pkg.name}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-stretch"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                             </div>

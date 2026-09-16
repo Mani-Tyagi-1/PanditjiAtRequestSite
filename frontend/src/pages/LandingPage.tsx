@@ -30,8 +30,8 @@ export default function LandingPage() {
 
   useEffect(() => {
     analytics.metaBridge("ViewContent", {
-    content_name: "Home Page",
-    content_type: "website",
+      content_name: "Home Page",
+      content_type: "website",
     });
   }, []);
 
@@ -101,7 +101,7 @@ export default function LandingPage() {
       <Navigation />
       <div className="w-full max-w-md relative mx-auto">
         <HeroBanner showConsultancySection={_showConsultancySection} />
-        
+
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useId, type CSSProperties } from "react";
+import { useState, useEffect, useMemo, useId, useRef, type CSSProperties } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Video, Gift, Calendar, Mountain, Sparkles,
@@ -171,7 +171,7 @@ function Accordion({ title, icon, defaultOpen = false, children }: {
 
 function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
     return (
-        <h3 className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-2">
+        <h3 className="flex items-center gap-1.5 text-[15px] font-bold uppercase tracking-wider text-black mb-3">
             {icon}{children}
         </h3>
     );
@@ -211,11 +211,62 @@ export default function LiveMandirPujaDetailPage() {
     const [templeTab, setTempleTab] = useState<"about" | "history">("about");
     const [selectedPackageId, setSelectedPackageId] = useState<string>("");
     const [prasadAdded, setPrasadAdded] = useState(false);
+    const packagesRef = useRef<HTMLDivElement>(null);
+
+    // Gentle one-time nudge: ~3.5s after landing, if the devotee hasn't scrolled
+    // yet, glide the page down so the package comparison is on screen. We run our
+    // own eased rAF tween (easeInOutCubic over ~1.4s) rather than native smooth
+    // scroll for a buttery, consistent glide — and bail the instant they
+    // interact, so it never fights a user who's already reading.
+    useEffect(() => {
+        let interacted = false;
+        let rafId = 0;
+        const mark = () => { interacted = true; cancelAnimationFrame(rafId); };
+        window.addEventListener("wheel", mark, { passive: true });
+        window.addEventListener("touchmove", mark, { passive: true });
+        window.addEventListener("keydown", mark);
+
+        const timeoutId = setTimeout(() => {
+            if (interacted || window.scrollY > 40 || !packagesRef.current) return;
+
+            const startY = window.scrollY;
+            const targetY = Math.max(0, packagesRef.current.getBoundingClientRect().top + startY - 70);
+            const distance = targetY - startY;
+            if (Math.abs(distance) < 4) return;
+
+            // Respect reduced-motion: jump straight there, no animation.
+            if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+                window.scrollTo(0, targetY);
+                return;
+            }
+
+            const duration = 1400;
+            const startT = performance.now();
+            const easeInOutCubic = (t: number) =>
+                t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            const step = (now: number) => {
+                if (interacted) return;
+                const t = Math.min(1, (now - startT) / duration);
+                window.scrollTo(0, startY + distance * easeInOutCubic(t));
+                if (t < 1) rafId = requestAnimationFrame(step);
+            };
+            rafId = requestAnimationFrame(step);
+            track("puja_packages_autoscroll", {}, true);
+        }, 3500);
+
+        return () => {
+            clearTimeout(timeoutId);
+            cancelAnimationFrame(rafId);
+            window.removeEventListener("wheel", mark);
+            window.removeEventListener("touchmove", mark);
+            window.removeEventListener("keydown", mark);
+        };
+    }, []);
 
     // Once puja is loaded, set the default selected package to the first one if not already set
     useEffect(() => {
         if (puja?.packages && puja.packages.length > 0 && !selectedPackageId) {
-            setSelectedPackageId(puja.packages[0].id);
+            setSelectedPackageId(puja.packages.length > 1 ? puja.packages[1].id : puja.packages[0].id);
         }
     }, [puja, selectedPackageId]);
 
@@ -396,8 +447,8 @@ export default function LiveMandirPujaDetailPage() {
                     <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
                         <span className="bg-orange-100 text-orange-700 t-bg-alt t-text-dark text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{puja.deity}</span>
                         <span className="flex items-center gap-1 text-[12px]">
-                            <Stars value={puja.rating} />
-                            <span className="font-bold text-stone-700">{puja.rating}</span>
+                            <Stars value={4.6} />
+                            <span className="font-bold text-stone-700">4.6</span>
                             <span className="text-stone-400">· {devoteesLabel} devotees</span>
                         </span>
                     </div>
@@ -446,7 +497,7 @@ export default function LiveMandirPujaDetailPage() {
 
                 {/* ── Choose your puja package (Admin only) ── */}
                 {isFromAdmin && puja.packages && puja.packages.length > 0 && (
-                    <div className="rounded-2xl border border-orange-100 t-border bg-white p-3 shadow-sm">
+                    <div ref={packagesRef} className="rounded-2xl border border-orange-100 t-border bg-white p-3 shadow-sm">
                         <SectionTitle icon={<Sparkles className="w-3.5 h-3.5 text-orange-400 t-text" />}>Choose your puja package</SectionTitle>
                         <p className="text-[11px] text-stone-400 mb-1 -mt-1">Select the package that best suits your devotion</p>
                         <AdminPujaPackages
@@ -484,7 +535,7 @@ export default function LiveMandirPujaDetailPage() {
                         <div className="flex items-center gap-1.5 mt-0.5 text-[11.5px]">
                             <Calendar className="w-3 h-3 text-orange-500 t-text shrink-0" />
                             <span className="text-stone-700 font-medium">{displayDate}</span>
-                            {puja.durationMins ? <span className="text-stone-400">· <Clock className="w-3 h-3 inline -mt-0.5" /> {puja.durationMins} min</span> : null}
+                            {(puja.durationString || puja.durationMins) ? <span className="text-stone-400">· <Clock className="w-3 h-3 inline -mt-0.5" /> {puja.durationString || `${puja.durationMins} min`}</span> : null}
                         </div>
                         <p className="text-[10px] text-stone-400 mt-0.5 truncate">Performed with Vedic rituals &amp; complete devotion</p>
                     </div>

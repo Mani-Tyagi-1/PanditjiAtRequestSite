@@ -20,10 +20,12 @@ export default function AdminUpsellAddon({
     product,
     added,
     onToggle,
+    adminTheme,
 }: {
     product: UpsellProduct;
     added: boolean;
     onToggle: (next: boolean) => void;
+    adminTheme?: { primary: string; dark: string; background: string; backgroundAlt: string; border: string; } | null;
 }) {
     const { money } = useMoney();
     const [isDismissed, setIsDismissed] = useState(false);
@@ -49,21 +51,42 @@ export default function AdminUpsellAddon({
         ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
         : 0;
 
+    const pillStyle = adminTheme
+        ? { backgroundImage: `linear-gradient(to right, ${adminTheme.dark}, ${adminTheme.primary}, ${adminTheme.dark})` }
+        : undefined;
+    const pillClass = adminTheme
+        ? "text-white text-[9.5px] font-extrabold px-3.5 py-1.5 rounded-r-full inline-flex items-center gap-1 shadow-md uppercase tracking-wider bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500"
+        : "bg-gradient-to-r from-[#8B1A1A] via-[#A02020] to-[#8B1A1A] text-white text-[9.5px] font-extrabold px-3.5 py-1.5 rounded-r-full inline-flex items-center gap-1 shadow-md uppercase tracking-wider bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500";
+
+    const titleStyle = adminTheme ? { color: adminTheme.dark } : undefined;
+    const titleClass = adminTheme ? "font-extrabold text-[14px] leading-snug line-clamp-2 drop-shadow-sm" : "text-[#5A1010] font-extrabold text-[14px] leading-snug line-clamp-2 drop-shadow-sm";
+
+    const priceStyle = adminTheme ? { color: adminTheme.dark } : undefined;
+    const priceClass = adminTheme ? "text-[17px] font-black tracking-tight" : "text-[17px] font-black text-[#8B1A1A] tracking-tight";
+
+    const iconStyle = adminTheme ? { color: adminTheme.dark } : undefined;
+    const iconClass = adminTheme ? "w-3.5 h-3.5" : "w-3.5 h-3.5 text-[#8B1A1A]";
+
+    const btnStyle = !added && adminTheme ? { backgroundImage: `linear-gradient(to right, ${adminTheme.dark}, ${adminTheme.primary})` } : undefined;
+
     return (
         <div className="fixed top-0 left-0 right-0 z-50 p-4 pt-12 pointer-events-none animate-in slide-in-from-top-full duration-500">
-            <div className="relative border border-white/60 rounded-[20px] bg-white/85 backdrop-blur-2xl overflow-hidden shadow-[0_24px_60px_-12px_rgba(139,26,26,0.2)] max-w-sm mx-auto pointer-events-auto transition-all duration-500 hover:shadow-[0_32px_60px_-12px_rgba(139,26,26,0.3)] ring-1 ring-[#8B1A1A]/10">
+            <div className="relative border border-white/60 rounded-[20px] bg-white/85 backdrop-blur-2xl overflow-hidden shadow-[0_24px_60px_-12px_rgba(139,26,26,0.2)] max-w-sm mx-auto pointer-events-auto transition-all duration-500 hover:shadow-[0_32px_60px_-12px_rgba(139,26,26,0.3)] ring-1 ring-[#8B1A1A]/10"
+                style={adminTheme ? { boxShadow: `0 24px 60px -12px color-mix(in srgb, ${adminTheme.dark} 20%, transparent)`, outlineColor: `color-mix(in srgb, ${adminTheme.dark} 10%, transparent)` } : undefined}>
 
                 {/* Decorative background blur */}
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#A02020]/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl pointer-events-none"
+                    style={adminTheme ? { backgroundColor: `color-mix(in srgb, ${adminTheme.dark} 10%, transparent)` } : { backgroundColor: '#A020201a' }}></div>
 
                 {/* Top Pill & Close Button */}
                 <div className="flex items-center justify-between pt-3 pb-2 relative z-10">
-                    <div className="bg-gradient-to-r from-[#8B1A1A] via-[#A02020] to-[#8B1A1A] text-white text-[9.5px] font-extrabold px-3.5 py-1.5 rounded-r-full inline-flex items-center gap-1 shadow-md uppercase tracking-wider bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500">
+                    <div className={pillClass} style={pillStyle}>
                         {product.pillText || "Recommended for You"}
                     </div>
                     {/* Close Button */}
                     <button
-                        className="p-1.5 mr-2 rounded-full text-stone-400 hover:text-[#8B1A1A] hover:bg-[#8B1A1A]/10 transition-all duration-300 outline-none"
+                        className="p-1.5 mr-2 rounded-full text-stone-400 hover:bg-black/5 transition-all duration-300 outline-none"
+                        style={adminTheme ? { color: 'var(--tw-text-opacity)', '--tw-text-opacity': '1' } : undefined}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (added) {
@@ -93,7 +116,7 @@ export default function AdminUpsellAddon({
                         {/* Details */}
                         <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
                             <div>
-                                <h3 className="text-[#5A1010] font-extrabold text-[14px] leading-snug line-clamp-2 drop-shadow-sm">
+                                <h3 className={titleClass} style={titleStyle}>
                                     {product.title}
                                 </h3>
                                 {product.description && (
@@ -104,7 +127,7 @@ export default function AdminUpsellAddon({
                             </div>
 
                             <div className="flex items-center gap-2 mt-2">
-                                <span className="text-[17px] font-black text-[#8B1A1A] tracking-tight">
+                                <span className={priceClass} style={priceStyle}>
                                     {money(product.price)}
                                 </span>
                                 {product.compareAtPrice && product.compareAtPrice > product.price && (
@@ -113,7 +136,8 @@ export default function AdminUpsellAddon({
                                     </span>
                                 )}
                                 {discountPercent > 0 && (
-                                    <span className="bg-gradient-to-br from-[#FEE2E2] to-[#FECACA] text-[#B91C1C] text-[9.5px] font-extrabold px-2 py-0.5 rounded-lg shadow-sm">
+                                    <span className="bg-gradient-to-br from-[#FEE2E2] to-[#FECACA] text-[#B91C1C] text-[9.5px] font-extrabold px-2 py-0.5 rounded-lg shadow-sm"
+                                        style={adminTheme ? { backgroundImage: `linear-gradient(to bottom right, color-mix(in srgb, ${adminTheme.primary} 15%, white), color-mix(in srgb, ${adminTheme.primary} 25%, white))`, color: adminTheme.dark } : undefined}>
                                         {discountPercent}% OFF
                                     </span>
                                 )}
@@ -129,7 +153,7 @@ export default function AdminUpsellAddon({
                                 return (
                                     <div key={idx} className="flex flex-col items-center gap-1.5 text-center flex-1">
                                         <div className="bg-white p-1.5 rounded-full shadow-sm">
-                                            <Icon className="w-3.5 h-3.5 text-[#8B1A1A]" strokeWidth={2} />
+                                            <Icon className={iconClass} style={iconStyle} strokeWidth={2} />
                                         </div>
                                         <span className="text-[9.5px] font-bold text-stone-600 leading-tight">{feature}</span>
                                     </div>
@@ -146,8 +170,9 @@ export default function AdminUpsellAddon({
                         className={`w-full py-2.5 rounded-xl font-bold text-[13.5px] flex items-center justify-center gap-2 transition-all duration-300 outline-none active:scale-[0.97]
                         ${added
                                 ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-[0_8px_16px_rgba(16,185,129,0.25)] hover:shadow-[0_8px_16px_rgba(16,185,129,0.4)] ring-1 ring-emerald-400/50"
-                                : "bg-gradient-to-r from-[#8B1A1A] to-[#6B1414] text-white shadow-[0_8px_16px_rgba(139,26,26,0.25)] hover:shadow-[0_8px_20px_rgba(139,26,26,0.4)] hover:from-[#9B1D1D] hover:to-[#7C1A1A] ring-1 ring-[#8B1A1A]/50"
+                                : (adminTheme ? "text-white shadow-md hover:shadow-lg ring-1 ring-black/10" : "bg-gradient-to-r from-[#8B1A1A] to-[#6B1414] text-white shadow-[0_8px_16px_rgba(139,26,26,0.25)] hover:shadow-[0_8px_20px_rgba(139,26,26,0.4)] hover:from-[#9B1D1D] hover:to-[#7C1A1A] ring-1 ring-[#8B1A1A]/50")
                             }`}
+                        style={btnStyle}
                     >
                         {added ? <Check className="w-4 h-4" strokeWidth={3} /> : <Plus className="w-4 h-4" strokeWidth={3} />}
                         {added ? "Added to My Puja" : `Add to My Puja - ${money(product.price)}`}

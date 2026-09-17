@@ -543,6 +543,7 @@ export default function LiveMandirBookingPageRegular() {
                                             key={idx}
                                             product={product}
                                             added={isAdded}
+                                            adminTheme={adminTheme}
                                             onToggle={(next) => {
                                                 if (next) {
                                                     setSelectedUpsells([...selectedUpsells, product]);

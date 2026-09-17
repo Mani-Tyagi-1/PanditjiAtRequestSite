@@ -568,6 +568,7 @@ function AdminLiveMandirBookingPage() {
                                             key={idx}
                                             product={product}
                                             added={isAdded}
+                                            adminTheme={adminTheme}
                                             onToggle={(next) => {
                                                 if (next) {
                                                     setSelectedUpsells([...selectedUpsells, product]);

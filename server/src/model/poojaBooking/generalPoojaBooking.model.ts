@@ -6,6 +6,7 @@ const AddressSchema = new Schema({
 }, { _id: false, strict: true });
 
 const schema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: "User" },
   generalPoojaId: { type: Schema.Types.ObjectId, required: true, ref: "GeneralPooja" },
   pujaName: { type: String, required: true }, templeName: String,
   devoteeName: { type: String, required: true }, gotra: String,

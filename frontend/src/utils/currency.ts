@@ -828,8 +828,11 @@ export function sanitizePhone(value: string, c: Country): string {
 }
 
 export function isValidPhone(value: string, c: Country): boolean {
-    const digits = value.replace(/\D/g, "").length;
-    return digits >= c.phone[0] && digits <= c.phone[1];
+    const digits = value.replace(/\D/g, "");
+    if (digits.length < c.phone[0] || digits.length > c.phone[1]) return false;
+    // Indian mobile numbers must start with 6, 7, 8 or 9
+    if (c.iso2 === "IN" && !/^[6-9]/.test(digits)) return false;
+    return true;
 }
 
 /**

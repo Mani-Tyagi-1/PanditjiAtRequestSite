@@ -241,10 +241,11 @@ function AdminLiveMandirBookingPage() {
     const addFamilyMember = () => {
         if (familyInput.trim()) {
             const val = familyGotraInput.trim() ? `${familyInput.trim()} (${familyGotraInput.trim()})` : familyInput.trim();
-            setForm(f => ({
-                ...f,
-                familyMembers: [...f.familyMembers, val]
-            }));
+            setForm(f => {
+                if (f.familyMembers.length >= 20) return f;
+                if (f.familyMembers.some(m => m.toLowerCase() === val.toLowerCase())) return f;
+                return { ...f, familyMembers: [...f.familyMembers, val] };
+            });
             setFamilyInput("");
             setFamilyGotraInput("");
         }
@@ -305,6 +306,11 @@ function AdminLiveMandirBookingPage() {
                 // Validate new address form
                 if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
                     setError("Please fill out all address fields.");
+                    submitInFlight.current = false;
+                    return;
+                }
+                if (isIndia && !/^\d{6}$/.test(newAddress.pincode.trim())) {
+                    setError("Please enter a valid 6-digit pincode.");
                     submitInFlight.current = false;
                     return;
                 }
@@ -534,7 +540,7 @@ function AdminLiveMandirBookingPage() {
             {/* Header Top */}
             <div className="px-4 py-4 flex items-center gap-4">
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
                     aria-label="Go back"
                     className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-stone-200 shadow-sm active:scale-90 transition-transform shrink-0"
                 >

@@ -227,10 +227,12 @@ export default function LiveMandirBookingPageRegular() {
 
     const addFamilyMember = () => {
         if (familyInput.trim()) {
-            setForm(f => ({
-                ...f,
-                familyMembers: [...f.familyMembers, familyInput.trim()]
-            }));
+            const val = familyInput.trim();
+            setForm(f => {
+                if (f.familyMembers.length >= 20) return f;
+                if (f.familyMembers.some(m => m.toLowerCase() === val.toLowerCase())) return f;
+                return { ...f, familyMembers: [...f.familyMembers, val] };
+            });
             setFamilyInput("");
         }
     };
@@ -293,6 +295,11 @@ export default function LiveMandirBookingPageRegular() {
                     submitInFlight.current = false;
                     return;
                 }
+                if (isIndia && !/^\d{6}$/.test(newAddress.pincode.trim())) {
+                    setError("Please enter a valid 6-digit pincode.");
+                    submitInFlight.current = false;
+                    return;
+                }
                 addressPayload = {
                     houseNo: newAddress.houseNo.trim(),
                     street: newAddress.street.trim(),
@@ -339,7 +346,7 @@ export default function LiveMandirBookingPageRegular() {
 
         try {
             const bookingEndpoint = state?.fromAdminBanner ? "generalpooja-bookings" : "bookings";
-            
+
             let orderData: any;
             if (cachedPendingOrder.current && cachedPendingOrder.current.payloadStr === payloadStr) {
                 orderData = cachedPendingOrder.current.orderData;
@@ -496,9 +503,9 @@ export default function LiveMandirBookingPageRegular() {
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-40 bg-[#FFFAF3]/95 backdrop-blur-md border-b border-orange-100 px-4 py-3 flex items-center gap-3" style={adminTheme ? { backgroundColor: adminTheme.background, borderColor: adminTheme.border } : undefined}>
+            <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-200/50 px-4 py-3 flex items-center gap-3" style={adminTheme ? { backgroundColor: adminTheme.background, borderColor: adminTheme.border } : undefined}>
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
                     aria-label="Go back"
                     className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 shadow-sm active:scale-90 transition-transform shrink-0"
                 >

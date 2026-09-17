@@ -12,7 +12,7 @@ const mapGeneralPooja = (data: any): LiveMandirPuja => {
         deity: data.deityName || "",
         image: data.images?.[0] || data.templeImage || "",
         images: Array.isArray(data.images) && data.images.length > 0 ? data.images : (data.templeImage ? [data.templeImage] : []),
-        status: data.status === "open" ? "upcoming" : "live",
+        status: data.status === "open" ? "upcoming" : data.status === "closed" ? "closed" : data.status === "live" ? "live" : "upcoming",
         scheduledDate: data.pujaDate || "",
         scheduledTime: data.startTime || "",
         durationMins: Number.parseInt(data.duration || "0", 10) || 60,
@@ -57,7 +57,17 @@ const mapGeneralPooja = (data: any): LiveMandirPuja => {
 
 export async function fetchGeneralPooja(id: string): Promise<LiveMandirPuja> {
     const response = await fetch(`${API_URL}/generalpoojas/${id}`);
-    if (!response.ok) throw new Error("General pooja not found");
+    if (!response.ok) {
+        let msg = `Server error (${response.status})`;
+        try {
+            const errData = await response.json();
+            msg = errData.message || msg;
+        } catch {
+            if (response.status === 404) msg = "General pooja not found.";
+            else if (response.status === 502) msg = "Server is temporarily down or unreachable.";
+        }
+        throw new Error(msg);
+    }
     const { data } = await response.json();
     return mapGeneralPooja(data);
 }

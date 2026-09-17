@@ -27,8 +27,8 @@ export interface LiveMandirPuja {
     deity: string;
     image: string;
     images?: string[];
-    /** "live" = streaming right now, "upcoming" = scheduled, "daily" = performed every day */
-    status: "live" | "upcoming" | "daily";
+    /** "live" = streaming right now, "upcoming" = scheduled, "daily" = performed every day, "closed" = no longer accepting bookings */
+    status: "live" | "upcoming" | "daily" | "closed";
     scheduledDate: string;   // human label e.g. "Tomorrow" / "Mon, 16 Jun"
     scheduledTime: string;   // e.g. "06:00 AM"
     durationMins: number;

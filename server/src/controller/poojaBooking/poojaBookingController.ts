@@ -12,6 +12,8 @@ import UserReferralBooking from '../../model/userApp/userReferralBooking.model';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import GeneralPoojaPending from '../../model/poojaBooking/generalPoojaPending.model';
+import GeneralPoojaBooking from '../../model/poojaBooking/generalPoojaBooking.model';
 import { sendPushNotification, schedulePujaDayReminder } from '../../utils/oneSignal';
 import { sendMetaPurchaseEvent } from '../../utils/metaCapiServices';
 import { reportServerPurchase } from '../../utils/serverAnalytics';
@@ -148,9 +150,9 @@ async function notifyPanditsNewRequest(req: any, opts: {
 //   • Live Mandir  → payment is taken AFTER create-pending, so this is called
 //                    in complete-booking (only once payment is verified) to avoid
 //                    confirming a puja the devotee never actually paid for.
-async function sendBookingConfirmationWhatsapp(booking: any) {
+export async function sendBookingConfirmationWhatsapp(booking: any) {
   try {
-    const rawPhone = String(booking?.userPhone || '');
+    const rawPhone = String(booking?.userPhone || booking?.phone || '');
     const cleanedPhone = rawPhone.replace(/\D/g, ''); // keep only digits
     const phone = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
 
@@ -160,9 +162,9 @@ async function sendBookingConfirmationWhatsapp(booking: any) {
     const address = booking?.address;
 
     // Use form-submitted name (bhaktName) for greeting — NOT the potentially-stale DB name
-    const userName = booking?.bhaktName || booking?.userName || 'Devotee';
-    const poojaName = booking?.poojaNameEng || 'Puja';
-    const poojaMode = booking?.poojaMode || 'offline';
+    const userName = booking?.bhaktName || booking?.devoteeName || booking?.userName || 'Devotee';
+    const poojaName = booking?.poojaNameEng || booking?.pujaName || 'Puja';
+    const poojaMode = booking?.poojaMode || 'online';
     const bookingDateStr = new Date(booking.bookingDate).toLocaleDateString('en-IN', {
       day: 'numeric',
       month: 'short',
@@ -1569,7 +1571,7 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
     // "9876543210", "919876543210", "+91 98765 43210", etc.
     const phoneRegex = new RegExp(`${alias10}$`);
 
-    const [pendingBookings, finalBookings] = await Promise.all([
+    const [pendingBookings, finalBookings, generalPoojaBookings] = await Promise.all([
       pendingPoojaBookingModel
         .find({ userPhone: { $regex: phoneRegex }, isCompleted: false })
         .populate('poojaId', 'poojaNameEng poojaCardImage')
@@ -1580,15 +1582,31 @@ export const getPendingBookingsByUserPhone: RequestHandler = async (req, res, ne
         .find({ userPhone: { $regex: phoneRegex } })
         .populate('poojaId', 'poojaNameEng poojaCardImage')
         .populate('assignedPandit', 'firstName lastName rating profileImage')
-        .lean()
+        .lean(),
+      // General Pooja bookings (admin-created pujas) — map to the shape the frontend expects
+      GeneralPoojaBooking
+        .find({ phone: { $regex: phoneRegex } })
+        .lean(),
     ]);
 
-    const bookings = [...pendingBookings, ...finalBookings].sort(
+    // Map GeneralPoojaBooking docs to the shape the frontend's ProfilePage expects
+    const mappedGeneralBookings = generalPoojaBookings.map((b: any) => ({
+      ...b,
+      poojaNameEng: b.pujaName,
+      userName: b.devoteeName,
+      userPhone: b.phone,
+      isLiveMandir: true,
+      isPaymentDone: true,
+      poojaMode: 'online',
+      _source: 'generalPoojaBooking',
+    }));
+
+    const bookings = [...pendingBookings, ...finalBookings, ...mappedGeneralBookings].sort(
       (a: any, b: any) => new Date(b.bookingDate ?? b.createdAt).getTime() - new Date(a.bookingDate ?? a.createdAt).getTime()
     );
 
     console.log(
-      `[get-pending-poojabookings] phone=${alias10} → pending=${pendingBookings.length}, final(poojabookings)=${finalBookings.length}, total=${bookings.length}`
+      `[get-pending-poojabookings] phone=${alias10} → pending=${pendingBookings.length}, final(poojabookings)=${finalBookings.length}, generalPooja=${generalPoojaBookings.length}, total=${bookings.length}`
     );
 
     res.status(200).json(bookings || []);

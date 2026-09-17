@@ -50,7 +50,7 @@ export default function AdminUpsellAddon({
         : 0;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-50 p-4 pt-12 bg-gradient-to-b from-white/95 via-white/80 to-transparent pointer-events-none animate-in slide-in-from-top-full duration-500 backdrop-blur-sm">
+        <div className="fixed top-0 left-0 right-0 z-50 p-4 pt-12 pointer-events-none animate-in slide-in-from-top-full duration-500">
             <div className="relative border border-white/60 rounded-[20px] bg-white/85 backdrop-blur-2xl overflow-hidden shadow-[0_24px_60px_-12px_rgba(139,26,26,0.2)] max-w-sm mx-auto pointer-events-auto transition-all duration-500 hover:shadow-[0_32px_60px_-12px_rgba(139,26,26,0.3)] ring-1 ring-[#8B1A1A]/10">
 
                 {/* Decorative background blur */}

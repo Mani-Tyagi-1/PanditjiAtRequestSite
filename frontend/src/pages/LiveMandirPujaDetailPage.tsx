@@ -355,12 +355,22 @@ export default function LiveMandirPujaDetailPage() {
                 return;
             }
             const res = await fetch(`${API_URL}/live-mandir-pujas/${slug}`);
-            if (!res.ok) throw new Error("Puja not found or server error");
+            if (!res.ok) {
+                let msg = `Server error (${res.status})`;
+                try {
+                    const errData = await res.json();
+                    msg = errData.message || msg;
+                } catch {
+                    if (res.status === 404) msg = "Puja not found.";
+                    else if (res.status === 502) msg = "Server is temporarily down or unreachable.";
+                }
+                throw new Error(msg);
+            }
             const json = await res.json();
             setPuja(json.data);
         } catch (err) {
             console.error("Error fetching puja details:", err);
-            setError("Failed to load puja details. It may not exist or is inactive.");
+            setError(err instanceof Error ? err.message : "Failed to load puja details. Please check your connection.");
         } finally {
             setLoading(false);
         }
@@ -429,9 +439,14 @@ export default function LiveMandirPujaDetailPage() {
                 <span className="text-4xl">🪔</span>
                 <h2 className="text-lg font-bold text-stone-800 mt-4">Error Loading Puja</h2>
                 <p className="text-xs text-stone-500 mt-2 max-w-[280px]">{error || "The requested live puja does not exist."}</p>
-                <button onClick={() => navigate("/")} className="mt-6 bg-orange-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all">
-                    Go to Homepage
-                </button>
+                <div className="flex gap-3 mt-6">
+                    <button onClick={() => fetchPujaDetails()} className="bg-stone-200 text-stone-800 font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all">
+                        Retry
+                    </button>
+                    <button onClick={() => navigate("/")} className="bg-orange-600 text-white font-bold px-6 py-2.5 rounded-xl shadow-md active:scale-95 transition-all">
+                        Go to Homepage
+                    </button>
+                </div>
             </div>
         );
     }
@@ -462,7 +477,9 @@ export default function LiveMandirPujaDetailPage() {
         '--theme-border': selectedTheme.border,
     } as CSSProperties : undefined;
 
-    const statusLabel = puja.status === "live" ? "LIVE NOW" : puja.status === "upcoming" ? "UPCOMING" : "DAILY SEVA";
+    const isPastDate = targetTs !== null && targetTs < Date.now();
+    const isClosed = puja.status === "closed" || isPastDate;
+    const statusLabel = isClosed ? "CLOSED" : puja.status === "live" ? "LIVE NOW" : puja.status === "upcoming" ? "UPCOMING" : "DAILY SEVA";
     const mandirName = `${puja.templeName}${puja.templeLocation && puja.templeLocation !== puja.templeName ? `, ${puja.templeLocation}` : ""}`;
     const reviews = puja.reviews?.length ? puja.reviews : seededReviews(slug ?? puja.id, 9);
     const videos = puja.videos ?? [];
@@ -499,7 +516,7 @@ export default function LiveMandirPujaDetailPage() {
 
             {/* ── Sticky header ── */}
             <div className={`sticky top-0 z-50 ${selectedTheme ? '' : themeBg + '/90'} backdrop-blur-md border-b ${selectedTheme ? '' : themeBorder} px-4 py-3 flex items-center gap-3 t-bg`} style={selectedTheme ? { backgroundColor: 'color-mix(in srgb, var(--theme-bg) 95%, transparent)', borderColor: selectedTheme.border } : undefined}>
-                <button onClick={() => navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 t-border shadow-sm active:scale-90 transition-transform">
+                <button onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 t-border shadow-sm active:scale-90 transition-transform">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <h1 className="text-sm font-bold text-stone-800 truncate">{puja.pujaName}</h1>
@@ -547,7 +564,7 @@ export default function LiveMandirPujaDetailPage() {
                         </div>
                     ) : (
                         <span className="text-[12px] text-stone-500">
-                            {puja.status === "live" ? "🔴 Live now" : puja.status === "daily" ? "Daily Seva" : "Booking open"}
+                            {puja.status === "closed" ? "⛔ Closed" : puja.status === "live" ? "🔴 Live now" : puja.status === "daily" ? "Daily Seva" : "Booking open"}
                         </span>
                     )}
                 </div>
@@ -729,8 +746,9 @@ export default function LiveMandirPujaDetailPage() {
                         </div>
                         <button
                             onClick={openBooking}
-                            className={`flex-1 ${selectedTheme ? 't-gradient' : themeBtn} text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 t-ring outline-none`}
-                        >Participate Now</button>
+                            disabled={isClosed}
+                            className={`flex-1 ${isClosed ? 'bg-stone-400 cursor-not-allowed' : selectedTheme ? 't-gradient' : themeBtn} text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 t-ring outline-none disabled:active:scale-100`}
+                        >{isClosed ? "Booking Closed" : "Participate Now"}</button>
                     </div>
                     <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-stone-400">
                         <Lock className="w-3 h-3 text-emerald-500" />

@@ -325,7 +325,7 @@ function LiveMandirVerticalCard({ puja, onBook }: { puja: LivePuja; onBook: () =
         ? Math.round(((puja.originalPrice - puja.price) / puja.originalPrice) * 100)
         : 0;
     return (
-        <div 
+        <div
             onClick={onBook}
             className="bg-[#FFFDF9] rounded-[24px] border border-[#FFEFE2] overflow-hidden shadow-[0_12px_36px_-12px_rgba(224,90,16,0.08)] hover:shadow-[0_16px_40px_-10px_rgba(224,90,16,0.14)] active:scale-[0.99] hover:scale-[1.005] transition-all duration-300 cursor-pointer flex flex-col justify-between"
         >
@@ -333,11 +333,11 @@ function LiveMandirVerticalCard({ puja, onBook }: { puja: LivePuja; onBook: () =
             <div className="relative h-48 bg-stone-100 overflow-hidden">
                 <img src={puja.image} alt={puja.pujaName} className="w-full h-full object-cover" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#2E1F15]/90 via-transparent to-black/20" />
-                
-               
-                 <span className=" absolute top-2 right-2 flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md self-start shrink-0">
-                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> {(puja.rating ?? 4.9).toFixed(1)}
-                        </span>
+
+
+                <span className=" absolute top-2 right-2 flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md self-start shrink-0">
+                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> {(puja.rating ?? 4.9).toFixed(1)}
+                </span>
 
                 {discount > 0 && (
                     <span className="absolute top-3.5 right-3.5 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 text-[10px] font-bold px-3 py-1 rounded-full shadow-sm">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
@@ -54,6 +54,7 @@ function displayScheduledDate(value: string): string {
 }
 
 import LiveMandirBookingPageRegular from "./LiveMandirBookingPageRegular";
+import AdminUpsellAddon, { type UpsellProduct } from "../components/booking/LiveMandirPujas/AdminUpsellAddon";
 
 const INPUT = "w-full bg-transparent px-3 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none";
 const INPUT_WRAPPER = "flex border border-stone-200 rounded-lg overflow-hidden bg-white focus-within:border-[#6b0504] focus-within:ring-1 focus-within:ring-[#6b0504]/20 transition-all t-focus-within";
@@ -77,6 +78,9 @@ function AdminLiveMandirBookingPage() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
 
+    const submitInFlight = useRef(false);
+    const cachedPendingOrder = useRef<{ payloadStr: string; orderData: any } | null>(null);
+
     // Form states
     const [form, setForm] = useState({
         name: "",
@@ -88,6 +92,8 @@ function AdminLiveMandirBookingPage() {
         familyMembers: [] as string[],
         prasadAdded: (state as any)?.preselectedPrasadAdded || false,
     });
+
+    const [selectedUpsells, setSelectedUpsells] = useState<UpsellProduct[]>([]);
 
     const [familyInput, setFamilyInput] = useState("");
     const [familyGotraInput, setFamilyGotraInput] = useState("");
@@ -166,11 +172,12 @@ function AdminLiveMandirBookingPage() {
     // Dynamic pricing — computed above the `!puja` guard so the abandoned-cart
     // draft below (a hook, so it must run before any early return) can carry the
     // running total.
-    const basePrice = selectedPkg ? selectedPkg.price : (puja?.price || 0);
-    const chargedMembers = Math.max(0, form.familyMembers.length - (selectedPkg.freePersons || 0));
+    const basePrice = selectedPkg ? selectedPkg?.price : (puja?.price || 0);
+    const chargedMembers = Math.max(0, form.familyMembers.length - (selectedPkg?.freePersons || 0));
     const familyCost = chargedMembers * 101;
     const prasadCost = (prasadAdded && !selectedPkg?.freePrasad) ? 501 : 0;
-    const totalPrice = basePrice + familyCost + prasadCost;
+    const upsellCost = selectedUpsells.reduce((acc, p) => acc + (p.price || 0), 0);
+    const totalPrice = basePrice + familyCost + prasadCost + upsellCost;
 
     // GA4 line items for this seva. Add-ons are separate rows so the item total
     // reconciles with `totalPrice` — a single lump row would show the base
@@ -190,6 +197,13 @@ function AdminLiveMandirBookingPage() {
         ...(familyCost > 0
             ? [{ id: `${puja?.id}__sankalp`, name: "Extra Sankalp Name", price: 101, quantity: chargedMembers, category: "Add-on" }]
             : []),
+        ...selectedUpsells.map(p => ({
+            id: p.shopifyProductId || p.handle,
+            name: p.title,
+            price: p.price,
+            quantity: 1,
+            category: "Add-on"
+        })),
     ];
 
     // Whatever delivery address the devotee has settled on so far — a selected
@@ -219,7 +233,7 @@ function AdminLiveMandirBookingPage() {
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
-        extra: { members: form.members, prasadAdded },
+        extra: { members: form.members, prasadAdded, upsells: selectedUpsells },
     }, String(puja?.id || slug || ""));
 
     if (!puja) return null;
@@ -244,22 +258,27 @@ function AdminLiveMandirBookingPage() {
     };
 
     const handleConfirm = async () => {
+        if (submitInFlight.current) return;
+        submitInFlight.current = true;
         setError("");
 
         // Basic Validations
         if (!form.name.trim()) {
             setError("Please enter the devotee's name.");
+            submitInFlight.current = false;
             return;
         }
 
         if (!isValidPhone(form.phone, country)) {
             setError(`Please enter a valid ${country.name} mobile number.`);
+            submitInFlight.current = false;
             return;
         }
         const phoneDigits = toStoredPhone(form.phone, country);
 
         if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
             setError("Please enter a valid email — it's how we send your booking confirmation.");
+            submitInFlight.current = false;
             return;
         }
 
@@ -268,13 +287,14 @@ function AdminLiveMandirBookingPage() {
             if (user && !showNewAddressForm) {
                 if (!selectedAddressId) {
                     setError("Please select a delivery address.");
+                    submitInFlight.current = false;
                     return;
                 }
                 const selected = addresses.find(a => (a._id || a.id) === selectedAddressId);
                 if (selected) {
                     addressPayload = {
-                        addressLine1: selected.addressLine1 || selected.houseNo,
-                        addressLine2: selected.addressLine2 || selected.street,
+                        houseNo: selected.addressLine1 || selected.houseNo,
+                        street: selected.addressLine2 || selected.street,
                         city: selected.city,
                         state: selected.state,
                         pincode: selected.pincode,
@@ -285,11 +305,12 @@ function AdminLiveMandirBookingPage() {
                 // Validate new address form
                 if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
                     setError("Please fill out all address fields.");
+                    submitInFlight.current = false;
                     return;
                 }
                 addressPayload = {
-                    addressLine1: newAddress.houseNo.trim(),
-                    addressLine2: newAddress.street.trim(),
+                    houseNo: newAddress.houseNo.trim(),
+                    street: newAddress.street.trim(),
                     city: newAddress.city.trim(),
                     state: newAddress.state.trim(),
                     pincode: newAddress.pincode.trim(),
@@ -298,39 +319,56 @@ function AdminLiveMandirBookingPage() {
             }
         }
 
+        const payload = {
+            isLiveMandir: true,
+            pujaSlug: puja.id,
+            packageName: `${puja.pujaName} - ${selectedPkg?.name || "Standard"}`,
+            packageId: selectedPkg?.id,
+            templeName: puja.templeName,
+            bhaktName: form.name.trim(),
+            gotra: form.gotra.trim(),
+            phone: phoneDigits,
+            emailId: form.email.trim(),
+            // Marked-up INR — the value of this sale, not the
+            // India list price. See utils/currency `inrEquivalent`.
+            amount: toInr(totalPrice),
+            currency,
+            dialCode: country.dial,
+            countryCode: country.iso2,
+            country: country.name,
+            poojaMode: "online",
+            bookingDate: resolveScheduledDate(puja.scheduledDate),
+            familyMembers: form.familyMembers,
+            prasadAdded: prasadAdded,
+            address: addressPayload,
+            upsellsAdded: selectedUpsells.map(p => ({
+                shopifyProductId: p.shopifyProductId,
+                title: p.title,
+                price: p.price,
+                variantId: p.variantId
+            })),
+        };
+        const payloadStr = JSON.stringify(payload);
+
         setSubmitting(true);
 
         try {
-            const bookingEndpoint = adminTheme ? "generalpooja-bookings" : "bookings";
-            // 1. Create booking order via unified endpoint
-            const res = await fetch(`${API_URL}/${bookingEndpoint}/create-pending`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(encryptPayload({
-                    isLiveMandir: true,
-                    pujaSlug: puja.id,
-                    packageName: `${puja.pujaName} - ${selectedPkg?.name || "Standard"}`,
-                    templeName: puja.templeName,
-                    bhaktName: form.name.trim(),
-                    gotra: form.gotra.trim(),
-                    phone: phoneDigits,
-                    emailId: form.email.trim(),
-                    // Marked-up INR — the value of this sale, not the
-                    // India list price. See utils/currency `inrEquivalent`.
-                    amount: toInr(totalPrice),
-                    currency,
-                    dialCode: country.dial,
-                    countryCode: country.iso2,
-                    country: country.name,
-                    poojaMode: "online",
-                    bookingDate: resolveScheduledDate(puja.scheduledDate),
-                    familyMembers: form.familyMembers,
-                    prasadAdded: form.prasadAdded,
-                    address: addressPayload,
-                })),
-            });
-            const orderData = await res.json();
-            if (!res.ok) throw new Error(orderData.message || "Failed to start booking payment.");
+            const bookingEndpoint = state?.fromAdminBanner ? "generalpooja-bookings" : "bookings";
+            
+            let orderData: any;
+            if (cachedPendingOrder.current && cachedPendingOrder.current.payloadStr === payloadStr) {
+                orderData = cachedPendingOrder.current.orderData;
+            } else {
+                // 1. Create booking order via unified endpoint
+                const res = await fetch(`${API_URL}/${bookingEndpoint}/create-pending`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(encryptPayload(payload)),
+                });
+                orderData = await res.json();
+                if (!res.ok) throw new Error(orderData.message || "Failed to start booking payment.");
+                cachedPendingOrder.current = { payloadStr, orderData };
+            }
 
             if (!orderData.razorpayOrderId || !orderData.razorpayKeyId) {
                 throw new Error("Could not initialise payment. Please try again.");
@@ -410,12 +448,14 @@ function AdminLiveMandirBookingPage() {
                         setError(verifyErr.message || "Payment verification failed. Please contact support.");
                     } finally {
                         setSubmitting(false);
+                        submitInFlight.current = false;
                     }
                 },
                 modal: {
                     ondismiss: () => {
                         setError("Payment was cancelled. You can try again.");
                         setSubmitting(false);
+                        submitInFlight.current = false;
                     },
                 },
             });
@@ -423,6 +463,7 @@ function AdminLiveMandirBookingPage() {
             rzp.on("payment.failed", (resp: any) => {
                 setError(resp?.error?.description || "Payment failed. Please try again.");
                 setSubmitting(false);
+                submitInFlight.current = false;
             });
 
             analytics.beginCheckout({
@@ -451,6 +492,7 @@ function AdminLiveMandirBookingPage() {
             console.error("[LiveMandirBooking] Pay & Book failed:", err);
             setError(err.message || "Something went wrong. Please try again.");
             setSubmitting(false);
+            submitInFlight.current = false;
         }
     };
 
@@ -511,12 +553,34 @@ function AdminLiveMandirBookingPage() {
             <div className="px-4 space-y-4 pt-1 relative z-20">
                 {step === "details" ? (
                     <div className="space-y-4">
+                        {puja.upsellEnabled && puja.upsellProducts && puja.upsellProducts.length > 0 && (
+                            <div className="space-y-4">
+                                {puja.upsellProducts.map((product, idx) => {
+                                    const isAdded = selectedUpsells.some(p => p.shopifyProductId === product.shopifyProductId);
+                                    return (
+                                        <AdminUpsellAddon
+                                            key={idx}
+                                            product={product}
+                                            added={isAdded}
+                                            onToggle={(next) => {
+                                                if (next) {
+                                                    setSelectedUpsells([...selectedUpsells, product]);
+                                                } else {
+                                                    setSelectedUpsells(selectedUpsells.filter(p => p.shopifyProductId !== product.shopifyProductId));
+                                                }
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )}
+
                         {/* Order summary — reflects the chosen package + extras */}
                         <div className={`bg-white border rounded-2xl p-4 shadow-[0_10px_30px_rgba(0,0,0,.07)] relative ${adminTheme ? 't-border' : 'border-stone-200'}`}>
                             <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0 pr-2">
                                     <h2 className={`text-[15px] font-bold leading-snug ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>{puja.pujaName}</h2>
-                                    <p className={`text-[12px] font-medium mt-1 ${adminTheme ? 't-text' : 'text-[#4C3F91]'}`}>{selectedPkg.name} package</p>
+                                    <p className={`text-[12px] font-medium mt-1 ${adminTheme ? 't-text' : 'text-[#4C3F91]'}`}>{selectedPkg?.name} package</p>
                                 </div>
                                 <span className={`flex items-center gap-1 shrink-0 border rounded-full px-2 py-0.5 text-[11px] font-bold ${adminTheme ? 't-bg-alt t-border-light t-text-dark' : 'bg-orange-50 border-orange-100 text-[#4C3F91]'}`}>
                                     ★ 4.6
@@ -525,12 +589,12 @@ function AdminLiveMandirBookingPage() {
 
                             <div className={`mt-3 pt-3 border-t space-y-2.5 ${adminTheme ? 't-border-light' : 'border-stone-100'}`}>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[13px] text-stone-600 font-medium">{selectedPkg.name}</span>
+                                    <span className="text-[13px] text-stone-600 font-medium">{selectedPkg?.name}</span>
                                     <span className={`text-[14px] font-bold ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>{money(basePrice)}</span>
                                 </div>
 
                                 {/* Offerings made in your name — shown as "Included" */}
-                                {selectedPkg.images && selectedPkg.images.length > 0 && (
+                                {selectedPkg?.images && selectedPkg?.images.length > 0 && (
                                     <div className="flex items-start justify-between gap-2">
                                         <span className="text-[12.5px] text-stone-600 font-medium flex items-start gap-2 min-w-0">
                                             <Flower2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -547,7 +611,7 @@ function AdminLiveMandirBookingPage() {
                                             <Gift className={`w-4 h-4 shrink-0 ${adminTheme ? 't-text' : 'text-amber-500'}`} />
                                             <span className="truncate">Prasad Box</span>
                                         </span>
-                                        {selectedPkg.freePrasad ? (
+                                        {selectedPkg?.freePrasad ? (
                                             <span className="text-[12px] font-bold text-emerald-600 shrink-0">Free</span>
                                         ) : prasadCost > 0 ? (
                                             <span className={`text-[14px] font-bold shrink-0 ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>+{money(prasadCost)}</span>
@@ -558,11 +622,11 @@ function AdminLiveMandirBookingPage() {
                                 )}
 
                                 {/* Free Family Sankalps included in package */}
-                                {(selectedPkg.freePersons || 0) > 0 && (
+                                {(selectedPkg?.freePersons || 0) > 0 && (
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-2 min-w-0">
                                             <Users className={`w-4 h-4 shrink-0 ${adminTheme ? 't-text' : 'text-orange-500'}`} />
-                                            <span className="truncate">{selectedPkg.freePersons} family Sankalp</span>
+                                            <span className="truncate">{selectedPkg?.freePersons} family Sankalp</span>
                                         </span>
                                         <span className="text-[12px] font-bold text-emerald-600 shrink-0">Free</span>
                                     </div>
@@ -577,6 +641,16 @@ function AdminLiveMandirBookingPage() {
                                         <span className={`text-[14px] font-bold ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>+{money(familyCost)}</span>
                                     </div>
                                 )}
+
+                                {selectedUpsells.map((p, i) => (
+                                    <div key={i} className="flex items-center justify-between">
+                                        <span className="text-[12.5px] text-stone-600 font-medium flex items-center gap-2">
+                                            <Gift className={`w-4 h-4 ${adminTheme ? 't-text' : 'text-orange-500'}`} />
+                                            {p.title}
+                                        </span>
+                                        <span className={`text-[14px] font-bold ${adminTheme ? 't-text-dark' : 'text-stone-900'}`}>+{money(p.price)}</span>
+                                    </div>
+                                ))}
 
                                 <div className={`flex items-baseline justify-between pt-3 border-t ${adminTheme ? 't-border-light' : 'border-stone-100'}`}>
                                     <span className="text-[11px] font-bold uppercase tracking-widest text-stone-500">TOTAL</span>
@@ -634,19 +708,19 @@ function AdminLiveMandirBookingPage() {
                                 <div>
                                     <h3 className="font-bold text-[#6b0504] t-text-dark text-[14px]">Family Sankalp</h3>
                                     <p className="text-[11px] text-stone-400">
-                                        {(selectedPkg.freePersons || 0) > 0
-                                            ? `${selectedPkg.freePersons} free in ${selectedPkg.name} · ${money(101)} each after`
+                                        {(selectedPkg?.freePersons || 0) > 0
+                                            ? `${selectedPkg?.freePersons} free in ${selectedPkg?.name} · ${money(101)} each after`
                                             : `Add members at ${money(101)} each`}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Free-allowance meter */}
-                            {(selectedPkg.freePersons || 0) > 0 && (
+                            {(selectedPkg?.freePersons || 0) > 0 && (
                                 <div className="flex items-center gap-1.5 bg-[#EDF9F0] border border-[#A7D8B6] rounded-xl px-3 py-2 text-[11.5px] font-semibold text-[#1F7A50]">
                                     <Sparkles className="w-3.5 h-3.5 text-[#2E8B57] shrink-0" />
-                                    {Math.max(0, (selectedPkg.freePersons || 0) - form.familyMembers.length) > 0
-                                        ? `${Math.max(0, (selectedPkg.freePersons || 0) - form.familyMembers.length)} free family Sankalp${Math.max(0, (selectedPkg.freePersons || 0) - form.familyMembers.length) > 1 ? "s" : ""} left in your package`
+                                    {Math.max(0, (selectedPkg?.freePersons || 0) - form.familyMembers.length) > 0
+                                        ? `${Math.max(0, (selectedPkg?.freePersons || 0) - form.familyMembers.length)} free family Sankalp${Math.max(0, (selectedPkg?.freePersons || 0) - form.familyMembers.length) > 1 ? "s" : ""} left in your package`
                                         : `Free members used — extra names add ${money(101)} each`}
                                 </div>
                             )}
@@ -693,7 +767,7 @@ function AdminLiveMandirBookingPage() {
                                             <div className="min-w-0 flex-1">
                                                 <p className={`text-[12.5px] font-bold truncate ${adminTheme ? 't-text-dark' : 'text-stone-800'}`}>{m}</p>
                                             </div>
-                                            {idx < (selectedPkg.freePersons || 0) ? (
+                                            {idx < (selectedPkg?.freePersons || 0) ? (
                                                 <span className="text-[11px] font-bold text-[#2E8B57] shrink-0">FREE</span>
                                             ) : (
                                                 <span className={`text-[11px] font-bold shrink-0 ${adminTheme ? 't-text' : 'text-orange-600'}`}>+{money(101)}</span>
@@ -907,7 +981,7 @@ export default function LiveMandirBookingPage() {
     const state = location.state as BookingState | null;
     const adminTheme = state?.fromAdminBanner ? state.adminTheme : null;
 
-    if (adminTheme) {
+    if (state?.fromAdminBanner) {
         return <AdminLiveMandirBookingPage />;
     } else {
         return <LiveMandirBookingPageRegular />;

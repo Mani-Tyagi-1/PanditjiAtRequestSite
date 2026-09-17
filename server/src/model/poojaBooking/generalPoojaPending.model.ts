@@ -12,9 +12,17 @@ const schema = new Schema({
   phone: { type: String, required: true }, email: String,
   bookingDate: { type: Date, required: true }, familyMembers: [String],
   prasadAdded: { type: Boolean, default: false }, address: AddressSchema,
+  upsellsAdded: [{
+    shopifyProductId: String,
+    title: String,
+    price: Number,
+    variantId: String
+  }],
   amount: { type: Number, required: true }, chargedAmount: { type: Number, required: true }, currency: { type: String, default: "INR" },
   countryCode: String, country: String,
   razorpayOrderId: { type: String, required: true, unique: true },
 }, { timestamps: true, strict: true, collection: "generalpoojapending" });
+
+schema.index({ createdAt: 1 }, { expireAfterSeconds: 3600 }); // 1 hour TTL
 
 export default panditJiAtRequestMongooose.model("GeneralPoojaPending", schema);

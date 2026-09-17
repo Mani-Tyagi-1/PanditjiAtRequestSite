@@ -7,7 +7,7 @@ import { IPendingPoojaBooking } from './pendingPoojaBooking.model';
 export interface IPoojaBooking
   extends Omit<IPendingPoojaBooking, 'razorpayOrderId' | 'isPaymentDone'> {
   _id: Types.ObjectId;
-  callID : string;
+  callID: string;
   // Optional on an advance booking until the balance settles — the app server
   // uses the same conditional rule, and both write this one collection.
   razorpayPaymentId?: string;
@@ -67,7 +67,7 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     userEmail: { type: String },
 
     address: { type: Object },
-    callID : {type : String  ,  default: null ,required : false},
+    callID: { type: String, default: null, required: false },
     poojaId: { type: Schema.Types.ObjectId, ref: 'Pooja', required: true },
     poojaNameEng: { type: String, required: true },
     poojaMode: { type: String, enum: ['online', 'offline'], required: true },
@@ -177,6 +177,12 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
     packageIncluded: { type: Boolean, default: false },
     packageDetails: { type: Schema.Types.Mixed, default: undefined },
     addons: { type: Schema.Types.Mixed, default: undefined },
+    upsellsAdded: [{
+      shopifyProductId: String,
+      title: String,
+      price: Number,
+      variantId: String
+    }],
     members: { type: String, trim: true },
     wish: { type: String, trim: true },
     isLiveMandir: { type: Boolean, default: false },

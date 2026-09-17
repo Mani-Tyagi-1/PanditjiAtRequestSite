@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
@@ -12,6 +12,7 @@ import analytics, { type AnalyticsItem } from "../utils/analytics";
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden ÔÇö see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
+import AdminUpsellAddon, { type UpsellProduct } from "../components/booking/LiveMandirPujas/AdminUpsellAddon";
 
 // Puja handed over from LiveMandirPujaDetailPage via navigate(..., { state }).
 // Carried in router state (not the URL) so a direct hit / refresh ÔÇö which has no
@@ -72,6 +73,9 @@ export default function LiveMandirBookingPageRegular() {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
 
+    const submitInFlight = useRef(false);
+    const cachedPendingOrder = useRef<{ payloadStr: string; orderData: any } | null>(null);
+
     // Form states
     const [form, setForm] = useState({
         name: "",
@@ -83,6 +87,8 @@ export default function LiveMandirBookingPageRegular() {
         familyMembers: [] as string[],
         prasadAdded: false,
     });
+
+    const [selectedUpsells, setSelectedUpsells] = useState<UpsellProduct[]>([]);
 
     const [familyInput, setFamilyInput] = useState("");
 
@@ -157,7 +163,8 @@ export default function LiveMandirBookingPageRegular() {
     const basePrice = puja?.price ?? 0;
     const familyCost = form.familyMembers.length * 101;
     const prasadCost = prasadAdded ? 501 : 0;
-    const totalPrice = basePrice + familyCost + prasadCost;
+    const upsellCost = selectedUpsells.reduce((acc, p) => acc + (p.price || 0), 0);
+    const totalPrice = basePrice + familyCost + prasadCost + upsellCost;
 
     // GA4 line items for this seva. Add-ons are separate rows so the item total
     // reconciles with `totalPrice` ÔÇö a single lump row would show the base
@@ -177,6 +184,13 @@ export default function LiveMandirBookingPageRegular() {
         ...(familyCost > 0
             ? [{ id: `${puja?.id}__sankalp`, name: "Extra Sankalp Name", price: 101, quantity: form.familyMembers.length, category: "Add-on" }]
             : []),
+        ...selectedUpsells.map(p => ({
+            id: p.shopifyProductId || p.handle,
+            name: p.title,
+            price: p.price,
+            quantity: 1,
+            category: "Add-on"
+        })),
     ];
 
     // Whatever delivery address the devotee has settled on so far ÔÇö a selected
@@ -206,7 +220,7 @@ export default function LiveMandirBookingPageRegular() {
         familyMembers: form.familyMembers,
         address: draftAddress,
         userId: user?._id || (user as any)?.id,
-        extra: { members: form.members, prasadAdded },
+        extra: { members: form.members, prasadAdded, upsells: selectedUpsells },
     }, String(puja?.id || slug || ""));
 
     if (!puja) return null;
@@ -229,22 +243,27 @@ export default function LiveMandirBookingPageRegular() {
     };
 
     const handleConfirm = async () => {
+        if (submitInFlight.current) return;
+        submitInFlight.current = true;
         setError("");
 
         // Basic Validations
         if (!form.name.trim()) {
             setError("Please enter the devotee's name.");
+            submitInFlight.current = false;
             return;
         }
 
         if (!isValidPhone(form.phone, country)) {
             setError(`Please enter a valid ${country.name} mobile number.`);
+            submitInFlight.current = false;
             return;
         }
         const phoneDigits = toStoredPhone(form.phone, country);
 
         if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-            setError("Please enter a valid email ÔÇö it's how we send your booking confirmation.");
+            setError("Please enter a valid email — it's how we send your booking confirmation.");
+            submitInFlight.current = false;
             return;
         }
 
@@ -253,13 +272,14 @@ export default function LiveMandirBookingPageRegular() {
             if (user && !showNewAddressForm) {
                 if (!selectedAddressId) {
                     setError("Please select a delivery address.");
+                    submitInFlight.current = false;
                     return;
                 }
                 const selected = addresses.find(a => (a._id || a.id) === selectedAddressId);
                 if (selected) {
                     addressPayload = {
-                        addressLine1: selected.addressLine1 || selected.houseNo,
-                        addressLine2: selected.addressLine2 || selected.street,
+                        houseNo: selected.addressLine1 || selected.houseNo,
+                        street: selected.addressLine2 || selected.street,
                         city: selected.city,
                         state: selected.state,
                         pincode: selected.pincode,
@@ -270,11 +290,12 @@ export default function LiveMandirBookingPageRegular() {
                 // Validate new address form
                 if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
                     setError("Please fill out all address fields.");
+                    submitInFlight.current = false;
                     return;
                 }
                 addressPayload = {
-                    addressLine1: newAddress.houseNo.trim(),
-                    addressLine2: newAddress.street.trim(),
+                    houseNo: newAddress.houseNo.trim(),
+                    street: newAddress.street.trim(),
                     city: newAddress.city.trim(),
                     state: newAddress.state.trim(),
                     pincode: newAddress.pincode.trim(),
@@ -283,39 +304,56 @@ export default function LiveMandirBookingPageRegular() {
             }
         }
 
+        const payload = {
+            isLiveMandir: true,
+            pujaSlug: puja.id,
+            packageName: puja.pujaName,
+            templeName: puja.templeName,
+            bhaktName: form.name.trim(),
+            gotra: form.gotra.trim(),
+            phone: phoneDigits,
+            emailId: form.email.trim(),
+            // Marked-up INR — the value of this sale, not the
+            // India list price. See utils/currency `inrEquivalent`.
+            amount: toInr(totalPrice),
+            currency,
+            dialCode: country.dial,
+            countryCode: country.iso2,
+            country: country.name,
+            poojaMode: "online",
+            bookingDate: resolveScheduledDate(puja.scheduledDate),
+            familyMembers: form.familyMembers,
+            prasadAdded: prasadAdded,
+            address: addressPayload,
+            upsellsAdded: selectedUpsells.map(p => ({
+                shopifyProductId: p.shopifyProductId,
+                title: p.title,
+                price: p.price,
+                variantId: p.variantId
+            })),
+        };
+
+        const payloadStr = JSON.stringify(payload);
+
         setSubmitting(true);
 
         try {
-            const bookingEndpoint = adminTheme ? "generalpooja-bookings" : "bookings";
-            // 1. Create booking order via unified endpoint
-            const res = await fetch(`${API_URL}/${bookingEndpoint}/create-pending`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(encryptPayload({
-                    isLiveMandir: true,
-                    pujaSlug: puja.id,
-                    packageName: puja.pujaName,
-                    templeName: puja.templeName,
-                    bhaktName: form.name.trim(),
-                    gotra: form.gotra.trim(),
-                    phone: phoneDigits,
-                    emailId: form.email.trim(),
-                    // Marked-up INR ÔÇö the value of this sale, not the
-                    // India list price. See utils/currency `inrEquivalent`.
-                    amount: toInr(totalPrice),
-                    currency,
-                    dialCode: country.dial,
-                    countryCode: country.iso2,
-                    country: country.name,
-                    poojaMode: "online",
-                    bookingDate: resolveScheduledDate(puja.scheduledDate),
-                    familyMembers: form.familyMembers,
-                    prasadAdded: form.prasadAdded,
-                    address: addressPayload,
-                })),
-            });
-            const orderData = await res.json();
-            if (!res.ok) throw new Error(orderData.message || "Failed to start booking payment.");
+            const bookingEndpoint = state?.fromAdminBanner ? "generalpooja-bookings" : "bookings";
+            
+            let orderData: any;
+            if (cachedPendingOrder.current && cachedPendingOrder.current.payloadStr === payloadStr) {
+                orderData = cachedPendingOrder.current.orderData;
+            } else {
+                // 1. Create booking order via unified endpoint
+                const res = await fetch(`${API_URL}/${bookingEndpoint}/create-pending`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(encryptPayload(payload)),
+                });
+                orderData = await res.json();
+                if (!res.ok) throw new Error(orderData.message || "Failed to start booking payment.");
+                cachedPendingOrder.current = { payloadStr, orderData };
+            }
 
             if (!orderData.razorpayOrderId || !orderData.razorpayKeyId) {
                 throw new Error("Could not initialise payment. Please try again.");
@@ -327,12 +365,12 @@ export default function LiveMandirBookingPageRegular() {
             // 2. Open Razorpay checkout widget
             const rzp = new RazorpayCtor({
                 key: orderData.razorpayKeyId,
-                // Straight from the order the server just created ÔÇö deriving
+                // Straight from the order the server just created — deriving
                 // these again is the one place display and charge could drift.
                 amount: orderData.amountMinor ?? toInr(totalPrice) * 100,
                 currency: orderData.currency ?? "INR",
                 name: "Pandit Ji At Request",
-                description: `${puja.pujaName} ÔÇö ${puja.templeName}`,
+                description: `${puja.pujaName} — ${puja.templeName}`,
                 order_id: orderData.razorpayOrderId,
                 prefill: {
                     name: form.name.trim(),
@@ -383,7 +421,7 @@ export default function LiveMandirBookingPageRegular() {
                                 },
                             },
                         });
-                        // Paid ÔÇö drop this row out of the abandoned-lead list.
+                        // Paid — drop this row out of the abandoned-lead list.
                         markCartConverted(orderData.bookingId);
 
                         setStep("success");
@@ -395,12 +433,14 @@ export default function LiveMandirBookingPageRegular() {
                         setError(verifyErr.message || "Payment verification failed. Please contact support.");
                     } finally {
                         setSubmitting(false);
+                        submitInFlight.current = false;
                     }
                 },
                 modal: {
                     ondismiss: () => {
                         setError("Payment was cancelled. You can try again.");
                         setSubmitting(false);
+                        submitInFlight.current = false;
                     },
                 },
             });
@@ -408,6 +448,7 @@ export default function LiveMandirBookingPageRegular() {
             rzp.on("payment.failed", (resp: any) => {
                 setError(resp?.error?.description || "Payment failed. Please try again.");
                 setSubmitting(false);
+                submitInFlight.current = false;
             });
 
             analytics.beginCheckout({
@@ -436,6 +477,7 @@ export default function LiveMandirBookingPageRegular() {
             console.error("[LiveMandirBooking] Pay & Book failed:", err);
             setError(err.message || "Something went wrong. Please try again.");
             setSubmitting(false);
+            submitInFlight.current = false;
         }
     };
 
@@ -471,7 +513,7 @@ export default function LiveMandirBookingPageRegular() {
                 </div>
             </div>
 
-{/* Currency switcher ÔÇö HIDDEN. The country is resolved automatically from
+            {/* Currency switcher ÔÇö HIDDEN. The country is resolved automatically from
     the visitor's IP on the server, so there is no manual override on
     screen. Left here, commented, so bringing it back is one uncomment
     (plus its import above).
@@ -485,6 +527,28 @@ export default function LiveMandirBookingPageRegular() {
             <div className="px-5 pt-4 space-y-6">
                 {step === "details" ? (
                     <div className="space-y-6">
+                        {puja.upsellEnabled && puja.upsellProducts && puja.upsellProducts.length > 0 && (
+                            <div className="space-y-4">
+                                {puja.upsellProducts.map((product, idx) => {
+                                    const isAdded = selectedUpsells.some(p => p.shopifyProductId === product.shopifyProductId);
+                                    return (
+                                        <AdminUpsellAddon
+                                            key={idx}
+                                            product={product}
+                                            added={isAdded}
+                                            onToggle={(next) => {
+                                                if (next) {
+                                                    setSelectedUpsells([...selectedUpsells, product]);
+                                                } else {
+                                                    setSelectedUpsells(selectedUpsells.filter(p => p.shopifyProductId !== product.shopifyProductId));
+                                                }
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )}
+
                         {/* Base Puja price info */}
                         <div className="bg-white border border-orange-100 rounded-2xl p-4 shadow-sm">
                             <div className="flex items-start justify-between gap-2">
@@ -503,6 +567,7 @@ export default function LiveMandirBookingPageRegular() {
                                 ) : null}
                             </div>
                         </div>
+
 
                         {/* Step 1: Devotee Details */}
                         <div className="space-y-3">

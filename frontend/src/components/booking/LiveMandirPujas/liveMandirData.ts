@@ -26,6 +26,7 @@ export interface LiveMandirPuja {
     templeLocation: string;
     deity: string;
     image: string;
+    images?: string[];
     /** "live" = streaming right now, "upcoming" = scheduled, "daily" = performed every day */
     status: "live" | "upcoming" | "daily";
     scheduledDate: string;   // human label e.g. "Tomorrow" / "Mon, 16 Jun"
@@ -51,6 +52,17 @@ export interface LiveMandirPuja {
     theme?: string;
     packages?: LiveMandirPackage[];
     prasadBoxEnabled?: boolean;
+    upsellEnabled?: boolean;
+    upsellProducts?: {
+        shopifyProductId: string;
+        title: string;
+        handle: string;
+        image: string;
+        price: number;
+        compareAtPrice: number;
+        variantId: string;
+        onlineStoreUrl: string;
+    }[];
 }
 
 // (kept exported for typing placeholder + API review data)

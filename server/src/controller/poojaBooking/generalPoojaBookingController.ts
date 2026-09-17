@@ -16,7 +16,34 @@ export const createGeneralPoojaPending: RequestHandler = async (req, res, next) 
     const body = req.body;
     const pooja = await GeneralPooja.findById(body.pujaSlug).lean();
     if (!pooja || pooja.status !== "open") { res.status(404).json({ message: "General pooja not found." }); return; }
-    const amount = Number(body.amount);
+    let basePrice = pooja.price;
+    let selectedPackage = undefined;
+
+    if (body.packageId && Array.isArray(pooja.packages)) {
+      selectedPackage = pooja.packages.find((p: any) => String(p._id) === String(body.packageId) || p.name === body.packageName || p.id === body.packageId);
+      if (selectedPackage) {
+        basePrice = selectedPackage.price;
+      }
+    }
+
+    const familyMembers = Array.isArray(body.familyMembers) ? body.familyMembers.map(String).slice(0, 20) : [];
+    
+    // Member cost logic (some packages might include free members)
+    const freePersons = selectedPackage?.freePersons || 0;
+    const membersToCharge = Math.max(0, familyMembers.length - freePersons);
+    const familyCost = membersToCharge * 101;
+
+    // Prasad logic
+    const freePrasad = selectedPackage?.freePrasad || false;
+    const prasadCost = (body.prasadAdded && !freePrasad) ? 501 : 0;
+
+    // Upsell logic
+    let upsellCost = 0;
+    if (Array.isArray(body.upsellsAdded)) {
+      upsellCost = body.upsellsAdded.reduce((sum: number, u: any) => sum + Number(u.price || 0), 0);
+    }
+
+    const amount = basePrice + familyCost + prasadCost + upsellCost;
     if (!Number.isFinite(amount) || amount <= 0) { res.status(400).json({ message: "Invalid amount." }); return; }
     const currency = resolveCurrency(body.currency);
     const chargedAmount = convertFromInr(amount, currency);
@@ -29,6 +56,7 @@ export const createGeneralPoojaPending: RequestHandler = async (req, res, next) 
       familyMembers: Array.isArray(body.familyMembers) ? body.familyMembers.map(String).slice(0, 20) : [],
       prasadAdded: body.prasadAdded === true,
       ...(body.prasadAdded === true && body.address ? { address: body.address } : {}),
+      ...(Array.isArray(body.upsellsAdded) ? { upsellsAdded: body.upsellsAdded } : {}),
       amount, chargedAmount, currency, countryCode: String(body.countryCode || "").slice(0, 2),
       country: String(body.country || "").slice(0, 64), razorpayOrderId: order.id,
     });
@@ -51,6 +79,7 @@ export const completeGeneralPoojaBooking: RequestHandler = async (req, res, next
       devoteeName: pending.devoteeName, gotra: pending.gotra, phone: pending.phone, email: pending.email,
       bookingDate: pending.bookingDate, familyMembers: pending.familyMembers,
       prasadAdded: pending.prasadAdded, ...(pending.address ? { address: pending.address } : {}),
+      ...(pending.upsellsAdded ? { upsellsAdded: pending.upsellsAdded } : {}),
       amount: pending.amount, chargedAmount: pending.chargedAmount, currency: pending.currency, countryCode: pending.countryCode, country: pending.country,
       razorpayOrderId, razorpayPaymentId, paidAt: new Date(),
     });

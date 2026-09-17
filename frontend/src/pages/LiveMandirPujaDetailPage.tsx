@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useId, useRef, type CSSProperties } from 
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Video, Gift, Calendar, Mountain, Sparkles,
-    Star, Clock, Lock, ChevronDown, MessageCircle, Phone, Flame, BadgeCheck,
+    Star, Clock, Lock, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Flame, BadgeCheck,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";
@@ -196,6 +196,80 @@ function ReviewMarquee({ reviews }: { reviews: LiveMandirReview[] }) {
                     </div>
                 ))}
             </div>
+        </div>
+    );
+}
+
+function HeroBannerSlider({ puja, statusLabel }: { puja: LiveMandirPuja; statusLabel: string }) {
+    const images = puja.images && puja.images.length > 0 ? puja.images : [puja.image];
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    const handleScroll = () => {
+        if (!scrollRef.current) return;
+        const index = Math.round(scrollRef.current.scrollLeft / scrollRef.current.clientWidth);
+        if (index !== currentIndex) {
+            setCurrentIndex(index);
+        }
+    };
+
+    useEffect(() => {
+        if (images.length <= 1) return;
+
+        const timer = setInterval(() => {
+            if (!scrollRef.current) return;
+            const container = scrollRef.current;
+
+            // Check if we are at the end
+            if (container.scrollLeft >= container.scrollWidth - container.clientWidth - 10) {
+                container.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
+            }
+        }, 4000);
+
+        return () => clearInterval(timer);
+    }, [images.length]);
+
+    return (
+        <div className="relative h-52 overflow-hidden p-2 rounded-[10px]">
+            <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+            <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="flex w-full h-full overflow-x-auto snap-x snap-mandatory hide-scrollbar rounded-[10px] shadow-sm"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+                {images.map((img, idx) => (
+                    <div key={idx} className="w-full h-full shrink-0 snap-center relative">
+                        <img
+                            src={optimizedImg(img, 800)}
+                            onError={(e) => { e.currentTarget.src = img; }}
+                            alt={`${puja.pujaName} at ${puja.templeName} - image ${idx + 1}`}
+                            loading={idx === 0 ? "eager" : "lazy"}
+                            fetchPriority={idx === 0 ? "high" : "auto"}
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                ))}
+            </div>
+
+            <span className="absolute top-3 left-3 bg-red-500 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm z-10 pointer-events-none">
+                {statusLabel}
+            </span>
+
+            {images.length > 1 && (
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
+                    {images.map((_, idx) => (
+                        <div
+                            key={idx}
+                            className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${currentIndex === idx ? "w-4 bg-white" : "w-1.5 bg-white/60"
+                                }`}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -432,12 +506,7 @@ export default function LiveMandirPujaDetailPage() {
             </div>
 
             {/* ── Hero banner ── */}
-            <div className="relative h-52 overflow-hidden p-2 rounded-[10px]">
-                <img src={optimizedImg(puja.image, 800)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={`${puja.pujaName} at ${puja.templeName}`} loading="eager" fetchPriority="high" decoding="async" className="w-full h-full object-cover rounded-[10px] shadow-sm" />
-                <span className="absolute top-3 left-3 bg-red-500 text-white text-[9.5px] font-bold tracking-wider px-2.5 py-1 rounded-full uppercase shadow-sm">
-                    {statusLabel}
-                </span>
-            </div>
+            <HeroBannerSlider puja={puja} statusLabel={statusLabel} />
 
             <div className="px-4 pt-3 pb-4 space-y-4">
                 {/* ── Puja name + meta (rating / temple / date) ── */}

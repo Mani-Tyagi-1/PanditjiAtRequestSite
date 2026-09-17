@@ -194,10 +194,10 @@ async function sendBookingConfirmationWhatsapp(booking: any) {
                 const plng = p.location.longitude;
                 const dLat = (plat - userLat) * Math.PI / 180;
                 const dLng = (plng - userLng) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                          Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
-                          Math.sin(dLng/2) * Math.sin(dLng/2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(userLat * Math.PI / 180) * Math.cos(plat * Math.PI / 180) *
+                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                 const distance = 6371 * c; // km
 
                 if (distance < minDistance && distance <= 50) { // within 50km
@@ -217,13 +217,13 @@ async function sendBookingConfirmationWhatsapp(booking: any) {
           const randomPandit = pandits[Math.floor(Math.random() * pandits.length)];
           assignedPanditName = `${randomPandit.prefix || ''} ${randomPandit.firstName || ''} ${randomPandit.lastName || ''}`.trim();
         }
-      } catch(err) {
+      } catch (err) {
         console.error('Error fetching nearby pandit for whatsapp msg:', err);
       }
     }
 
     if (!assignedPanditName) {
-       assignedPanditName = "Acharya Ramlok Sharma ji"; // Ultimate fallback if DB is empty
+      assignedPanditName = "Acharya Ramlok Sharma ji"; // Ultimate fallback if DB is empty
     }
 
     // For Live Mandir: include mandir name in param2, selected date in param3
@@ -446,7 +446,7 @@ const sendOrderToPartnerAffiliate = async (booking: any): Promise<void> => {
     }
 
     const payload = {
-      userId: referralValue ,
+      userId: referralValue,
       refferal_user_id: actualUserId,
       orderId: booking.razorpayOrderId,
       orderPrice: orderAmount,
@@ -967,7 +967,7 @@ export async function finalizePendingPoojaBooking(
       prasadAdded: Boolean(b.prasadAdded),
       deliveryAddress: addr
         ? [addr.addressLine1, addr.addressLine2, addr.city, addr.state, addr.pincode, addr.country]
-            .filter(Boolean).join(", ")
+          .filter(Boolean).join(", ")
         : null,
     });
   })();
@@ -1146,6 +1146,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       packageName,
       packageDetails,
       addons,
+      upsellsAdded,
       members,
       wish,
       concern,
@@ -1357,6 +1358,7 @@ export const createPendingBooking: RequestHandler = async (req, res, next) => {
       skipMetaCapi: skipMetaCapi === true,
       packageIncluded,
       ...(addons && typeof addons === 'object' && { addons }),
+      ...(Array.isArray(upsellsAdded) && { upsellsAdded }),
       ...(packageIncluded && {
         packageId,
         packageName,

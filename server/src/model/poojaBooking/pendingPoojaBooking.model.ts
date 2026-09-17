@@ -247,6 +247,12 @@ export interface IPendingPoojaBooking extends Document {
   familyMembers?: any[];
   prasadAdded?: boolean;
   poojaType?: string;
+  upsellsAdded?: Array<{
+    shopifyProductId: string;
+    title: string;
+    price: number;
+    variantId?: string;
+  }>;
   /**
    * Opt OUT of the Meta CAPI Purchase event for this booking. Set from the
    * create-pending request and carried onto the final booking, which is what
@@ -354,6 +360,12 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     familyMembers: { type: Array, default: undefined },
     prasadAdded: { type: Boolean, default: undefined },
     poojaType: { type: String, default: 'normal_pooja' },
+    upsellsAdded: [{
+      shopifyProductId: String,
+      title: String,
+      price: Number,
+      variantId: String
+    }],
     skipMetaCapi: { type: Boolean, default: false },
   },
   { timestamps: true },

@@ -18,6 +18,17 @@ const GeneralPoojaSchema = new Schema({
     images: [String],
     freePersons: Number,
     freePrasad: Boolean
+  }],
+  upsellEnabled: { type: Boolean, default: false },
+  upsellProducts: [{
+    shopifyProductId: String,
+    title: String,
+    handle: String,
+    image: String,
+    price: Number,
+    compareAtPrice: Number,
+    variantId: String,
+    onlineStoreUrl: String
   }]
 }, { timestamps: true, collection: "generalpoojas" });
 

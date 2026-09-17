@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
     Search,
     ChevronRight,
+    ChevronLeft,
     Phone,
     Video,
     MessageSquare,
@@ -148,9 +149,17 @@ export default function HomePage() {
     // Auto-sliding logic for banners
     useEffect(() => {
         const totalSlides = 1 + adminBannerPoojas.length;
+        if (totalSlides <= 1) return;
+        
         const timer = setInterval(() => {
-            setCurrentBanner((prev) => (prev + 1) % totalSlides);
+            const container = document.getElementById("home-banner-slider");
+            if (container) {
+                const currentIndex = Math.round(container.scrollLeft / container.clientWidth);
+                const nextIndex = (currentIndex + 1) % totalSlides;
+                container.scrollTo({ left: nextIndex * container.clientWidth, behavior: "smooth" });
+            }
         }, 4000);
+        
         return () => clearInterval(timer);
     }, [adminBannerPoojas.length]);
 
@@ -371,53 +380,96 @@ export default function HomePage() {
 
             {/* ── Featured puja banner slider ── Banke Bihari Ji & Navratri Pooja */}
             <section className="px-4">
-                <div className="relative w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm">
+                <div className="relative w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm group">
+                    <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
                     <div
-                        className="flex transition-transform duration-500 ease-in-out"
-                        style={{ transform: `translateX(-${currentBanner * 100}%)` }}
+                        id="home-banner-slider"
+                        className="flex w-full overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+                        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                        onScroll={(e) => {
+                            const target = e.currentTarget;
+                            const index = Math.round(target.scrollLeft / target.clientWidth);
+                            if (index !== currentBanner) setCurrentBanner(index);
+                        }}
                     >
                         {/* Slide 1: Banke Bihari */}
-                        <button
-                            onClick={() => {
-                                analytics.viewItem({
-                                    items: [{ id: String(bankeBihariPuja._id), name: bankeBihariPuja.poojaNameEng, price: bankeBihariPuja.poojaPriceOnline, quantity: 1, category: "Puja" }],
-                                    value: bankeBihariPuja.poojaPriceOnline,
-                                    currency: "INR",
-                                    meta: {
-                                        event: "ViewContent",
-                                        params: {
-                                            content_name: bankeBihariPuja.poojaNameEng,
-                                            content_ids: [bankeBihariPuja._id],
-                                            content_type: "product",
-                                            value: bankeBihariPuja.poojaPriceOnline,
-                                            currency: "INR",
-                                            source: "home_banner",
+                        <div className="w-full shrink-0 snap-center relative">
+                            <button
+                                onClick={() => {
+                                    analytics.viewItem({
+                                        items: [{ id: String(bankeBihariPuja._id), name: bankeBihariPuja.poojaNameEng, price: bankeBihariPuja.poojaPriceOnline, quantity: 1, category: "Puja" }],
+                                        value: bankeBihariPuja.poojaPriceOnline,
+                                        currency: "INR",
+                                        meta: {
+                                            event: "ViewContent",
+                                            params: {
+                                                content_name: bankeBihariPuja.poojaNameEng,
+                                                content_ids: [bankeBihariPuja._id],
+                                                content_type: "product",
+                                                value: bankeBihariPuja.poojaPriceOnline,
+                                                currency: "INR",
+                                                source: "home_banner",
+                                            },
                                         },
-                                    },
-                                });
-                                navigate(SHARAD_PURNIMA_HREF);
-                            }}
-                            aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
-                            className="block w-full shrink-0 active:scale-[0.98] transition-transform"
-                        >
-                            <img
-                                src={optimizedImg(SHARAD_PURNIMA_BANNER, 900)}
-                                onError={(e) => { e.currentTarget.src = SHARAD_PURNIMA_BANNER; }}
-                                width={SHARAD_PURNIMA_BANNER_W}
-                                height={SHARAD_PURNIMA_BANNER_H}
-                                alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
-                                loading="eager"
-                                decoding="async"
-                                className="w-full h-auto object-cover"
-                            />
-                        </button>
+                                    });
+                                    navigate(SHARAD_PURNIMA_HREF);
+                                }}
+                                aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
+                                className="block w-full h-full active:scale-[0.98] transition-transform"
+                            >
+                                <img
+                                    src={optimizedImg(SHARAD_PURNIMA_BANNER, 900)}
+                                    onError={(e) => { e.currentTarget.src = SHARAD_PURNIMA_BANNER; }}
+                                    width={SHARAD_PURNIMA_BANNER_W}
+                                    height={SHARAD_PURNIMA_BANNER_H}
+                                    alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
+                                    loading="eager"
+                                    decoding="async"
+                                    className="w-full h-auto object-cover"
+                                />
+                            </button>
+                        </div>
 
                         {adminBannerPoojas.map((puja) => (
-                            <button key={puja.id} onClick={() => navigate(`/live-mandir-puja/${puja.id}`, { state: { fromAdminBanner: true } })} aria-label={`Book ${puja.pujaName}`} className="block w-full shrink-0 active:scale-[0.98] transition-transform">
-                                <img src={optimizedImg(puja.image, 900)} onError={(e) => { e.currentTarget.src = puja.image; }} width={SHARAD_PURNIMA_BANNER_W} height={SHARAD_PURNIMA_BANNER_H} alt={puja.pujaName} loading="lazy" decoding="async" className="w-full h-auto object-cover" />
-                            </button>
+                            <div key={puja.id} className="w-full shrink-0 snap-center relative">
+                                <button onClick={() => navigate(`/live-mandir-puja/${puja.id}`, { state: { fromAdminBanner: true } })} aria-label={`Book ${puja.pujaName}`} className="block w-full h-full active:scale-[0.98] transition-transform">
+                                    <img src={optimizedImg(puja.image, 900)} onError={(e) => { e.currentTarget.src = puja.image; }} width={SHARAD_PURNIMA_BANNER_W} height={SHARAD_PURNIMA_BANNER_H} alt={puja.pujaName} loading="lazy" decoding="async" className="w-full h-auto object-cover" />
+                                </button>
+                            </div>
                         ))}
                     </div>
+                    
+                    {/* Left/Right Arrows */}
+                    {1 + adminBannerPoojas.length > 1 && (
+                        <>
+                            <button 
+                                onClick={() => {
+                                    const container = document.getElementById("home-banner-slider");
+                                    if (container) {
+                                        const total = 1 + adminBannerPoojas.length;
+                                        const newIndex = (currentBanner - 1 + total) % total;
+                                        container.scrollTo({ left: newIndex * container.clientWidth, behavior: "smooth" });
+                                    }
+                                }}
+                                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/70 text-stone-800 shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-0 z-10"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    const container = document.getElementById("home-banner-slider");
+                                    if (container) {
+                                        const total = 1 + adminBannerPoojas.length;
+                                        const newIndex = (currentBanner + 1) % total;
+                                        container.scrollTo({ left: newIndex * container.clientWidth, behavior: "smooth" });
+                                    }
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/70 text-stone-800 shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-0 z-10"
+                            >
+                                <ChevronRight className="w-5 h-5" />
+                            </button>
+                        </>
+                    )}
 
                     {/* Dots indicator */}
                     <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">

@@ -182,7 +182,7 @@ function ReviewMarquee({ reviews }: { reviews: LiveMandirReview[] }) {
     const items = [...reviews, ...reviews]; // duplicated for a seamless loop
     return (
         <div className="overflow-hidden -mx-4 px-4">
-            <style>{`@keyframes reviewMarquee{from{transform:translateX(-50%)}to{transform:translateX(0)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
+            <style>{`@keyframes reviewMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
             <div className="review-track flex gap-2.5">
                 {items.map((r, i) => (
                     <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 t-border rounded-xl p-3 shadow-sm">
@@ -460,7 +460,7 @@ export default function LiveMandirPujaDetailPage() {
 
                 {/* ── Countdown (honest — real puja date) — compact single row ── */}
                 <div className="flex  items-center justify-center gap-6 bg-white border border-orange-100 t-border rounded-xl px-3 py-2 shadow-sm">
-                    <span className="text-[10.5px] font-bold text-orange-600 t-text-dark leading-tight shrink-0">Bookings close soon</span>
+                    <span className="text-sm font-bold text-orange-600 t-text-dark leading-tight shrink-0">Bookings close soon</span>
                     {cd ? (
                         <div className="flex items-center gap-1">
                             {[
@@ -548,6 +548,11 @@ export default function LiveMandirPujaDetailPage() {
                         <Accordion title="What is performed" defaultOpen>
                             <p>{puja.whatIsPerformed || `The ${puja.pujaName} is performed with complete Vedic rituals.`}</p>
                         </Accordion>
+                        {puja.vidhi && (
+                            <Accordion title="Vidhi">
+                                <p>{puja.vidhi}</p>
+                            </Accordion>
+                        )}
                         <Accordion title="Offerings & samagri">
                             <p>{puja.offeringsSamagri || "All required samagri and offerings are arranged on your behalf."}</p>
                         </Accordion>

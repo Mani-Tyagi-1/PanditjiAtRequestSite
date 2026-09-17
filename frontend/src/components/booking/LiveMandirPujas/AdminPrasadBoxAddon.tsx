@@ -137,9 +137,6 @@ export default function AdminPrasadBoxAddon({
                         <span className={`block text-[15px] font-extrabold leading-none ${added ? (selectedTheme ? "t-text-dark" : "text-[#4C3F91]") : (selectedTheme ? "t-text-dark" : "text-amber-900")}`}>
                             +{money(501)}
                         </span>
-                        <span className={`block text-[9px] font-bold uppercase tracking-wide mt-1 ${added ? (selectedTheme ? "t-text" : "text-[#8A8A8A]") : (selectedTheme ? "t-text" : "text-amber-700/80")}`}>
-                            {added ? "added" : "one-time"}
-                        </span>
                     </div>
                 </button>
                 {chevronButton}

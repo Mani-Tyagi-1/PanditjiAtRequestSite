@@ -84,11 +84,10 @@ export default function PrasadBoxAddon({
 
     return (
         <div
-            className={`rounded-2xl border p-3.5 transition-all ${
-                added
+            className={`rounded-2xl border p-3.5 transition-all ${added
                     ? "border-[#4C3F91] bg-[#F1EEFB] ring-1 ring-[#C9C3ED] shadow-md"
                     : "border-[#E6E1F5] bg-white shadow-sm"
-            }`}
+                }`}
         >
             {/* The whole header is the toggle — a small checkbox alone is an easy
                 target to miss on a phone. `aria-pressed` (not a raw checkbox)
@@ -101,9 +100,8 @@ export default function PrasadBoxAddon({
                 className="w-full text-left flex items-start gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-[#4C3F91] rounded-xl disabled:cursor-default cursor-pointer"
             >
                 <span
-                    className={`mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                        added ? "border-[#4C3F91] bg-[#4C3F91]" : "border-[#D8D2ED] bg-white"
-                    }`}
+                    className={`mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${added ? "border-[#4C3F91] bg-[#4C3F91]" : "border-[#D8D2ED] bg-white"
+                        }`}
                 >
                     {added && <Check className="w-3 h-3 text-white" strokeWidth={4} />}
                 </span>
@@ -161,9 +159,8 @@ function ContentList({
     return (
         <div className={className}>
             <p
-                className={`text-[10px] font-bold uppercase tracking-wide mb-1.5 ${
-                    tone === "free" ? "text-[#1F7A50]" : "text-[#8A5A12]"
-                }`}
+                className={`text-[10px] font-bold uppercase tracking-wide mb-1.5 ${tone === "free" ? "text-[#1F7A50]" : "text-[#8A5A12]"
+                    }`}
             >
                 What's inside
             </p>

@@ -23,6 +23,7 @@ const mapGeneralPooja = (data: any): LiveMandirPuja => {
         benefits: data.benefits || [],
         tags: data.category ? [data.category] : [],
         whatIsPerformed: data.whatIsPerformed,
+        vidhi: data.vidhi,
         offeringsSamagri: data.offeringsSamagri,
         templeAbout: data.templeAbout,
         templeHistory: data.templeHistory,

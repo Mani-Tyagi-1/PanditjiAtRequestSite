@@ -4,15 +4,24 @@ import poojaModel from "../../model/userApp/poojaModel";
 // Lightweight projection for list/card views — excludes heavy fields like
 // descriptions, image/video arrays, samagri and FAQs (huge payload otherwise).
 const POOJA_LIST_FIELDS =
-  "poojaID poojaNameEng poojaNameHindi poojaMode poojaPriceOnline poojaPriceOffline mainCategories subCategories poojaCardImage isFeatured featuredRank isExclusive exclusiveRank isActive";
+  "poojaID poojaNameEng poojaNameHindi poojaMode poojaPriceOnline poojaPriceOffline mainCategories subCategories poojaCardImage isFeatured featuredRank isExclusive exclusiveRank isActive specialDate";
 
 const escapeRelatedPujaTerm = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Get all active poojas (list view — projected & lean for speed)
 export const fetchAllPoojas = async (req: Request, res: Response) => {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const poojas = await poojaModel
-      .find({ isActive: true })
+      .find({
+        isActive: true,
+        $or: [
+          { specialDate: { $gte: today } },
+          { specialDate: null },
+          { specialDate: { $exists: false } }
+        ]
+      })
       .select(POOJA_LIST_FIELDS)
       .lean();
     // Catalog data changes rarely — let browsers/CDN cache briefly (non-breaking).

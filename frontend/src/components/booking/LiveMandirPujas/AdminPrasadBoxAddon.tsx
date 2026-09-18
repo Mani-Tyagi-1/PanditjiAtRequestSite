@@ -59,9 +59,9 @@ export default function AdminPrasadBoxAddon({
         <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-            className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-xl border outline-none cursor-pointer transition-colors ${open ? (selectedTheme ? "t-border-active t-bg-alt t-text-dark" : "border-[#C9C3ED] bg-[#F1EEFB] text-[#4C3F91]") : (selectedTheme ? "t-border-light t-bg-alt t-text hover:t-border-active" : "border-[#E6E1F5] bg-[#F8F7FC] text-[#8A8A8A] hover:border-[#C3BBEA] hover:text-[#4C3F91]")}`}
+            className={`shrink-0 w-8 h-8 min-[360px]:w-10 min-[360px]:h-10 flex items-center justify-center rounded-xl border outline-none cursor-pointer transition-colors ${open ? (selectedTheme ? "t-border-active t-bg-alt t-text-dark" : "border-[#C9C3ED] bg-[#F1EEFB] text-[#4C3F91]") : (selectedTheme ? "t-border-light t-bg-alt t-text hover:t-border-active" : "border-[#E6E1F5] bg-[#F8F7FC] text-[#8A8A8A] hover:border-[#C3BBEA] hover:text-[#4C3F91]")}`}
         >
-            <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+            <ChevronDown className={`w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
     );
 
@@ -69,14 +69,14 @@ export default function AdminPrasadBoxAddon({
     if (pkg.freePrasad) {
         return (
             <div>
-                <div className="flex items-center gap-2">
-                    <div className="flex-1 min-w-0 rounded-xl border px-3 py-2.5 transition-colors flex items-start gap-2.5 border-emerald-200 bg-[#F0FDF4]">
+                <div className="flex items-center gap-1.5 min-[360px]:gap-2">
+                    <div className="flex-1 min-w-0 rounded-xl border px-2.5 min-[360px]:px-3 py-2 min-[360px]:py-2.5 transition-colors flex items-start gap-2 min-[360px]:gap-2.5 border-emerald-200 bg-[#F0FDF4]">
                         <Gift className="w-4 h-4 shrink-0 mt-0.5 text-[#087F63]" />
                         <div className="flex-1 min-w-0">
-                            <p className="text-[13.5px] font-bold leading-tight text-[#087F63]">
+                            <p className="text-[12.5px] min-[360px]:text-[13.5px] font-bold leading-tight text-[#087F63]">
                                 FREE Premium Prasad Box
                             </p>
-                            <p className="text-[11px] leading-snug mt-0.5 text-[#087F63]">
+                            <p className="text-[10px] min-[360px]:text-[11px] leading-snug mt-0.5 text-[#087F63]">
                                 couriered home
                             </p>
                         </div>
@@ -95,38 +95,38 @@ export default function AdminPrasadBoxAddon({
 
     return (
         <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 min-[360px]:gap-2">
                 <button
                     type="button"
                     disabled={!interactive}
                     onClick={(e) => { e.stopPropagation(); onToggle?.(!added); }}
                     aria-pressed={added}
-                    className={`flex-1 min-w-0 text-left rounded-xl border px-2.5 py-2 transition-all flex items-center justify-between gap-2 outline-none cursor-pointer ${added
+                    className={`flex-1 min-w-0 text-left rounded-xl border px-2 min-[360px]:px-2.5 py-1.5 min-[360px]:py-2 transition-all flex items-center justify-between gap-1.5 min-[360px]:gap-2 outline-none cursor-pointer ${added
                         ? (selectedTheme ? "t-border-active t-bg-alt shadow-sm" : "border-[#4C3F91] bg-[#F1EEFB] shadow-sm")
                         : (selectedTheme ? "t-border-light t-bg hover:shadow-sm" : "border-amber-200 bg-[#FFFBEB] hover:border-amber-300")
                         }`}
                 >
-                    <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="flex items-start gap-2 min-[360px]:gap-2.5 min-w-0 flex-1">
                         <span
-                            className={`shrink-0 w-[22px] h-[22px] mt-0.5 rounded-md flex items-center justify-center transition-colors ${added
+                            className={`shrink-0 w-5 h-5 min-[360px]:w-[22px] min-[360px]:h-[22px] mt-0.5 rounded-md flex items-center justify-center transition-colors ${added
                                 ? (selectedTheme ? "text-white t-tab-active" : "bg-[#4C3F91] text-white")
                                 : (selectedTheme ? "t-bg-alt t-text-dark border t-border-light" : "bg-amber-300 text-amber-800")
                                 }`}
                         >
-                            {added ? <Check className="w-3.5 h-3.5" strokeWidth={4} /> : <Plus className="w-3.5 h-3.5" strokeWidth={3} />}
+                            {added ? <Check className="w-3 h-3 min-[360px]:w-3.5 min-[360px]:h-3.5" strokeWidth={4} /> : <Plus className="w-3 h-3 min-[360px]:w-3.5 min-[360px]:h-3.5" strokeWidth={3} />}
                         </span>
                         <div className="flex-1 min-w-0">
-                            <p className={`text-[13.5px] font-bold leading-tight ${added ? (selectedTheme ? "t-text-dark" : "text-[#262454]") : (selectedTheme ? "t-text-dark opacity-90" : "text-[#1E3A8A]")}`}>
+                            <p className={`text-[12px] min-[360px]:text-[13.5px] font-bold leading-tight ${added ? (selectedTheme ? "t-text-dark" : "text-[#262454]") : (selectedTheme ? "t-text-dark opacity-90" : "text-[#1E3A8A]")}`}>
                                 {added ? "Prasad Box Added" : "Add Prasad Box"}
                             </p>
-                            <p className={`text-[11px] leading-snug mt-0.5 ${added ? (selectedTheme ? "t-text" : "text-[#4F4A85]") : (selectedTheme ? "t-text opacity-80" : "text-amber-700")}`}>
+                            <p className={`text-[10px] min-[360px]:text-[11px] leading-snug mt-0.5 ${added ? (selectedTheme ? "t-text" : "text-[#4F4A85]") : (selectedTheme ? "t-text opacity-80" : "text-amber-700")}`}>
                                 couriered home
                             </p>
                         </div>
                     </div>
 
                     <div className="text-right shrink-0">
-                        <span className={`block text-[15px] font-extrabold leading-none ${added ? (selectedTheme ? "t-text-dark" : "text-[#4C3F91]") : (selectedTheme ? "t-text-dark" : "text-amber-900")}`}>
+                        <span className={`block text-[13.5px] min-[360px]:text-[15px] font-extrabold leading-none ${added ? (selectedTheme ? "t-text-dark" : "text-[#4C3F91]") : (selectedTheme ? "t-text-dark" : "text-amber-900")}`}>
                             +{money(501)}
                         </span>
                     </div>

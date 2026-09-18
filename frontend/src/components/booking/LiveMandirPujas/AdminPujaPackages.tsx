@@ -76,10 +76,10 @@ export default function AdminPujaPackages({
                             </div>
                         )}
 
-                        <div className="px-3 pt-3.5 pb-2.5">
+                        <div className="px-2.5 min-[360px]:px-3 pt-3 pb-2.5">
                             {/* ── Selection: header + the short summary ── */}
-                            <div className="w-full text-left flex items-start justify-between gap-2 outline-none">
-                                <div className="flex items-start gap-2 min-w-0">
+                            <div className="w-full text-left flex items-start justify-between gap-1.5 min-[360px]:gap-2 outline-none">
+                                <div className="flex items-start gap-1.5 min-[360px]:gap-2 flex-1 min-w-0">
                                     <span
                                         className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${selected
                                             ? (selectedTheme ? "t-border-active t-gradient" : "border-[#4C3F91] bg-[#4C3F91]")
@@ -88,23 +88,23 @@ export default function AdminPujaPackages({
                                     >
                                         {selected && <Check className="w-2.5 h-2.5 text-white" strokeWidth={4} />}
                                     </span>
-                                    <div className="min-w-0">
-                                        <p className={`text-[14px] font-bold leading-tight ${selectedTheme ? "t-text-dark" : "text-[#262454]"}`}>
+                                    <div className="min-w-0 flex-1">
+                                        <p className={`text-[13px] min-[360px]:text-[14px] font-bold leading-snug ${selectedTheme ? "t-text-dark" : "text-[#262454]"}`}>
                                             {pkg.name}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="shrink-0 flex items-center gap-1.5">
-                                    <p className={`text-[18px] font-extrabold leading-none ${selectedTheme ? "t-text-dark" : "text-[#4C3F91]"}`}>
+                                <div className="shrink-0 flex items-baseline justify-end flex-wrap gap-x-1 min-[360px]:gap-x-1.5 gap-y-0.5 text-right">
+                                    <p className={`text-[16px] min-[360px]:text-[18px] font-extrabold leading-none ${selectedTheme ? "t-text-dark" : "text-[#4C3F91]"}`}>
                                         {money(pkg.price)}
                                     </p>
                                     {(pkg.strikePrice && discountPercent > 0) ? (
                                         <>
-                                            <span className="text-[12px] font-bold text-stone-400 line-through">
+                                            <span className="text-[11px] min-[360px]:text-[12px] font-bold text-stone-400 line-through">
                                                 {money(pkg.strikePrice)}
                                             </span>
-                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${selectedTheme ? "bg-orange-100 text-orange-700 t-bg-alt t-text-dark" : "bg-[#FDE8E8] text-[#9B1C1C]"}`}>
+                                            <span className={`px-1 min-[360px]:px-1.5 py-0.5 rounded text-[9px] min-[360px]:text-[10px] font-bold uppercase tracking-wide ${selectedTheme ? "bg-orange-100 text-orange-700 t-bg-alt t-text-dark" : "bg-[#FDE8E8] text-[#9B1C1C]"}`}>
                                                 {discountPercent}% OFF
                                             </span>
                                         </>
@@ -114,9 +114,9 @@ export default function AdminPujaPackages({
 
                             {/* Family Members Included */}
                             {pkg.freePersons && pkg.freePersons > 0 ? (
-                                <div className={`mt-3 rounded-lg p-2 flex items-center gap-2 border ${selectedTheme ? "bg-gradient-to-r from-orange-50 to-orange-50/30 border-orange-100/60 t-bg" : "bg-[#EDF9F0] border-[#A7D8B6]"}`}>
-                                    <Users className={`w-3.5 h-3.5 ${selectedTheme ? "t-text-dark" : "text-[#2E8B57]"}`} />
-                                    <span className={`text-[11.5px] font-semibold ${selectedTheme ? "t-text-dark" : "text-[#1F7A50]"}`}>
+                                <div className={`mt-2.5 min-[360px]:mt-3 rounded-lg p-1.5 min-[360px]:p-2 flex items-center gap-1.5 min-[360px]:gap-2 border ${selectedTheme ? "bg-gradient-to-r from-orange-50 to-orange-50/30 border-orange-100/60 t-bg" : "bg-[#EDF9F0] border-[#A7D8B6]"}`}>
+                                    <Users className={`w-3.5 h-3.5 shrink-0 ${selectedTheme ? "t-text-dark" : "text-[#2E8B57]"}`} />
+                                    <span className={`text-[11px] min-[360px]:text-[11.5px] font-semibold ${selectedTheme ? "t-text-dark" : "text-[#1F7A50]"}`}>
                                         {pkg.freePersons} free family Sankalp{pkg.freePersons > 1 ? "s" : ""}
                                     </span>
                                 </div>
@@ -124,7 +124,7 @@ export default function AdminPujaPackages({
 
                             {/* Prasad Box Addon */}
                             {prasadBoxEnabled ? (
-                                <div className="mt-3">
+                                <div className="mt-2.5 min-[360px]:mt-3">
                                     <AdminPrasadBoxAddon
                                         pkg={pkg}
                                         pujaPrasadBoxEnabled={prasadBoxEnabled}
@@ -140,19 +140,19 @@ export default function AdminPujaPackages({
                             ) : (
                                 /* When Prasad Box is OFF, show "View Description" with arrow */
                                 (pkg.description || (pkg.bulletPoints && pkg.bulletPoints.length > 0)) ? (
-                                    <div className="mt-3">
+                                    <div className="mt-2.5 min-[360px]:mt-3">
                                         <button
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setExpandedDetails(prev => ({ ...prev, [pkg.id]: !prev[pkg.id] }));
                                             }}
-                                            className={`w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 outline-none cursor-pointer transition-colors ${expandedDetails[pkg.id]
+                                            className={`w-full flex items-center justify-between gap-2 rounded-xl border px-2.5 min-[360px]:px-3 py-2 min-[360px]:py-2.5 outline-none cursor-pointer transition-colors ${expandedDetails[pkg.id]
                                                 ? (selectedTheme ? "t-border-active t-bg-alt" : "border-[#C9C3ED] bg-[#F1EEFB]")
                                                 : (selectedTheme ? "t-border-light t-bg hover:t-border-active" : "border-[#E6E1F5] bg-[#F8F7FC] hover:border-[#C3BBEA]")
                                                 }`}
                                         >
-                                            <span className={`text-[12.5px] font-semibold ${selectedTheme ? "t-text-dark" : "text-[#4C3F91]"}`}>
+                                            <span className={`text-[11.5px] min-[360px]:text-[12.5px] font-semibold ${selectedTheme ? "t-text-dark" : "text-[#4C3F91]"}`}>
                                                 View Description
                                             </span>
                                             <ChevronDown className={`w-4 h-4 transition-transform ${selectedTheme ? "t-text" : "text-[#8A8A8A]"} ${expandedDetails[pkg.id] ? "rotate-180" : ""}`} />

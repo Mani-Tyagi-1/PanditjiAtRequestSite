@@ -2,7 +2,16 @@ import { RequestHandler } from "express";
 import GeneralPooja from "../../model/userApp/generalPoojaModel";
 
 export const getGeneralPoojas: RequestHandler = async (_req, res) => {
-  const poojas = await GeneralPooja.find({ status: "open" }).sort({ createdAt: -1 }).lean();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const poojas = await GeneralPooja.find({
+    status: "open",
+    $or: [
+      { pujaDate: { $gte: today } },
+      { pujaDate: null },
+      { pujaDate: { $exists: false } }
+    ]
+  }).sort({ createdAt: -1 }).lean();
   res.json({ success: true, data: poojas });
 };
 

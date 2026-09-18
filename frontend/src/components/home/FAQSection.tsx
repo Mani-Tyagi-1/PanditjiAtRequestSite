@@ -41,10 +41,10 @@ export default function FAQSection() {
 
     return (
         <section className="px-4 pt-6">
-            <SectionHeader 
-                title="Frequently Asked Questions" 
-                icon={HelpCircle} 
-                subtitle="Have queries? We have answers" 
+            <SectionHeader
+                title="Frequently Asked Questions"
+                icon={HelpCircle}
+                subtitle="Have queries? We have answers"
             />
 
             <div className="mt-3 space-y-3">
@@ -68,7 +68,7 @@ export default function FAQSection() {
                                     <ChevronDown className="w-5 h-5 text-stone-500 shrink-0 ml-2" />
                                 )}
                             </button>
-                            
+
                             {isExpanded && (
                                 <div className="px-5 pb-4.5 pt-0 border-t border-orange-50/20">
                                     <p className="text-[12.5px] text-stone-500 leading-relaxed mt-2.5">

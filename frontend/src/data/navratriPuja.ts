@@ -1,5 +1,6 @@
 import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
 import API_URL from "../utils/apiConfig";
+import { isTodayOrFuture } from "../utils/dateUtils";
 
 const mapGeneralPooja = (data: any): LiveMandirPuja => {
     const hasDiscountPrice = Number.isFinite(Number(data.discountPrice)) && Number(data.discountPrice) > 0;
@@ -76,5 +77,8 @@ export async function fetchAdminGeneralPoojas(): Promise<LiveMandirPuja[]> {
     const response = await fetch(`${API_URL}/generalpoojas`);
     if (!response.ok) throw new Error("General poojas not found");
     const { data } = await response.json();
-    return Array.isArray(data) ? data.map(mapGeneralPooja) : [];
+    if (!Array.isArray(data)) return [];
+    return data
+        .map(mapGeneralPooja)
+        .filter((p) => p.status !== "closed" && isTodayOrFuture(p.scheduledDate));
 }

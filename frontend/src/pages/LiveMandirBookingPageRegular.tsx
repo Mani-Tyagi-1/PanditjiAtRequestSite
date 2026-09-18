@@ -88,6 +88,45 @@ export default function LiveMandirBookingPageRegular() {
         prasadAdded: false,
     });
 
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+    const updateFormField = (field: string, value: any) => {
+        setForm((f) => ({ ...f, [field]: value }));
+        if (fieldErrors[field]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
+        if (error) setError("");
+    };
+
+    const updateAddressField = (field: string, value: any) => {
+        setNewAddress((a) => ({ ...a, [field]: value }));
+        if (fieldErrors[field]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
+        if (error) setError("");
+    };
+
+    const scrollToField = (fieldId: string) => {
+        const el = document.getElementById(fieldId);
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            const input = el.querySelector("input") || (el.tagName === "INPUT" ? el : null);
+            if (input) {
+                setTimeout(() => {
+                    (input as HTMLElement).focus({ preventScroll: true });
+                }, 400);
+            }
+        }
+    };
+
     const [selectedUpsells, setSelectedUpsells] = useState<UpsellProduct[]>([]);
 
     const [familyInput, setFamilyInput] = useState("");
@@ -249,35 +288,67 @@ export default function LiveMandirBookingPageRegular() {
         submitInFlight.current = true;
         setError("");
 
-        // Basic Validations
-        if (!form.name.trim()) {
-            setError("Please enter the devotee's name.");
-            submitInFlight.current = false;
-            return;
-        }
+        // Field-level validations
+        const newFieldErrors: Record<string, string> = {};
 
         if (!isValidPhone(form.phone, country)) {
-            setError(`Please enter a valid ${country.name} mobile number.`);
-            submitInFlight.current = false;
-            return;
+            newFieldErrors.phone = form.phone.trim()
+                ? `Please enter a valid ${country.name} mobile number.`
+                : "Please enter your mobile number.";
         }
-        const phoneDigits = toStoredPhone(form.phone, country);
+
+        if (!form.name.trim()) {
+            newFieldErrors.name = "Please enter the devotee's name.";
+        }
 
         if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-            setError("Please enter a valid email — it's how we send your booking confirmation.");
+            newFieldErrors.email = "Please enter a valid email for your booking confirmation.";
+        }
+
+        if (prasadAdded) {
+            if (user && addresses.length > 0 && !showNewAddressForm) {
+                if (!selectedAddressId) {
+                    newFieldErrors.addressSelect = "Please select a delivery address.";
+                }
+            } else {
+                if (!newAddress.houseNo.trim()) {
+                    newFieldErrors.houseNo = "Please enter house / flat no.";
+                }
+                if (!newAddress.street.trim()) {
+                    newFieldErrors.street = "Please enter area / street.";
+                }
+                if (!newAddress.city.trim()) {
+                    newFieldErrors.city = "Please enter city.";
+                }
+                if (!newAddress.state.trim()) {
+                    newFieldErrors.state = "Please enter state.";
+                }
+                if (!newAddress.pincode.trim()) {
+                    newFieldErrors.pincode = "Please enter pincode.";
+                } else if (isIndia && !/^\d{6}$/.test(newAddress.pincode.trim())) {
+                    newFieldErrors.pincode = "Please enter a valid 6-digit pincode.";
+                }
+            }
+        }
+
+        if (Object.keys(newFieldErrors).length > 0) {
+            setFieldErrors(newFieldErrors);
+            const fieldOrder = ["phone", "name", "email", "addressSelect", "houseNo", "street", "city", "state", "pincode"];
+            const firstErrorKey = fieldOrder.find((k) => newFieldErrors[k]);
+            if (firstErrorKey) {
+                scrollToField(`field-${firstErrorKey}`);
+            }
             submitInFlight.current = false;
             return;
         }
+
+        setFieldErrors({});
+        const phoneDigits = toStoredPhone(form.phone, country);
 
         let addressPayload: any = null;
         if (prasadAdded) {
             if (user && !showNewAddressForm) {
-                if (!selectedAddressId) {
-                    setError("Please select a delivery address.");
-                    submitInFlight.current = false;
-                    return;
-                }
-                const selected = addresses.find(a => (a._id || a.id) === selectedAddressId);
+                const selected = addresses.find((a) => (a._id || a.id) === selectedAddressId);
                 if (selected) {
                     addressPayload = {
                         houseNo: selected.addressLine1 || selected.houseNo,
@@ -289,17 +360,6 @@ export default function LiveMandirBookingPageRegular() {
                     };
                 }
             } else {
-                // Validate new address form
-                if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
-                    setError("Please fill out all address fields.");
-                    submitInFlight.current = false;
-                    return;
-                }
-                if (isIndia && !/^\d{6}$/.test(newAddress.pincode.trim())) {
-                    setError("Please enter a valid 6-digit pincode.");
-                    submitInFlight.current = false;
-                    return;
-                }
                 addressPayload = {
                     houseNo: newAddress.houseNo.trim(),
                     street: newAddress.street.trim(),
@@ -503,7 +563,7 @@ export default function LiveMandirBookingPageRegular() {
             </Helmet>
 
             {/* Header */}
-            <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-200/50 px-4 py-3 flex items-center gap-3" style={adminTheme ? { backgroundColor: adminTheme.background, borderColor: adminTheme.border } : undefined}>
+            <div className="sticky top-0 z-50 bg-[#FFFAF3]/90 backdrop-blur-md border-b border-orange-200/50 px-3 min-[360px]:px-4 py-2.5 min-[360px]:py-3 flex items-center gap-2.5 min-[360px]:gap-3" style={adminTheme ? { backgroundColor: adminTheme.background, borderColor: adminTheme.border } : undefined}>
                 <button
                     onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
                     aria-label="Go back"
@@ -512,26 +572,18 @@ export default function LiveMandirBookingPageRegular() {
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
                 <div className="min-w-0">
-                    <h1 className="text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Mandir Puja</h1>
-                    <p className="text-[11px] text-stone-500 flex items-center gap-1">
+                    <h1 className="text-[14px] min-[360px]:text-[15px] font-bold text-stone-800 leading-tight truncate">Complete Your Mandir Puja</h1>
+                    <p className="text-[10.5px] min-[360px]:text-[11px] text-stone-500 flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-orange-500 shrink-0" />
-                        <span className="truncate">{puja.templeName}{puja.templeLocation ? ` ┬À ${puja.templeLocation}` : ""}</span>
+                        <span className="truncate">{puja.templeName}{puja.templeLocation ? ` · ${puja.templeLocation}` : ""}</span>
                     </p>
                 </div>
             </div>
 
-            {/* Currency switcher ÔÇö HIDDEN. The country is resolved automatically from
-    the visitor's IP on the server, so there is no manual override on
-    screen. Left here, commented, so bringing it back is one uncomment
-    (plus its import above).
-                <div className="flex items-center justify-between gap-2 px-5 py-2 border-b border-[#FFE3C2] bg-[#FFFAF3]">
-                    <span className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">Paying from</span>
-                    <CountryPicker className="bg-white border border-[#FFE3C2] text-stone-700" accentClass="text-orange-600" />
-                </div>
-*/}
+            {/* Currency switcher — HIDDEN */}
 
             {/* Content */}
-            <div className="px-5 pt-4 space-y-6">
+            <div className="px-3 min-[360px]:px-5 pt-3.5 min-[360px]:pt-4 space-y-4 min-[360px]:space-y-6">
                 {step === "details" ? (
                     <div className="space-y-6">
                         {puja.upsellEnabled && puja.upsellProducts && puja.upsellProducts.length > 0 && (
@@ -588,51 +640,65 @@ export default function LiveMandirBookingPageRegular() {
                             </div>
                             <div className="space-y-3">
                                 {/* Mobile Number input (required if user not logged in or edit allowed) */}
-                                <div>
+                                <div id="field-phone">
                                     <label className={LABEL}>Mobile Number *</label>
                                     <PhoneField
                                         country={country}
                                         value={form.phone}
-                                        onChange={(phone) => setForm((f) => ({ ...f, phone }))}
-                                        inputClass={INPUT}
+                                        onChange={(phone) => updateFormField("phone", phone)}
+                                        inputClass={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.phone ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                         prefixClass="text-orange-600"
                                     />
+                                    {fieldErrors.phone && (
+                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1.5 flex items-center gap-1 animate-fadeIn">
+                                            <span className="text-[13px] leading-none">⚠</span>
+                                            <span>{fieldErrors.phone}</span>
+                                        </p>
+                                    )}
                                 </div>
-                                <div>
+                                <div id="field-name">
                                     <label className={LABEL}>Devotee's Name *</label>
                                     <input
                                         value={form.name}
-                                        onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                                        onChange={(e) => updateFormField("name", e.target.value)}
                                         placeholder="Name for main Sankalp"
-                                        className={INPUT}
+                                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.name ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                     />
+                                    {fieldErrors.name && (
+                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1.5 flex items-center gap-1 animate-fadeIn">
+                                            <span className="text-[13px] leading-none">⚠</span>
+                                            <span>{fieldErrors.name}</span>
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className={LABEL}>Gotra</label>
                                     <input
                                         value={form.gotra}
-                                        onChange={(e) => setForm(f => ({ ...f, gotra: e.target.value }))}
+                                        onChange={(e) => updateFormField("gotra", e.target.value)}
                                         placeholder="e.g. Kashyap"
                                         className={INPUT}
                                     />
                                 </div>
-                                <div>
-                                    {/* Email ÔÇö REQUIRED outside India, optional at home. Abroad
-    there is no OTP to log in with, so the confirmation email
-    is the devotee's only record of the booking. In India
-    WhatsApp already covers that. */}
+                                <div id="field-email">
                                     <label className={LABEL}>
-                                        Email {isIndia ? <span className="font-normal normal-case opacity-70">(optional)</span> : "*"}
+                                        Email {!isIndia ? "*" : <span className="font-normal normal-case opacity-70">(optional)</span>}
                                     </label>
                                     <input
                                         value={form.email}
-                                        onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-                                        placeholder={isIndia ? "For a copy of your booking" : "For your booking confirmation"}
+                                        onChange={(e) => updateFormField("email", e.target.value)}
+                                        placeholder={isIndia ? "For a copy of your booking" : "For your booking confirmation *"}
                                         type="email"
                                         inputMode="email"
                                         autoComplete="email"
-                                        className={INPUT}
+                                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.email ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                     />
+                                    {fieldErrors.email && (
+                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1.5 flex items-center gap-1 animate-fadeIn">
+                                            <span className="text-[13px] leading-none">⚠</span>
+                                            <span>{fieldErrors.email}</span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -719,7 +785,7 @@ export default function LiveMandirBookingPageRegular() {
                             {form.prasadAdded && (
                                 <div className="space-y-3 pt-2">
                                     {user && addresses.length > 0 && !showNewAddressForm && (
-                                        <div className="space-y-2">
+                                        <div id="field-addressSelect" className="space-y-2">
                                             <p className={LABEL}>Select Delivery Address</p>
                                             {addresses.map(addr => (
                                                 <label
@@ -730,7 +796,7 @@ export default function LiveMandirBookingPageRegular() {
                                                         type="radio"
                                                         name="addressSelect"
                                                         checked={selectedAddressId === addr._id}
-                                                        onChange={() => setSelectedAddressId(addr._id)}
+                                                        onChange={() => { setSelectedAddressId(addr._id); if (fieldErrors.addressSelect) setFieldErrors(prev => ({ ...prev, addressSelect: "" })); }}
                                                         className="mt-1 text-orange-500 focus:ring-orange-400 border-orange-200"
                                                     />
                                                     <div className="text-[12.5px] text-stone-700 leading-relaxed">
@@ -739,6 +805,12 @@ export default function LiveMandirBookingPageRegular() {
                                                     </div>
                                                 </label>
                                             ))}
+                                            {fieldErrors.addressSelect && (
+                                                <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                    <span className="text-[13px] leading-none">⚠</span>
+                                                    <span>{fieldErrors.addressSelect}</span>
+                                                </p>
+                                            )}
                                             <button
                                                 onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
                                                 className="text-orange-600 hover:text-orange-700 text-xs font-bold pt-1 block cursor-pointer"
@@ -762,59 +834,95 @@ export default function LiveMandirBookingPageRegular() {
                                                     </button>
                                                 )}
                                             </div>
-                                            <div>
+                                            <div id="field-houseNo">
                                                 <label className={LABEL}>House/Flat No *</label>
                                                 <input
                                                     value={newAddress.houseNo}
-                                                    onChange={(e) => setNewAddress(a => ({ ...a, houseNo: e.target.value }))}
+                                                    onChange={(e) => updateAddressField("houseNo", e.target.value)}
                                                     placeholder="e.g. 73a VIP Road"
-                                                    className={INPUT}
+                                                    className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.houseNo ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                                 />
+                                                {fieldErrors.houseNo && (
+                                                    <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                        <span className="text-[13px] leading-none">⚠</span>
+                                                        <span>{fieldErrors.houseNo}</span>
+                                                    </p>
+                                                )}
                                             </div>
-                                            <div>
+                                            <div id="field-street">
                                                 <label className={LABEL}>Area/Street *</label>
                                                 <input
                                                     value={newAddress.street}
-                                                    onChange={(e) => setNewAddress(a => ({ ...a, street: e.target.value }))}
+                                                    onChange={(e) => updateAddressField("street", e.target.value)}
                                                     placeholder="e.g. Zirakpur"
-                                                    className={INPUT}
+                                                    className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.street ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                                 />
+                                                {fieldErrors.street && (
+                                                    <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                        <span className="text-[13px] leading-none">⚠</span>
+                                                        <span>{fieldErrors.street}</span>
+                                                    </p>
+                                                )}
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <div>
+                                                <div id="field-city">
                                                     <label className={LABEL}>City *</label>
                                                     <input
                                                         value={newAddress.city}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, city: e.target.value }))}
+                                                        onChange={(e) => updateAddressField("city", e.target.value)}
                                                         placeholder="e.g. Zirakpur"
-                                                        className={INPUT}
+                                                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.city ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                                     />
+                                                    {fieldErrors.city && (
+                                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                            <span className="text-[13px] leading-none">⚠</span>
+                                                            <span>{fieldErrors.city}</span>
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                <div>
+                                                <div id="field-state">
                                                     <label className={LABEL}>State *</label>
                                                     <input
                                                         value={newAddress.state}
-                                                        onChange={(e) => setNewAddress(a => ({ ...a, state: e.target.value }))}
+                                                        onChange={(e) => updateAddressField("state", e.target.value)}
                                                         placeholder="e.g. Punjab"
-                                                        className={INPUT}
+                                                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.state ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                                     />
+                                                    {fieldErrors.state && (
+                                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                            <span className="text-[13px] leading-none">⚠</span>
+                                                            <span>{fieldErrors.state}</span>
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <div>
+                                            <div id="field-pincode">
                                                 <label className={LABEL}>Pincode *</label>
                                                 <input
                                                     value={newAddress.pincode}
-                                                    onChange={(e) => setNewAddress(a => ({ ...a, pincode: e.target.value.replace(/\D/g, "") }))}
+                                                    onChange={(e) => updateAddressField("pincode", e.target.value.replace(/\D/g, ""))}
                                                     placeholder="6-digit pincode"
                                                     inputMode="numeric"
-                                                    className={INPUT}
+                                                    className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.pincode ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-200 focus:border-orange-400 focus:ring-2 focus:ring-orange-100"}`}
                                                 />
+                                                {fieldErrors.pincode && (
+                                                    <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                        <span className="text-[13px] leading-none">⚠</span>
+                                                        <span>{fieldErrors.pincode}</span>
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             )}
                         </div>
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 text-xs font-semibold text-center flex items-center justify-between animate-fadeIn">
+                                <span>{error}</span>
+                                <button type="button" onClick={() => setError("")} className="text-red-400 hover:text-red-600 text-sm font-bold ml-2">✕</button>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <motion.div
@@ -847,27 +955,22 @@ export default function LiveMandirBookingPageRegular() {
 
             {/* Sticky Footer */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-stone-100 px-5 py-4">
-                    {/* Error is shown here (always visible) so the user gets feedback
-                        even when the form is not scrolled to the bottom. */}
-                    {error && (
-                        <p className="text-red-500 text-[12px] font-semibold mb-3 text-center">{error}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
-                            <span className="text-[20px] font-extrabold text-[#D85C0E]" style={adminTheme ? { color: adminTheme.dark } : undefined}>{money(totalPrice)}</span>
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white border-t border-stone-100 px-3 min-[360px]:px-5 py-3 min-[360px]:py-4">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="shrink-0">
+                            <span className="text-[9px] min-[360px]:text-[10px] text-stone-400 font-semibold uppercase block">TOTAL TO PAY</span>
+                            <span className="text-[17px] min-[360px]:text-[20px] font-extrabold text-[#D85C0E]" style={adminTheme ? { color: adminTheme.dark } : undefined}>{money(totalPrice)}</span>
                         </div>
                         <button
                             onClick={handleConfirm}
                             disabled={submitting}
-                            className="flex items-center gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[14px] px-8 py-3.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                            className="flex items-center justify-center gap-1 min-[360px]:gap-1.5 bg-[#E05A10] hover:bg-[#C94D0C] text-white font-bold text-[12.5px] min-[360px]:text-[14px] px-3.5 min-[360px]:px-6 min-[400px]:px-8 py-2.5 min-[360px]:py-3.5 rounded-full shadow-lg shadow-orange-200/50 hover:shadow-orange-300/40 active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer shrink-0"
                             style={adminTheme ? { backgroundImage: `linear-gradient(100deg, ${adminTheme.dark}, ${adminTheme.primary})` } : undefined}
                         >
                             {submitting ? (
-                                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> ProcessingÔÇª</>
+                                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
                             ) : (
-                                <>Offer With Devotion <ChevronRight className="w-4 h-4" /></>
+                                <>Offer With Devotion <ChevronRight className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4" /></>
                             )}
                         </button>
                     </div>

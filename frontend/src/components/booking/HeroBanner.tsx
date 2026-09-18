@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import API_URL from "../../utils/apiConfig";
-import { Search } from "lucide-react";
+import { Search, UserCheck, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
@@ -77,7 +77,7 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
     }, []);
 
     // Login State (via AuthContext)
-    const { user, openLoginModal } = useAuth();
+    const { user, openLoginModal, logout } = useAuth();
     const isLoggedIn = !!user;
 
     // Prevent scrolling when menu is open
@@ -318,7 +318,36 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                     Menu
                                 </p>
                                 <ul className="flex flex-col gap-1">
-                                    {!isLoggedIn && (
+                                    {isLoggedIn ? (
+                                        <li className="mb-3">
+                                            <Link
+                                                to="/profile"
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className="p-3 rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100/60 border border-orange-200/70 flex items-center gap-3 shadow-xs hover:border-orange-300 transition-colors"
+                                            >
+                                                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#E05A10] via-orange-500 to-amber-500 text-white font-bold text-sm flex items-center justify-center shadow-sm ring-2 ring-white shrink-0">
+                                                    {user?.name?.trim() ? (
+                                                        user.name.trim().charAt(0).toUpperCase()
+                                                    ) : (
+                                                        <UserCheck className="w-5 h-5 text-white stroke-[2.5]" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="text-sm font-bold text-stone-800 truncate">
+                                                            {user?.name || "Devotee"}
+                                                        </p>
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                                                            Logged In
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-stone-500 truncate mt-0.5">
+                                                        {user?.phone || user?.email || "View Account & Bookings →"}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        </li>
+                                    ) : (
                                         <li>
                                             <button
                                                 onClick={() => { setIsMenuOpen(false); openLoginModal(); }}
@@ -361,6 +390,20 @@ const HeroSection = ({ showConsultancySection = false }: { showConsultancySectio
                                                 </Link>
                                             </li>
                                         ))}
+                                    {isLoggedIn && (
+                                        <li className="pt-2 mt-2 border-t border-orange-100">
+                                            <button
+                                                onClick={() => {
+                                                    setIsMenuOpen(false);
+                                                    logout();
+                                                }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer font-medium text-sm"
+                                            >
+                                                <LogOut className="w-4 h-4 text-red-500" />
+                                                <span>Log Out</span>
+                                            </button>
+                                        </li>
+                                    )}
                                 </ul>
                             </nav>
 

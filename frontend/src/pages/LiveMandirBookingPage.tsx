@@ -82,6 +82,46 @@ function AdminLiveMandirBookingPage() {
         prasadAdded: (state as any)?.preselectedPrasadAdded || false,
     });
 
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [dontKnowGotra, setDontKnowGotra] = useState(false);
+
+    const updateFormField = (field: string, value: any) => {
+        setForm((f) => ({ ...f, [field]: value }));
+        if (fieldErrors[field]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
+        if (error) setError("");
+    };
+
+    const updateAddressField = (field: string, value: any) => {
+        setNewAddress((a) => ({ ...a, [field]: value }));
+        if (fieldErrors[field]) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+                return next;
+            });
+        }
+        if (error) setError("");
+    };
+
+    const scrollToField = (fieldId: string) => {
+        const el = document.getElementById(fieldId);
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            const input = el.querySelector("input") || (el.tagName === "INPUT" ? el : null);
+            if (input) {
+                setTimeout(() => {
+                    (input as HTMLElement).focus({ preventScroll: true });
+                }, 400);
+            }
+        }
+    };
+
     const [selectedUpsells, setSelectedUpsells] = useState<UpsellProduct[]>([]);
 
     const [familyInput, setFamilyInput] = useState("");
@@ -252,35 +292,71 @@ function AdminLiveMandirBookingPage() {
         submitInFlight.current = true;
         setError("");
 
-        // Basic Validations
-        if (!form.name.trim()) {
-            setError("Please enter the devotee's name.");
-            submitInFlight.current = false;
-            return;
-        }
+        // Field-level validations
+        const newFieldErrors: Record<string, string> = {};
 
         if (!isValidPhone(form.phone, country)) {
-            setError(`Please enter a valid ${country.name} mobile number.`);
-            submitInFlight.current = false;
-            return;
+            newFieldErrors.phone = form.phone.trim()
+                ? `Please enter a valid ${country.name} mobile number.`
+                : "Please enter your mobile number.";
         }
-        const phoneDigits = toStoredPhone(form.phone, country);
+
+        if (!form.name.trim()) {
+            newFieldErrors.name = "Please enter the devotee's name.";
+        }
+
+        if (!form.gotra.trim()) {
+            newFieldErrors.gotra = "Please enter your Gotra (or select the checkbox if not known).";
+        }
 
         if (!isIndia && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-            setError("Please enter a valid email — it's how we send your booking confirmation.");
+            newFieldErrors.email = "Please enter a valid email for your booking confirmation.";
+        }
+
+        if (prasadAdded) {
+            if (user && addresses.length > 0 && !showNewAddressForm) {
+                if (!selectedAddressId) {
+                    newFieldErrors.addressSelect = "Please select a delivery address.";
+                }
+            } else {
+                if (!newAddress.houseNo.trim()) {
+                    newFieldErrors.houseNo = "Please enter house / flat no.";
+                }
+                if (!newAddress.street.trim()) {
+                    newFieldErrors.street = "Please enter area / street.";
+                }
+                if (!newAddress.city.trim()) {
+                    newFieldErrors.city = "Please enter city.";
+                }
+                if (!newAddress.state.trim()) {
+                    newFieldErrors.state = "Please enter state.";
+                }
+                if (!newAddress.pincode.trim()) {
+                    newFieldErrors.pincode = "Please enter pincode.";
+                } else if (isIndia && !/^\d{6}$/.test(newAddress.pincode.trim())) {
+                    newFieldErrors.pincode = "Please enter a valid 6-digit pincode.";
+                }
+            }
+        }
+
+        if (Object.keys(newFieldErrors).length > 0) {
+            setFieldErrors(newFieldErrors);
+            const fieldOrder = ["phone", "name", "gotra", "email", "addressSelect", "houseNo", "street", "city", "state", "pincode"];
+            const firstErrorKey = fieldOrder.find((k) => newFieldErrors[k]);
+            if (firstErrorKey) {
+                scrollToField(`field-${firstErrorKey}`);
+            }
             submitInFlight.current = false;
             return;
         }
+
+        setFieldErrors({});
+        const phoneDigits = toStoredPhone(form.phone, country);
 
         let addressPayload: any = null;
         if (prasadAdded) {
             if (user && !showNewAddressForm) {
-                if (!selectedAddressId) {
-                    setError("Please select a delivery address.");
-                    submitInFlight.current = false;
-                    return;
-                }
-                const selected = addresses.find(a => (a._id || a.id) === selectedAddressId);
+                const selected = addresses.find((a) => (a._id || a.id) === selectedAddressId);
                 if (selected) {
                     addressPayload = {
                         houseNo: selected.addressLine1 || selected.houseNo,
@@ -292,17 +368,6 @@ function AdminLiveMandirBookingPage() {
                     };
                 }
             } else {
-                // Validate new address form
-                if (!newAddress.houseNo.trim() || !newAddress.street.trim() || !newAddress.city.trim() || !newAddress.state.trim() || !newAddress.pincode.trim()) {
-                    setError("Please fill out all address fields.");
-                    submitInFlight.current = false;
-                    return;
-                }
-                if (isIndia && !/^\d{6}$/.test(newAddress.pincode.trim())) {
-                    setError("Please enter a valid 6-digit pincode.");
-                    submitInFlight.current = false;
-                    return;
-                }
                 addressPayload = {
                     houseNo: newAddress.houseNo.trim(),
                     street: newAddress.street.trim(),
@@ -527,17 +592,17 @@ function AdminLiveMandirBookingPage() {
             </Helmet>
 
             {/* Header Top */}
-            <div className="px-4 py-4 flex items-center gap-4">
+            <div className="px-3 min-[360px]:px-4 py-3 min-[360px]:py-4 flex items-center gap-2.5 min-[360px]:gap-4">
                 <button
                     onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")}
                     aria-label="Go back"
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-stone-200 shadow-sm active:scale-90 transition-transform shrink-0"
+                    className="w-8 h-8 min-[360px]:w-10 min-[360px]:h-10 rounded-full bg-white flex items-center justify-center border border-stone-200 shadow-sm active:scale-90 transition-transform shrink-0"
                 >
-                    <ArrowLeft className="w-5 h-5 text-stone-700" />
+                    <ArrowLeft className="w-4 h-4 min-[360px]:w-5 min-[360px]:h-5 text-stone-700" />
                 </button>
                 <div className="flex-1 min-w-0">
-                    <h1 className="text-[17px] font-bold text-stone-900 leading-tight truncate">Complete Your Mandir Puja</h1>
-                    <p className="text-[11px] text-stone-500 flex items-center gap-1 mt-0.5">
+                    <h1 className="text-[15px] min-[360px]:text-[17px] font-bold text-stone-900 leading-tight truncate">Complete Your Mandir Puja</h1>
+                    <p className="text-[10.5px] min-[360px]:text-[11px] text-stone-500 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3.5 h-3.5 text-orange-500 t-text shrink-0" />
                         <span className="truncate">{puja.templeName}{puja.templeLocation && puja.templeLocation !== puja.templeName ? ` · ${puja.templeLocation}` : ""}</span>
                     </p>
@@ -545,7 +610,7 @@ function AdminLiveMandirBookingPage() {
             </div>
 
             {/* Content */}
-            <div className="px-4 space-y-4 pt-1 relative z-20">
+            <div className="px-3 min-[360px]:px-4 space-y-3.5 min-[360px]:space-y-4 pt-1 relative z-20">
                 {step === "details" ? (
                     <div className="space-y-4">
                         {puja.upsellEnabled && puja.upsellProducts && puja.upsellProducts.length > 0 && (
@@ -666,33 +731,125 @@ function AdminLiveMandirBookingPage() {
                             </div>
                             <div className="space-y-3">
                                 {/* Mobile Number input */}
-                                <div>
+                                <div id="field-phone">
                                     <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">MOBILE NUMBER *</label>
                                     <PhoneField
                                         country={country}
                                         value={form.phone}
-                                        onChange={(phone) => setForm((f) => ({ ...f, phone }))}
-                                        inputClass="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within pl-14"
+                                        onChange={(phone) => updateFormField("phone", phone)}
+                                        inputClass={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all pl-14 ${fieldErrors.phone ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                         prefixClass="text-orange-500 t-text font-bold text-[13px]"
                                     />
+                                    {fieldErrors.phone && (
+                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1.5 flex items-center gap-1 animate-fadeIn">
+                                            <span className="text-[13px] leading-none">⚠</span>
+                                            <span>{fieldErrors.phone}</span>
+                                        </p>
+                                    )}
                                 </div>
-                                <div>
+                                <div id="field-name">
                                     <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">DEVOTEE'S NAME *</label>
                                     <input
                                         value={form.name}
-                                        onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                                        onChange={(e) => updateFormField("name", e.target.value)}
                                         placeholder="Devotee's Name"
-                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.name ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                     />
+                                    {fieldErrors.name && (
+                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1.5 flex items-center gap-1 animate-fadeIn">
+                                            <span className="text-[13px] leading-none">⚠</span>
+                                            <span>{fieldErrors.name}</span>
+                                        </p>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">GOTRA</label>
+                                <div id="field-gotra">
+                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">GOTRA *</label>
+                                    <div className="relative">
+                                        <input
+                                            value={form.gotra}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                updateFormField("gotra", val);
+                                                if (dontKnowGotra && val.trim().toLowerCase() !== "kashyap") {
+                                                    setDontKnowGotra(false);
+                                                }
+                                            }}
+                                            placeholder="e.g. Kashyap"
+                                            className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all pr-10 ${fieldErrors.gotra ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
+                                        />
+                                        {(dontKnowGotra || form.gotra.trim().toLowerCase() === "kashyap") && (
+                                            <div
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6b0504] t-text-dark cursor-pointer"
+                                                title="As per scriptures, the Sankalp can be taken with Kashyap Gotra."
+                                            >
+                                                <Info className="w-4.5 h-4.5 opacity-80" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {fieldErrors.gotra && (
+                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1.5 flex items-center gap-1 animate-fadeIn">
+                                            <span className="text-[13px] leading-none">⚠</span>
+                                            <span>{fieldErrors.gotra}</span>
+                                        </p>
+                                    )}
+
+                                    {/* Checkbox: If you don't know your Gotra, select this */}
+                                    <label className="mt-2.5 flex items-center gap-2 cursor-pointer select-none group">
+                                        <input
+                                            type="checkbox"
+                                            checked={dontKnowGotra}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setDontKnowGotra(checked);
+                                                if (checked) {
+                                                    updateFormField("gotra", "Kashyap");
+                                                } else if (form.gotra.trim().toLowerCase() === "kashyap") {
+                                                    updateFormField("gotra", "");
+                                                }
+                                            }}
+                                            className="hidden"
+                                        />
+                                        <div
+                                            className={`w-4 h-4 rounded-[4px] flex items-center justify-center transition-all ${dontKnowGotra
+                                                ? "bg-[#6b0504] text-white shadow-xs"
+                                                : "border border-stone-300 bg-white group-hover:border-stone-400"
+                                                }`}
+                                            style={dontKnowGotra && adminTheme ? { backgroundColor: adminTheme.dark } : undefined}
+                                        >
+                                            {dontKnowGotra && <Check className="w-3 h-3 stroke-[3]" />}
+                                        </div>
+                                        <span className="text-[12.5px] font-medium text-stone-700">
+                                            If you don't know your Gotra, select this
+                                        </span>
+                                    </label>
+
+                                    {/* Scripture explanation notice */}
+                                    {dontKnowGotra && (
+                                        <div className="mt-1.5 px-2.5 py-1.5 bg-[#edf9f0] border border-[#a7d8b6]/70 rounded-lg animate-fadeIn">
+                                            <p className="text-[11px] text-[#1f7a50] leading-snug">
+                                                As per scriptures, the Sankalp can be taken with Kashyap Gotra, allowing you to receive the full benefit of the puja.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                                <div id="field-email">
+                                    <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">
+                                        EMAIL {!isIndia ? "*" : <span className="font-normal normal-case opacity-70">(optional)</span>}
+                                    </label>
                                     <input
-                                        value={form.gotra}
-                                        onChange={(e) => setForm(f => ({ ...f, gotra: e.target.value }))}
-                                        placeholder="e.g. Kashyap"
-                                        className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                        value={form.email}
+                                        onChange={(e) => updateFormField("email", e.target.value)}
+                                        placeholder={isIndia ? "For booking receipt & WhatsApp video" : "For your booking confirmation *"}
+                                        type="email"
+                                        inputMode="email"
+                                        className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.email ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                     />
+                                    {fieldErrors.email && (
+                                        <p className="text-red-500 text-[11.5px] font-semibold mt-1.5 flex items-center gap-1 animate-fadeIn">
+                                            <span className="text-[13px] leading-none">⚠</span>
+                                            <span>{fieldErrors.email}</span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -811,7 +968,7 @@ function AdminLiveMandirBookingPage() {
                                 {prasadAdded && (
                                     <div className="space-y-3 pt-2">
                                         {user && addresses.length > 0 && !showNewAddressForm && (
-                                            <div className="space-y-2">
+                                            <div id="field-addressSelect" className="space-y-2">
                                                 <p className={LABEL}>Select Delivery Address</p>
                                                 {addresses.map(addr => (
                                                     <label
@@ -822,7 +979,7 @@ function AdminLiveMandirBookingPage() {
                                                             type="radio"
                                                             name="addressSelect"
                                                             checked={selectedAddressId === addr._id}
-                                                            onChange={() => setSelectedAddressId(addr._id)}
+                                                            onChange={() => { setSelectedAddressId(addr._id); if (fieldErrors.addressSelect) setFieldErrors(prev => ({ ...prev, addressSelect: "" })); }}
                                                             className="mt-1 text-orange-500 t-text focus:ring-orange-400 t-ring border-orange-200 t-border"
                                                             style={adminTheme ? { accentColor: adminTheme.primary } : { accentColor: '#f97316' }}
                                                         />
@@ -832,6 +989,12 @@ function AdminLiveMandirBookingPage() {
                                                         </div>
                                                     </label>
                                                 ))}
+                                                {fieldErrors.addressSelect && (
+                                                    <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                        <span className="text-[13px] leading-none">⚠</span>
+                                                        <span>{fieldErrors.addressSelect}</span>
+                                                    </p>
+                                                )}
                                                 <button
                                                     onClick={() => { setShowNewAddressForm(true); setSelectedAddressId(null); }}
                                                     className="text-orange-600 t-text-dark hover:opacity-80 text-xs font-bold pt-1 block cursor-pointer transition-opacity"
@@ -856,59 +1019,95 @@ function AdminLiveMandirBookingPage() {
                                                     )}
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <div>
+                                                    <div id="field-houseNo">
                                                         <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">HOUSE/FLAT NO *</label>
                                                         <input
                                                             value={newAddress.houseNo}
-                                                            onChange={(e) => setNewAddress(a => ({ ...a, houseNo: e.target.value }))}
+                                                            onChange={(e) => updateAddressField("houseNo", e.target.value)}
                                                             placeholder="e.g. 73a VIP Road"
-                                                            className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                            className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.houseNo ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                                         />
+                                                        {fieldErrors.houseNo && (
+                                                            <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                                <span className="text-[13px] leading-none">⚠</span>
+                                                                <span>{fieldErrors.houseNo}</span>
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                    <div>
+                                                    <div id="field-street">
                                                         <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">AREA/STREET *</label>
                                                         <input
                                                             value={newAddress.street}
-                                                            onChange={(e) => setNewAddress(a => ({ ...a, street: e.target.value }))}
+                                                            onChange={(e) => updateAddressField("street", e.target.value)}
                                                             placeholder="e.g. Zirakpur"
-                                                            className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                            className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.street ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                                         />
+                                                        {fieldErrors.street && (
+                                                            <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                                <span className="text-[13px] leading-none">⚠</span>
+                                                                <span>{fieldErrors.street}</span>
+                                                            </p>
+                                                        )}
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-3">
-                                                        <div>
+                                                        <div id="field-city">
                                                             <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">CITY *</label>
                                                             <input
                                                                 value={newAddress.city}
-                                                                onChange={(e) => setNewAddress(a => ({ ...a, city: e.target.value }))}
+                                                                onChange={(e) => updateAddressField("city", e.target.value)}
                                                                 placeholder="e.g. Zirakpur"
-                                                                className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                                className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.city ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                                             />
+                                                            {fieldErrors.city && (
+                                                                <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                                    <span className="text-[13px] leading-none">⚠</span>
+                                                                    <span>{fieldErrors.city}</span>
+                                                                </p>
+                                                            )}
                                                         </div>
-                                                        <div>
+                                                        <div id="field-state">
                                                             <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">STATE *</label>
                                                             <input
                                                                 value={newAddress.state}
-                                                                onChange={(e) => setNewAddress(a => ({ ...a, state: e.target.value }))}
+                                                                onChange={(e) => updateAddressField("state", e.target.value)}
                                                                 placeholder="e.g. Punjab"
-                                                                className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                                className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.state ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                                             />
+                                                            {fieldErrors.state && (
+                                                                <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                                    <span className="text-[13px] leading-none">⚠</span>
+                                                                    <span>{fieldErrors.state}</span>
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    <div>
+                                                    <div id="field-pincode">
                                                         <label className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1.5 block">PINCODE *</label>
                                                         <input
                                                             value={newAddress.pincode}
-                                                            onChange={(e) => setNewAddress(a => ({ ...a, pincode: e.target.value.replace(/\D/g, "") }))}
+                                                            onChange={(e) => updateAddressField("pincode", e.target.value.replace(/\D/g, ""))}
                                                             placeholder="6-digit pincode"
                                                             inputMode="numeric"
-                                                            className="w-full bg-stone-50 border border-stone-100 rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 transition-all t-focus-within"
+                                                            className={`w-full bg-stone-50 border rounded-xl px-4 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none transition-all ${fieldErrors.pincode ? "border-red-500 ring-2 ring-red-500/20 bg-red-50/20" : "border-stone-100 focus:border-[#6b0504] focus:ring-1 focus:ring-[#6b0504]/20 t-focus-within"}`}
                                                         />
+                                                        {fieldErrors.pincode && (
+                                                            <p className="text-red-500 text-[11.5px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+                                                                <span className="text-[13px] leading-none">⚠</span>
+                                                                <span>{fieldErrors.pincode}</span>
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
                                 )}
+                            </div>
+                        )}
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 text-xs font-semibold text-center flex items-center justify-between animate-fadeIn">
+                                <span>{error}</span>
+                                <button type="button" onClick={() => setError("")} className="text-red-400 hover:text-red-600 text-sm font-bold ml-2">✕</button>
                             </div>
                         )}
                     </div>
@@ -943,26 +1142,22 @@ function AdminLiveMandirBookingPage() {
 
             {/* Sticky Footer */}
             {step !== "success" && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFFAF3] border-t border-[#F2E0C4] px-4 py-3 pb-4 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] rounded-t-3xl t-bg">
-                    {/* Error is shown here */}
-                    {error && (
-                        <p className="text-red-500 text-[12px] font-semibold mb-2 text-center">{error}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <span className="text-[10px] text-stone-500 font-bold uppercase block tracking-wider">TOTAL TO PAY</span>
-                            <span className={`text-[18px] font-extrabold ${adminTheme ? 't-text-dark' : 'text-[#6b0504]'}`}>{money(totalPrice)}</span>
-                            <div className="text-[9px] text-stone-400 mt-0.5 flex items-center gap-1 font-medium">Incl. all charges <Info className="w-2.5 h-2.5" /></div>
+                <div className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-[#FFFAF3] border-t border-[#F2E0C4] px-3 min-[360px]:px-4 py-2.5 min-[360px]:py-3 pb-3.5 min-[360px]:pb-4 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] rounded-t-3xl t-bg">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="shrink-0">
+                            <span className="text-[9px] min-[360px]:text-[10px] text-stone-500 font-bold uppercase block tracking-wider">TOTAL TO PAY</span>
+                            <span className={`text-[16px] min-[360px]:text-[18px] font-extrabold ${adminTheme ? 't-text-dark' : 'text-[#6b0504]'}`}>{money(totalPrice)}</span>
+                            <div className="text-[8.5px] min-[360px]:text-[9px] text-stone-400 mt-0.5 flex items-center gap-1 font-medium">Incl. all charges <Info className="w-2.5 h-2.5" /></div>
                         </div>
                         <button
                             onClick={handleConfirm}
                             disabled={submitting}
-                            className={`flex items-center gap-2 ${adminTheme ? 't-gradient text-white' : 'bg-[#6b0504] hover:bg-[#8a0b09] text-white'} font-bold text-[13px] px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer`}
+                            className={`flex items-center justify-center gap-1.5 min-[360px]:gap-2 ${adminTheme ? 't-gradient text-white' : 'bg-[#6b0504] hover:bg-[#8a0b09] text-white'} font-bold text-[12px] min-[360px]:text-[13px] px-3.5 min-[360px]:px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-60 cursor-pointer shrink-0`}
                         >
                             {submitting ? (
                                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Processing…</>
                             ) : (
-                                <>Offer With Devotion <ChevronRight className="w-4 h-4" /></>
+                                <>Offer With Devotion <ChevronRight className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4" /></>
                             )}
                         </button>
                     </div>

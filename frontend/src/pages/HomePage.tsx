@@ -15,6 +15,8 @@ import {
     Menu,
     X,
     User,
+    UserCheck,
+    LogOut,
 } from "lucide-react";
 import API_URL from "../utils/apiConfig";
 import analytics from "../utils/analytics";
@@ -22,10 +24,11 @@ import { useAuth } from "../context/AuthContext";
 // import { kaalBhairavPuja, KAAL_BHAIRAV_PUJA_SLUG } from "../data/kaalBhairavPuja";
 // import { hanumanPuja, HANUMAN_PUJA_SLUG } from "../data/hanumanPuja";
 import {
-    bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, BANKE_BIHARI_POOJA_ID, BANNER_IMG,
+    bankeBihariPuja, BANKE_BIHARI_PUJA_SLUG, BANKE_BIHARI_POOJA_ID, BANNER_IMG, BANKE_BIHARI_PUJA_DATE,
 } from "../data/bankeBihariPuja";
 import { fetchAdminGeneralPoojas } from "../data/navratriPuja";
 import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
+import { isTodayOrFuture } from "../utils/dateUtils";
 import { optimizedImg } from "../utils/img";
 import OurServices from "../components/home/OurServices";
 import SacredChadhavaSewa from "../components/home/SacredChadhavaSewa";
@@ -82,6 +85,7 @@ type Pooja = {
     poojaPriceOffline?: number;
     isFeatured?: boolean;
     featuredRank?: number;
+    specialDate?: string | Date | null;
 };
 
 /**
@@ -109,7 +113,7 @@ const CONSULTATIONS = [
 
 export default function HomePage() {
     const navigate = useNavigate();
-    const { user, openLoginModal } = useAuth();
+    const { user, openLoginModal, logout } = useAuth();
     const isLoggedIn = !!user;
     const [poojas, setPoojas] = useState<Pooja[]>([]);
     const [loading, setLoading] = useState(true);
@@ -121,20 +125,24 @@ export default function HomePage() {
     const [allPoojas, setAllPoojas] = useState<Pooja[]>([]);
     const [searchResults, setSearchResults] = useState<Pooja[]>([]);
 
+    const isBankeBihariActive = isTodayOrFuture(BANKE_BIHARI_PUJA_DATE);
+    const totalSlides = (isBankeBihariActive ? 1 : 0) + adminBannerPoojas.length;
+
     useEffect(() => {
         const fetchPoojas = async () => {
             try {
                 const { data } = await axios.get(`${API_URL}/fetch-all-poojas`);
                 const list: Pooja[] = data?.poojas || [];
-                setAllPoojas(list);
+                const validPoojas = list.filter((p) => isTodayOrFuture(p.specialDate));
+                setAllPoojas(validPoojas);
                 // Featured poojas first, ordered by featuredRank (1 = highest).
                 // Poojas without a rank fall to the end of the featured group.
                 const rankOf = (p: Pooja) =>
                     typeof p.featuredRank === "number" ? p.featuredRank : Number.POSITIVE_INFINITY;
-                const featured = list
+                const featured = validPoojas
                     .filter((p) => p.isFeatured)
                     .sort((a, b) => rankOf(a) - rankOf(b));
-                const ordered = [...featured, ...list.filter((p) => !p.isFeatured)];
+                const ordered = [...featured, ...validPoojas.filter((p) => !p.isFeatured)];
                 setPoojas(ordered.slice(0, 8));
             } catch (err) {
                 console.error("Error fetching poojas:", err);
@@ -143,14 +151,15 @@ export default function HomePage() {
             }
         };
         fetchPoojas();
-        void fetchAdminGeneralPoojas().then(setAdminBannerPoojas).catch(() => undefined);
+        void fetchAdminGeneralPoojas().then((list) => {
+            setAdminBannerPoojas(list.filter((p) => p.status !== "closed" && isTodayOrFuture(p.scheduledDate)));
+        }).catch(() => undefined);
     }, []);
 
     // Auto-sliding logic for banners
     useEffect(() => {
-        const totalSlides = 1 + adminBannerPoojas.length;
         if (totalSlides <= 1) return;
-        
+
         const timer = setInterval(() => {
             const container = document.getElementById("home-banner-slider");
             if (container) {
@@ -159,9 +168,9 @@ export default function HomePage() {
                 container.scrollTo({ left: nextIndex * container.clientWidth, behavior: "smooth" });
             }
         }, 4000);
-        
+
         return () => clearInterval(timer);
-    }, [adminBannerPoojas.length]);
+    }, [totalSlides]);
 
     // Loose token matching for search
     useEffect(() => {
@@ -233,10 +242,32 @@ export default function HomePage() {
                                     openLoginModal();
                                 }
                             }}
-                            className="p-1.5 rounded-xl hover:bg-orange-50 active:scale-95 transition-transform cursor-pointer"
-                            title="Profile / Account"
+                            className={`p-1 rounded-xl active:scale-95 transition-all cursor-pointer ${isLoggedIn
+                                    ? "hover:bg-orange-100/60"
+                                    : "hover:bg-orange-50"
+                                }`}
+                            title={
+                                isLoggedIn
+                                    ? user?.name
+                                        ? `${user.name} (Logged in) — My Account`
+                                        : "My Account (Logged in)"
+                                    : "Login / Register"
+                            }
+                            aria-label={isLoggedIn ? "Account Profile (Logged In)" : "Login"}
                         >
-                            <User className="w-6 h-6 text-stone-700" />
+                            {isLoggedIn ? (
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#E05A10] via-orange-500 to-amber-500 text-white flex items-center justify-center shadow-sm ring-2 ring-orange-400/40">
+                                    {user?.name?.trim() ? (
+                                        <span className="font-bold text-xs uppercase tracking-tight">
+                                            {user.name.trim().charAt(0)}
+                                        </span>
+                                    ) : (
+                                        <UserCheck className="w-4.5 h-4.5 text-white stroke-[2.5]" />
+                                    )}
+                                </div>
+                            ) : (
+                                <User className="w-6 h-6 text-stone-700" />
+                            )}
                         </button>
                         <button
                             onClick={() => setIsMenuOpen(true)}
@@ -379,110 +410,114 @@ export default function HomePage() {
             </section>
 
             {/* ── Featured puja banner slider ── Banke Bihari Ji & Navratri Pooja */}
-            <section className="px-4">
-                <div className="relative w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm group">
-                    <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
-                    <div
-                        id="home-banner-slider"
-                        className="flex w-full overflow-x-auto snap-x snap-mandatory hide-scrollbar"
-                        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                        onScroll={(e) => {
-                            const target = e.currentTarget;
-                            const index = Math.round(target.scrollLeft / target.clientWidth);
-                            if (index !== currentBanner) setCurrentBanner(index);
-                        }}
-                    >
-                        {/* Slide 1: Banke Bihari */}
-                        <div className="w-full shrink-0 snap-center relative">
-                            <button
-                                onClick={() => {
-                                    analytics.viewItem({
-                                        items: [{ id: String(bankeBihariPuja._id), name: bankeBihariPuja.poojaNameEng, price: bankeBihariPuja.poojaPriceOnline, quantity: 1, category: "Puja" }],
-                                        value: bankeBihariPuja.poojaPriceOnline,
-                                        currency: "INR",
-                                        meta: {
-                                            event: "ViewContent",
-                                            params: {
-                                                content_name: bankeBihariPuja.poojaNameEng,
-                                                content_ids: [bankeBihariPuja._id],
-                                                content_type: "product",
+            {totalSlides > 0 && (
+                <section className="px-4">
+                    <div className="relative w-full rounded-3xl overflow-hidden border border-orange-100 shadow-sm group">
+                        <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
+                        <div
+                            id="home-banner-slider"
+                            className="flex w-full overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+                            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                            onScroll={(e) => {
+                                const target = e.currentTarget;
+                                const index = Math.round(target.scrollLeft / target.clientWidth);
+                                if (index !== currentBanner) setCurrentBanner(index);
+                            }}
+                        >
+                            {/* Slide 1: Banke Bihari */}
+                            {isBankeBihariActive && (
+                                <div className="w-full shrink-0 snap-center relative">
+                                    <button
+                                        onClick={() => {
+                                            analytics.viewItem({
+                                                items: [{ id: String(bankeBihariPuja._id), name: bankeBihariPuja.poojaNameEng, price: bankeBihariPuja.poojaPriceOnline, quantity: 1, category: "Puja" }],
                                                 value: bankeBihariPuja.poojaPriceOnline,
                                                 currency: "INR",
-                                                source: "home_banner",
-                                            },
-                                        },
-                                    });
-                                    navigate(SHARAD_PURNIMA_HREF);
-                                }}
-                                aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
-                                className="block w-full h-full active:scale-[0.98] transition-transform"
-                            >
-                                <img
-                                    src={optimizedImg(SHARAD_PURNIMA_BANNER, 900)}
-                                    onError={(e) => { e.currentTarget.src = SHARAD_PURNIMA_BANNER; }}
-                                    width={SHARAD_PURNIMA_BANNER_W}
-                                    height={SHARAD_PURNIMA_BANNER_H}
-                                    alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
-                                    loading="eager"
-                                    decoding="async"
-                                    className="w-full h-auto object-cover"
-                                />
-                            </button>
+                                                meta: {
+                                                    event: "ViewContent",
+                                                    params: {
+                                                        content_name: bankeBihariPuja.poojaNameEng,
+                                                        content_ids: [bankeBihariPuja._id],
+                                                        content_type: "product",
+                                                        value: bankeBihariPuja.poojaPriceOnline,
+                                                        currency: "INR",
+                                                        source: "home_banner",
+                                                    },
+                                                },
+                                            });
+                                            navigate(SHARAD_PURNIMA_HREF);
+                                        }}
+                                        aria-label={`Book ${bankeBihariPuja.poojaNameEng} at ${bankeBihariPuja.templeName}`}
+                                        className="block w-full h-full active:scale-[0.98] transition-transform"
+                                    >
+                                        <img
+                                            src={optimizedImg(SHARAD_PURNIMA_BANNER, 900)}
+                                            onError={(e) => { e.currentTarget.src = SHARAD_PURNIMA_BANNER; }}
+                                            width={SHARAD_PURNIMA_BANNER_W}
+                                            height={SHARAD_PURNIMA_BANNER_H}
+                                            alt={`${bankeBihariPuja.poojaNameEng} — ${bankeBihariPuja.occasion} at ${bankeBihariPuja.templeName}`}
+                                            loading="eager"
+                                            decoding="async"
+                                            className="w-full h-auto object-cover"
+                                        />
+                                    </button>
+                                </div>
+                            )}
+
+                            {adminBannerPoojas.map((puja) => (
+                                <div key={puja.id} className="w-full shrink-0 snap-center relative">
+                                    <button onClick={() => navigate(`/live-mandir-puja/${puja.id}`, { state: { fromAdminBanner: true } })} aria-label={`Book ${puja.pujaName}`} className="block w-full h-full active:scale-[0.98] transition-transform">
+                                        <img src={optimizedImg(puja.image, 900)} onError={(e) => { e.currentTarget.src = puja.image; }} width={SHARAD_PURNIMA_BANNER_W} height={SHARAD_PURNIMA_BANNER_H} alt={puja.pujaName} loading="lazy" decoding="async" className="w-full h-auto object-cover" />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
 
-                        {adminBannerPoojas.map((puja) => (
-                            <div key={puja.id} className="w-full shrink-0 snap-center relative">
-                                <button onClick={() => navigate(`/live-mandir-puja/${puja.id}`, { state: { fromAdminBanner: true } })} aria-label={`Book ${puja.pujaName}`} className="block w-full h-full active:scale-[0.98] transition-transform">
-                                    <img src={optimizedImg(puja.image, 900)} onError={(e) => { e.currentTarget.src = puja.image; }} width={SHARAD_PURNIMA_BANNER_W} height={SHARAD_PURNIMA_BANNER_H} alt={puja.pujaName} loading="lazy" decoding="async" className="w-full h-auto object-cover" />
+                        {/* Left/Right Arrows */}
+                        {totalSlides > 1 && (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        const container = document.getElementById("home-banner-slider");
+                                        if (container) {
+                                            const newIndex = (currentBanner - 1 + totalSlides) % totalSlides;
+                                            container.scrollTo({ left: newIndex * container.clientWidth, behavior: "smooth" });
+                                        }
+                                    }}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/70 text-stone-800 shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-0 z-10"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
                                 </button>
-                            </div>
-                        ))}
-                    </div>
-                    
-                    {/* Left/Right Arrows */}
-                    {1 + adminBannerPoojas.length > 1 && (
-                        <>
-                            <button 
-                                onClick={() => {
-                                    const container = document.getElementById("home-banner-slider");
-                                    if (container) {
-                                        const total = 1 + adminBannerPoojas.length;
-                                        const newIndex = (currentBanner - 1 + total) % total;
-                                        container.scrollTo({ left: newIndex * container.clientWidth, behavior: "smooth" });
-                                    }
-                                }}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/70 text-stone-800 shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-0 z-10"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button 
-                                onClick={() => {
-                                    const container = document.getElementById("home-banner-slider");
-                                    if (container) {
-                                        const total = 1 + adminBannerPoojas.length;
-                                        const newIndex = (currentBanner + 1) % total;
-                                        container.scrollTo({ left: newIndex * container.clientWidth, behavior: "smooth" });
-                                    }
-                                }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/70 text-stone-800 shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-0 z-10"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
-                        </>
-                    )}
+                                <button
+                                    onClick={() => {
+                                        const container = document.getElementById("home-banner-slider");
+                                        if (container) {
+                                            const newIndex = (currentBanner + 1) % totalSlides;
+                                            container.scrollTo({ left: newIndex * container.clientWidth, behavior: "smooth" });
+                                        }
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-white/70 text-stone-800 shadow-md opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity disabled:opacity-0 z-10"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+                            </>
+                        )}
 
-                    {/* Dots indicator */}
-                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
-                        {Array.from({ length: 1 + adminBannerPoojas.length }, (_, idx) => (
-                            <div
-                                key={idx}
-                                className={`h-1.5 rounded-full transition-all duration-300 ${currentBanner === idx ? "w-4 bg-white" : "w-1.5 bg-white/50"
-                                    }`}
-                            />
-                        ))}
+                        {/* Dots indicator */}
+                        {totalSlides > 1 && (
+                            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
+                                {Array.from({ length: totalSlides }, (_, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`h-1.5 rounded-full transition-all duration-300 ${currentBanner === idx ? "w-4 bg-white" : "w-1.5 bg-white/50"
+                                            }`}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
-                </div>
-            </section>
+                </section>
+            )}
 
             {/* ── Our Services ── */}
             <OurServices />
@@ -611,7 +646,36 @@ export default function HomePage() {
                             {/* Links */}
                             <nav className="flex-1 px-4 py-4 overflow-y-auto">
                                 <ul className="flex flex-col gap-1">
-                                    {!isLoggedIn && (
+                                    {isLoggedIn ? (
+                                        <li className="mb-3">
+                                            <Link
+                                                to="/account"
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className="p-3 rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100/60 border border-orange-200/70 flex items-center gap-3 shadow-xs hover:border-orange-300 transition-colors"
+                                            >
+                                                <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#E05A10] via-orange-500 to-amber-500 text-white font-bold text-sm flex items-center justify-center shadow-sm ring-2 ring-white shrink-0">
+                                                    {user?.name?.trim() ? (
+                                                        user.name.trim().charAt(0).toUpperCase()
+                                                    ) : (
+                                                        <UserCheck className="w-5 h-5 text-white stroke-[2.5]" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <p className="text-sm font-bold text-stone-800 truncate">
+                                                            {user?.name || "Devotee"}
+                                                        </p>
+                                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                                                            Logged In
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs text-stone-500 truncate mt-0.5">
+                                                        {user?.phone || user?.email || "View Account & Bookings →"}
+                                                    </p>
+                                                </div>
+                                            </Link>
+                                        </li>
+                                    ) : (
                                         <li>
                                             <button
                                                 onClick={() => { setIsMenuOpen(false); openLoginModal(); }}
@@ -623,13 +687,13 @@ export default function HomePage() {
                                         </li>
                                     )}
                                     {[
-                                        // { label: "Profile", href: "/account", icon: "👤" },
+                                        ...(isLoggedIn ? [{ label: "My Profile & Account", href: "/account", icon: "👤" }] : []),
                                         { label: "My Bookings", href: "/account?tab=bookings", icon: "📖" },
                                         { label: "Book Puja Now", href: "/book-puja", icon: "🪔" },
                                         // { label: "Free consultation", href: "/free-consultation", icon: "🙏" },
                                         { label: "Paid consultation", href: "/paid-consultation", icon: "📞" },
                                     ]
-                                        .filter(link => isLoggedIn || (link.label !== "Profile" && link.label !== "My Bookings"))
+                                        .filter(link => isLoggedIn || (link.label !== "My Profile & Account" && link.label !== "My Bookings"))
                                         .map((link) => (
                                             <li key={link.label}>
                                                 <Link
@@ -642,6 +706,20 @@ export default function HomePage() {
                                                 </Link>
                                             </li>
                                         ))}
+                                    {isLoggedIn && (
+                                        <li className="pt-2 mt-2 border-t border-orange-100">
+                                            <button
+                                                onClick={() => {
+                                                    setIsMenuOpen(false);
+                                                    logout();
+                                                }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-600 hover:bg-red-50 transition-colors text-left cursor-pointer font-medium text-sm"
+                                            >
+                                                <LogOut className="w-4 h-4 text-red-500" />
+                                                <span>Log Out</span>
+                                            </button>
+                                        </li>
+                                    )}
                                 </ul>
                             </nav>
 

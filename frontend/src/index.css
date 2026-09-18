@@ -10,8 +10,15 @@
    the motion reads the same, at zero download.
    -------------------------------------------------------------------------- */
 @keyframes svn-nav-pop {
-  from { transform: translateY(30px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .svn-nav-pop {
@@ -20,7 +27,9 @@
 
 /* Honour a reduced-motion preference: show it, just don't fly it in. */
 @media (prefers-reduced-motion: reduce) {
-  .svn-nav-pop { animation: none; }
+  .svn-nav-pop {
+    animation: none;
+  }
 }
 
 /* ==========================================================================
@@ -570,6 +579,7 @@
   white-space: nowrap;
   transition: color 0.25s ease;
 }
+
 .viv-navlink::after {
   content: "";
   position: absolute;
@@ -582,9 +592,11 @@
   transform-origin: left;
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
 .viv-navlink:hover {
   color: var(--color-viv-maroon);
 }
+
 .viv-navlink:hover::after {
   transform: scaleX(1);
 }
@@ -603,6 +615,7 @@
   box-shadow: 0 14px 30px -16px rgba(97, 26, 27, 0.9);
   transition: box-shadow 0.3s ease, transform 0.2s ease;
 }
+
 .viv-cta-gold::before {
   content: "";
   position: absolute;
@@ -613,10 +626,12 @@
   transition: left 0.55s ease;
   left: -60%;
 }
+
 .viv-cta-gold:hover {
   box-shadow: 0 18px 38px -16px rgba(97, 26, 27, 1);
   transform: translateY(-1px);
 }
+
 .viv-cta-gold:hover::before {
   left: 130%;
 }
@@ -624,27 +639,39 @@
 /* Hairline under the bar that shimmers very slowly. */
 .viv-nav-hairline {
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(191, 139, 52, 0.65) 30%,
-    rgba(210, 164, 93, 0.95) 50%,
-    rgba(191, 139, 52, 0.65) 70%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(191, 139, 52, 0.65) 30%,
+      rgba(210, 164, 93, 0.95) 50%,
+      rgba(191, 139, 52, 0.65) 70%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: viv-hairline-sweep 7s linear infinite;
 }
+
 @keyframes viv-hairline-sweep {
-  0% { background-position: 0% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: 0% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 /* Mobile sheet items cascade in. */
 @keyframes viv-sheet-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 .viv-sheet-item {
   animation: viv-sheet-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -653,22 +680,29 @@
 .viv-shloka-ink {
   color: var(--color-viv-maroon);
 }
+
 .viv-shloka-cream {
-  background: linear-gradient(
-    100deg,
-    #f5e6c8 0%,
-    #ffe9b8 25%,
-    #d2a45d 50%,
-    #ffe9b8 75%,
-    #f5e6c8 100%
-  );
+  background: linear-gradient(100deg,
+      #f5e6c8 0%,
+      #ffe9b8 25%,
+      #d2a45d 50%,
+      #ffe9b8 75%,
+      #f5e6c8 100%);
   background-size: 220% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: viv-gold-sweep 9s ease-in-out infinite;
 }
+
 @keyframes viv-gold-sweep {
-  0%, 100% { background-position: 0% 0; }
-  50% { background-position: 100% 0; }
+
+  0%,
+  100% {
+    background-position: 0% 0;
+  }
+
+  50% {
+    background-position: 100% 0;
+  }
 }

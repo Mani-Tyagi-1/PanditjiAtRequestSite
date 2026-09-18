@@ -71,18 +71,18 @@ function Panel({
 }) {
   return (
     <Reveal>
-    <Card className="!bg-viv-sheet p-5 lg:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="display text-[19px] lg:text-[21px] text-viv-maroon flex items-center gap-2">
-          <Flower2 className="w-4 h-4 text-viv-gold shrink-0" aria-hidden="true" />
-          {title}
-          <Flower2 className="w-4 h-4 text-viv-gold shrink-0 scale-x-[-1]" aria-hidden="true" />
-        </h2>
-        {right}
-      </div>
-      {sub && <p className="text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">{sub}</p>}
-      <div className="mt-3.5">{children}</div>
-    </Card>
+      <Card className="!bg-viv-sheet p-5 lg:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="display text-[19px] lg:text-[21px] text-viv-maroon flex items-center gap-2">
+            <Flower2 className="w-4 h-4 text-viv-gold shrink-0" aria-hidden="true" />
+            {title}
+            <Flower2 className="w-4 h-4 text-viv-gold shrink-0 scale-x-[-1]" aria-hidden="true" />
+          </h2>
+          {right}
+        </div>
+        {sub && <p className="text-[12.5px] text-viv-muted mt-1.5 leading-relaxed">{sub}</p>}
+        <div className="mt-3.5">{children}</div>
+      </Card>
     </Reveal>
   );
 }
@@ -196,8 +196,7 @@ export default function VivahPackageDetailPage() {
   const title = `${pkg.name} — Vedic Vivah Package (${fmtINR(pkg.price)}) | Pandit Ji At Request`;
   const description =
     pkg.tagline ||
-    `${pkg.panditCount} verified Pandit Ji${pkg.panditCount > 1 ? "s" : ""}, every Vivah ritual${
-      pkg.hasCoordinator ? ", a dedicated coordinator" : ""
+    `${pkg.panditCount} verified Pandit Ji${pkg.panditCount > 1 ? "s" : ""}, every Vivah ritual${pkg.hasCoordinator ? ", a dedicated coordinator" : ""
     } and samagri included — ${fmtINR(pkg.price)} all-inclusive.`;
 
   return (

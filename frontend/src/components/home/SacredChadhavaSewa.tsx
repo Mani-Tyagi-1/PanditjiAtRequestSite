@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Share2, ChevronRight } from "lucide-react";
 import axios from "axios";
-import { CHADHAVA_FALLBACK, Chadhava } from "./chadhavaFallback";
+import { Chadhava } from "./chadhavaFallback";
 import API_URL from "../../utils/apiConfig";
 import { money } from "../../utils/currency";
 import analytics from "../../utils/analytics";
@@ -80,7 +80,7 @@ const isTodayOrFutureDate = (value: unknown): boolean => {
 
 const normalizeChadhava = (item: any): Chadhava => {
     const id = item._id || item.id || "";
-    
+
     // If it's already fully normalized with a startingPrice
     if (item.deity && item.image && typeof item.startingPrice === "number") {
         return {
@@ -103,14 +103,14 @@ const normalizeChadhava = (item: any): Chadhava => {
     if (mandir && !templeName) {
         templeName = mandir.nameEnglish || mandir.mandirName || mandir.name || "";
     }
-    
+
     // Images may be plain URL strings (new PJAR format) or upload objects (legacy VV).
     const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
     const image = item.image || imgLoc(item.chadhavaWebCardImage) || imgLoc(item.chadhavaAppImage) || "";
-    
+
     let startingPrice = item.startingPrice || 501;
     let originalPrice = item.originalPrice;
-    
+
     const prices: number[] = [];
     const sections = item.chadhavaSections || item.sections;
     if (Array.isArray(sections)) {
@@ -130,7 +130,7 @@ const normalizeChadhava = (item: any): Chadhava => {
             if (!isNaN(pr)) prices.push(pr);
         }
     }
-    
+
     if (prices.length > 0) {
         startingPrice = Math.min(...prices);
         if (item.offer?.offerStartPrice) {
@@ -139,7 +139,7 @@ const normalizeChadhava = (item: any): Chadhava => {
             originalPrice = Math.round(startingPrice * 2.2);
         }
     }
-    
+
     const tags = item.isFeatured ? ["Most Booked"] : (item.isExclusive ? ["New Offerings"] : (item.tags || []));
 
     return {
@@ -183,11 +183,10 @@ export default function SacredChadhavaSewa() {
                         item.availableDates.some(isTodayOrFutureDate)
                 );
 
-                const finalItems = activeItems.length > 0 ? activeItems : CHADHAVA_FALLBACK;
-                setItems(finalItems.map(normalizeChadhava));
+                setItems(activeItems.map(normalizeChadhava));
             } catch (err) {
                 console.error("Error loading chadhavas:", err);
-                setItems(CHADHAVA_FALLBACK.map(normalizeChadhava));
+                setItems([]);
             } finally {
                 setLoading(false);
             }
@@ -231,24 +230,24 @@ export default function SacredChadhavaSewa() {
                         const targetDate = c.availableDates?.[0] || new Date(Date.now() + 13 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000 + 6 * 60 * 1000).toISOString();
 
                         return (
-                            <div 
-                                key={c.id} 
+                            <div
+                                key={c.id}
                                 onClick={() => navigate(`/chadhava/${c.id}`)}
                                 className="shrink-0 w-[65%] max-w-[290px] md:w-[300px] bg-[#FFFDF9] rounded-[20px] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.12)] cursor-pointer active:scale-[0.99] transition-transform snap-start flex flex-col justify-between"
                             >
                                 {/* Banner / Image Area */}
                                 <div className="relative w-full h-35 overflow-hidden rounded-t-[20px]">
-                                    <img 
-                                        src={c.image} 
-                                        alt={c.deity} 
-                                        loading="lazy" 
-                                        className="w-full h-full object-cover" 
+                                    <img
+                                        src={c.image}
+                                        alt={c.deity}
+                                        loading="lazy"
+                                        className="w-full h-full object-cover"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                                    
+
 
                                     {/* Top-Right Share Button */}
-                                    <button 
+                                    <button
                                         onClick={(e) => handleShare(e, c)}
                                         className="absolute top-2 right-2 w-6 h-6  bg-white/95 rounded-full flex items-center justify-center shadow-md border border-stone-100/50 active:scale-90 transition-transform"
                                     >
@@ -268,7 +267,7 @@ export default function SacredChadhavaSewa() {
                                 {/* Body / Content Area */}
                                 <div className="p-3 pt-1 flex flex-col gap-2.5">
                                     {/* Title */}
-                                    <h3 
+                                    <h3
                                         className="text-[16px] font-bold text-[#2E1F15] tracking-tight line-clamp-1 text-left"
                                         title={c.deity}
                                     >

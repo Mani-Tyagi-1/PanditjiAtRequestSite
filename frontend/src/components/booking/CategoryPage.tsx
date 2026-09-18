@@ -160,10 +160,10 @@ export default function CategoryPage() {
   useEffect(() => {
     if (!categoryDetails) return;
     analytics.metaBridge("ViewContent", {
-    content_ids: [categoryId],
-    content_name: categoryDetails.category_name_en,
-    content_type: "product_group",
-    currency: "INR",
+      content_ids: [categoryId],
+      content_name: categoryDetails.category_name_en,
+      content_type: "product_group",
+      currency: "INR",
     });
   }, [categoryDetails, categoryId]);
 
@@ -297,7 +297,7 @@ export default function CategoryPage() {
               onClick={() => setIsConsultancyOpen(true)}
               className="enquiry-btn mt-3 inline-flex items-center gap-2 text-white font-bold text-sm px-5 py-2.5 rounded-full active:scale-95"
             >
-              Get 
+              Get
               <span className="bg-white/20 text-white text-[16px] font-bold px-1.5 py-0.5 rounded-full leading-none border border-white/40">
                 FREE
               </span>

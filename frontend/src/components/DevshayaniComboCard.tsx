@@ -11,6 +11,7 @@ import {
     devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_PRICE, COMBO_DATE,
 } from "../data/devshayaniCombo";
 import analytics from "../utils/analytics";
+import { isTodayOrFuture } from "../utils/dateUtils";
 
 function Countdown({ targetDate }: { targetDate: string }) {
     const [txt, setTxt] = useState("");
@@ -39,6 +40,8 @@ const displayDate = (iso: string) => {
 
 export function DevshayaniComboCard() {
     const navigate = useNavigate();
+    const isExpired = !isTodayOrFuture(COMBO_DATE, false);
+    if (isExpired) return null;
 
     const share = async (e: React.MouseEvent) => {
         e.stopPropagation();

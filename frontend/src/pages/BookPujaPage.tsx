@@ -16,6 +16,7 @@ import {
 import API_URL from "../utils/apiConfig";
 import analytics from "../utils/analytics";
 import { money } from "../utils/currency";
+import { isTodayOrFuture } from "../utils/dateUtils";
 
 // Click-to-chat support line (same number used across the site / schema).
 const WHATSAPP_URL =
@@ -33,6 +34,7 @@ type Pooja = {
     mainCategories?: CategoryRef[];
     subCategories?: CategoryRef[];
     isFeatured?: boolean;
+    specialDate?: string | Date | null;
 };
 type Category = {
     category_id: string;
@@ -47,7 +49,7 @@ type LivePuja = {
     templeLocation?: string;
     deity?: string;
     image: string;
-    status: "live" | "upcoming" | "daily";
+    status: "live" | "upcoming" | "daily" | "closed";
     scheduledDate?: string;
     scheduledTime?: string;
     price: number;
@@ -79,7 +81,8 @@ export default function BookPujaPage() {
                     axios.get(`${API_URL}/fetch-all-poojas`),
                     axios.get(`${API_URL}/fetch-all-pooja-category`),
                 ]);
-                setPoojas(pRes.data?.poojas || []);
+                const allP: Pooja[] = pRes.data?.poojas || [];
+                setPoojas(allP.filter((p) => isTodayOrFuture(p.specialDate)));
                 setCategories(cRes.data?.poojaCategory || []);
             } catch (err) {
                 console.error("Error loading poojas/categories:", err);
@@ -93,7 +96,9 @@ export default function BookPujaPage() {
         (async () => {
             try {
                 const res = await axios.get(`${API_URL}/live-mandir-pujas`);
-                setLivePujas(res.data?.data || []);
+                const list: LivePuja[] = res.data?.data || [];
+                const active = list.filter((p) => p.status !== "closed" && isTodayOrFuture(p.scheduledDate));
+                setLivePujas(active);
             } catch (err) {
                 console.error("Error loading live mandir pujas:", err);
             } finally {

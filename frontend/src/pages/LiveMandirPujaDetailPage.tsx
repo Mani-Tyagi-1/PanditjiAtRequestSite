@@ -181,18 +181,18 @@ function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: Re
 function ReviewMarquee({ reviews }: { reviews: LiveMandirReview[] }) {
     const items = [...reviews, ...reviews]; // duplicated for a seamless loop
     return (
-        <div className="overflow-hidden -mx-4 px-4">
+        <div className="overflow-hidden -mx-3 min-[360px]:-mx-4 px-3 min-[360px]:px-4">
             <style>{`@keyframes reviewMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
             <div className="review-track flex gap-2.5">
                 {items.map((r, i) => (
-                    <div key={i} className="shrink-0 w-56 bg-white border border-orange-100 t-border rounded-xl p-3 shadow-sm">
+                    <div key={i} className="shrink-0 w-48 min-[360px]:w-56 bg-white border border-orange-100 t-border rounded-xl p-2.5 min-[360px]:p-3 shadow-sm">
                         <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-stone-800 text-[12px]">{r.name}</span>
+                            <span className="font-bold text-stone-800 text-[11px] min-[360px]:text-[12px]">{r.name}</span>
                             {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
-                            <span className="ml-auto text-[9px] text-stone-400">{r.date}</span>
+                            <span className="ml-auto text-[8.5px] min-[360px]:text-[9px] text-stone-400">{r.date}</span>
                         </div>
                         <Stars value={r.rating} className="w-3 h-3" />
-                        <p className="text-[11.5px] text-stone-600 mt-1 leading-snug line-clamp-3">{r.text}</p>
+                        <p className="text-[10.5px] min-[360px]:text-[11.5px] text-stone-600 mt-1 leading-snug line-clamp-3">{r.text}</p>
                     </div>
                 ))}
             </div>
@@ -232,7 +232,7 @@ function HeroBannerSlider({ puja, statusLabel }: { puja: LiveMandirPuja; statusL
     }, [images.length]);
 
     return (
-        <div className="relative h-52 overflow-hidden p-2 rounded-[10px]">
+        <div className="relative h-48 min-[360px]:h-52 overflow-hidden p-1.5 min-[360px]:p-2 rounded-[10px]">
             <style>{`.hide-scrollbar::-webkit-scrollbar { display: none; }`}</style>
             <div
                 ref={scrollRef}
@@ -515,64 +515,66 @@ export default function LiveMandirPujaDetailPage() {
             </Helmet>
 
             {/* ── Sticky header ── */}
-            <div className={`sticky top-0 z-50 ${selectedTheme ? '' : themeBg + '/90'} backdrop-blur-md border-b ${selectedTheme ? '' : themeBorder} px-4 py-3 flex items-center gap-3 t-bg`} style={selectedTheme ? { backgroundColor: 'color-mix(in srgb, var(--theme-bg) 95%, transparent)', borderColor: selectedTheme.border } : undefined}>
-                <button onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 t-border shadow-sm active:scale-90 transition-transform">
+            <div className={`sticky top-0 z-50 ${selectedTheme ? '' : themeBg + '/90'} backdrop-blur-md border-b ${selectedTheme ? '' : themeBorder} px-3 min-[360px]:px-4 py-2.5 min-[360px]:py-3 flex items-center gap-2.5 min-[360px]:gap-3 t-bg`} style={selectedTheme ? { backgroundColor: 'color-mix(in srgb, var(--theme-bg) 95%, transparent)', borderColor: selectedTheme.border } : undefined}>
+                <button onClick={() => location.key !== "default" ? navigate(-1) : navigate("/")} aria-label="Go back" className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-orange-200/50 t-border shadow-sm active:scale-90 transition-transform shrink-0">
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
-                <h1 className="text-sm font-bold text-stone-800 truncate">{puja.pujaName}</h1>
+                <h1 className="text-xs min-[360px]:text-sm font-bold text-stone-800 truncate">{puja.pujaName}</h1>
             </div>
 
             {/* ── Hero banner ── */}
             <HeroBannerSlider puja={puja} statusLabel={statusLabel} />
 
-            <div className="px-4 pt-3 pb-4 space-y-4">
+            <div className="px-3 min-[360px]:px-4 pt-3 pb-4 space-y-3.5 min-[360px]:space-y-4">
                 {/* ── Puja name + meta (rating / temple / date) ── */}
                 <div>
-                    <h2 className="text-xl font-bold font-serif text-stone-900 leading-tight">{puja.pujaName}</h2>
-                    <p className="text-[13px] text-orange-500 t-text font-medium mt-0.5">{puja.pujaNameHindi}</p>
-                    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2">
-                        <span className="bg-orange-100 text-orange-700 t-bg-alt t-text-dark text-[11px] font-semibold px-2.5 py-0.5 rounded-full">{puja.deity}</span>
-                        <span className="flex items-center gap-1 text-[12px]">
+                    <h2 className="text-lg min-[360px]:text-xl font-bold font-serif text-stone-900 leading-tight">{puja.pujaName}</h2>
+                    <p className="text-[12px] min-[360px]:text-[13px] text-orange-500 t-text font-medium mt-0.5">{puja.pujaNameHindi}</p>
+                    <div className="flex items-center flex-wrap gap-x-2.5 min-[360px]:gap-x-3 gap-y-1 mt-2">
+                        <span className="bg-orange-100 text-orange-700 t-bg-alt t-text-dark text-[10.5px] min-[360px]:text-[11px] font-semibold px-2 min-[360px]:px-2.5 py-0.5 rounded-full">{puja.deity}</span>
+                        <span className="flex items-center gap-1 text-[11px] min-[360px]:text-[12px]">
                             <Stars value={4.6} />
                             <span className="font-bold text-stone-700">4.6</span>
                             <span className="text-stone-400">· {devoteesLabel} devotees</span>
                         </span>
                     </div>
-                    <div className="flex items-center gap-3 mt-1.5 text-[12px] text-stone-500">
-                        <span className="flex items-center gap-1"><Mountain className="w-3.5 h-3.5 text-orange-500 t-text" />{mandirName}</span>
-                        <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-orange-500 t-text" />{displayDate}</span>
+                    <div className="flex items-center flex-wrap gap-x-2.5 min-[360px]:gap-x-3 gap-y-1 mt-1.5 text-[11px] min-[360px]:text-[12px] text-stone-500">
+                        <span className="flex items-center gap-1"><Mountain className="w-3.5 h-3.5 text-orange-500 t-text shrink-0" /><span className="truncate max-w-[160px] min-[360px]:max-w-none">{mandirName}</span></span>
+                        <span className="flex items-center gap-1 shrink-0"><Calendar className="w-3.5 h-3.5 text-orange-500 t-text shrink-0" />{displayDate}</span>
                     </div>
                 </div>
 
                 {/* ── Countdown (honest — real puja date) — compact single row ── */}
-                <div className="flex  items-center justify-center gap-6 bg-white border border-orange-100 t-border rounded-xl px-3 py-2 shadow-sm">
-                    <span className="text-sm font-bold text-orange-600 t-text-dark leading-tight shrink-0">Bookings close soon</span>
+                <div className="flex items-center justify-between min-[380px]:justify-center gap-1.5 min-[360px]:gap-2.5 min-[400px]:gap-6 bg-white border border-orange-100 t-border rounded-xl px-2.5 min-[360px]:px-3 py-2.5 shadow-sm">
+                    <span className="text-[13px] min-[360px]:text-[14.5px] min-[400px]:text-[15.5px] font-extrabold text-orange-600 t-text-dark leading-tight shrink-0">
+                        Bookings close soon
+                    </span>
                     {cd ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5 min-[360px]:gap-1 shrink-0">
                             {[
                                 { v: cd.days, l: "Days" }, { v: cd.hrs, l: "Hrs" },
                                 { v: cd.min, l: "Min" }, { v: cd.sec, l: "Sec" },
                             ].map((u, i, arr) => (
-                                <div key={u.l} className="flex items-center gap-1">
-                                    <div className="min-w-[32px] bg-stone-50 border border-stone-100 rounded-lg px-1 py-0.5 text-center">
-                                        <div className="text-[15px] leading-none font-bold text-stone-900 tabular-nums">{pad2(u.v)}</div>
-                                        <div className="text-[8px] uppercase tracking-wide text-stone-400 mt-0.5">{u.l}</div>
+                                <div key={u.l} className="flex items-center gap-0.5 min-[360px]:gap-1">
+                                    <div className="min-w-[26px] min-[360px]:min-w-[30px] min-[400px]:min-w-[32px] bg-stone-50 border border-stone-100 rounded-md min-[360px]:rounded-lg px-0.5 min-[360px]:px-1 py-0.5 text-center">
+                                        <div className="text-[12px] min-[360px]:text-[14px] min-[400px]:text-[15px] leading-none font-bold text-stone-900 tabular-nums">{pad2(u.v)}</div>
+                                        <div className="text-[7px] min-[360px]:text-[8px] uppercase tracking-wide text-stone-400 mt-0.5">{u.l}</div>
                                     </div>
-                                    {i < arr.length - 1 && <span className="text-stone-300 font-semibold text-xs">:</span>}
+                                    {i < arr.length - 1 && <span className="text-stone-300 font-semibold text-[10px] min-[360px]:text-xs">:</span>}
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <span className="text-[12px] text-stone-500">
+                        <span className="text-[11px] min-[360px]:text-[12px] text-stone-500">
                             {puja.status === "closed" ? "⛔ Closed" : puja.status === "live" ? "🔴 Live now" : puja.status === "daily" ? "Daily Seva" : "Booking open"}
                         </span>
                     )}
                 </div>
 
                 {/* ── WhatsApp reassurance line (replaces the price section) ── */}
-                <div className="flex items-center justify-center gap-1 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-1.5 text-[12px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-1.5 bg-green-50 border border-green-200 text-green-700 rounded-lg px-2 min-[360px]:px-3 py-1.5 text-[11px] min-[360px]:text-[12px] font-semibold text-center leading-snug">
                     <MessageCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
-                    Receive puja video with your name &amp; gotra on WhatsApp
+                    <span>Receive puja video with your name &amp; gotra on WhatsApp</span>
                 </div>
 
                 {/* ── Auto-scrolling devotee reviews ── */}
@@ -612,18 +614,20 @@ export default function LiveMandirPujaDetailPage() {
                 </div>
 
                 {/* ── Mandir card ── */}
-                <div className="flex items-center gap-3 rounded-2xl border border-orange-100 t-border bg-white p-3 shadow-sm">
-                    <div className="w-11 h-11 rounded-full border border-amber-200 bg-white overflow-hidden shrink-0 flex items-center justify-center">
-                        {puja.image ? <img src={optimizedImg(puja.image, 96)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={puja.templeName} loading="lazy" className="w-full h-full object-cover" /> : <Mountain className="w-6 h-6 text-amber-600/70" />}
+                <div className="flex items-center gap-2.5 min-[360px]:gap-3 rounded-2xl border border-orange-100 t-border bg-white p-2.5 min-[360px]:p-3 shadow-sm">
+                    <div className="w-10 h-10 min-[360px]:w-11 min-[360px]:h-11 rounded-full border border-amber-200 bg-white overflow-hidden shrink-0 flex items-center justify-center">
+                        {puja.image ? <img src={optimizedImg(puja.image, 96)} onError={(e) => { e.currentTarget.src = puja.image; }} alt={puja.templeName} loading="lazy" className="w-full h-full object-cover" /> : <Mountain className="w-5 h-5 min-[360px]:w-6 min-[360px]:h-6 text-amber-600/70" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <h3 className="text-[14px] font-bold text-stone-900 leading-snug truncate">{mandirName}</h3>
-                        <div className="flex items-center gap-1.5 mt-0.5 text-[11.5px]">
-                            <Calendar className="w-3 h-3 text-orange-500 t-text shrink-0" />
-                            <span className="text-stone-700 font-medium">{displayDate}</span>
-                            {(puja.durationString || puja.durationMins) ? <span className="text-stone-400">· <Clock className="w-3 h-3 inline -mt-0.5" /> {puja.durationString || `${puja.durationMins} min`}</span> : null}
+                        <h3 className="text-[13px] min-[360px]:text-[14px] font-bold text-stone-900 leading-snug truncate">{mandirName}</h3>
+                        <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 mt-0.5 text-[11px] min-[360px]:text-[11.5px]">
+                            <span className="flex items-center gap-1 text-stone-700 font-medium shrink-0">
+                                <Calendar className="w-3 h-3 text-orange-500 t-text shrink-0" />
+                                {displayDate}
+                            </span>
+                            {(puja.durationString || puja.durationMins) ? <span className="text-stone-400 shrink-0">· <Clock className="w-3 h-3 inline -mt-0.5" /> {puja.durationString || `${puja.durationMins} min`}</span> : null}
                         </div>
-                        <p className="text-[10px] text-stone-400 mt-0.5 truncate">Performed with Vedic rituals &amp; complete devotion</p>
+                        <p className="text-[9.5px] min-[360px]:text-[10px] text-stone-400 mt-0.5 truncate">Performed with Vedic rituals &amp; complete devotion</p>
                     </div>
                 </div>
 
@@ -674,14 +678,14 @@ export default function LiveMandirPujaDetailPage() {
                 {/* ── What you'll get ── */}
                 <div>
                     <SectionTitle icon={<Gift className="w-3.5 h-3.5 text-orange-400 t-text" />}>What you'll get</SectionTitle>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-1.5 min-[360px]:gap-2">
                         {whatYouGet.map(({ icon: Icon, title, sub }) => (
-                            <div key={title} className="bg-white border border-orange-100 t-border rounded-xl p-2.5 text-center shadow-sm">
-                                <div className="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 t-icon-bg flex items-center justify-center mb-1.5">
-                                    <Icon className="w-4 h-4 text-orange-600 t-text-dark" />
+                            <div key={title} className="bg-white border border-orange-100 t-border rounded-xl p-1.5 min-[360px]:p-2.5 text-center shadow-sm">
+                                <div className="w-7 h-7 min-[360px]:w-8 min-[360px]:h-8 mx-auto rounded-full bg-gradient-to-br from-amber-100 to-orange-200/70 t-icon-bg flex items-center justify-center mb-1 min-[360px]:mb-1.5">
+                                    <Icon className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 text-orange-600 t-text-dark" />
                                 </div>
-                                <p className="text-[11px] font-bold text-stone-800 leading-tight">{title}</p>
-                                <p className="text-[9.5px] text-stone-400 leading-tight mt-0.5">{sub}</p>
+                                <p className="text-[10px] min-[360px]:text-[11px] font-bold text-stone-800 leading-tight">{title}</p>
+                                <p className="text-[8.5px] min-[360px]:text-[9.5px] text-stone-400 leading-tight mt-0.5">{sub}</p>
                             </div>
                         ))}
                     </div>
@@ -701,15 +705,15 @@ export default function LiveMandirPujaDetailPage() {
                 {/* TODO: video proof gallery hidden — backend doesn't return puja.videos for live-mandir pujas yet. */}
 
                 {/* ── Trust row ── */}
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-3 gap-1.5 min-[360px]:gap-2 text-center">
                     {[
                         { icon: Video, label: "Live HD Video" },
                         { icon: Gift, label: "Prasad at Home" },
                         { icon: ShieldCheck, label: "Verified Pandit" },
                     ].map(({ icon: Icon, label }) => (
-                        <div key={label} className="bg-white border border-stone-100 rounded-xl py-2.5 flex flex-col items-center gap-1 shadow-sm hover:shadow-md transition-shadow">
-                            <Icon className="w-4 h-4 text-orange-500 t-text" />
-                            <span className="text-[9.5px] font-semibold text-stone-500 leading-tight">{label}</span>
+                        <div key={label} className="bg-white border border-stone-100 rounded-xl py-2 min-[360px]:py-2.5 px-1 flex flex-col items-center gap-1 shadow-sm hover:shadow-md transition-shadow">
+                            <Icon className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 text-orange-500 t-text" />
+                            <span className="text-[9px] min-[360px]:text-[9.5px] font-semibold text-stone-500 leading-tight">{label}</span>
                         </div>
                     ))}
                 </div>
@@ -731,28 +735,30 @@ export default function LiveMandirPujaDetailPage() {
 
             {/* ── Sticky bottom CTA ── */}
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-100 max-w-md mx-auto shadow-lg">
-                <div className="px-4 pt-2 pb-2.5">
-                    <div className="flex items-center gap-3">
+                <div className="px-3 min-[360px]:px-4 pt-2 pb-2.5">
+                    <div className="flex items-center gap-2.5 min-[360px]:gap-3">
                         <div className="shrink-0">
-                            <span className="text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
-                            <span className={`text-[19px] font-extrabold ${selectedTheme ? 't-text-dark' : themeTextMain}`}>
-                                {money((isFromAdmin && puja.packages && puja.packages.length > 0 ? (puja.packages.find(p => p.id === selectedPackageId)?.price || puja.price) : puja.price) + ((prasadAdded && !(puja.packages?.find(p => p.id === selectedPackageId)?.freePrasad)) ? 501 : 0))}
-                            </span>
-                            {isFromAdmin && puja.packages && puja.packages.find(p => p.id === selectedPackageId)?.strikePrice ? (
-                                <span className="ml-1.5 text-xs font-semibold text-stone-400 line-through">
-                                    {money(puja.packages.find(p => p.id === selectedPackageId)!.strikePrice! + ((prasadAdded && !(puja.packages?.find(p => p.id === selectedPackageId)?.freePrasad)) ? 501 : 0))}
+                            <span className="text-[9px] min-[360px]:text-[9.5px] text-stone-400 font-semibold uppercase block leading-none">Offering</span>
+                            <div className="flex items-baseline gap-1 mt-0.5">
+                                <span className={`text-[16px] min-[360px]:text-[19px] font-extrabold ${selectedTheme ? 't-text-dark' : themeTextMain}`}>
+                                    {money((isFromAdmin && puja.packages && puja.packages.length > 0 ? (puja.packages.find(p => p.id === selectedPackageId)?.price || puja.price) : puja.price) + ((prasadAdded && !(puja.packages?.find(p => p.id === selectedPackageId)?.freePrasad)) ? 501 : 0))}
                                 </span>
-                            ) : (puja.originalPrice && !isFromAdmin ? <span className="ml-1.5 text-xs font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span> : null)}
+                                {isFromAdmin && puja.packages && puja.packages.find(p => p.id === selectedPackageId)?.strikePrice ? (
+                                    <span className="text-[11px] min-[360px]:text-xs font-semibold text-stone-400 line-through">
+                                        {money(puja.packages.find(p => p.id === selectedPackageId)!.strikePrice! + ((prasadAdded && !(puja.packages?.find(p => p.id === selectedPackageId)?.freePrasad)) ? 501 : 0))}
+                                    </span>
+                                ) : (puja.originalPrice && !isFromAdmin ? <span className="text-[11px] min-[360px]:text-xs font-semibold text-stone-400 line-through">{money(puja.originalPrice)}</span> : null)}
+                            </div>
                         </div>
                         <button
                             onClick={openBooking}
                             disabled={isClosed}
-                            className={`flex-1 ${isClosed ? 'bg-stone-400 cursor-not-allowed' : selectedTheme ? 't-gradient' : themeBtn} text-white font-bold text-[15px] py-3 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 t-ring outline-none disabled:active:scale-100`}
+                            className={`flex-1 min-w-0 ${isClosed ? 'bg-stone-400 cursor-not-allowed' : selectedTheme ? 't-gradient' : themeBtn} text-white font-bold text-[13px] min-[360px]:text-[15px] py-2.5 min-[360px]:py-3 px-3 min-[360px]:px-4 rounded-xl shadow-md active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-orange-400 t-ring outline-none disabled:active:scale-100 truncate text-center`}
                         >{isClosed ? "Booking Closed" : "Participate Now"}</button>
                     </div>
                     <div className="flex items-center justify-center gap-1.5 mt-1.5 text-[10px] text-stone-400">
-                        <Lock className="w-3 h-3 text-emerald-500" />
-                        100% secure payment
+                        <Lock className="w-3 h-3 text-emerald-500 shrink-0" />
+                        <span>100% secure payment</span>
                     </div>
                 </div>
             </div>

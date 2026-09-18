@@ -51,7 +51,7 @@ const toClientShape = (doc: any) => {
 // GET /live-mandir-pujas — active catalog for the cards
 export const getLivePujas: RequestHandler = async (_req, res) => {
   try {
-    const pujas = await LiveMandirPuja.find({ isActive: true }).sort({
+    const pujas = await LiveMandirPuja.find({ isActive: true, status: { $ne: "closed" } }).sort({
       sortOrder: 1,
       createdAt: 1,
     });

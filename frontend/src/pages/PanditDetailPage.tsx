@@ -40,13 +40,12 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "md
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`${cls} ${
-            i < full
-              ? "fill-amber-400 text-amber-400"
-              : i === full && half
+          className={`${cls} ${i < full
+            ? "fill-amber-400 text-amber-400"
+            : i === full && half
               ? "fill-amber-200 text-amber-400"
               : "fill-stone-200 text-stone-300"
-          }`}
+            }`}
         />
       ))}
       <span className={`ml-1 font-semibold text-stone-600 ${size === "md" ? "text-sm" : "text-[11px]"}`}>
@@ -87,7 +86,7 @@ export default function PanditDetailPage() {
   const { panditId } = useParams<{ panditId: string }>();
   const navigate = useNavigate();
   const { user, login } = useAuth();
-  
+
   const [pandit, setPandit] = useState<Pandit | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -108,7 +107,7 @@ export default function PanditDetailPage() {
           setPandit(found || null);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [panditId]);
 
@@ -274,7 +273,7 @@ export default function PanditDetailPage() {
 
         {/* Info Body */}
         <div className="px-4 py-5 space-y-4">
-          
+
           {/* Quick Metrics */}
           <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-orange-100/70">
             <div className="text-center flex flex-col items-center">
@@ -300,7 +299,7 @@ export default function PanditDetailPage() {
 
           {/* Details Card */}
           <div className="bg-white rounded-2xl border border-orange-100/70 shadow-sm divide-y divide-stone-100">
-            
+
             {pandit.dob && (
               <DetailRow icon={<Calendar className="w-4 h-4 text-orange-500 shrink-0" />} label="Date of Birth" value={formatDate(pandit.dob)} />
             )}
@@ -346,11 +345,10 @@ export default function PanditDetailPage() {
           </div>
 
           {/* Active status banner */}
-          <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border text-xs font-bold shadow-sm ${
-            pandit.isActive
-              ? "bg-green-50/60 border-green-200 text-green-700"
-              : "bg-stone-50 border-stone-200 text-stone-500"
-          }`}>
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border text-xs font-bold shadow-sm ${pandit.isActive
+            ? "bg-green-50/60 border-green-200 text-green-700"
+            : "bg-stone-50 border-stone-200 text-stone-500"
+            }`}>
             <span className={`w-2 h-2 rounded-full ${pandit.isActive ? "bg-green-500 animate-ping" : "bg-stone-400"}`} />
             {pandit.isActive ? "Currently Active & Available for Puja" : "Currently Offline / Unavailable"}
           </div>
@@ -386,7 +384,7 @@ export default function PanditDetailPage() {
 
           {/* Modal content */}
           <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[28px] border border-orange-100 bg-[#FFFAF3] shadow-2xl transition-all duration-300 transform scale-100 flex flex-col max-h-[90vh]">
-            
+
             {/* Top marigold banner */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#FFEDD5] via-[#FFF7ED] to-[#FEF3C7] px-5 pb-5 pt-6 text-center border-b border-orange-100/50 shrink-0">
               <div className="absolute inset-0 opacity-40">
@@ -434,7 +432,7 @@ export default function PanditDetailPage() {
 
             {/* Scrollable Form & Info Area */}
             <div className="overflow-y-auto px-5 py-4 space-y-4">
-              
+
               {/* Trust highlights card */}
               <div className="rounded-2xl border border-orange-100 bg-[#FFFDF9] p-3.5 space-y-2.5">
                 <div className="flex items-start gap-2">
@@ -499,11 +497,10 @@ export default function PanditDetailPage() {
                   <label className="mb-1 block text-xs font-bold text-stone-600">
                     WhatsApp Mobile Number <span className="text-orange-500">*</span>
                   </label>
-                  <div className={`flex items-center overflow-hidden rounded-xl border shadow-sm transition ${
-                    user 
-                      ? "border-stone-200 bg-stone-100/70"
-                      : "border-stone-200 bg-stone-50/50 focus-within:border-orange-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-100"
-                  }`}>
+                  <div className={`flex items-center overflow-hidden rounded-xl border shadow-sm transition ${user
+                    ? "border-stone-200 bg-stone-100/70"
+                    : "border-stone-200 bg-stone-50/50 focus-within:border-orange-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-orange-100"
+                    }`}>
                     <div className="pl-3.5 text-stone-400 flex items-center gap-1 font-semibold text-xs border-r border-stone-200/60 pr-2">
                       <Phone className="w-4 h-4 text-stone-400" />
                       <span>+91</span>
@@ -535,11 +532,10 @@ export default function PanditDetailPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full rounded-xl py-3.5 text-xs font-bold text-white uppercase tracking-wider shadow-md transition-all active:scale-[0.98] ${
-                    isSubmitting
-                      ? "bg-stone-300 cursor-not-allowed shadow-none"
-                      : "bg-gradient-to-r from-orange-500 to-red-500 shadow-orange-100 hover:scale-[1.01]"
-                  }`}
+                  className={`w-full rounded-xl py-3.5 text-xs font-bold text-white uppercase tracking-wider shadow-md transition-all active:scale-[0.98] ${isSubmitting
+                    ? "bg-stone-300 cursor-not-allowed shadow-none"
+                    : "bg-gradient-to-r from-orange-500 to-red-500 shadow-orange-100 hover:scale-[1.01]"
+                    }`}
                 >
                   {isSubmitting ? "Confirming & Logging in..." : "Confirm Pandit Ji"}
                 </button>

@@ -6,6 +6,8 @@ import API_URL from "../utils/apiConfig";
 // Devshayani Ekadashi combo (frontend-only campaign card — remove this import
 // and the <DevshayaniComboCard/> below to disable the whole feature)
 import { DevshayaniComboCard } from "../components/DevshayaniComboCard";
+import { COMBO_DATE } from "../data/devshayaniCombo";
+import { isTodayOrFuture } from "../utils/dateUtils";
 import analytics from "../utils/analytics";
 
 /**
@@ -153,7 +155,7 @@ const toPlainDescription = (value?: string): string => {
 
 const normalizeChadhavaItem = (item: any): Chadhava => {
     const id = item._id || item.id || "";
-    
+
     // If it's already fully normalized
     if (item.deity && item.image && typeof item.startingPrice === "number") {
         return {
@@ -189,11 +191,11 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
         if (!templeName) templeName = mandir.nameEnglish || mandir.mandirName || mandir.name || "";
         if (!templeLocation) templeLocation = mandir.city || mandir.location || "";
     }
-    
+
     // Images may be plain URL strings (new PJAR format) or upload objects (legacy VV).
     const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
     const image = item.image || imgLoc(item.chadhavaWebCardImage) || imgLoc(item.chadhavaAppImage) || "";
-    
+
     // Calculate sections & items
     const rawSections = item.chadhavaSections || item.sections || [];
     const prices: number[] = [];
@@ -214,7 +216,7 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
             if (!isNaN(pr)) prices.push(pr);
         }
     }
-    
+
     let startingPrice = item.startingPrice || 501;
     let originalPrice = item.originalPrice;
     if (prices.length > 0) {
@@ -225,7 +227,7 @@ const normalizeChadhavaItem = (item: any): Chadhava => {
             originalPrice = Math.round(startingPrice * 2.2);
         }
     }
-    
+
     const tags = item.isFeatured ? ["Most Booked"] : (item.isExclusive ? ["New Offerings"] : (item.tags || []));
     const benefits = Array.isArray(item.benefits)
         ? item.benefits.map((b: any) => (typeof b === "object" ? b.description : b))
@@ -263,7 +265,7 @@ export default function ChadhavaPage() {
                 const res = await fetch(`${API_URL}/config/get-all-new-chadhava-proxy`);
                 if (!res.ok) throw new Error("Failed");
                 const json = await res.json();
-                
+
                 const rawItems = Array.isArray(json?.data)
                     ? json.data
                     : Array.isArray(json?.items)
@@ -276,7 +278,8 @@ export default function ChadhavaPage() {
                     (item: any) =>
                         item?.isActive !== false &&
                         !HIDDEN_CHADHAVA_IDS.has(String(item?._id || item?.id || "")) &&
-                        (Array.isArray(item?.availableDates) ? item.availableDates.some(isTodayOrFutureDate) : true)
+                        Array.isArray(item?.availableDates) &&
+                        item.availableDates.some(isTodayOrFutureDate)
                 );
 
                 setItems(activeItems.map(normalizeChadhavaItem));
@@ -313,8 +316,8 @@ export default function ChadhavaPage() {
 
             {/* ── List ── */}
             <section className="px-4 pt-4 space-y-5 pb-8">
-                {/* Devshayani Ekadashi combo — frontend-only campaign card (removable) */}
-                <DevshayaniComboCard />
+                {/* Devshayani Ekadashi combo — only shown if date not passed */}
+                {isTodayOrFuture(COMBO_DATE, false) && <DevshayaniComboCard />}
 
                 {loading &&
                     Array.from({ length: 3 }).map((_, i) => (
@@ -346,21 +349,21 @@ export default function ChadhavaPage() {
                         const cleanTitle = c.deity.replace(/\s*\([^)]*\)\s*$/, "").trim();
 
                         return (
-                            <div 
-                                key={c.id} 
+                            <div
+                                key={c.id}
                                 onClick={() => navigate(`/chadhava/${c.id}`)}
                                 className="bg-[#FFFDF9] rounded-[24px] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.12)] cursor-pointer active:scale-[0.995] transition-transform flex flex-col"
                             >
                                 {/* Banner Image container */}
                                 <div className="relative w-full h-52 overflow-hidden rounded-t-[24px]">
-                                    <img 
-                                        src={c.image} 
-                                        alt={c.deity} 
-                                        className="w-full h-full object-cover" 
-                                        loading="lazy" 
+                                    <img
+                                        src={c.image}
+                                        alt={c.deity}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
-                                    
+
                                     {/* Top-Left Event Pill (Dark grey) */}
                                     <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-[2px] text-white px-3.5 py-1 text-[11px] font-bold rounded-full flex items-center gap-1 shadow-sm">
                                         <span>🕉️</span>
@@ -368,7 +371,7 @@ export default function ChadhavaPage() {
                                     </div>
 
                                     {/* Top-Right Share Button */}
-                                    <button 
+                                    <button
                                         onClick={(e) => handleShare(e, c)}
                                         className="absolute top-3 right-3 w-8 h-8 bg-white/95 rounded-full flex items-center justify-center shadow-md border border-stone-100/50 active:scale-90 transition-transform"
                                     >

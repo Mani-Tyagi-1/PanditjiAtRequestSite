@@ -191,11 +191,10 @@ export default function ShopPage() {
                             <button
                                 key={category}
                                 onClick={() => navigate(`/shop/${categoryToSlug(category)}${shopQuery()}`)}
-                                className={`shrink-0 px-4 py-1.5 rounded-full text-[12.5px] font-bold border transition-all ${
-                                    active
+                                className={`shrink-0 px-4 py-1.5 rounded-full text-[12.5px] font-bold border transition-all ${active
                                         ? "bg-orange-500 text-white border-orange-500 shadow-sm"
                                         : "bg-white text-stone-600 border-orange-100"
-                                }`}
+                                    }`}
                             >
                                 {category}
                             </button>
@@ -236,7 +235,7 @@ export default function ShopPage() {
                             return (
                                 <div
                                     key={p._id}
-                                        onClick={() =>
+                                    onClick={() =>
                                         navigate(`/shop/${categoryToSlug(getCategory(p))}/${p.handle}${shopQuery()}`)
                                     }
                                     className="bg-white rounded-2xl border border-orange-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all active:scale-[0.98] cursor-pointer"

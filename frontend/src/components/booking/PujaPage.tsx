@@ -19,9 +19,9 @@ import analytics from "../../utils/analytics";
 
 const DEATH_RITUAL_PUJA_ID = "6a0310c4e78148f7f6e6176b";
 const RITUAL_PLACES = [
-  { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
-  { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
-  { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
+    { id: "kashi", label: "Kashi", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/kashi.png" },
+    { id: "haridwar", label: "Haridwar", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/haridwar.png" },
+    { id: "prayagraj", label: "Prayagraj", imageUrl: "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/vedic-vaibhav/prayagraj.png" },
 ];
 
 // ── Sub-components ─────────────────────────────────────────────
@@ -89,9 +89,8 @@ function ImageCarousel({ images, title }: { images: string[]; title: string }) {
                                 if (scrollEl) scrollEl.scrollTo({ left: i * scrollEl.offsetWidth, behavior: "smooth" });
                                 setTimeout(() => setUserScrolling(false), 4000);
                             }}
-                            className={`rounded-full transition-all duration-300 ${
-                                i === active ? "w-4 h-1.5 bg-orange-500" : "w-1.5 h-1.5 bg-white/70"
-                            }`}
+                            className={`rounded-full transition-all duration-300 ${i === active ? "w-4 h-1.5 bg-orange-500" : "w-1.5 h-1.5 bg-white/70"
+                                }`}
                         />
                     ))}
                 </div>
@@ -355,7 +354,7 @@ export default function PujaDetailPage() {
 
     const title = pujaData.poojaNameEng || "";
     const deity = pujaData.poojaGods?.[0] || "Divine Deity";
-    
+
     // Support poojaMainImage being either a string, an array of strings, or fall back to poojaCardImage
     let mainImages: string[] = [];
     if (Array.isArray(pujaData.poojaMainImage)) {
@@ -440,7 +439,7 @@ export default function PujaDetailPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <img src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/30%25.png" alt="Promo Image" className="w-full h-auto" />
-                        
+
 
                         {/* Body */}
                         <div className="px-5 py-5 space-y-3">
@@ -471,7 +470,7 @@ export default function PujaDetailPage() {
                                 className="promo-cta mt-2 w-full flex items-center justify-center gap-2 text-white font-bold text-sm py-3.5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-transform"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M3.18 23.76a2 2 0 0 1-.93-1.76V2a2 2 0 0 1 .93-1.76l.1-.06 11.67 11.67v.28L3.28 23.82l-.1-.06zM15.93 16.02l-3.89-3.89 1.17-1.17 4.63 2.67a1.14 1.14 0 0 1 0 1.96l-4.63 2.67-1.17-1.17 3.89-3.07zM2.61.62l12.65 7.3-2.82 2.82L2.61.62zm0 22.76 9.83-9.84 2.82 2.82L2.61 23.38z"/>
+                                    <path d="M3.18 23.76a2 2 0 0 1-.93-1.76V2a2 2 0 0 1 .93-1.76l.1-.06 11.67 11.67v.28L3.28 23.82l-.1-.06zM15.93 16.02l-3.89-3.89 1.17-1.17 4.63 2.67a1.14 1.14 0 0 1 0 1.96l-4.63 2.67-1.17-1.17 3.89-3.07zM2.61.62l12.65 7.3-2.82 2.82L2.61.62zm0 22.76 9.83-9.84 2.82 2.82L2.61 23.38z" />
                                 </svg>
                                 Download App & Save 30%
                             </a>

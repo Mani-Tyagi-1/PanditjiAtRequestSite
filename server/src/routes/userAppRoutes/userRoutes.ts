@@ -4,6 +4,7 @@ import {
   updateUserProfile,
   getUserByUserId,
   lookupUserByPhone,
+  findOrRegisterGuest,
 } from "../../controller/userApp/userController"; // ⬅️ update path if needed
 import { decryptRequest } from "../../utils/encryption";
 
@@ -27,5 +28,11 @@ router.get("/profile/:userId", getUserByUserId);
  * @desc    Read-only lookup — returns user data + booking count (no user creation)
  */
 router.get("/lookup-by-phone/:phone", lookupUserByPhone);
+
+/**
+ * @route   POST /users/find-or-register-guest
+ * @desc    Find existing user or create a guest record
+ */
+router.post("/find-or-register-guest", findOrRegisterGuest);
 
 export default router;

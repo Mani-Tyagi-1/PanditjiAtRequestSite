@@ -1,8 +1,31 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronLeft, Clock, CreditCard, Shield, Lock, CheckCircle } from "lucide-react";
+import { Check, ChevronLeft, Clock, CreditCard, Shield, Lock, CheckCircle, Phone, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../utils/apiConfig";
 import { useAuth } from "../context/AuthContext";
+import { money } from "../utils/currency";
+import { isIndia } from "../utils/currency";
+import analytics, { type AnalyticsItem } from "../utils/analytics";
+
+/**
+ * The consultation as a GA4 line item.
+ *
+ * Split by call type rather than reported as one generic "consultation", so
+ * Ads can see which of the two actually converts and bid accordingly.
+ */
+const consultationGa4ItemsFor = (
+  consultType: string,
+  price: number,
+): AnalyticsItem[] => [
+  {
+    id: consultType === "video" ? "consultation_video" : "consultation_audio",
+    name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+    price,
+    quantity: 1,
+    category: "Consultation",
+    variant: consultType === "video" ? "video" : "audio",
+  },
+];
 
 const TIME_SLOTS = [
   { value: "9-11", display: "9 AM - 11 AM", period: "Morning" },
@@ -18,13 +41,23 @@ const LABEL_CLASS = "text-xs font-semibold text-stone-500 uppercase tracking-wid
 export default function PaidConsultationPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryParams = new URLSearchParams(window.location.search);
+  const [consultType, setConsultType] = useState<"voice" | "video">(
+    queryParams.get("type") === "video" ? "video" : "voice"
+  );
+
   const [form, setForm] = useState({
     fullName: "",
     mobileNumber: "",
+    email: "",
     city: "",
     preferredTimeSlot: "5-7", // ← Default is now 5-7 PM
   });
-  const [amount, setAmount] = useState(101);
+  const [amount, setAmount] = useState(consultType === "video" ? 201 : 101);
+
+  /** This page's consultation as a GA4 line item, priced at `price`. */
+  const consultationGa4Items = (price: number) =>
+    consultationGa4ItemsFor(consultType, price);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
@@ -52,6 +85,12 @@ export default function PaidConsultationPage() {
     setForm((current) => ({ ...current, preferredTimeSlot: slotValue }));
   };
 
+  const handleTypeChange = (type: "voice" | "video") => {
+    setConsultType(type);
+    setAmount(type === "video" ? 201 : 101);
+    setError("");
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
@@ -62,6 +101,11 @@ export default function PaidConsultationPage() {
       !form.preferredTimeSlot
     ) {
       setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (!isIndia() && !/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+      setError("Please enter a valid email — it's how we send your booking confirmation.");
       return;
     }
 
@@ -80,8 +124,12 @@ export default function PaidConsultationPage() {
         body: JSON.stringify({
           fullName: form.fullName,
           mobileNumber: form.mobileNumber,
+          // The server needs an address to confirm to — without this the
+          // consultation booking has no email to send the receipt to.
+          email: form.email.trim(),
           city: form.city,
           preferredTimeSlot: form.preferredTimeSlot,
+          type: consultType,
         }),
       });
 
@@ -97,14 +145,14 @@ export default function PaidConsultationPage() {
         throw new Error("Razorpay SDK failed to load. Please refresh and try again.");
       }
 
-      const prefillEmail = user?.email || `user${form.mobileNumber.trim()}@panditjiatrequest.com`;
+      const prefillEmail = form.email.trim() || user?.email || `user${form.mobileNumber.trim()}@panditjiatrequest.com`;
 
       const rzp = new RazorpayCtor({
         key: orderData.razorpayKeyId,
         amount: Number(orderData.amount) * 100,
         currency: orderData.currency || "INR",
         name: "PanditJiAtRequest",
-        description: `Personalised Consultation - ₹${orderData.amount || 101}`,
+        description: `Personalised Consultation - ${money(orderData.amount || 101)}`,
         order_id: orderData.razorpayOrderId,
         prefill: {
           name: form.fullName,
@@ -130,14 +178,23 @@ export default function PaidConsultationPage() {
               throw new Error(completeData.message || "Payment verification failed.");
             }
 
-            if (window.fbq) {
-              window.fbq("track", "Purchase", {
-                content_name: "Personalised Consultation",
-                content_type: "service",
-                value: orderData.amount,
-                currency: orderData.currency || "INR",
-              });
-            }
+            analytics.purchase({
+              transactionId: response.razorpay_order_id,
+              items: consultationGa4Items(Number(orderData.amount) || amount),
+              value: Number(orderData.amount) || amount,
+              currency: orderData.currency || "INR",
+              meta: {
+                event: "Purchase",
+                // eventID must match server CAPI event_id for deduplication
+                eventId: `consultation_purchase_${response.razorpay_order_id}`,
+                params: {
+                  content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+                  content_type: consultType === "video" ? "video_call" : "audio_call",
+                  value: orderData.amount,
+                  currency: orderData.currency || "INR",
+                },
+              },
+            });
 
             setSubmitted(true);
           } catch (paymentError: any) {
@@ -159,6 +216,32 @@ export default function PaidConsultationPage() {
         setSubmitting(false);
       });
 
+      {
+        const checkoutValue = Number(orderData.amount) || amount;
+        analytics.beginCheckout({
+          items: consultationGa4Items(checkoutValue),
+          value: checkoutValue,
+          currency: orderData.currency || "INR",
+          meta: {
+            event: "InitiateCheckout",
+            params: {
+              content_name: consultType === "video" ? "Video Call Consultation" : "Audio Call Consultation",
+              content_type: consultType === "video" ? "video_call" : "audio_call",
+              value: checkoutValue,
+              currency: orderData.currency || "INR",
+            },
+          },
+        });
+        analytics.addPaymentInfo({
+          items: consultationGa4Items(checkoutValue),
+          value: checkoutValue,
+          currency: orderData.currency || "INR",
+        });
+        // Lets the Razorpay webhook attribute the purchase to this visitor even
+        // if the tab is gone before payment settles.
+        analytics.stashOrderAttribution(orderData.razorpayOrderId);
+      }
+
       rzp.open();
     } catch (submitError: any) {
       setError(submitError.message || "Something went wrong. Please try again.");
@@ -179,7 +262,7 @@ export default function PaidConsultationPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-white font-extrabold text-xl" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            <h2 className="text-white font-bold text-xl" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
               Personalised Consultation
             </h2>
             <p className="text-orange-100 text-xs mt-0.5">
@@ -210,6 +293,31 @@ export default function PaidConsultationPage() {
           </div>
         ) : (
           <>
+            {/* Consultation Type Tabs */}
+            <div className="flex bg-white border border-stone-100 rounded-2xl p-1 mb-5 shadow-sm">
+              {([
+                { key: "voice", label: "Talk on Call", icon: Phone },
+                { key: "video", label: "Video Call", icon: Video },
+              ] as const).map(({ key, label, icon: Icon }) => {
+                const active = consultType === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleTypeChange(key)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                      active
+                        ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md"
+                        : "text-stone-500 hover:text-stone-700"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Special Offer Banner */}
             <div className="bg-white border border-orange-200 rounded-3xl p-5 mb-6 shadow-sm">
               <div className="flex items-center justify-between">
@@ -217,7 +325,7 @@ export default function PaidConsultationPage() {
                   <div className="inline-flex items-center gap-1.5 bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-2xl">
                     🔥 SPECIAL INTRODUCTORY OFFER
                   </div>
-                  <p className="text-3xl font-bold text-stone-800 mt-3">Only ₹{amount}</p>
+                  <p className="text-3xl font-bold text-stone-800 mt-3">Only {money(amount)}</p>
                   <p className="text-stone-500 text-sm">for 30-minute personalised consultation</p>
                 </div>
                 <div className="text-4xl">🪔</div>
@@ -251,6 +359,25 @@ export default function PaidConsultationPage() {
                     placeholder="10-digit mobile number"
                     inputMode="numeric"
                     maxLength={10}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+
+                <div>
+                  {/* Email — REQUIRED outside India, optional at home. Abroad
+                      there is no OTP to log in with, so the confirmation email
+                      is the devotee's only record of the booking. */}
+                  <label className={LABEL_CLASS}>
+                    Email {isIndia() ? <span className="opacity-70 font-normal">(optional)</span> : <span className="text-red-400">*</span>}
+                  </label>
+                  <input
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder={isIndia() ? "For a copy of your booking" : "For your booking confirmation"}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
                     className={INPUT_CLASS}
                   />
                 </div>
@@ -303,7 +430,7 @@ export default function PaidConsultationPage() {
                   </p>
                   <ul className="space-y-2 text-stone-600 text-[13px]">
                     <li className="flex items-start gap-2">
-                      <span className="text-orange-500 mt-0.5">✓</span>30-minute dedicated one-on-one call
+                      <span className="text-orange-500 mt-0.5">✓</span>30-minute dedicated one-on-one {consultType === "video" ? "video call" : "call"}
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-orange-500 mt-0.5">✓</span>Personalised guidance &amp; remedies
@@ -333,7 +460,7 @@ export default function PaidConsultationPage() {
             className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 active:scale-[0.97] text-white font-bold py-4 rounded-3xl shadow-xl shadow-orange-200 transition-all duration-200 text-base flex items-center justify-center gap-3 disabled:opacity-60"
           >
             <CreditCard className="w-5 h-5" />
-            {submitting ? "Processing..." : `Pay ₹${amount} Securely Now`}
+            {submitting ? "Processing..." : `Pay ${money(amount)} Securely Now`}
           </button>
 
           {/* Trust signals */}

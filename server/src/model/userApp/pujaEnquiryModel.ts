@@ -1,5 +1,5 @@
 import { Schema, Model, Types } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export interface IPujaEnquiry {
   fullName: string;

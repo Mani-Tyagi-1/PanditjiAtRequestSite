@@ -1,3 +1,4 @@
+# ── General rules ──
 User-agent: *
 Allow: /
 Allow: /join-as-panditji
@@ -13,7 +14,31 @@ Allow: /termsandconditions-pandit
 Allow: /delete-my-account
 Allow: /delete-pandit-account
 Allow: /blog/
+Allow: /llms.txt
 
 Disallow: /booking-flow
+
+# ── AI Search Crawlers (allow for GEO/AEO visibility) ──
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+# ── Training crawlers (blocked to protect content) ──
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
 
 Sitemap: https://panditjiatrequest.com/sitemap.xml

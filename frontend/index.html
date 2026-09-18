@@ -3,6 +3,63 @@
 
 <head>
 
+  <!-- ═══════════════════════════════════════════════
+         GOOGLE CONSENT MODE v2
+         MUST stay above the GTM snippet. Tags read the default the instant the
+         container loads, so a default declared after it arrives too late and
+         the first page_view has already fired ungoverned.
+
+         Region-scoped on purpose. Traffic is overwhelmingly Indian, where the
+         DPDP Act does not require prior opt-in, so storage is granted by
+         default and the banner offers an opt-OUT. Visitors from the EEA, UK and
+         Switzerland — where GDPR does require prior consent — start denied and
+         nothing is written until they accept.
+
+         "Denied" is not "no tracking": Consent Mode keeps sending cookieless
+         pings that Google uses to model the conversions it can no longer
+         observe, which is why the tags stay installed either way.
+
+         To require opt-in everywhere, delete the region list from the second
+         call and change the first call's grants to 'denied'.
+    ═══════════════════════════════════════════════ -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+
+    // Default for the rest of the world (India included).
+    gtag('consent', 'default', {
+      ad_storage: 'granted',
+      ad_user_data: 'granted',
+      ad_personalization: 'granted',
+      analytics_storage: 'granted',
+      functionality_storage: 'granted',
+      security_storage: 'granted'
+    });
+
+    // Stricter default for consent-required jurisdictions. `wait_for_update`
+    // holds tags for 500ms so a returning visitor's stored "accept" can land
+    // before anything fires — without it their first pageview is always lost.
+    gtag('consent', 'default', {
+      region: ['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR',
+               'HU', 'IS', 'IE', 'IT', 'LV', 'LI', 'LT', 'LU', 'MT', 'NL', 'NO', 'PL',
+               'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'GB', 'CH'],
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      functionality_storage: 'granted',
+      security_storage: 'granted',
+      wait_for_update: 500
+    });
+
+    // Keeps click ids on the URL when ad_storage is denied, so a conversion can
+    // still be attributed without a cookie.
+    gtag('set', 'url_passthrough', true);
+    // Strips ad click identifiers from the tag's own network requests while
+    // ad_storage is denied.
+    gtag('set', 'ads_data_redaction', true);
+  </script>
+
   <!-- Google Tag Manager -->
   <script>(function (w, d, s, l, i) {
       w[l] = w[l] || []; w[l].push({
@@ -20,9 +77,61 @@
   <link rel="icon" type="image/svg+xml"
     href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png" />
 
-  <!-- Preconnect to image CDN for faster LCP -->
+  <!-- ═══════════════════════════════════════════════
+         TYPEFACES
+         Cormorant Garamond is referenced by name across the site (Vivah,
+         Chadhava, Savan, Kaal Bhairav, BookingModal…) but was never actually
+         loaded — those headings had all been falling back to Times New Roman.
+         Loading it here fixes every one of them. Inter is the body face for
+         the Vedic Vivah pages.
+
+         Cinzel (engraved caps) and DM Sans join them for the Savan/Mahakal
+         parchment theme worn by both the puja page and its booking page —
+         Cinzel carries their subheadings and seal badges, DM Sans their body
+         copy, while buttons stay on Inter. They ride the SAME
+         stylesheet request as the two above rather than a second <link>: the
+         browser is already blocked on this one, so extra families cost bytes
+         but no extra round trip. Weights are pruned to the ones actually used.
+    ═══════════════════════════════════════════════ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- NOT render-blocking. As a plain stylesheet this sat in front of first
+       paint on a THIRD origin: DNS + TLS + round trip to fonts.googleapis.com
+       before the browser would paint a single pixel, and the font files it
+       names then need the same again for fonts.gstatic.com. `media="print"`
+       makes it a non-blocking fetch; onload promotes it to the real thing.
+       Nothing about the type changes — every family already ships
+       `display=swap`, so text has always painted in the fallback face and
+       swapped on arrival. This only stops the page waiting for the swap to
+       become possible. -->
+  <link
+    rel="stylesheet"
+    media="print"
+    onload="this.media='all';this.onload=null"
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;600;700&family=DM+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
+    />
+  </noscript>
+
+  <!-- Preconnect to image CDNs for faster LCP -->
   <link rel="preconnect" href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com" crossorigin />
   <link rel="dns-prefetch" href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com" />
+  <!-- Shopify CDN serves all shop product images (LCP on product pages) -->
+  <link rel="preconnect" href="https://cdn.shopify.com" crossorigin />
+  <link rel="dns-prefetch" href="https://cdn.shopify.com" />
+  <!-- Resizer origin for images served through src/utils/img.ts (optimizedImg) —
+       it fronts the LCP hero on the puja/chadhava detail pages, so pay the
+       DNS + TLS handshake up front rather than on first image request. -->
+  <link rel="preconnect" href="https://images.weserv.nl" crossorigin />
+  <link rel="dns-prefetch" href="https://images.weserv.nl" />
+  <!-- Home/blog hero. NOTE: index.html is the shell for EVERY route, so a
+       preload here is paid by every page. Routes with their own LCP hero get a
+       generated shell that strips this and preloads theirs instead — see
+       scripts/generate-route-shells.mjs. -->
   <link rel="preload" as="image"
     href="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/poojaMainImage_1779258749947.webp"
     fetchpriority="high" />
@@ -36,7 +145,9 @@
   <meta name="keywords"
     content="book pandit online, pandit for puja, pandit at home, Hindu puja booking, online pandit booking, Griha Pravesh pandit, Satyanarayan Katha, havan booking, katha booking, religious ceremony pandit, PanditJiAtRequest" />
   <meta name="author" content="PanditJiAtRequest" />
-  <link rel="canonical" href="https://panditjiatrequest.com/" />
+  <!-- No static canonical: each route sets its own via react-helmet-async.
+       A hardcoded one here would mark every page as a duplicate of the
+       homepage — two conflicting canonicals and crawlers may ignore both. -->
 
   <!-- ═══════════════════════════════════════════════
          OPEN GRAPH (Facebook / WhatsApp / LinkedIn)
@@ -79,22 +190,137 @@
         },
       "openingHours": "Mo-Su 00:00-23:59",
       "sameAs": [
-        "[INSTAGRAM_URL]",
-        "[TWITTER_URL]"
+        "https://x.com/AtRequest50649"
       ]
     }
     </script>
 
+  <!-- Organization entity (knowledge-panel anchor) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://panditjiatrequest.com/#organization",
+      "name": "PanditJiAtRequest",
+      "url": "https://panditjiatrequest.com/",
+      "logo": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/pjar_logo-removebg-preview.png",
+      "image": "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png",
+      "telephone": "+91-9056955311",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "1031, Tricity Trade Tower",
+        "addressLocality": "Zirakpur",
+        "addressRegion": "Punjab",
+        "postalCode": "140603",
+        "addressCountry": "IN"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+91-9056955311",
+        "contactType": "customer service",
+        "areaServed": "IN",
+        "availableLanguage": ["English", "Hindi", "Telugu", "Tamil", "Bengali", "Gujarati", "Marathi", "Kannada", "Malayalam", "Odia", "Punjabi"]
+      },
+      "sameAs": ["https://x.com/AtRequest50649"]
+    }
+    </script>
+
+  <!-- WebSite entity + Sitelinks Search Box -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://panditjiatrequest.com/#website",
+      "url": "https://panditjiatrequest.com/",
+      "name": "PanditJiAtRequest",
+      "publisher": { "@id": "https://panditjiatrequest.com/#organization" },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://panditjiatrequest.com/puja?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+  <!-- FAQPage Schema for Rich Results + AEO citability -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How to book a pandit online?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You can book a verified pandit online through PanditJiAtRequest. Simply select your ceremony type (Puja, Havan, Satyanarayan Katha, Griha Pravesh), choose your date and location, browse available verified pandits, and confirm your booking. Same-day booking is available in most cities. Free consultation included with every booking."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How much does puja booking cost?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Puja booking starts from ₹799 for basic ceremonies. Pricing varies by ceremony type, duration, and location. Satyanarayan Katha typically costs ₹999-2,500, Griha Pravesh ₹1,500-3,500, and Havan ₹899-2,000. All prices are transparent with no hidden fees. You can see exact pricing before confirming your booking."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is online puja booking safe and reliable?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, PanditJiAtRequest ensures all pandits are verified with credentials and background checks. Every booking includes live photo and video proof of the ceremony. Payments are processed securely through Razorpay. You can also have a free consultation before booking."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I book a pandit for same-day puja?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, same-day puja booking is available in most major Indian cities. PanditJiAtRequest has 25,000+ verified pandits across India. Simply select your ceremony and location, and you can find available pandits for the same day. Live video calling is also available for remote participation."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What ceremonies can I book online?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You can book pandits for all major Hindu ceremonies including Satyanarayan Katha, Griha Pravesh (house warming), Havan/Yagna, Wedding pujas, Navagraha puja, Rudrabhishek, and more. Temple offerings (chadhava) and live darshan are also available. We cover all ceremonies across all Hindu traditions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you provide services for NRIs living abroad?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, NRIs can book pandits for their family members in India from abroad. You can schedule the ceremony, make payment in your currency, and receive live video proof of the puja. We support 11 languages including Hindi, Telugu, Tamil, Bengali, Gujarati, and English for seamless communication."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Organization Schema for brand knowledge panel -->
+
   <!-- ═══════════════════════════════════════════════
-         MICROSOFT CLARITY  (replace [CLARITY_ID])
+         MICROSOFT CLARITY
+         DISABLED: no project ID was configured — the previous code loaded
+         https://www.clarity.ms/tag/[CLARITY_ID] (a literal placeholder), which
+         failed on every page load and recorded no sessions. To enable, replace
+         YOUR_CLARITY_ID below with your real Clarity project ID and uncomment.
     ═══════════════════════════════════════════════ -->
+  <!--
   <script type="text/javascript">
     (function (c, l, a, r, i, t, y) {
       c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
       t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
       y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-    })(window, document, "clarity", "script", "[CLARITY_ID]");
+    })(window, document, "clarity", "script", "YOUR_CLARITY_ID");
   </script>
+  -->
 
   <!-- ═══════════════════════════════════════════════
          GOOGLE TRANSLATE  (hidden, programmatic)

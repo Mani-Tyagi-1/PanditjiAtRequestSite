@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 const BlogSchema = new mongoose.Schema(
   {

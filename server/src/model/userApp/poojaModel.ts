@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 const PoojaSchema = new mongoose.Schema(
   {
@@ -54,11 +54,19 @@ const PoojaSchema = new mongoose.Schema(
     ],
     isActive: { type: Boolean, default: true },
     isFeatured: { type: Boolean, default: false },
+    featuredRank: { type: Number, default: null },
     isExclusive: { type: Boolean, default: false },
+    exclusiveRank: { type: Number, default: null },
     isUpcoming: { type: Boolean, default: false },
+    // Package catalogs for dedicated landing pages live in frontend data.
+    // When enabled, bookings persist the selected package as a snapshot.
+    packageIncluded: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
+// Speeds up the active-poojas list query.
+PoojaSchema.index({ isActive: 1 });
 
 // IMPORTANT: Use your custom connection instance.
 export default panditJiAtRequestMongooose.model("Pooja", PoojaSchema);

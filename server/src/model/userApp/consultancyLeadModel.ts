@@ -1,15 +1,18 @@
 import { Schema, Model } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export interface IConsultancyLead {
   fullName: string;
   mobileNumber: string;
+  /** Confirmation-email address. Optional in India, required abroad. */
+  email?: string;
   helpWith: string;
   concern: string;
   poojaType: string;
   city: string;
   callbackTime: string;
   timeSlot: string;
+  consultationType?: "voice" | "video";
   amount: number;
   isPaymentDone: boolean;
   razorpayOrderId: string;
@@ -21,12 +24,16 @@ export interface IConsultancyLead {
 const consultancyLeadSchema = new Schema<IConsultancyLead>({
   fullName: { type: String, required: true, trim: true },
   mobileNumber: { type: String, required: true, trim: true },
+  // Confirmation-email address. Optional in India, required abroad — with no
+  // international OTP it is the devotee's only record of the booking.
+  email: { type: String, trim: true, lowercase: true },
   helpWith: { type: String, trim: true },
   concern: { type: String, trim: true },
   poojaType: { type: String, trim: true },
   city: { type: String, required: true, trim: true },
   callbackTime: { type: String, trim: true },
   timeSlot: { type: String, trim: true },
+  consultationType: { type: String, enum: ["voice", "video"], default: "voice", trim: true },
   amount: { type: Number, default: 0 },
   isPaymentDone: { type: Boolean, default: false },
   razorpayOrderId: { type: String, trim: true },

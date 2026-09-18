@@ -1,5 +1,5 @@
 import { Schema, InferSchemaType } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export type PushAppType = "user" | "pandit";
 export type PushPlatform = "android" | "ios";

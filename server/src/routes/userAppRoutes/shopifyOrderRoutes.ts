@@ -1,0 +1,47 @@
+import express, { Request, Response, NextFunction } from "express";
+import {
+  createShopifyOrder,
+  createCodShopifyOrder,
+  getShopifyCodConfig,
+  completeShopifyOrderPayment,
+  getUserShopifyOrders,
+  checkFirstOrderEligibility,
+} from "../../controller/userApp/shopifyOrderController";
+import { razorpayWebhook } from "../../controller/payments/razorpayWebhookController";
+
+const router = express.Router();
+
+const wrap =
+  (handler: (req: Request, res: Response, next: NextFunction) => Promise<void> | void) =>
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await handler(req, res, next);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+// Initialize order and create Razorpay payment intent
+router.post("/shopify-orders/create-order", wrap(createShopifyOrder));
+
+// Place a Cash-on-Delivery order (no online payment step)
+router.post("/shopify-orders/cod", wrap(createCodShopifyOrder));
+
+// COD availability + minimum-order config (server source of truth)
+router.get("/shopify-orders/cod-config", wrap(getShopifyCodConfig));
+
+// Verify Razorpay payment signature and capture order
+router.post("/shopify-orders/complete-payment", wrap(completeShopifyOrderPayment));
+
+// Legacy webhook URL — kept alive in case it's still the one configured in the
+// Razorpay dashboard. Runs the SHARED dispatcher (all services), not just shop
+// orders. New setups should use /api/payments/razorpay/webhook.
+router.post("/shopify-orders/webhook", wrap(razorpayWebhook));
+
+// Check whether the user qualifies for the first-order discount
+router.get("/shopify-orders/first-order-eligibility/:phone", wrap(checkFirstOrderEligibility));
+
+// Fetch all shopify orders for a specific user phone
+router.get("/shopify-orders/user/:phone", wrap(getUserShopifyOrders));
+
+export default router;

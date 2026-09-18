@@ -7,6 +7,9 @@ import {
   getPendingBookingsForPandit,
   acceptPendingBooking,
   getOnePendingBooking,
+  getPoojaPaymentOptions,
+  createPoojaBalanceOrder,
+  completePoojaBalancePayment,
   updatePendingBookingProgress,
   uploadPoojaCompletionMedia
 } from '../../controller/poojaBooking/poojaBookingController';
@@ -30,6 +33,14 @@ router.get('/bookings/pending', getAllPendingBookings);
 router.get('/bookings/pending/assigned/:panditId', getPendingBookingsForPandit);
 
 /** ACTIONS */
+
+// What the checkout should offer. Public: it exposes a percentage, nothing more.
+router.get('/bookings/payment-options', getPoojaPaymentOptions);
+
+// Devotee-side settlement of an advance booking's balance. Declared BEFORE
+// any '/bookings/:bookingId' GET so the param route cannot shadow them.
+router.post('/bookings/:bookingId/balance-order', createPoojaBalanceOrder);
+router.post('/bookings/:bookingId/complete-balance-payment', completePoojaBalancePayment);
 router.get('/bookings/:bookingId', getOnePendingBooking);
 router.patch('/bookings/:bookingId/progress', updatePendingBookingProgress);
 router.post('/bookings/:bookingId/accept', acceptPendingBooking);

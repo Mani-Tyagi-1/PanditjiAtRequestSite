@@ -1,6 +1,6 @@
 // src/model/Vedic-Vaibhav/userModel.ts (updated)
 import { Schema, Model, Types } from "mongoose";
-import { VedicVaibhavMongoose } from "../../../config/vedicVaibhavDB";
+import { VedicVaibhavMongoose } from "../../config/vedicVaibhavDB";
 
 // ✅ Added: Address interface + schema
 export interface IAddress {
@@ -38,6 +38,16 @@ export interface IUser {
   isActive: boolean;            // (kept)
   isFromApp: boolean;           // (kept)
   isNotifyOkay: boolean;        // (kept)
+  // ── Where this devotee books from ──────────────────────────────────────
+  // Set when the account is created from outside India, so support and
+  // reporting can tell a New Jersey booking from a Delhi one without decoding
+  // a phone number. Absent on every account created before this existed, and
+  // on Indian ones, which is the same thing as "IN".
+  country?: string;             // "United States"
+  countryCode?: string;         // "US"
+  /** True when the account was created without a phone, keyed on email only. */
+  isEmailOnly?: boolean;
+
   otp?: string;                 // (kept)
   otpExpiry?: Date;             // (kept)
 
@@ -62,17 +72,35 @@ export interface IUser {
     expiresAt: Date;            // 1 day from appliedAt
   };
 
+  // ---- Partner/Affiliate APP referral order cap (separate from the above userReferral /
+  // referralSourcePJAR fields, which are this platform's OWN internal referral program). This
+  // tracks, for the partner-affiliate commission system, how many of this user's APP-sourced
+  // Pandit Ji At Request orders have already earned a commission — capped at the platform's
+  // admin-configured appReferralOrderCap (default 15). See utils/partnerAffiliateReferralCap.ts.
+  referralOrdersCounted?: number;
+
   token?: string;               // JWT saved on successful OTP verify
 }
 
 const userSchema = new Schema<IUser>({
-  email: { type: String, required: false, sparse: true },
+  // Indexed so a devotee can be matched by email — the only handle we have for
+  // someone abroad, where we cannot send an OTP.
+  //
+  // Deliberately NOT `unique`. Phone is the historic identity and email was
+  // never constrained, so this collection may already hold rows sharing one
+  // address (a family booking on a parent's email, a placeholder). Adding a
+  // unique index would fail to build against that data and take signup down
+  // with it. Duplicates are resolved in code instead — see utils/resolveUser.
+  email: { type: String, required: false, sparse: true, index: true },
   email_verified: { type: Boolean, default: false },
   family_name: { type: String },
   given_name: { type: String },
   name: { type: String, default: "Vedic Shop User" },
   // (kept) phone — added index: true (non-breaking addition)
   phone: { type: String, unique: true, sparse: true, index: true },
+  country: { type: String },
+  countryCode: { type: String, index: true },
+  isEmailOnly: { type: Boolean, default: false },
   gender: { type: String },
   picture: { type: String },
   addedOn: { type: Date, default: Date.now },
@@ -102,6 +130,9 @@ const userSchema = new Schema<IUser>({
     appliedAt: { type: Date },
     expiresAt: { type: Date },
   },
+
+  // Partner/Affiliate APP referral order cap counter (see IUser above for explanation)
+  referralOrdersCounted: { type: Number, default: 0, min: 0 },
 
   token: { type: String },
 });

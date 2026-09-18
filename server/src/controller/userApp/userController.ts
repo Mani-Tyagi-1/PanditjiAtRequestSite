@@ -3,6 +3,7 @@ import { RequestHandler } from "express";
 import User from "../../model/userApp/userModel";
 import poojaBookingModel from "../../model/poojaBooking/poojaBooking.model";
 import { sendEncryptedResponse } from "../../utils/encryption"; // ⬅️ encrypt GET responses
+import { resolveUser } from "../../utils/resolveUser";
 
 /**
  * Update a user's profile
@@ -135,7 +136,37 @@ export const lookupUserByPhone: RequestHandler = async (req, res) => {
     res.status(200).json({ exists: true, user, bookingCount });
   } catch (error) {
     console.error("Error looking up user by phone:", error);
-    res.status(500).json({ exists: false, user: null, bookingCount: 0 });
+  }
+};
+
+/**
+ * Find or register a guest user by phone number.
+ * POST /users/find-or-register-guest
+ */
+export const findOrRegisterGuest: RequestHandler = async (req, res) => {
+  const { phone, name, gotra, email, dialCode, countryCode, country } = req.body;
+
+  try {
+    // Shared resolver: searches the whole collection by phone AND by email
+    // before creating anything, and understands numbers that are not ten
+    // digits. The old inline version rejected every international number
+    // outright, which failed the chadhava checkout for anyone abroad.
+    const resolved = await resolveUser({
+      phone, dialCode, email, name: name || "Devotee", gotra, countryCode, country,
+    });
+
+    if (!resolved) {
+      res.status(400).json({
+        success: false,
+        message: "A valid phone number or email address is required",
+      });
+      return;
+    }
+
+    res.status(200).json({ success: true, exists: resolved.existed, user: resolved.user });
+  } catch (error) {
+    console.error("Error in findOrRegisterGuest:", error);
+    res.status(500).json({ success: false, message: "Server error lookup/registering guest" });
   }
 };
 

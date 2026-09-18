@@ -10,6 +10,9 @@
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
+    /* Lets image manifests (e.g. src/data/savanHeroImages.json) be shared as data
+       between the app and build scripts. Vite already bundles JSON imports. */
+    "resolveJsonModule": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,

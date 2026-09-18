@@ -1,5 +1,5 @@
-// Must be the first import: populates process.env from .env.<MODE> before
-// any module below reads it at load time.
+// Load environment configuration (.env + .env.dev/.env.production) before anything
+// else reads process.env.
 import "./config/loadEnv";
 
 import dns from 'node:dns';
@@ -8,10 +8,11 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import * as http from "http";
 import cors from "cors";
+import compression from "compression";
 import { Server as SocketIOServer } from "socket.io";
 
-import { panditJiAtRequestDB } from "../config/connectDB";
-import { VVMainConnectDB } from "../config/vedicVaibhavDB";
+import { panditJiAtRequestDB } from "./config/connectDB";
+import { VVMainConnectDB } from "./config/vedicVaibhavDB";
 
 // User/Pandit routes
 import panditRoutes from "./routes/panditAppRoutes/panditRoutes";
@@ -29,10 +30,24 @@ import { generateStreamToken } from "./controller/userApp/StreamTokenController"
 import consultancyLeadRoutes from "./routes/userAppRoutes/consultancyLeadRoutes";
 import referralRoutes from "./routes/userAppRoutes/referralRoutes";
 import pujaEnquiryRoutes from "./routes/userAppRoutes/pujaEnquiryRoutes";
+import abandonedCartRoutes from "./routes/userAppRoutes/abandonedCartRoutes";
 import paidConsultationRoutes from "./routes/userAppRoutes/paidConsultationRoutes";
 import panditRoute from "./routes/panditAppRoutes/PanditRoute";
 import userRoute from "./routes/userAppRoutes/UserDeleteRoute";
 import panditDirectBookingEnquiryRoutes from "./routes/userAppRoutes/panditDirectBookingEnquiryRoutes";
+import whatsappRoutes from "./routes/whatsapp/whatsapp.routes";
+import liveMandirRoutes from "./routes/userAppRoutes/liveMandirRoutes";
+import chadhavaRoutes from "./routes/userAppRoutes/chadhavaRoutes";
+import vivahRoutes from "./routes/userAppRoutes/vivahRoutes";
+import kashiRoutes from "./routes/userAppRoutes/kashiRoutes";
+import shopRoutes from "./routes/userAppRoutes/shopRoutes";
+import holyPanditRoutes from "./routes/userAppRoutes/holyPanditRoutes";
+import shopifyProductRoutes from "./routes/userAppRoutes/shopifyProductRoutes";
+import shopifyOrderRoutes from "./routes/userAppRoutes/shopifyOrderRoutes";
+import seoRoutes from "./routes/seoRoutes";
+import affiliateProductsRoutes from "./routes/userAppRoutes/affiliateProductsRoutes";
+import razorpayWebhookRoutes from "./routes/payments/razorpayWebhookRoutes";
+import analyticsRoutes from "./routes/analytics/analyticsRoutes";
 
 // Pandit app auth & address routes
 import panditAuthRoutes from "./routes/panditAppRoutes/panditAuthRoutes";
@@ -41,8 +56,24 @@ import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
 import PanditModel from "./model/panditApp/panditModel";
 import UserAddressModel from "./model/userApp/userAddressModel";
 
+// Normalize cross-service URLs (partner-affiliate commission engine) for the current APP_ENV.
+// MUST stay a require(): env is loaded by ./config/loadEnv (imported first, at the top of this
+// file), and a plain `import` here could hoist above that and read an empty process.env.
+// See src/config/environment.ts for the local/production rules.
+require("./config/environment");
+
 const app = express();
-app.use(express.json());
+// Gzip all responses (safe, transparent) — big payload-size win for API responses.
+app.use(compression());
+
+// Capture the raw request body so webhook handlers can verify HMAC signatures.
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as any).rawBody = buf;
+    },
+  })
+);
 
 app.use(cors({
   origin: "*",
@@ -66,8 +97,24 @@ app.use("/api/stream", streamRoutes);
 app.use("/api", consultancyLeadRoutes);
 app.use("/api", referralRoutes);
 app.use("/api", pujaEnquiryRoutes);
+app.use("/api", abandonedCartRoutes);
 app.use("/api", paidConsultationRoutes);
 app.use("/api", panditDirectBookingEnquiryRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api", liveMandirRoutes);
+app.use("/api", chadhavaRoutes);
+app.use("/api", vivahRoutes);
+app.use("/api", kashiRoutes);
+app.use("/api", shopRoutes);
+app.use("/api/affiliate", affiliateProductsRoutes);
+app.use("/api", holyPanditRoutes);
+app.use("/api", shopifyProductRoutes);
+app.use("/api", shopifyOrderRoutes);
+// Razorpay server-to-server payment confirmation for every service
+app.use("/api/payments", razorpayWebhookRoutes);
+// Parks the browser's GA4/Ads ids against an order id so the webhook above can
+// report the purchase as the right visitor. See utils/serverAnalytics.ts.
+app.use("/api/analytics", analyticsRoutes);
 
 app.get("/gen-stream-token/:userId", generateStreamToken);
 
@@ -77,6 +124,7 @@ app.use("/", panditAddressRoutes);
 
 app.use("/api", panditRoute);
 app.use("/api/user", userRoute);
+app.use("/api/seo", seoRoutes);
 
 const PORT = process.env.PORT || 8001;
 

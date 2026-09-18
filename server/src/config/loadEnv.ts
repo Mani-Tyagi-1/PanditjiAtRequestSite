@@ -1,59 +1,68 @@
+import * as dotenv from "dotenv";
+import * as fs from "fs";
+import * as path from "path";
+
 /**
- * Environment loader.
+ * Centralised environment loader.
  *
- * `.env` holds only the MODE selector; all real configuration lives in
- * `.env.production` / `.env.development`. Importing this module (for its
- * side effect) populates process.env from the correct file.
+ * `.env` holds a single selector variable, MODE:
+ *   MODE=production   -> loads .env.production
+ *   MODE=development  -> loads .env.dev
  *
- * Import it BEFORE any module that reads process.env at load time.
+ * All real configuration lives in .env.production / .env.dev.
+ *
+ * Import this module (`import "./config/loadEnv";`) BEFORE anything that reads
+ * `process.env`, so every module sees the fully-resolved configuration.
  */
-import fs from "fs";
-import path from "path";
-import dotenv from "dotenv";
 
-// server/src/config -> server
-const ROOT = path.resolve(__dirname, "..", "..");
+// `__dirname` is <root>/src/config in dev (ts-node) and <root>/dist/config in prod,
+// so "../.." resolves to the server root in both cases.
+const serverRoot = path.resolve(__dirname, "../..");
 
-let loaded = false;
+// 1) Read the selector from .env.
+dotenv.config({ path: path.join(serverRoot, ".env") });
 
-export const loadEnv = (): string => {
-  if (loaded) return process.env.MODE || "development";
+// Anything that isn't explicitly "production" is treated as development.
+// NODE_ENV is only a fallback, for hosts that set it but not MODE.
+const mode = (process.env.MODE || process.env.NODE_ENV || "development")
+  .trim()
+  .toLowerCase();
+const isProd = mode === "production";
 
-  // Step 1: read the selector from .env
-  dotenv.config({ path: path.join(ROOT, ".env") });
+// 2) Load the environment-specific config file, overriding the selector file.
+//    Both spellings are accepted: this repo has used .env.dev and .env.development
+//    at different times, and a checkout may have either.
+const candidates = isProd
+  ? [".env.production", ".env.prod"]
+  : [".env.dev", ".env.development"];
 
-  const mode = (process.env.MODE || process.env.NODE_ENV || "development").trim();
+const envSpecificPath = candidates
+  .map((name) => path.join(serverRoot, name))
+  .find((candidate) => fs.existsSync(candidate));
 
-  // Step 2: load the mode-specific file. `.env.dev` is accepted as an alias
-  // for `.env.development`.
-  const candidates =
-    mode === "production"
-      ? [".env.production", ".env.prod"]
-      : [".env.development", ".env.dev"];
+// Nothing here injects config from the platform (no Docker/CI env), so a missing
+// file means nothing is configured. Fail loudly rather than booting with an empty
+// process.env and surfacing as a confusing error further downstream.
+if (!envSpecificPath) {
+  throw new Error(
+    `[env] No environment file found for MODE="${mode}". ` +
+      `Expected one of ${candidates.join(" or ")} in ${serverRoot}`
+  );
+}
 
-  const file = candidates
-    .map((name) => path.join(ROOT, name))
-    .find((filePath) => fs.existsSync(filePath));
+const result = dotenv.config({ path: envSpecificPath, override: true });
+if (result.error) throw result.error;
 
-  if (!file) {
-    throw new Error(
-      `Environment file not found for MODE="${mode}". Expected one of ${candidates.join(
-        " or "
-      )} in ${ROOT}`
-    );
-  }
+// Keep NODE_ENV in sync for any library/code that relies on it. Always set it, so
+// NODE_ENV can never disagree with the env file actually loaded — src/config/environment.ts
+// falls back to NODE_ENV to decide between the local and live partner-affiliate engines.
+process.env.NODE_ENV = isProd ? "production" : "development";
 
-  const result = dotenv.config({ path: file });
-  if (result.error) throw result.error;
+console.log(`[env] MODE="${mode}" -> loaded ${path.basename(envSpecificPath)}`);
 
-  // Keep NODE_ENV in sync with MODE so existing NODE_ENV checks (and any
-  // library that inspects it) agree with the selected env file.
-  if (!process.env.NODE_ENV) process.env.NODE_ENV = mode;
+export const MODE = mode;
+export const isProduction = isProd;
+export const isDevelopment = !isProd;
 
-  loaded = true;
-  console.log(`[env] MODE=${mode} -> loaded ${path.basename(file)}`);
-
-  return mode;
-};
-
-loadEnv();
+/** Back-compat no-op: the work above runs once, on first import. */
+export const loadEnv = (): string => mode;

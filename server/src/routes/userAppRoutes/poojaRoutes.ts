@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
-import { fetchAllPoojas, fetchPoojabycategoryId, fetchPoojaById } from "../../controller/userApp/poojaController";
+import { fetchAllPoojas, fetchRelatedPoojas, fetchPoojabycategoryId, fetchPoojaById } from "../../controller/userApp/poojaController";
 import { fetchAllBlogs } from "../../controller/userApp/blogController";
 
 const router = express.Router();
@@ -11,6 +11,18 @@ router.get(
     async (req: Request, res: Response, next: NextFunction) => {
       try {
         await fetchAllPoojas(req, res);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+// GET - Fetch active pujas related to a deity or ritual
+router.get(
+    "/fetch-related-poojas",
+    async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        await fetchRelatedPoojas(req, res);
       } catch (err) {
         next(err);
       }

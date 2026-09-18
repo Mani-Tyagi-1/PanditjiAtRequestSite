@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     User,
     Phone,
+    ChevronDown,
     Mail,
     ChevronLeft,
     ChevronRight,
@@ -26,11 +27,21 @@ import {
     CalendarClock,
     CheckCircle2,
     MailOpen,
+    Video,
+    Star,
+    Loader2,
+    RefreshCw,
+    MessageCircle,
+    Sparkles,
+    Landmark,
+    Package,
+    ShieldCheck,
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { decryptData, encryptPayload } from "../utils/encryption";
 import API_URL from "../utils/apiConfig";
+import { loadRazorpay, humanError, humanPaymentError } from "../data/vivahApi";
 
 interface UserData {
     _id: string;
@@ -100,13 +111,30 @@ const EditInput = ({ icon: Icon, label, value, onChange, disabled, type = "text"
     </div>
 );
 
+/**
+ * The signed-in user's id, straight off storage.
+ *
+ * `fetchUserBookings` runs from `fetchUserProfile` BEFORE `setUser` resolves,
+ * so anything inside it that read `user?._id` from React state saw `null` and
+ * silently skipped — which is exactly why the Vivah tab came up empty on every
+ * cold load. Reading storage removes the ordering dependency entirely.
+ */
+const storedUserId = (): string => {
+    try {
+        return JSON.parse(localStorage.getItem("user_data") || "{}")?._id || "";
+    } catch {
+        return "";
+    }
+};
+
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { logout } = useAuth();
     const [user, setUser] = useState<UserData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [mode, setMode] = useState<"view" | "edit" | "referral-bookings">("view");
+    const [mode, setMode] = useState<"view" | "edit" | "referral-bookings" | "bookings">("view");
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
     // Referral state
@@ -117,6 +145,22 @@ const ProfilePage: React.FC = () => {
     // Referral bookings state
     const [referralBookings, setReferralBookings] = useState<ReferralBooking[]>([]);
     const [referralBookingsLoading, setReferralBookingsLoading] = useState(false);
+
+    // User bookings state
+    const [poojaBookings, setPoojaBookings] = useState<any[]>([]);
+    const [liveBookings, setLiveBookings] = useState<any[]>([]);
+    const [chadhavaBookings, setChadhavaBookings] = useState<any[]>([]);
+    const [directBookings, setDirectBookings] = useState<any[]>([]);
+    const [shopifyOrders, setShopifyOrders] = useState<any[]>([]);
+    const [vivahBookings, setVivahBookings] = useState<any[]>([]);
+    // Vivah bookings move under the family's feet — ops assign a Pandit Ji,
+    // tick rituals off and shift dates hours after booking. These back a quiet
+    // re-read so the card is never a stale snapshot.
+    const [vivahSyncedAt, setVivahSyncedAt] = useState<number>(0);
+    const [vivahRefreshing, setVivahRefreshing] = useState(false);
+    const vivahInFlight = useRef(false);
+    const [bookingsLoading, setBookingsLoading] = useState(false);
+    const [activeBookingTab, setActiveBookingTab] = useState<"pooja" | "direct" | "live" | "chadhava" | "shopify" | "vivah">("pooja");
 
     // Payout state
     const [payoutModal, setPayoutModal] = useState<"confirm" | "not-allowed" | null>(null);
@@ -235,6 +279,172 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    /**
+     * Re-read ONLY the vivah bookings.
+     *
+     * Deliberately narrow: refetching all six booking types every 45 seconds
+     * to watch one tab would hammer five endpoints nobody is looking at. It is
+     * also silent — no spinner over the list, no error banner — because this
+     * runs unprompted and a failed background poll is not the family's problem.
+     * The card keeps showing the last good data and the "Updated N min ago"
+     * label tells the truth about how fresh it is.
+     */
+    const refreshVivahBookings = async () => {
+        if (vivahInFlight.current) return;
+        const token = localStorage.getItem("user_token");
+        const uid = user?._id || storedUserId();
+        if (!token || !uid) return;
+        vivahInFlight.current = true;
+        setVivahRefreshing(true);
+        try {
+            const { data } = await axios.get(
+                `${API_URL}/bookings/vedic-vivah/user/${uid}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (data?.bookings) {
+                setVivahBookings(data.bookings);
+                setVivahSyncedAt(Date.now());
+            }
+        } catch (err) {
+            // Silent by design — see the note above.
+            console.error("[Vivah] background refresh failed", err);
+        } finally {
+            vivahInFlight.current = false;
+            setVivahRefreshing(false);
+        }
+    };
+
+    /**
+     * Poll while the Vivah tab is actually on screen, and catch up the moment
+     * the family comes back to the tab. Paused when the document is hidden so
+     * a backgrounded phone isn't spending someone's data all afternoon.
+     */
+    useEffect(() => {
+        if (activeBookingTab !== "vivah" || !(user?._id || storedUserId())) return;
+        if (!vivahSyncedAt) void refreshVivahBookings();
+
+        const tick = () => {
+            if (document.visibilityState === "visible") void refreshVivahBookings();
+        };
+        const id = window.setInterval(tick, 45_000);
+        window.addEventListener("focus", tick);
+        document.addEventListener("visibilitychange", tick);
+        return () => {
+            window.clearInterval(id);
+            window.removeEventListener("focus", tick);
+            document.removeEventListener("visibilitychange", tick);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeBookingTab, user?._id]);
+
+    const fetchUserBookings = async (phone: string, userIdArg?: string) => {
+        setBookingsLoading(true);
+        try {
+            const apiUrl = API_URL;
+            const cleanPhone = String(phone).replace(/\D/g, "");
+
+            const [poojaRes, chadhavaRes, directRes, kashiRes, shopifyRes] = await Promise.all([
+                axios.get(`${apiUrl}/bookings/get-pending-poojabookings/${cleanPhone}`),
+                axios.get(`${apiUrl}/chadhava-bookings/user/${cleanPhone}`),
+                axios.get(`${apiUrl}/pandit-direct-bookings/user/${cleanPhone}`),
+                axios.get(`${apiUrl}/kashi-requests/user/${cleanPhone}`),
+                axios.get(`${apiUrl}/shopify-orders/user/${cleanPhone}`).catch((err) => {
+                    console.error("Error fetching Shopify orders:", err);
+                    return { data: { success: true, data: [] } };
+                })
+            ]);
+
+            // Vedic Vivah bookings are scoped to the AUTHENTICATED user (they
+            // carry birth details and kundali images, so the server ignores any
+            // id in the URL and reads it off the token). Fetched separately —
+            // and tolerantly — so a signed-out or expired session degrades to an
+            // empty Vivah tab instead of blanking every other tab.
+            let vivahList: any[] = [];
+            try {
+                const vivahToken = localStorage.getItem("user_token");
+                // NOT `user?._id` — see storedUserId(). This runs before the
+                // profile response lands, so React state is still null here.
+                const vivahUserId = userIdArg || user?._id || storedUserId();
+                if (vivahToken && vivahUserId) {
+                    const vivahRes = await axios.get(
+                        `${apiUrl}/bookings/vedic-vivah/user/${vivahUserId}`,
+                        { headers: { Authorization: `Bearer ${vivahToken}` } }
+                    );
+                    vivahList = vivahRes.data?.bookings || [];
+                }
+            } catch (err) {
+                console.error("Error fetching Vivah bookings:", err);
+            }
+
+            const allPoojaBookings: any[] = poojaRes.data || [];
+            // Split: regular puja bookings vs live mandir bookings (isLiveMandir: true)
+            const regularBookings = allPoojaBookings.filter((b: any) => !b.isLiveMandir);
+            const liveMandirBookings = allPoojaBookings.filter((b: any) => b.isLiveMandir === true);
+
+            // Kashi Ji requests are shown alongside Direct Pandit bookings. Map them
+            // into the same shape the DirectBookingCard expects.
+            const kashiRequests = (kashiRes.data?.data || []).map((k: any) => ({
+                _id: k._id,
+                name: k.devoteeName,
+                phone: k.mobileNumber,
+                panditName: "Kashi Ji Pandit",
+                status: k.status,
+                createdAt: k.addedOn || k.createdAt,
+                ritualDetails: k.ritualDetails,
+                isKashi: true,
+            }));
+            const mergedDirect = [...(directRes.data?.data || []), ...kashiRequests].sort(
+                (a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+            );
+
+            setPoojaBookings(regularBookings);
+            setLiveBookings(liveMandirBookings);
+            setChadhavaBookings(chadhavaRes.data?.data || []);
+            setDirectBookings(mergedDirect);
+            setShopifyOrders(shopifyRes.data?.data || []);
+            setVivahBookings(vivahList);
+            setVivahSyncedAt(Date.now());
+        } catch (err) {
+            console.error("Error fetching user bookings:", err);
+        } finally {
+            setBookingsLoading(false);
+        }
+    };
+
+    const startCall = async (panditId: string, type: 'video' | 'audio' = 'video') => {
+        try {
+            const userDataString = localStorage.getItem("user_data");
+            if (!userDataString) return;
+            const user = JSON.parse(userDataString);
+
+            const baseCallId = crypto.randomUUID();
+            const callId = type === "audio" ? `${baseCallId}_AC` : `${baseCallId}_VC`;
+            const apiUrl = API_URL;
+            const status = type === "video" ? "ringing" : "call-ringing";
+
+            await axios.post(`${apiUrl}/calls/invite`, {
+                fromUserId: user._id,
+                toUserId: panditId,
+                callId,
+                callerName: user.name || user.userName || "User",
+                callerId: user._id,
+                fromAppType: "user",
+                toAppType: "pandit",
+                callType: type,
+                status: status,
+            });
+
+            if (type === 'video') {
+                navigate(`/video-call/${callId}/${panditId}`, { replace: true });
+            } else {
+                navigate(`/audio-call/${callId}/${panditId}`, { replace: true });
+            }
+        } catch (err) {
+            console.error("Error starting call:", err);
+            triggerAlert("Call Error", "Failed to start call. Please try again.", "error");
+        }
+    };
+
     const handleCopyCode = async () => {
         if (!referralData?.userReferralCode) return;
         try {
@@ -272,9 +482,13 @@ const ProfilePage: React.FC = () => {
 
             const storedUser = JSON.parse(userDataString);
             const userId = storedUser._id;
+            const phone = storedUser.phone;
 
             // Fetch referral data in parallel (non-blocking)
             fetchReferralData(userId);
+            if (phone) {
+                fetchUserBookings(phone, userId);
+            }
 
             const apiUrl = API_URL;
             const response = await axios.get(`${apiUrl}/profile/${userId}`, {
@@ -303,6 +517,39 @@ const ProfilePage: React.FC = () => {
     useEffect(() => {
         fetchUserProfile();
     }, []);
+
+    // Razorpay checkout script — needed by the Vivah "pay balance" action on a
+    // booking card. Injected once; harmless when the family never uses it.
+    useEffect(() => {
+        const SRC = "https://checkout.razorpay.com/v1/checkout.js";
+        if (document.querySelector(`script[src="${SRC}"]`)) return;
+        const script = document.createElement("script");
+        script.src = SRC;
+        script.async = true;
+        document.body.appendChild(script);
+    }, []);
+
+    // Open the "My Bookings" view on the right tab when the URL has ?tab=...
+    // e.g. /account?tab=live → Live Puja tab, /account?tab=chadhava → Chadhava tab.
+    // Any tab value (including "bookings") opens the bookings view; unknown values
+    // fall back to the Puja tab.
+    useEffect(() => {
+        const tab = (searchParams.get("tab") || "").toLowerCase();
+        if (!tab) return;
+        const map: Record<string, "pooja" | "direct" | "live" | "chadhava" | "shopify" | "vivah"> = {
+            pooja: "pooja",
+            puja: "pooja",
+            direct: "direct",
+            live: "live",
+            chadhava: "chadhava",
+            shopify: "shopify",
+            shop: "shopify",
+            vivah: "vivah",
+            marriage: "vivah",
+        };
+        setMode("bookings");
+        if (map[tab]) setActiveBookingTab(map[tab]);
+    }, [searchParams]);
 
     const handleLogout = () => {
         setIsLogoutModalOpen(true);
@@ -382,7 +629,7 @@ const ProfilePage: React.FC = () => {
         );
     }
 
-    const isLockedView = mode === "referral-bookings";
+    const isLockedView = mode === "referral-bookings" || mode === "bookings";
 
     return (
         <div className={`font-sans flex justify-center ${isLockedView ? "h-screen overflow-hidden" : "min-h-screen"}`}>
@@ -399,7 +646,7 @@ const ProfilePage: React.FC = () => {
                             {/* Navigation Header */}
                             <div className="flex items-center gap-4 pt-6 pb-2">
                                 <button
-                                    onClick={() => navigate("/landing-page")}
+                                    onClick={() => navigate("/home")}
                                     className="p-2 rounded-full bg-white shadow-sm border border-orange-50 active:scale-90 transition-all text-[#FF7000]"
                                 >
                                     <ChevronLeft className="w-6 h-6" />
@@ -493,9 +740,15 @@ const ProfilePage: React.FC = () => {
                             /> */}
                                 <ProfileMenuItem
                                     icon={Calendar}
-                                    title="My Puja Booking"
-                                    subtitle="Tap to open"
-                                    onClick={() => navigate("/my-bookings")}
+                                    title="My Bookings"
+                                    subtitle="Pujas, Live Mandir & Chadhavas"
+                                    onClick={() => {
+                                        setMode("bookings");
+                                        const stored = localStorage.getItem("user_data");
+                                        if (stored) {
+                                            fetchUserBookings(JSON.parse(stored).phone);
+                                        }
+                                    }}
                                 />
                                 <ProfileMenuItem
                                     icon={Users}
@@ -852,6 +1105,171 @@ const ProfilePage: React.FC = () => {
                             )}
                         </motion.div>
                     )}
+
+                    {mode === "bookings" && (
+                        <motion.div
+                            key="bookings"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="h-screen bg-[#FFF8F3] relative flex flex-col overflow-hidden"
+                        >
+                            {/* Background watermark emblem */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                                <img
+                                    src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/Group%201000005116%201.png"
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="w-72 h-72 object-contain opacity-[0.2] select-none"
+                                />
+                            </div>
+
+                            {/* Header */}
+                            <div className="relative z-10 flex-shrink-0 bg-gradient-to-br from-[#FF7000] to-[#FF9A45] px-4 pt-5 pb-5">
+                                <div className="flex items-center gap-3 text-white">
+                                    <button
+                                        onClick={() => setMode("view")}
+                                        className="p-2 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 transition-all border border-white/20"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <div>
+                                        <h1 className="text-lg font-bold leading-tight">My Bookings</h1>
+                                        <p className="text-white/75 text-[10px]">Track and view all your sacred bookings</p>
+                                    </div>
+                                </div>
+
+                                {/* Custom Tab Switcher */}
+                                <div className="flex bg-white/10 p-1 rounded-2xl mt-4 border border-white/10 overflow-x-auto scrollbar-hide">
+                                    <button
+                                        onClick={() => setActiveBookingTab("pooja")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "pooja"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Puja ({poojaBookings.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("direct")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "direct"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Direct Pandit ({directBookings.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("live")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "live"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Live Puja ({liveBookings.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("chadhava")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "chadhava"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Chadhava ({chadhavaBookings.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("shopify")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "shopify"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Shop Orders ({shopifyOrders.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveBookingTab("vivah")}
+                                        className={`flex-grow py-2 px-1.5 rounded-xl text-[10px] font-bold text-center transition-all shrink-0 ${
+                                            activeBookingTab === "vivah"
+                                                ? "bg-white text-[#FF7000] shadow-sm"
+                                                : "text-white hover:bg-white/5"
+                                        }`}
+                                    >
+                                        Vivah ({vivahBookings.length})
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Bookings List Container */}
+                            <div className="relative z-10 flex-1 overflow-y-auto px-4 pt-4 pb-28 space-y-3.5 scrollbar-hide">
+                                {bookingsLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                        <Loader2 className="w-9 h-9 text-[#FF7000] animate-spin" />
+                                        <p className="text-xs text-orange-400 font-semibold">Loading bookings...</p>
+                                    </div>
+                                ) : activeBookingTab === "pooja" ? (
+                                    poojaBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Puja" />
+                                    ) : (
+                                        poojaBookings.map((booking, idx) => (
+                                            <PoojaBookingCard key={booking._id || idx} booking={booking} index={idx} startCall={startCall} navigate={navigate} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "direct" ? (
+                                    directBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Direct Pandit" />
+                                    ) : (
+                                        directBookings.map((booking, idx) => (
+                                            <DirectBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "live" ? (
+                                    liveBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Live Puja" />
+                                    ) : (
+                                        liveBookings.map((booking, idx) => (
+                                            <LiveBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "shopify" ? (
+                                    shopifyOrders.length === 0 ? (
+                                        <EmptyBookingsState type="Shop" />
+                                    ) : (
+                                        shopifyOrders.map((order, idx) => (
+                                            <ShopifyOrderCard key={order._id || idx} order={order} index={idx} />
+                                        ))
+                                    )
+                                ) : activeBookingTab === "vivah" ? (
+                                    vivahBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Vivah" />
+                                    ) : (
+                                        vivahBookings.map((booking, idx) => (
+                                            <VivahBookingCard
+                                                key={booking._id || idx}
+                                                booking={booking}
+                                                index={idx}
+                                                onRefresh={refreshVivahBookings}
+                                                refreshing={vivahRefreshing}
+                                                lastSyncedAt={vivahSyncedAt}
+                                            />
+                                        ))
+                                    )
+                                ) : (
+                                    chadhavaBookings.length === 0 ? (
+                                        <EmptyBookingsState type="Chadhava" />
+                                    ) : (
+                                        chadhavaBookings.map((booking, idx) => (
+                                            <ChadhavaBookingCard key={booking._id || idx} booking={booking} index={idx} />
+                                        ))
+                                    )
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
                 </AnimatePresence>
 
                 {/* Share Referral Modal */}
@@ -1132,3 +1550,1268 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
+
+// Helper component for Empty Bookings
+const EmptyBookingsState = ({ type }: { type: string }) => (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-16 h-16 bg-orange-50/50 rounded-full flex items-center justify-center mb-4">
+            <Calendar className="w-7 h-7 text-orange-300" />
+        </div>
+        <p className="text-gray-700 font-bold text-sm">No {type} bookings found</p>
+        <p className="text-gray-400 text-xs mt-1 max-w-[240px] leading-relaxed">
+            You haven't placed any bookings for {type} yet. Explore our services to book!
+        </p>
+    </div>
+);
+
+// Helper component for Pooja Booking Card
+const PoojaBookingCard = ({
+    booking,
+    index,
+    startCall,
+    navigate
+}: {
+    booking: any;
+    index: number;
+    startCall: (panditId: string, type: 'video' | 'audio') => void;
+    navigate: any;
+}) => {
+    const date = new Date(booking.bookingDate);
+    const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const formattedTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const bookingDateOnly = new Date(date);
+    bookingDateOnly.setHours(0, 0, 0, 0);
+
+    const isToday = bookingDateOnly.getTime() === now.getTime();
+    const isPast = bookingDateOnly.getTime() < now.getTime();
+
+    const isOnline = booking.poojaMode === 'online';
+    const isOffline = booking.poojaMode === 'offline';
+    const hasStartedJourney = !!booking.journeyStartTime;
+    const hasAssignedPandit = booking.assignedPandit && booking.assignedPandit.length > 0;
+
+    const isActionEnabled = isOnline ? (isToday && hasAssignedPandit) : (isOffline && isToday && hasStartedJourney && hasAssignedPandit);
+    const isAudioCallEnabled = isOffline && hasAssignedPandit && isToday;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className={`bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-50/70 transition-all ${
+                isPast ? "opacity-75 grayscale-[20%] scale-[0.99]" : ""
+            }`}
+        >
+            {/* Header band */}
+            <div className={`relative px-4 py-3 overflow-hidden ${isPast ? "bg-gray-400" : "bg-gradient-to-r from-[#FF7000] to-[#FF9A45]"}`}>
+                <div className="relative flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0 pr-2">
+                        <span className="text-base">{isPast ? "✅" : "🪔"}</span>
+                        <h3 className="text-white font-bold text-sm leading-tight truncate">
+                            {booking.poojaNameEng || "Puja Service"}
+                            {isPast && <span className="ml-2 text-[10px] uppercase tracking-wider opacity-90">(Completed)</span>}
+                        </h3>
+                    </div>
+                    <span className="bg-white/20 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
+                        {isOnline ? "Online" : "At Home"}
+                    </span>
+                </div>
+            </div>
+
+            {/* Card Body */}
+            <div className="p-3 space-y-2.5">
+                <div className="grid grid-cols-3 gap-2">
+                    {/* Devotee */}
+                    <div className="bg-[#FFF8F2] rounded-2xl p-2 flex flex-col items-center justify-center border border-orange-50/50 text-center">
+                        <User className="w-4 h-4 text-[#FF7000] mb-0.5" />
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider">Devotee</p>
+                        <p className="text-gray-800 font-bold text-xs truncate w-full">
+                            {booking.bhaktName || booking.userName || "Devotee"}
+                        </p>
+                    </div>
+
+                    {/* Date */}
+                    <div className="bg-[#FFF8F2] rounded-2xl p-2 flex flex-col items-center justify-center border border-orange-50/50 text-center">
+                        <Calendar className="w-4 h-4 text-[#FF7000] mb-0.5" />
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider">Date</p>
+                        <p className="text-gray-800 font-bold text-[10px] whitespace-nowrap">{formattedDate}</p>
+                    </div>
+
+                    {/* Time */}
+                    <div className="bg-[#FFF8F2] rounded-2xl p-2 flex flex-col items-center justify-center border border-orange-50/50 text-center">
+                        <Clock className="w-4 h-4 text-[#FF7000] mb-0.5" />
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider">Time</p>
+                        <p className="text-gray-800 font-bold text-[10px] whitespace-nowrap">{formattedTime}</p>
+                    </div>
+                </div>
+
+                {/* Pandit assignment */}
+                <div className="flex items-center gap-3 bg-gradient-to-r from-orange-50/50 to-[#FFF8F2]/50 rounded-2xl px-3 py-2 border border-orange-100/50">
+                    <div className="w-9 h-9 rounded-full bg-orange-100 border-2 border-white shadow-sm overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        {booking.assignedPandit?.[0]?.profileImage ? (
+                            <img
+                                src={booking.assignedPandit[0].profileImage}
+                                alt="Pandit Ji"
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <User className="w-4 h-4 text-[#FF7000]" />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[8px] text-orange-400 font-bold uppercase tracking-wider leading-none mb-0.5">
+                            {hasAssignedPandit ? "Pandit Ji Assigned" : "Awaiting Assignment"}
+                        </p>
+                        <p className="text-gray-800 font-bold text-xs truncate">
+                            {hasAssignedPandit
+                                ? `Pandit ${booking.assignedPandit[0].firstName} ${booking.assignedPandit[0].lastName}`
+                                : "Not assigned yet"}
+                        </p>
+                    </div>
+                    {hasAssignedPandit && (
+                        <div className="flex items-center gap-0.5 bg-emerald-500 text-white px-2 py-0.5 rounded-lg flex-shrink-0">
+                            <Star className="w-2.5 h-2.5 fill-white text-white" />
+                            <span className="text-[10px] font-bold">{booking.assignedPandit[0].rating?.toFixed(1) || "5.0"}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Call/Track buttons */}
+                {hasAssignedPandit && (
+                    isOnline ? (
+                        <button
+                            disabled={!isActionEnabled}
+                            onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'video')}
+                            className={`w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition-all active:scale-[0.98] ${
+                                isActionEnabled
+                                    ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            }`}
+                        >
+                            <Video className="w-3.5 h-3.5" />
+                            {isActionEnabled ? "Join Video Call" : "Video Call — Not Available Yet"}
+                        </button>
+                    ) : (
+                        <div className="flex gap-2">
+                            <button
+                                disabled={!isAudioCallEnabled}
+                                onClick={() => startCall(booking.assignedPandit?.[0]?._id, 'audio')}
+                                className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center transition-all active:scale-[0.98] flex-shrink-0 ${
+                                    isAudioCallEnabled
+                                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-100"
+                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                }`}
+                            >
+                                <Phone className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                disabled={!isActionEnabled}
+                                onClick={() => {
+                                    if (hasAssignedPandit && booking.address?.coordinates) {
+                                        const { lat, lng } = booking.address.coordinates;
+                                        navigate(`/track-pandit/${booking.assignedPandit[0]._id}/${lat}/${lng}`);
+                                    }
+                                }}
+                                className={`flex-1 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 text-xs transition-all active:scale-[0.98] ${
+                                    isActionEnabled
+                                        ? "bg-gradient-to-r from-[#FF7000] to-[#FF9A45] text-white shadow-md shadow-orange-200"
+                                        : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                }`}
+                            >
+                                <MapPin className="w-3.5 h-3.5" />
+                            {isActionEnabled ? "Track Panditji" : "Awaiting Departure"}
+                            </button>
+                        </div>
+                    )
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
+// Helper component for Live Booking Card
+const LiveBookingCard = ({ booking, index }: { booking: any; index: number }) => {
+    const dateVal = booking.bookingDate || booking.addedOn || booking.createdAt;
+    const formattedDate = dateVal
+        ? new Date(dateVal).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    // Unified field resolution: PoojaBooking (new) vs old LiveMandirBooking
+    const pujaName = booking.poojaNameEng || booking.pujaName || "Live Mandir Puja";
+    const temple = booking.templeName || "";
+    const devoteeName = booking.bhaktName || booking.devoteeName || booking.userName || "—";
+    const gotra = booking.gotra || "";
+    const members = booking.members || "";
+    const wish = booking.wish || booking.concern || "";
+    const amount = booking.amount || booking.poojaPrice || 0;
+
+    const rawStatus = booking.status || (booking.isPaymentDone ? "confirmed" : "pending");
+    const displayStatus = rawStatus === "confirmed" ? "Confirmed" : rawStatus === "completed" ? "Completed" : rawStatus === "cancelled" ? "Cancelled" : "Pending";
+
+    const statusStyle =
+        rawStatus === "confirmed" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+        rawStatus === "completed" ? "bg-blue-50 text-blue-600 border border-blue-100" :
+        rawStatus === "cancelled" ? "bg-red-50 text-red-600 border border-red-100" :
+        "bg-orange-50 text-orange-500 border border-orange-100";
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl shadow-sm border border-orange-50/70 relative overflow-hidden"
+        >
+            {/* Decorative gradient accent */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-orange-400 via-red-400 to-amber-400" />
+
+            <div className="p-4">
+                {/* Top row: puja name + status */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-base">📺</span>
+                            <h3 className="font-bold text-gray-800 text-sm truncate">{pujaName}</h3>
+                        </div>
+                        {temple && (
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-orange-400 shrink-0" />
+                                <span className="truncate">{temple}</span>
+                            </p>
+                        )}
+                    </div>
+                    <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${statusStyle}`}>
+                        {displayStatus}
+                    </span>
+                </div>
+
+                {/* Devotee details */}
+                <div className="mt-3.5 pt-3 border-t border-orange-50/60 grid grid-cols-2 gap-3">
+                    <div>
+                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wide mb-0.5">Devotee</p>
+                        <p className="text-xs font-bold text-gray-700 truncate">{devoteeName}</p>
+                        {gotra && <p className="text-[10px] text-gray-400">Gotra: {gotra}</p>}
+                        {members && <p className="text-[10px] text-gray-400">{members} member(s)</p>}
+                    </div>
+                    <div>
+                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-wide mb-0.5">Date</p>
+                        <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                            <span className="text-[10px] text-gray-400 font-semibold">Paid:</span>
+                            <span className="text-xs font-black text-[#FF7000]">₹{Number(amount).toLocaleString("en-IN")}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Wish */}
+                {wish && (
+                    <div className="mt-3 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                        <p className="text-[9px] text-amber-500 font-bold uppercase tracking-wide">🙏 Sankalp Wish</p>
+                        <p className="text-xs text-stone-600 italic mt-0.5">"{wish}"</p>
+                    </div>
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
+// Helper component for Chadhava Booking Card
+const ChadhavaBookingCard = ({ booking, index }: { booking: any; index: number }) => {
+    const formattedDate = booking.addedOn 
+        ? new Date(booking.addedOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    const getPaymentBadge = (status: string) => {
+        switch (status) {
+            case "paid":
+                return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+            case "failed":
+                return "bg-red-50 text-red-600 border border-red-100";
+            default:
+                return "bg-orange-50 text-orange-600 border border-orange-100";
+        }
+    };
+
+    // Construct selections text
+    const selectionsText = booking.selections 
+        ? booking.selections.map((s: any) => `${s.quantity}x ${s.name}`).join(", ")
+        : "";
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            {/* Top row */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-lg">🌸</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">{booking.deity}</h3>
+                    </div>
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                        <span className="truncate text-gray-600">{booking.templeName}</span>
+                    </p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getPaymentBadge(booking.paymentStatus)}`}>
+                    {booking.paymentStatus === "paid" ? "Paid" : booking.paymentStatus || "Pending"}
+                </span>
+            </div>
+
+            {/* Selections / Offerings list */}
+            {selectionsText && (
+                <div className="mt-3 bg-orange-50/30 p-2.5 rounded-xl border border-orange-100/30">
+                    <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider mb-0.5">Offerings</p>
+                    <p className="text-xs font-semibold text-gray-700 leading-tight">{selectionsText}</p>
+                </div>
+            )}
+
+            {/* Prasad Box indicator if true */}
+            {booking.addPrasadBox && (
+                <div className="mt-2 flex items-center gap-1.5 bg-yellow-50 text-yellow-700 text-[10px] font-bold px-2.5 py-1.5 rounded-xl border border-yellow-100">
+                    <span>📦</span>
+                    <span>Prasad Box Added (Dispatched to Home Address)</span>
+                </div>
+            )}
+
+            {/* Middle Details Grid */}
+            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50">
+                <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Devotee</p>
+                    <p className="text-xs font-bold text-gray-700">{booking.devoteeName}</p>
+                    {booking.gotra && <p className="text-[10px] text-gray-400">Gotra: {booking.gotra}</p>}
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Booking Date</p>
+                    <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-orange-50/50">
+                <span className="text-[10px] text-gray-400 font-medium">
+                    Order ID: <span className="font-mono text-gray-500 font-semibold">{booking.razorpayOrderId ? booking.razorpayOrderId.substring(0, 12) : "N/A"}</span>
+                </span>
+                <div className="flex items-center gap-1 text-[#FF7000]">
+                    <span className="text-[10px] font-bold text-gray-400">Total:</span>
+                    <span className="text-sm font-black">₹{booking.totalAmount}</span>
+                </div>
+            </div>
+
+            {/* Wish / Prayer */}
+            {booking.wish && (
+                <div className="mt-3 bg-stone-50 p-2.5 rounded-xl border border-stone-100">
+                    <p className="text-[9px] text-stone-400 font-semibold uppercase">Your Prayer / Wish</p>
+                    <p className="text-xs text-stone-600 italic mt-0.5">"{booking.wish}"</p>
+                </div>
+            )}
+        </motion.div>
+    );
+};
+
+// Helper component for Direct Pandit Booking Card
+const DirectBookingCard = ({ booking, index }: { booking: any; index: number }) => {
+    const formattedDate = booking.createdAt 
+        ? new Date(booking.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+    const formattedTime = booking.createdAt 
+        ? new Date(booking.createdAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true })
+        : "";
+
+    const getStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case "confirmed":
+            case "approved":
+                return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+            case "completed":
+                return "bg-blue-50 text-blue-600 border border-blue-100";
+            case "cancelled":
+            case "rejected":
+                return "bg-red-50 text-red-600 border border-red-100";
+            default:
+                return "bg-orange-50 text-orange-600 border border-orange-100";
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            {/* Top row */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-lg">{booking.isKashi ? "🛕" : "🪔"}</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">
+                            {booking.isKashi ? "Kashi Ji Pandit Request" : "Pandit Direct Booking"}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-[#FF7000] font-bold flex items-center gap-1">
+                          <span>{booking.isKashi ? "From:" : "Acharya:"}</span>
+                          <span className="truncate">{booking.isKashi ? "Kashi Vishwanath Dham" : (booking.panditName || "Assigned Pandit")}</span>
+                      </p>
+                  </div>
+                  <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getStatusColor(booking.status)}`}>
+                      {booking.status || "Pending"}
+                  </span>
+              </div>
+
+              {/* Middle Details Grid */}
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-orange-50/50">
+                  <div>
+                      <p className="text-[9px] text-gray-400 uppercase font-semibold">Devotee</p>
+                      <p className="text-xs font-bold text-gray-700">{booking.name}</p>
+                  </div>
+                  <div className="text-right">
+                      <p className="text-[9px] text-gray-400 uppercase font-semibold">Requested On</p>
+                      <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                      <p className="text-[10px] text-gray-400">{formattedTime}</p>
+                  </div>
+              </div>
+
+              {/* Contact info / reference */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-orange-50/50">
+                  <div className="flex items-center gap-1 text-gray-500">
+                      <Phone className="w-3 h-3" />
+                      <span className="text-[11px] font-medium">+91 {booking.phone}</span>
+                  </div>
+                  <span className="text-[10px] bg-stone-50 text-stone-500 border border-stone-100 rounded-lg px-2 py-0.5 font-mono">
+                      Ref: {booking._id ? booking._id.substring(0, 8) : "N/A"}
+                  </span>
+              </div>
+          </motion.div>
+      );
+  };
+
+// Helper component for Shopify Order Card
+const ShopifyOrderCard = ({ order, index }: { order: any; index: number }) => {
+    const dateVal = order.addedOn || order.createdAt;
+    const formattedDate = dateVal
+        ? new Date(dateVal).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    const getStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case "delivered":
+                return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+            case "shipped":
+                return "bg-blue-50 text-blue-600 border border-blue-100";
+            case "confirmed":
+                return "bg-amber-50 text-amber-600 border border-amber-100";
+            case "cancelled":
+                return "bg-red-50 text-red-600 border border-red-100";
+            default:
+                return "bg-orange-50 text-orange-600 border border-orange-100";
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            {/* Top row */}
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="text-lg">🛍️</span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">
+                            Shop Order
+                        </h3>
+                    </div>
+                    <p className="text-xs text-[#FF7000] font-bold">
+                        Status: <span className="capitalize text-xs">{order.status || "Pending"}</span>
+                    </p>
+                    <span className={`inline-flex items-center gap-1 mt-1 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                        order.paymentMethod === "cod"
+                            ? "bg-amber-50 text-amber-700 border border-amber-100"
+                            : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                    }`}>
+                        {order.paymentMethod === "cod" ? "🚚 Cash on Delivery" : "💳 Paid Online"}
+                    </span>
+                </div>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                    {order.status || "Pending"}
+                </span>
+            </div>
+
+            {/* Items list */}
+            <div className="mt-3 space-y-2">
+                {order.items?.map((item: any, itemIdx: number) => (
+                    <div key={itemIdx} className="flex items-center gap-3 bg-stone-50/50 p-2 rounded-xl border border-stone-100/50">
+                        {item.image ? (
+                            <img src={item.image} alt={item.title} className="w-10 h-10 object-cover rounded-lg border border-orange-100 shrink-0" />
+                        ) : (
+                            <div className="w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center text-stone-400 shrink-0">
+                                🛍️
+                            </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-850 truncate">{item.title}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">Qty: {item.qty} · ₹{item.price?.toLocaleString("en-IN")}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Delivery address */}
+            <div className="mt-3 bg-orange-50/20 p-2.5 rounded-xl border border-orange-100/30">
+                <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider mb-0.5">Delivery Address</p>
+                <p className="text-xs font-bold text-gray-700 leading-tight">{order.customerName}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5 leading-normal">
+                    {order.addressLine}, {order.city}, {order.state} - {order.pincode}
+                </p>
+            </div>
+
+            {/* Middle Details Grid */}
+            <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50">
+                <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Payment Status</p>
+                    <span className={`inline-block text-[10px] font-bold uppercase tracking-wider mt-0.5 ${
+                        order.paymentStatus === "paid" ? "text-emerald-600" : "text-orange-500"
+                    }`}>
+                        {order.paymentStatus || "Pending"}
+                    </span>
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Ordered On</p>
+                    <p className="text-xs font-bold text-gray-700">{formattedDate}</p>
+                </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-orange-50/50">
+                <span className="text-[10px] text-gray-400 font-medium">
+                    Order ID: <span className="font-mono text-gray-500 font-semibold">{(order.razorpayOrderId || order._id || "").toString().substring(0, 12) || "N/A"}</span>
+                </span>
+                <div className="flex items-center gap-1 text-[#FF7000]">
+                    <span className="text-[10px] font-bold text-gray-400">{order.paymentMethod === "cod" && order.paymentStatus !== "paid" ? "Amount Due:" : "Total Paid:"}</span>
+                    <span className="text-sm font-black">₹{order.totalAmount?.toLocaleString("en-IN")}</span>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+/* ============================================================================
+   Vedic Vivah booking card
+   ----------------------------------------------------------------------------
+   Shows a family's marriage booking and gives them the two actions the app
+   also offers from My Bookings: pay the remaining balance on an advance-paid
+   booking, and cancel (the server computes the refund from the published
+   policy — 100% at 7+ days, 50% at 3–6 days, none inside 3 days).
+
+   `platform` is surfaced as a small chip so a family (and support, reading a
+   screenshot) can see whether a booking came from the app or the website.
+   ========================================================================== */
+const VIVAH_STATUS_STYLE: Record<string, string> = {
+    lead: "bg-orange-50 text-orange-600 border border-orange-100",
+    confirmed: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+    in_progress: "bg-blue-50 text-blue-600 border border-blue-100",
+    completed: "bg-violet-50 text-violet-600 border border-violet-100",
+    cancelled: "bg-red-50 text-red-600 border border-red-100",
+};
+
+const VIVAH_STATUS_LABEL: Record<string, string> = {
+    lead: "Requested",
+    confirmed: "Confirmed",
+    in_progress: "In Progress",
+    completed: "Completed",
+    cancelled: "Cancelled",
+};
+
+/* ==========================================================================
+   VEDIC VIVAH — the family's booking, in full
+   --------------------------------------------------------------------------
+   A vivah is not one appointment, so this card is not one line. It shows the
+   whole journey: every ceremony with its own date, who is performing it, what
+   is already done, what is still to come, and exactly what has been paid.
+
+   It also keeps itself current. Ops assign a Pandit Ji, tick rituals off and
+   move dates hours after a family books — if the card only rendered whatever
+   the page happened to fetch on load, the family would be reading a snapshot
+   and calling us to ask what changed. So it re-reads while the tab is open.
+   ========================================================================== */
+
+/** "12/03/2027" → "12 Mar 2027". Anything unparseable comes back untouched. */
+const prettyVivahDate = (ddmmyyyy?: string): string => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(ddmmyyyy || "").trim());
+    if (!m) return String(ddmmyyyy || "");
+    const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    if (Number.isNaN(d.getTime())) return ddmmyyyy as string;
+    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+/** "19:30" → "7:30 PM". Empty in, empty out. */
+const prettyVivahTime = (hhmm?: string): string => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || "").trim());
+    if (!m) return "";
+    const h = Number(m[1]);
+    const suffix = h >= 12 ? "PM" : "AM";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${m[2]} ${suffix}`;
+};
+
+const vivahDateValue = (ddmmyyyy?: string): number => {
+    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(ddmmyyyy || "").trim());
+    if (!m) return Number.POSITIVE_INFINITY; // undated rituals sort last
+    return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])).getTime();
+};
+
+/**
+ * One plain sentence telling the family what is happening right now. This is
+ * the "constant update" a booking screen owes someone who has paid us to run
+ * their wedding — not just a coloured status pill.
+ */
+const vivahNarrative = (b: any): string => {
+    if (b?.status === "cancelled") return "This booking is cancelled. Any refund due is being processed.";
+    if (b?.status === "completed") return "Every ritual is complete. Thank you for letting us be part of it 🙏";
+    const total = Number(b?.totalAmount || 0);
+    const paid = Number(b?.amountPaid || 0);
+    const steps: any[] = b?.selectedSteps || [];
+    const done = steps.filter((s) => s?.completed).length;
+    if (b?.status === "lead" || !b?.isPaymentDone)
+        return "Our Vivah desk will call you on WhatsApp to confirm the details and the muhurat.";
+    if (!b?.panditAssigned?.name && !(b?.assignedPandits || []).length)
+        return "Payment received. We're matching a verified Pandit Ji for your dates — you'll see them here.";
+    if (done > 0 && done < steps.length)
+        return `${done} of ${steps.length} ceremonies are done. Your Pandit Ji marks each one as it completes.`;
+    if (paid < total)
+        return "Your Pandit Ji is assigned. The balance is due before the ceremony — you can pay it here any time.";
+    return "Everything is confirmed and fully paid. Your Pandit Ji will reach out before each ritual.";
+};
+
+const VivahBookingCard = ({
+    booking: initial,
+    index,
+    onRefresh,
+    refreshing,
+    lastSyncedAt,
+}: {
+    booking: any;
+    index: number;
+    onRefresh?: () => void;
+    refreshing?: boolean;
+    lastSyncedAt?: number;
+}) => {
+    const [booking, setBooking] = useState<any>(initial);
+    const [busy, setBusy] = useState<null | "balance" | "cancel">(null);
+    const [note, setNote] = useState("");
+    const [noteTone, setNoteTone] = useState<"good" | "bad">("good");
+    const [showAll, setShowAll] = useState(false);
+
+    /**
+     * Adopt whatever the poller brought in — unless this card is mid-payment,
+     * where replacing state under an open Razorpay sheet would strand the
+     * handler on a stale booking id.
+     */
+    useEffect(() => {
+        if (busy) return;
+        setBooking((prev: any) =>
+            prev?.updatedAt === initial?.updatedAt && prev?.status === initial?.status
+                ? prev
+                : initial
+        );
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initial]);
+
+    const total = Number(booking.totalAmount || 0);
+    const paid = Number(booking.amountPaid || 0);
+    const balance = Math.max(0, total - paid);
+    const isCancelled = booking.status === "cancelled";
+    const isCompleted = booking.status === "completed";
+    const paidPct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+
+    const ceremony = booking.needMuhuratHelp && !booking.eventDate
+        ? "Pandit Ji will suggest"
+        : `${prettyVivahDate(booking.eventDate) || "—"}${
+              booking.eventTime ? `, ${prettyVivahTime(booking.eventTime)}` : ""
+          }`;
+
+    const createdOn = booking.createdAt
+        ? new Date(booking.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "N/A";
+
+    const selection = booking.packageName
+        ? `${booking.packageName} Package`
+        : booking.isSampooranPackage
+            ? "Sampooran Vivah (Complete Package)"
+            : (booking.selectedSteps || []).map((s: any) => s.title).join(", ") || "Vedic Vivah";
+
+    /** Rituals in the order they will actually happen — dated ones first. */
+    const steps: any[] = useMemo(() => {
+        const list = [...(booking.selectedSteps || [])];
+        return list.sort((a, b) => vivahDateValue(a?.scheduledDate) - vivahDateValue(b?.scheduledDate));
+    }, [booking.selectedSteps]);
+
+    const doneCount = steps.filter((s) => s.completed).length;
+    /** The next ceremony coming up — the one thing a family looks for first. */
+    const nextIdx = steps.findIndex((s) => !s.completed);
+    const visibleSteps = showAll ? steps : steps.slice(0, 4);
+    const [expanded, setExpanded] = useState(false);
+
+    /** "Next up" — the single answer a family opens this card for. */
+    const nextStep = nextIdx >= 0 ? steps[nextIdx] : null;
+    const nextInDays = (() => {
+        if (!nextStep?.scheduledDate) return null;
+        const v = vivahDateValue(nextStep.scheduledDate);
+        if (!Number.isFinite(v) || v <= 0) return null;
+        const days = Math.ceil((v - Date.now()) / 86400000);
+        return days >= 0 ? days : null;
+    })();
+
+
+    const pandits: any[] = (booking.assignedPandits || []).filter((p: any) => p?.name);
+    /**
+     * The 4-stop journey tracker: Booked → Confirmed → Pandit Ji → Sampann.
+     * Derived, never stored — so it can't drift from the real booking.
+     */
+    const stage = isCancelled
+        ? -1
+        : isCompleted
+            ? 3
+            : (booking.panditAssigned?.name || pandits.length > 0)
+                ? 2
+                : booking.isPaymentDone || booking.status === "confirmed" || booking.status === "in_progress"
+                    ? 1
+                    : 0;
+    const STAGES = ["Booked", "Confirmed", "Pandit Ji", "Sampann"];
+
+    const gifts: any[] = (booking.packageGifts || []).filter((g: any) => g?.title);
+    const venue = [booking.address?.street, booking.address?.city, booking.address?.state, booking.address?.pincode]
+        .filter(Boolean)
+        .join(", ");
+    const ref = String(booking._id || "").slice(-6).toUpperCase();
+
+    const say = (text: string, tone: "good" | "bad" = "good") => {
+        setNoteTone(tone);
+        setNote(text);
+    };
+
+    const whatsappUs = () => {
+        const msg =
+            `Namaste 🙏 I'd like an update on my Vedic Vivah booking.\n\n` +
+            `Booking: ${ref}\n` +
+            `Name: ${booking.devoteeName || ""}\n` +
+            `Selection: ${selection}\n` +
+            `Ceremony: ${ceremony}`;
+        window.open(`https://wa.me/919056955311?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+    };
+
+    const payBalance = async () => {
+        setNote("");
+        setBusy("balance");
+        try {
+            const token = localStorage.getItem("user_token");
+
+            // Wait for the gateway BEFORE creating the order. Creating it first
+            // rotates `balanceRazorpayOrderId` on the booking; if the SDK then
+            // isn't ready we've orphaned that order, and a late payment against
+            // it would be rejected as "Order ID mismatch" with the money gone.
+            const Ctor = await loadRazorpay();
+
+            const { data: order } = await axios.post(
+                `${API_URL}/bookings/vedic-vivah/balance-order`,
+                { bookingId: booking._id },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!order?.success) throw new Error(order?.message || "Could not start the payment.");
+
+            const rzp = new Ctor({
+                key: order.razorpayKeyId,
+                amount: Number(order.amount) * 100,
+                currency: order.currency || "INR",
+                name: "Pandit Ji At Request",
+                description: "Vedic Vivah Sanskar — balance payment",
+                order_id: order.razorpayOrderId,
+                prefill: { name: booking.devoteeName, contact: booking.whatsapp },
+                theme: { color: "#FF7000" },
+                handler: async (resp: any) => {
+                    try {
+                        const { data } = await axios.post(
+                            `${API_URL}/bookings/vedic-vivah/complete-balance-payment`,
+                            {
+                                bookingId: booking._id,
+                                razorpayOrderId: resp.razorpay_order_id,
+                                razorpayPaymentId: resp.razorpay_payment_id,
+                                razorpaySignature: resp.razorpay_signature,
+                            },
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        if (!data?.success) throw new Error(data?.message || "");
+                        setBooking(data.booking || { ...booking, amountPaid: total, paymentOption: "full" });
+                        say("Payment complete 🙏 Your Vivah booking is fully settled.");
+                        onRefresh?.();
+                    } catch (e: any) {
+                        // The money is already captured on this path, so lead
+                        // with that before explaining anything else.
+                        say(
+                            `Your payment went through — we just couldn't record it yet. Your money is safe and ` +
+                            `our team will confirm it shortly. (${humanError(
+                                e?.response?.data?.message || e,
+                                "balance-complete"
+                            )})`,
+                            "bad"
+                        );
+                    } finally {
+                        setBusy(null);
+                    }
+                },
+                modal: { ondismiss: () => setBusy(null) },
+            });
+            rzp.on("payment.failed", (r: any) => {
+                say(humanPaymentError(r), "bad");
+                setBusy(null);
+            });
+            rzp.open();
+        } catch (e: any) {
+            // Nothing charged here — the gateway never opened.
+            say(humanError(e?.response?.data?.message || e, "balance-order"), "bad");
+            setBusy(null);
+        }
+    };
+
+    const cancelBooking = async () => {
+        if (!window.confirm("Cancel this Vivah booking? The refund is calculated from our published policy.")) return;
+        setNote("");
+        setBusy("cancel");
+        try {
+            const token = localStorage.getItem("user_token");
+            const { data } = await axios.post(
+                `${API_URL}/bookings/vedic-vivah/${booking._id}/cancel`,
+                { reason: "Cancelled by the family from My Bookings" },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!data?.success) throw new Error(data?.message || "");
+            setBooking(data.booking || { ...booking, status: "cancelled" });
+            say(
+                Number(data?.refund?.amount) > 0
+                    ? `Cancelled. A refund of ₹${Number(data.refund.amount).toLocaleString("en-IN")} (${data.refund.pct}%) will reach you in 5–7 days.`
+                    : "Cancelled. As per the policy no refund is available at this stage."
+            );
+            onRefresh?.();
+        } catch (e: any) {
+            say(humanError(e?.response?.data?.message || e, "cancel"), "bad");
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const syncedLabel = (() => {
+        if (refreshing) return "Updating…";
+        if (!lastSyncedAt) return "";
+        const secs = Math.max(0, Math.round((Date.now() - lastSyncedAt) / 1000));
+        if (secs < 60) return "Updated just now";
+        const mins = Math.round(secs / 60);
+        return `Updated ${mins} min${mins > 1 ? "s" : ""} ago`;
+    })();
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 28 }}
+            className="bg-white rounded-3xl p-4 shadow-sm border border-orange-50 relative overflow-hidden"
+        >
+            {/* ── Header band — instantly identifiable, high contrast ── */}
+            <div className="-m-4 mb-0 px-4 py-3.5 bg-gradient-to-r from-[#5A1414] via-[#6E1A1A] to-[#57140F] flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-lg leading-none">💍</span>
+                        <h3 className="font-bold text-[#F7ECD8] text-[13.5px] truncate">Vedic Vivah Sanskar</h3>
+                        {ref && (
+                            <span className="text-[8.5px] font-bold uppercase tracking-wider text-[#E8CE93]/80 border border-[#E8CE93]/30 rounded-full px-1.5 py-0.5">
+                                #{ref}
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-[11.5px] text-[#F7ECD8]/75 leading-snug mt-1 truncate">{selection}</p>
+                </div>
+                <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${VIVAH_STATUS_STYLE[booking.status] || VIVAH_STATUS_STYLE.lead}`}>
+                    {VIVAH_STATUS_LABEL[booking.status] || booking.status}
+                </span>
+            </div>
+
+            {/* ── Journey tracker — where this booking stands, at a glance ── */}
+            {!isCancelled && (
+                <div className="mt-3.5 flex items-center">
+                    {STAGES.map((label, i) => (
+                        <div key={label} className={`flex items-center ${i > 0 ? "flex-1" : ""}`}>
+                            {i > 0 && (
+                                <div className={`h-[2px] flex-1 mx-1 rounded ${i <= stage ? "bg-emerald-400" : "bg-gray-150 bg-gray-200"}`} />
+                            )}
+                            <div className="flex flex-col items-center gap-1">
+                                <span
+                                    className={`w-5 h-5 rounded-full flex items-center justify-center ${
+                                        i < stage
+                                            ? "bg-emerald-500"
+                                            : i === stage
+                                                ? "bg-[#FF7000] ring-4 ring-orange-100"
+                                                : "bg-gray-200"
+                                    }`}
+                                >
+                                    {i < stage ? (
+                                        <Check className="w-3 h-3 text-white" strokeWidth={3.5} />
+                                    ) : (
+                                        <span className={`w-1.5 h-1.5 rounded-full ${i === stage ? "bg-white" : "bg-gray-400"}`} />
+                                    )}
+                                </span>
+                                <span className={`text-[9px] font-bold ${i <= stage ? "text-gray-700" : "text-gray-300"}`}>
+                                    {label}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ── NEXT UP — the answer the family opened this card for ── */}
+            {!isCancelled && !isCompleted && nextStep && (
+                <div className="mt-3.5 rounded-2xl border border-orange-200/70 bg-gradient-to-r from-orange-50 to-amber-50/60 px-3.5 py-3 flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-xl bg-white border border-orange-100 flex items-center justify-center text-[18px] shrink-0">
+                        🪔
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[9.5px] font-bold uppercase tracking-wider text-[#C04A01]">Next up</p>
+                        <p className="text-[13px] font-bold text-gray-800 truncate">{nextStep.title}</p>
+                        <p className="text-[11px] text-gray-500">
+                            {nextStep.scheduledDate
+                                ? `${prettyVivahDate(nextStep.scheduledDate)}${
+                                      nextStep.scheduledTime ? `, ${prettyVivahTime(nextStep.scheduledTime)}` : ""
+                                  }`
+                                : "Date will be planned with you"}
+                        </p>
+                    </div>
+                    {nextInDays !== null && (
+                        <div className="text-center shrink-0 bg-white border border-orange-100 rounded-xl px-2.5 py-1.5">
+                            <p className="text-[16px] font-black text-[#FF7000] leading-none">{nextInDays === 0 ? "आज" : nextInDays}</p>
+                            <p className="text-[8.5px] font-bold uppercase text-gray-400 mt-0.5">{nextInDays === 0 ? "today" : nextInDays === 1 ? "day left" : "days left"}</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── What's happening right now ── */}
+            <div className="mt-3 flex items-start gap-2 bg-orange-50/50 border border-orange-100/50 rounded-xl px-3 py-2.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF7000] shrink-0 mt-0.5" />
+                <p className="text-[12px] text-gray-600 leading-relaxed flex-1">{vivahNarrative(booking)}</p>
+            </div>
+
+            {/* ── Muhurat ── */}
+            {booking.selectedMuhurat?.date && (
+                <div className="mt-3 flex items-center gap-2 flex-wrap text-[10.5px]">
+                    <span className="font-bold text-[#FF7000] bg-orange-50 border border-orange-100 rounded-full px-2 py-0.5">
+                        Shubh Muhurat
+                    </span>
+                    <span className="text-gray-500">
+                        {prettyVivahDate(booking.selectedMuhurat.date)}
+                        {booking.selectedMuhurat.day ? ` · ${booking.selectedMuhurat.day}` : ""}
+                        {booking.selectedMuhurat.tithi ? ` · ${booking.selectedMuhurat.tithi}` : ""}
+                        {booking.selectedMuhurat.nakshatra ? ` · ${booking.selectedMuhurat.nakshatra}` : ""}
+                    </span>
+                </div>
+            )}
+
+            {/* ── Pandit Ji (single legacy field + the real area-wise team) ── */}
+            {(booking.panditAssigned?.name || pandits.length > 0) && (
+                <div className="mt-3 bg-orange-50/40 p-2.5 rounded-xl border border-orange-100/40 space-y-2">
+                    <p className="text-[9px] text-orange-400 font-bold uppercase tracking-wider">
+                        {pandits.length > 1 ? "Your Pandit Ji team" : "Your Pandit Ji"}
+                    </p>
+                    {booking.panditAssigned?.name && (
+                        <div className="flex items-center gap-2.5">
+                            {booking.panditAssigned.photo ? (
+                                <img src={booking.panditAssigned.photo} alt="" className="w-9 h-9 rounded-full object-cover" />
+                            ) : (
+                                <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-[13px]">🙏</div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-700 truncate">{booking.panditAssigned.name}</p>
+                                {(booking.panditAssigned.title || booking.panditAssigned.experienceYears) && (
+                                    <p className="text-[10px] text-gray-400 truncate">
+                                        {[
+                                            booking.panditAssigned.title,
+                                            booking.panditAssigned.experienceYears
+                                                ? `${booking.panditAssigned.experienceYears} yrs`
+                                                : "",
+                                        ].filter(Boolean).join(" · ")}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {pandits.map((p: any, i: number) => (
+                        <div key={p.panditId || i} className="flex items-center gap-2.5">
+                            {p.photo ? (
+                                <img src={p.photo} alt="" className="w-9 h-9 rounded-full object-cover" />
+                            ) : (
+                                <div className="w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center text-[13px]">🙏</div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-700 truncate">{p.name}</p>
+                                <p className="text-[10px] text-gray-400 capitalize">{p.role || "lead"}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ── The journey: every ceremony on its own date ── */}
+            {steps.length > 0 && (
+                <div className="mt-3.5">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-[9px] text-gray-400 uppercase font-semibold">Ritual schedule</p>
+                        <p className="text-[10px] font-bold text-gray-600">{doneCount} / {steps.length} done</p>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-orange-50 overflow-hidden mb-2.5">
+                        <div
+                            className="h-full bg-gradient-to-r from-[#E25800] to-[#FF8A2B] rounded-full transition-all"
+                            style={{ width: `${steps.length ? (doneCount / steps.length) * 100 : 0}%` }}
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        {visibleSteps.map((s: any, i: number) => {
+                            const isNext = !isCancelled && steps.indexOf(s) === nextIdx;
+                            return (
+                                <div
+                                    key={s.stepId || i}
+                                    className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 border ${
+                                        s.completed
+                                            ? "bg-emerald-50/50 border-emerald-100/60"
+                                            : isNext
+                                                ? "bg-orange-50/60 border-orange-200/70"
+                                                : "bg-gray-50/60 border-gray-100"
+                                    }`}
+                                >
+                                    <span
+                                        className={`w-4 h-4 rounded-full shrink-0 flex items-center justify-center ${
+                                            s.completed ? "bg-emerald-500" : isNext ? "bg-[#FF7000]" : "bg-gray-200"
+                                        }`}
+                                    >
+                                        {s.completed && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3.5} />}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[11.5px] font-semibold text-gray-700 truncate">{s.title}</p>
+                                        <p className="text-[10px] text-gray-400">
+                                            {s.scheduledDate
+                                                ? `${prettyVivahDate(s.scheduledDate)}${
+                                                      s.scheduledTime ? `, ${prettyVivahTime(s.scheduledTime)}` : ""
+                                                  }`
+                                                : "Date to be planned with you"}
+                                        </p>
+                                    </div>
+                                    {s.completed ? (
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600 shrink-0">
+                                            Done
+                                        </span>
+                                    ) : isNext ? (
+                                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#FF7000] shrink-0">
+                                            Next
+                                        </span>
+                                    ) : null}
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {steps.length > 4 && (
+                        <button
+                            onClick={() => setShowAll((v) => !v)}
+                            className="mt-2 text-[10.5px] font-bold text-[#FF7000]"
+                        >
+                            {showAll ? "Show less" : `Show all ${steps.length} rituals`}
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* ── Expand: everything else lives behind one calm toggle ── */}
+            <button
+                onClick={() => setExpanded((v) => !v)}
+                className="mt-3 w-full flex items-center justify-center gap-1.5 text-[11px] font-bold text-gray-500 border border-gray-100 bg-gray-50/60 rounded-xl py-2 active:scale-[0.98] transition-transform"
+            >
+                {expanded ? "Hide full details" : "View full details"}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* ── Inclusions ── */}
+            {expanded && (booking.kashiPandit?.invited || booking.liveDarshanTemple?.name || booking.language || booking.samagriNeeded) && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                    {booking.kashiPandit?.invited && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5">
+                            <ShieldCheck className="w-3 h-3" /> Kashi Acharya
+                        </span>
+                    )}
+                    {booking.liveDarshanTemple?.name && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">
+                            <Landmark className="w-3 h-3" /> {booking.liveDarshanTemple.name}
+                        </span>
+                    )}
+                    {booking.samagriNeeded && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full px-2 py-0.5">
+                            <Package className="w-3 h-3" /> Samagri included
+                        </span>
+                    )}
+                    {booking.language && (
+                        <span className="text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 rounded-full px-2 py-0.5">
+                            {booking.language}
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* ── Free gifts ── */}
+            {expanded && gifts.length > 0 && (
+                <div className="mt-3">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold mb-1.5">
+                        Gifts included ({gifts.length})
+                    </p>
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+                        {gifts.map((g: any, i: number) => (
+                            <div key={i} className="shrink-0 w-[64px]">
+                                {g.image ? (
+                                    <img
+                                        src={g.image}
+                                        alt={g.title}
+                                        loading="lazy"
+                                        className="w-[64px] h-[64px] rounded-xl object-cover border border-orange-100"
+                                    />
+                                ) : (
+                                    <div className="w-[64px] h-[64px] rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
+                                        <Gift className="w-5 h-5 text-[#FF7000]" />
+                                    </div>
+                                )}
+                                <p className="text-[8.5px] text-gray-500 mt-1 leading-tight line-clamp-2">{g.title}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Where and when ── */}
+            <div className={`${expanded ? "" : "hidden"} grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-orange-50/50`}>
+                <div>
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Ceremony</p>
+                    <p className="text-xs font-bold text-gray-700">{ceremony}</p>
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] text-gray-400 uppercase font-semibold">Requested On</p>
+                    <p className="text-xs font-bold text-gray-700">{createdOn}</p>
+                </div>
+            </div>
+
+            {expanded && venue && (
+                <div className="mt-2 flex items-start gap-1.5">
+                    <MapPin className="w-3 h-3 text-gray-300 shrink-0 mt-0.5" />
+                    <p className="text-[10.5px] text-gray-500 leading-snug">{venue}</p>
+                </div>
+            )}
+
+            {/* ── Money ── */}
+            <div className="mt-3.5 pt-3 border-t border-orange-50/50">
+                <div className="flex items-end justify-between">
+                    <div>
+                        <p className="text-[9.5px] font-bold uppercase tracking-wider text-gray-400">Payment</p>
+                        <p className="text-[12.5px] font-bold text-gray-700 mt-0.5">
+                            ₹{paid.toLocaleString("en-IN")} paid
+                            {balance > 0 && !isCancelled ? (
+                                <span className="text-[#FF7000]"> · ₹{balance.toLocaleString("en-IN")} balance</span>
+                            ) : !isCancelled ? (
+                                <span className="text-emerald-600"> · fully settled ✓</span>
+                            ) : null}
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[9.5px] font-bold uppercase tracking-wider text-gray-400">Total</p>
+                        <p className="text-[16px] font-black text-gray-800 leading-tight">₹{total.toLocaleString("en-IN")}</p>
+                    </div>
+                </div>
+                {total > 0 && !isCancelled && (
+                    <div className="h-1 rounded-full bg-gray-100 overflow-hidden mt-2">
+                        <div
+                            className="h-full bg-emerald-400 rounded-full transition-all"
+                            style={{ width: `${paidPct}%` }}
+                        />
+                    </div>
+                )}
+            </div>
+
+            {/* ── Actions ── */}
+            <div className="flex gap-2 mt-3">
+                {!isCancelled && !isCompleted && balance > 0 && booking.isPaymentDone && (
+                    <button
+                        onClick={payBalance}
+                        disabled={busy !== null}
+                        className="flex-1 bg-gradient-to-r from-[#E25800] to-[#FF8A2B] text-white text-[11.5px] font-bold py-2.5 rounded-xl disabled:opacity-60 active:scale-95 transition-transform"
+                    >
+                        {busy === "balance" ? "Opening…" : `Pay balance ₹${balance.toLocaleString("en-IN")}`}
+                    </button>
+                )}
+                <button
+                    onClick={whatsappUs}
+                    className="flex-1 flex items-center justify-center gap-1.5 border border-emerald-200 text-emerald-700 text-[11.5px] font-bold py-2.5 rounded-xl active:scale-95 transition-transform"
+                >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    Ask for an update
+                </button>
+                {!isCancelled && !isCompleted && (
+                    <button
+                        onClick={cancelBooking}
+                        disabled={busy !== null}
+                        className="flex-1 border border-red-200 text-red-600 text-[11.5px] font-bold py-2.5 rounded-xl disabled:opacity-60 active:scale-95 transition-transform"
+                    >
+                        {busy === "cancel" ? "Cancelling…" : "Cancel booking"}
+                    </button>
+                )}
+            </div>
+
+            {isCancelled && Number(booking.cancellation?.refundAmount) > 0 && (
+                <p className="mt-3 text-[11px] text-stone-500">
+                    Refund of ₹{Number(booking.cancellation.refundAmount).toLocaleString("en-IN")} is{" "}
+                    {booking.cancellation.refundStatus === "processed" ? "processed" : "being processed"}.
+                </p>
+            )}
+
+            {note && (
+                <p
+                    role="alert"
+                    className={`mt-3 text-[11.5px] rounded-xl px-3 py-2 border ${
+                        noteTone === "bad"
+                            ? "text-red-700 bg-red-50 border-red-100"
+                            : "text-emerald-700 bg-emerald-50 border-emerald-100"
+                    }`}
+                >
+                    {note}
+                </p>
+            )}
+
+            {/* ── Freshness ── */}
+            {(syncedLabel || onRefresh) && (
+                <div className="mt-3 pt-2.5 border-t border-orange-50/50 flex items-center justify-between">
+                    <span className="text-[9.5px] text-gray-300">{syncedLabel}</span>
+                    {onRefresh && (
+                        <button
+                            onClick={onRefresh}
+                            disabled={!!refreshing}
+                            className="inline-flex items-center gap-1 text-[9.5px] font-bold text-gray-400 disabled:opacity-50"
+                        >
+                            <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+                            Refresh
+                        </button>
+                    )}
+                </div>
+            )}
+        </motion.div>
+    );
+};

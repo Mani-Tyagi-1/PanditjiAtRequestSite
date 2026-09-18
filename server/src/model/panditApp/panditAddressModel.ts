@@ -1,6 +1,6 @@
 // src/model/panditApp/panditAddressModel.ts
 import { Schema, Document, Types } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 import PanditModel, { IPandit } from "./panditModel"; 
 
 /** Mongo document interface for Pandit addresses */

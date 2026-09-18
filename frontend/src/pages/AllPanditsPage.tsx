@@ -57,10 +57,12 @@ export default function AllPanditsPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
-          // Only show active and verified pandits
-          const filtered = data.data.filter(
-            (p: Pandit) => p.isActive !== false && p.isVerified === true
-          );
+          const filtered = data.data.filter((p: Pandit) => {
+            if (p.isActive === false || p.isVerified !== true) return false;
+            const fullName = `${p.prefix || ""} ${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
+            if (fullName.includes("nirmanyu thakur") || fullName.includes("vansh bhandari")) return false;
+            return true;
+          });
           setPandits(filtered);
         }
       })
@@ -87,7 +89,7 @@ export default function AllPanditsPage() {
           <ArrowLeft className="w-4 h-4 text-stone-700" />
         </button>
         <div>
-          <h1 className="text-base font-extrabold text-stone-850">Our Verified Pandit Jis</h1>
+          <h1 className="text-base font-bold text-stone-850">Our Verified Pandit Jis</h1>
           <p className="text-[10px] text-stone-500 font-medium">Experienced & Shastrik Ritual Experts</p>
         </div>
       </div>
@@ -148,7 +150,7 @@ export default function AllPanditsPage() {
                       {pandit.isVerified && (
                         <div className="absolute top-2 right-2 bg-white/90 rounded-full px-1.5 py-0.5 flex items-center gap-0.5 shadow-sm border border-orange-100/50">
                           <BadgeCheck className="w-3 h-3 text-orange-500" />
-                          <span className="text-[8.5px] font-extrabold text-orange-600">Verified</span>
+                          <span className="text-[8.5px] font-bold text-orange-600">Verified</span>
                         </div>
                       )}
                     </div>

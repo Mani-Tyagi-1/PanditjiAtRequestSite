@@ -233,7 +233,7 @@ const VideoCallPage = () => {
     }
 
     callRef.current = null;
-    navigate("/my-bookings", { replace: true });
+    navigate("/account?tab=pooja", { replace: true });
   }, [navigate]);
 
   const cancelOutgoingAndExit = useCallback(async () => {
@@ -250,7 +250,7 @@ const VideoCallPage = () => {
     }
 
     callRef.current = null;
-    navigate("/my-bookings", { replace: true });
+    navigate("/account?tab=pooja", { replace: true });
   }, [navigate]);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { Schema, Model, Types } from "mongoose";
-import { VedicVaibhavMongoose } from "../../../config/vedicVaibhavDB";
+import { VedicVaibhavMongoose } from "../../config/vedicVaibhavDB";
 
 export interface IReferralPayoutRequest {
   _id: Types.ObjectId;

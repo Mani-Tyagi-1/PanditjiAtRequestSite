@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { panditJiAtRequestMongooose } from "../../../config/connectDB";
+import { panditJiAtRequestMongooose } from "../../config/connectDB";
 
 export interface ITestimonial extends Document {
   user_name: string;

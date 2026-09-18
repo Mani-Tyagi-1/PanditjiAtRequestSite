@@ -1,9 +1,12 @@
+// Must be the first import: populates process.env from .env.<MODE> before
+// any module below reads it at load time.
+import "./config/loadEnv";
+
 import dns from 'node:dns';
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 import express, { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import * as http from "http";
-import * as dotenv from "dotenv";
 import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
 
@@ -37,8 +40,6 @@ import panditAddressRoutes from "./routes/panditAppRoutes/panditAddressRoutes";
 import streamRoutes from "./routes/voiceCallRoutes/genTokenRoutes";
 import PanditModel from "./model/panditApp/panditModel";
 import UserAddressModel from "./model/userApp/userAddressModel";
-
-dotenv.config();
 
 const app = express();
 app.use(express.json());

@@ -3,9 +3,7 @@ const multerS3 = require("multer-s3");
 import { S3Client } from "@aws-sdk/client-s3";
 import path from "path";
 import type { RequestHandler } from "express";
-import dotenv from "dotenv";
-
-dotenv.config();
+import "../config/loadEnv";
 
 const s3 = new S3Client({
   region: process.env.region || "blr1",

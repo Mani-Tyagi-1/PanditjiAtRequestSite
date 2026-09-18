@@ -11,6 +11,7 @@ const STATUS_META: Record<
     live: { label: "LIVE NOW", dot: "bg-red-500", chip: "bg-rose-600 text-white shadow-sm" },
     upcoming: { label: "UPCOMING", dot: "bg-amber-400", chip: "bg-black/60 text-white backdrop-blur-xs" },
     daily: { label: "DAILY SEVA", dot: "bg-emerald-400", chip: "bg-black/60 text-white backdrop-blur-xs" },
+    closed: { label: "BOOKING CLOSED", dot: "bg-stone-500", chip: "bg-black/60 text-white backdrop-blur-xs" },
 };
 
 interface Props {

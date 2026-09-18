@@ -63,6 +63,7 @@ export interface LiveMandirPuja {
         variantId: string;
         onlineStoreUrl: string;
     }[];
+    vidhi?: string;
 }
 
 // (kept exported for typing placeholder + API review data)

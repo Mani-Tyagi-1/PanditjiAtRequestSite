@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useId, useRef, type CSSProperties } from 
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
     ArrowLeft, Check, ShieldCheck, Video, Gift, Calendar, Mountain, Sparkles,
-    Star, Clock, Lock, ChevronDown, ChevronLeft, ChevronRight, MessageCircle, Phone, Flame, BadgeCheck,
+    Star, Clock, Lock, ChevronDown, MessageCircle, Phone, Flame, BadgeCheck,
 } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import API_URL from "../utils/apiConfig";

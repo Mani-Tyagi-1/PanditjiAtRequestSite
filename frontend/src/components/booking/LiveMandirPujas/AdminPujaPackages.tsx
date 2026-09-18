@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, Users, Sparkles, ChevronDown, PackageOpen, Gift } from "lucide-react";
+import { Check, Users, ChevronDown } from "lucide-react";
 import type { LiveMandirPackage } from "./liveMandirData";
 import { money } from "../../../utils/currency";
 import AdminPrasadBoxAddon from "./AdminPrasadBoxAddon";
@@ -17,11 +17,11 @@ export default function AdminPujaPackages({
     selectedId: string;
     onSelect: (id: string) => void;
     prasadBoxEnabled?: boolean;
-    selectedTheme?: boolean;
+    selectedTheme?: any;
     prasadAdded?: boolean;
     onPrasadToggle?: (next: boolean) => void;
 }) {
-    const [openId, setOpenId] = useState<string | null>(selectedId);
+    const [, setOpenId] = useState<string | null>(selectedId);
     const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({});
 
     // Sync expandedDetails whenever selectedId changes (e.g. from parent props)

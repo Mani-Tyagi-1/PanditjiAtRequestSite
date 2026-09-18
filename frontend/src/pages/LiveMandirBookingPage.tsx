@@ -2,9 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Star, User, Mail, Users, Calendar, Clock, Home, Building, Map, Mailbox, Info, ShieldCheck, Bell, Flower2, Gift, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, Check, ChevronRight, Plus, X, Users, Info, Flower2, Gift, Sparkles } from "lucide-react";
 import type { LiveMandirPuja } from "../components/booking/LiveMandirPujas/liveMandirData";
-import AdminPujaPackages from "../components/booking/LiveMandirPujas/AdminPujaPackages";
 import API_URL from "../utils/apiConfig";
 import { encryptPayload, decryptData } from "../utils/encryption";
 import { useAuth } from "../context/AuthContext";
@@ -41,16 +40,6 @@ function resolveScheduledDate(label: string): string {
     if (norm === "tomorrow") return new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString();
     const parsed = new Date(label);
     return isNaN(parsed.getTime()) ? today.toISOString() : parsed.toISOString();
-}
-
-function displayScheduledDate(value: string): string {
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return value;
-    return parsed.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    });
 }
 
 import LiveMandirBookingPageRegular from "./LiveMandirBookingPageRegular";
@@ -128,7 +117,7 @@ function AdminLiveMandirBookingPage() {
 
     // We assume puja and puja.packages are available from state
     const packages = puja?.packages || [];
-    const [selectedPackageId, setSelectedPackageId] = useState<string>(state?.preselectedPackageId || (packages.length > 1 ? packages[1].id : (packages.length > 0 ? packages[0].id : "")));
+    const [selectedPackageId] = useState<string>(state?.preselectedPackageId || (packages.length > 1 ? packages[1].id : (packages.length > 0 ? packages[0].id : "")));
     const selectedPkg = packages.find(p => p.id === selectedPackageId) || (packages.length > 1 ? packages[1] : packages[0]);
 
     // Blessed prasad is couriered within India only — see `shipsPrasad`. Gated
@@ -360,7 +349,7 @@ function AdminLiveMandirBookingPage() {
 
         try {
             const bookingEndpoint = state?.fromAdminBanner ? "generalpooja-bookings" : "bookings";
-            
+
             let orderData: any;
             if (cachedPendingOrder.current && cachedPendingOrder.current.payloadStr === payloadStr) {
                 orderData = cachedPendingOrder.current.orderData;
@@ -986,7 +975,6 @@ function AdminLiveMandirBookingPage() {
 export default function LiveMandirBookingPage() {
     const location = useLocation();
     const state = location.state as BookingState | null;
-    const adminTheme = state?.fromAdminBanner ? state.adminTheme : null;
 
     if (state?.fromAdminBanner) {
         return <AdminLiveMandirBookingPage />;

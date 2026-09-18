@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Check, Gift, Plus, ChevronDown, PackageOpen } from "lucide-react";
+import { Check, Gift, Plus, ChevronDown } from "lucide-react";
 import { useMoney } from "../../../utils/currency";
 import type { LiveMandirPackage } from "./liveMandirData";
 
@@ -15,7 +15,7 @@ export default function AdminPrasadBoxAddon({
     pujaPrasadBoxEnabled?: boolean;
     added: boolean;
     onToggle?: (next: boolean) => void;
-    selectedTheme?: boolean;
+    selectedTheme?: any;
     selected?: boolean;
 }) {
     const { money } = useMoney();
@@ -25,14 +25,6 @@ export default function AdminPrasadBoxAddon({
     useEffect(() => {
         setOpen(selected);
     }, [selected]);
-
-    // Generic list of items for the prasad box
-    const prasadItems = [
-        "Blessed Dry Prasad",
-        "Sacred Kalawa (Thread)",
-        "Holy Chandan / Bhasma",
-        "Deity Photo"
-    ];
 
     // Collapsible contents element
     const renderContents = () => {

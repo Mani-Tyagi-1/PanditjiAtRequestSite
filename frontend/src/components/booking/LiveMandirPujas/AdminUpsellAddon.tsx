@@ -86,7 +86,7 @@ export default function AdminUpsellAddon({
                     {/* Close Button */}
                     <button
                         className="p-1.5 mr-2 rounded-full text-stone-400 hover:bg-black/5 transition-all duration-300 outline-none"
-                        style={adminTheme ? { color: 'var(--tw-text-opacity)', '--tw-text-opacity': '1' } : undefined}
+                        style={adminTheme ? { color: 'var(--tw-text-opacity)', '--tw-text-opacity': '1' } as any : undefined}
                         onClick={(e) => {
                             e.stopPropagation();
                             if (added) {

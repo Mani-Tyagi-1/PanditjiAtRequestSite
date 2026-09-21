@@ -15,4 +15,15 @@ router.get(
   }
 );
 
+router.get(
+  "/testimonials",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await fetchAllTestimonials(req, res);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 export default router;

@@ -10,6 +10,7 @@ import { optimizedImg } from "../utils/img";
 import analytics from "../utils/analytics";
 import { type LiveMandirPuja, type LiveMandirReview } from "../components/booking/LiveMandirPujas/liveMandirData";
 import { fetchGeneralPooja } from "../data/navratriPuja";
+import { fetchLiveTestimonials } from "../data/testimonialData";
 import { money } from "../utils/currency";
 import AdminPujaPackages from "../components/booking/LiveMandirPujas/AdminPujaPackages";
 
@@ -179,20 +180,49 @@ function SectionTitle({ icon, children }: { icon?: React.ReactNode; children: Re
 
 // Auto-scrolling reviews strip — cards glide left→right continuously (paused on hover).
 function ReviewMarquee({ reviews }: { reviews: LiveMandirReview[] }) {
-    const items = [...reviews, ...reviews]; // duplicated for a seamless loop
+    let baseItems = [...reviews];
+    while (baseItems.length > 0 && baseItems.length < 8) {
+        baseItems = [...baseItems, ...reviews];
+    }
+    const items = [...baseItems, ...baseItems]; // duplicated for a seamless loop
+
     return (
         <div className="overflow-hidden -mx-3 min-[360px]:-mx-4 px-3 min-[360px]:px-4">
-            <style>{`@keyframes reviewMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.review-track{animation:reviewMarquee 32s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
+            <style>{`@keyframes reviewMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.review-track{animation:reviewMarquee 36s linear infinite;width:max-content}.review-track:hover{animation-play-state:paused}`}</style>
             <div className="review-track flex gap-2.5">
                 {items.map((r, i) => (
-                    <div key={i} className="shrink-0 w-48 min-[360px]:w-56 bg-white border border-orange-100 t-border rounded-xl p-2.5 min-[360px]:p-3 shadow-sm">
-                        <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-stone-800 text-[11px] min-[360px]:text-[12px]">{r.name}</span>
-                            {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
-                            <span className="ml-auto text-[8.5px] min-[360px]:text-[9px] text-stone-400">{r.date}</span>
+                    <div key={i} className="shrink-0 w-52 min-[360px]:w-60 bg-white border border-orange-100 t-border rounded-xl p-2.5 min-[360px]:p-3 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1.5">
+                                {r.image ? (
+                                    <img
+                                        src={r.image}
+                                        alt={r.name}
+                                        className="w-7 h-7 min-[360px]:w-8 min-[360px]:h-8 rounded-full object-cover border border-orange-200 shrink-0 shadow-xs"
+                                        onError={(e) => {
+                                            (e.currentTarget as HTMLElement).style.display = "none";
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="w-7 h-7 min-[360px]:w-8 min-[360px]:h-8 rounded-full bg-gradient-to-tr from-amber-500 to-orange-400 text-white font-bold text-[11px] min-[360px]:text-[12px] flex items-center justify-center shrink-0 shadow-xs">
+                                        {r.name.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1">
+                                        <span className="font-bold text-stone-800 text-[11px] min-[360px]:text-[12px] truncate">{r.name}</span>
+                                        {r.verified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                                    </div>
+                                    {r.address && (
+                                        <div className="text-[8.5px] min-[360px]:text-[9px] text-stone-400 truncate leading-none mt-0.5">
+                                            {r.address}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <Stars value={r.rating} className="w-3 h-3" />
+                            <p className="text-[10.5px] min-[360px]:text-[11.5px] text-stone-600 mt-1.5 leading-snug line-clamp-3">{r.text}</p>
                         </div>
-                        <Stars value={r.rating} className="w-3 h-3" />
-                        <p className="text-[10.5px] min-[360px]:text-[11.5px] text-stone-600 mt-1 leading-snug line-clamp-3">{r.text}</p>
                     </div>
                 ))}
             </div>
@@ -285,7 +315,18 @@ export default function LiveMandirPujaDetailPage() {
     const [templeTab, setTempleTab] = useState<"about" | "history">("about");
     const [selectedPackageId, setSelectedPackageId] = useState<string>("");
     const [prasadAdded, setPrasadAdded] = useState(false);
+    const [liveReviews, setLiveReviews] = useState<LiveMandirReview[]>([]);
     const packagesRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        fetchLiveTestimonials().then((data) => {
+            if (mounted && data && data.length > 0) {
+                setLiveReviews(data);
+            }
+        });
+        return () => { mounted = false; };
+    }, []);
 
     // Gentle one-time nudge: ~3.5s after landing, if the devotee hasn't scrolled
     // yet, glide the page down so the package comparison is on screen. We run our
@@ -481,7 +522,9 @@ export default function LiveMandirPujaDetailPage() {
     const isClosed = puja.status === "closed" || isPastDate;
     const statusLabel = isClosed ? "CLOSED" : puja.status === "live" ? "LIVE NOW" : puja.status === "upcoming" ? "UPCOMING" : "DAILY SEVA";
     const mandirName = `${puja.templeName}${puja.templeLocation && puja.templeLocation !== puja.templeName ? `, ${puja.templeLocation}` : ""}`;
-    const reviews = puja.reviews?.length ? puja.reviews : seededReviews(slug ?? puja.id, 9);
+    const reviews = liveReviews.length > 0
+        ? liveReviews
+        : (puja.reviews?.length ? puja.reviews : seededReviews(slug ?? puja.id, 9));
     const videos = puja.videos ?? [];
     const devoteesLabel = "50K+"; // static figure — TODO: source from real data
     const whatYouGet = [

@@ -73,6 +73,8 @@ export interface LiveMandirReview {
     date: string;   // ISO or human label
     text: string;
     verified?: boolean;
+    address?: string;
+    image?: string;
 }
 export const LIVE_MANDIR_PUJAS: LiveMandirPuja[] = [
     {

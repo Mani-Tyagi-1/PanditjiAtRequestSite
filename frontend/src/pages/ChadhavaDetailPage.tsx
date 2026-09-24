@@ -92,50 +92,9 @@ function formatOfferingDate(dateStr?: string): string {
     return `${day} ${month} ${d.getFullYear()} , ${weekday}`;
 }
 
-// Pool of short, genuine-sounding devotee reviews for chadhava offerings. A
-// different random subset is shown per chadhava (see seededReviews) so the
-// reviews vary page-to-page instead of repeating everywhere.
-// ponytail: self-contained here — the LiveMandir page keeps its own puja-context
-// pool; the two contexts (offering vs live puja) differ enough that one shared
-// list would read wrong on both. TODO: replace with real reviews from the API.
+// Devotee reviews come from the admin-managed testimonials (same source as the
+// home page); `date` holds the reviewer's location.
 interface ChadhavaReview { name: string; rating: number; date: string; text: string; verified?: boolean; }
-const PLACEHOLDER_REVIEWS: ChadhavaReview[] = [
-    { name: "Sunita Rao", rating: 5, date: "1 week ago", text: "Offered chadhava in my name at the temple. Got the photos next day. 🙏", verified: true },
-    { name: "Rahul Khanna", rating: 5, date: "3 weeks ago", text: "They shared a video of my offering being done. Felt blessed.", verified: true },
-    { name: "Geeta Iyer", rating: 5, date: "2 weeks ago", text: "Prasad box reached home nicely packed. Very happy.", verified: true },
-    { name: "Mohit Saxena", rating: 4, date: "1 month ago", text: "Smooth booking and got proof of the chadhava. Authentic.", verified: false },
-    { name: "Pooja Reddy", rating: 5, date: "6 days ago", text: "Booked from Dubai for my parents. They received the prasad. 🙏", verified: true },
-    { name: "Anil Kapoor", rating: 5, date: "1 month ago", text: "First time trying this. Got photos of the offering same day.", verified: true },
-    { name: "Shalini Nair", rating: 4, date: "3 weeks ago", text: "Good service. Prasad took a few days but reached safely.", verified: true },
-    { name: "Deepa Joshi", rating: 5, date: "2 weeks ago", text: "Loved the photos they sent. Felt like I was at the temple.", verified: false },
-    { name: "Vivek Sharma", rating: 5, date: "1 month ago", text: "Genuine offering, no doubts. Will book again.", verified: true },
-    { name: "Kiran Patel", rating: 5, date: "4 days ago", text: "Quick updates on WhatsApp and clear photos of chadhava. 🙏", verified: true },
-    { name: "Manju Devi", rating: 5, date: "2 months ago", text: "Did this in my late husband's name. Felt peaceful. Thank you.", verified: true },
-    { name: "Rohit Verma", rating: 4, date: "3 weeks ago", text: "Overall happy. Would like more photos but satisfied.", verified: false },
-    { name: "Sneha Kulkarni", rating: 5, date: "1 week ago", text: "Booking was easy and the prasad was fresh. Recommended.", verified: true },
-    { name: "Arvind Menon", rating: 5, date: "1 month ago", text: "Offered in my family's name. Got the video as promised.", verified: true },
-    { name: "Neeta Agarwal", rating: 5, date: "5 days ago", text: "Very reliable. Photos came the same evening. 🙏", verified: false },
-    { name: "Suresh Nayak", rating: 5, date: "2 months ago", text: "Authentic chadhava and timely prasad delivery. Happy.", verified: true },
-    { name: "Lata Pillai", rating: 4, date: "3 weeks ago", text: "Nice experience. Booking could be faster but good service.", verified: true },
-    { name: "Gaurav Mehta", rating: 5, date: "1 week ago", text: "Booked from USA, prasad reached my mom in India. 🙏", verified: true },
-    { name: "Ritika Singh", rating: 5, date: "1 month ago", text: "They did everything properly and shared proof. Trustworthy.", verified: false },
-    { name: "Harish Gupta", rating: 5, date: "2 weeks ago", text: "Simple, genuine and devotional. Got my offering photos.", verified: true },
-];
-
-// Pick a stable-but-varied subset of reviews for a chadhava. Seeded by slug so
-// the same page always shows the same reviews (no reshuffle on countdown ticks)
-// while different chadhavas show different ones.
-function seededReviews(seed: string, count: number): ChadhavaReview[] {
-    let h = 2166136261;
-    for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619); }
-    const rand = () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h ^= h >>> 13; return (h >>> 0) / 4294967296; };
-    const a = [...PLACEHOLDER_REVIEWS];
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(rand() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a.slice(0, Math.min(count, a.length));
-}
 
 function ReviewStars({ value }: { value: number }) {
     const full = Math.round(value);
@@ -183,6 +142,7 @@ export default function ChadhavaDetailPage() {
     const [prasadUpsellOpen, setPrasadUpsellOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<"about" | "history">("about");
     const [bannerIndex, setBannerIndex] = useState(0);
+    const bannerRailRef = useRef<HTMLDivElement>(null);
     const sectionsRef = useRef<HTMLDivElement>(null);
 
     // Is this the frontend-only Devshayani Ekadashi combo?
@@ -224,14 +184,31 @@ export default function ChadhavaDetailPage() {
                 // as a last-resort fallback below, when a doc exposes nothing
                 // else at all.
                 const imgLoc = (v: any): string => (v && typeof v === "object" ? v.location : v) || "";
-                const bannerImages = Array.from(new Set([
-                    raw.chadhavaWebCardImage,
-                    ...(Array.isArray(raw.chadhavaInnerImages) ? raw.chadhavaInnerImages : []),
-                    ...(Array.isArray(raw.chadhavaImages) ? raw.chadhavaImages : []),
-                    ...(Array.isArray(raw.bannerImages) ? raw.bannerImages : []),
-                    ...(Array.isArray(raw.images) ? raw.images : []),
-                    raw.image,
-                ].map(imgLoc).filter(Boolean)));
+                const uniqueImages = (list: any[]): string[] => {
+                    const seen = new Set<string>();
+                    return list.map(imgLoc).filter((url: string) => {
+                        if (!url || seen.has(url)) return false;
+                        seen.add(url);
+                        return true;
+                    });
+                };
+                // The hero shows ONLY the web card image the admin uploaded — not
+                // the inner images. Inner/legacy arrays are used solely as a
+                // fallback when no web card image exists.
+                const bannerImages = uniqueImages([raw.chadhavaWebCardImage]);
+                if (bannerImages.length === 0) {
+                    bannerImages.push(...uniqueImages(
+                        Array.isArray(raw.chadhavaInnerImages) ? raw.chadhavaInnerImages : [],
+                    ));
+                }
+                if (bannerImages.length === 0) {
+                    bannerImages.push(...uniqueImages([
+                        ...(Array.isArray(raw.chadhavaImages) ? raw.chadhavaImages : []),
+                        ...(Array.isArray(raw.bannerImages) ? raw.bannerImages : []),
+                        ...(Array.isArray(raw.images) ? raw.images : []),
+                        raw.image,
+                    ]));
+                }
                 if (bannerImages.length === 0) {
                     const fallback = imgLoc(raw.chadhavaAppImage);
                     if (fallback) bannerImages.push(fallback);
@@ -447,7 +424,33 @@ export default function ChadhavaDetailPage() {
     const grandTotal = itemsTotal + prasadPrice;
     const sevasSelected = selections.length;
     const targetDate = chadhava?.availableDates?.[0] || new Date(Date.now() + 13 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000 + 6 * 60 * 1000).toISOString();
-    const reviews = useMemo(() => seededReviews(slug ?? chadhava?.id ?? "chadhava", 9), [slug, chadhava?.id]);
+    const [reviews, setReviews] = useState<ChadhavaReview[]>([]);
+    // Average of the admin testimonial ratings; falls back to the chadhava's own
+    // rating only while none have loaded (or the admin has none).
+    const avgRating = reviews.length
+        ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+        : chadhava?.rating ?? 5;
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`${API_URL}/fetch-all-testimonials`)
+            .then((res) => res.json())
+            .then((json) => {
+                if (cancelled || !json?.success || !Array.isArray(json.data)) return;
+                setReviews(
+                    json.data
+                        .filter((t: any) => t.isActive !== false && t.user_testimonial)
+                        .map((t: any): ChadhavaReview => ({
+                            name: t.user_name || "Devotee",
+                            rating: Number(t.rating) || 5,
+                            date: t.address || "",
+                            text: t.user_testimonial,
+                            verified: true,
+                        })),
+                );
+            })
+            .catch(() => { });
+        return () => { cancelled = true; };
+    }, []);
 
     if (loading) {
         return (
@@ -496,10 +499,13 @@ export default function ChadhavaDetailPage() {
                     <div className="px-3 pt-3">
                         <div className="relative rounded-[22px] overflow-hidden shadow-[0_10px_30px_-12px_rgba(224,90,16,0.25)]">
                             <div
-                                className="flex items-start overflow-x-auto snap-x snap-mandatory scrollbar-none"
+                                ref={bannerRailRef}
+                                className="flex items-start overflow-x-auto snap-x snap-mandatory scrollbar-hide"
                                 onScroll={(e) => {
                                     const el = e.currentTarget;
-                                    setBannerIndex(Math.round(el.scrollLeft / el.clientWidth));
+                                    if (!el.clientWidth) return;
+                                    const idx = Math.round(el.scrollLeft / el.clientWidth);
+                                    setBannerIndex(Math.min(Math.max(idx, 0), banners.length - 1));
                                 }}
                             >
                                 {banners.map((img, i) => (
@@ -518,7 +524,7 @@ export default function ChadhavaDetailPage() {
 
                             <div className="absolute bottom-3 left-3 bg-white/95 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-sm">
                                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                <span className="text-[12px] font-bold text-stone-800">{chadhava.rating.toFixed(1)}</span>
+                                <span className="text-[12px] font-bold text-stone-800">{avgRating.toFixed(1)}</span>
                                 {chadhava.devoteesOffered > 0 && (
                                     <span className="text-[11px] text-stone-500 font-semibold">({chadhava.devoteesOffered})</span>
                                 )}
@@ -533,9 +539,16 @@ export default function ChadhavaDetailPage() {
                         {banners.length > 1 && (
                             <div className="flex items-center justify-center gap-1.5 mt-2.5">
                                 {banners.map((_, i) => (
-                                    <span
+                                    <button
                                         key={i}
-                                        className={`h-1.5 rounded-full transition-all ${i === bannerIndex ? "w-5 bg-[#E05A10]" : "w-1.5 bg-[#FFD9BF]"
+                                        type="button"
+                                        aria-label={`Show image ${i + 1}`}
+                                        onClick={() => {
+                                            const el = bannerRailRef.current;
+                                            if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+                                            setBannerIndex(i);
+                                        }}
+                                        className={`h-1.5 rounded-full transition-all p-0 border-0 ${i === bannerIndex ? "w-5 bg-[#E05A10]" : "w-1.5 bg-[#FFD9BF]"
                                             }`}
                                     />
                                 ))}
@@ -547,18 +560,18 @@ export default function ChadhavaDetailPage() {
 
             {/* Title + temple + date */}
             <div className="px-4 pt-3">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center justify-between gap-3">
                     <h2 className="text-[18px] font-bold text-[#2E1F15] leading-snug text-left flex-1">
                         {chadhava.deity}
                     </h2>
-                    <button onClick={(e) => handleShare(e, chadhava)} className="w-9 h-9 rounded-xl bg-[#FFF1E6] flex items-center justify-center shrink-0 active:scale-90 transition-transform">
+                    <button onClick={(e) => handleShare(e, chadhava)} className="w-8 h-8 rounded-xl bg-[#FFF1E6] flex items-center justify-center shrink-0 active:scale-90 transition-transform">
                         <Share2 className="w-4 h-4 text-[#E05A10]" />
                     </button>
                 </div>
                 {chadhava.deityHindi && (
                     <p className="text-[13px] text-stone-500 mt-1 text-left">{chadhava.deityHindi}</p>
                 )}
-                <div className="mt-3 space-y-1.5">
+                <div className="mt-1 space-y-0.5">
                     <div className="flex items-center gap-2 text-[13px] text-stone-700">
                         <MapPin className="w-4 h-4 text-[#E05A10] shrink-0" />
                         <span className="font-semibold text-left">{chadhava.templeName}{chadhava.templeLocation ? `, ${chadhava.templeLocation}` : ""}</span>
@@ -574,15 +587,22 @@ export default function ChadhavaDetailPage() {
 
             {/* WhatsApp reassurance line */}
             <div className="px-4 pt-3">
-                <div className="relative flex items-center gap-2.5 py-2 pl-3 pr-24 bg-green-50 border border-green-200 text-green-700 rounded-xl text-[12px] font-semibold text-start">
+                <div className="relative flex items-center gap-2.5 py-2 pl-3 pr-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-[12px] font-semibold text-start">
                     <MessageCircle className="w-4 h-4 text-green-600 shrink-0" />
-                    <span>Receive chadhava video with your name &amp; gotra on <span className="font-bold">WhatsApp</span></span>
-                    <img
+                    <style>{`@keyframes waLineMarquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.wa-line-track{display:flex;width:max-content;animation:waLineMarquee 14s linear infinite}@media (prefers-reduced-motion:reduce){.wa-line-track{animation:none}}`}</style>
+                    <div className="overflow-hidden min-w-0 flex-1 text-[11px] min-[380px]:text-[12px]">
+                        <div className="wa-line-track">
+                            {[0, 1].map((n) => (
+                                <span key={n} className="whitespace-nowrap pr-8" aria-hidden={n === 1}>Receive chadhava video with your name &amp; gotra on <span className="font-bold">WhatsApp</span></span>
+                            ))}
+                        </div>
+                    </div>
+                    {/* <img
                         src="https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/makhan%20apnkh.png"
                         alt=""
                         aria-hidden="true"
                         className="absolute right-[-10px] top-0 h-[82px] pointer-events-none select-none"
-                    />
+                    /> */}
                 </div>
             </div>
 
@@ -779,10 +799,12 @@ export default function ChadhavaDetailPage() {
             )}
 
             {/* Devotee reviews */}
-            <div className="px-4 pt-5">
-                <h3 className="text-[16px] font-bold text-[#2E1F15] mb-3 text-left">Loved by devotees</h3>
-                <ReviewMarquee reviews={reviews} />
-            </div>
+            {reviews.length > 0 && (
+                <div className="px-4 pt-5">
+                    <h3 className="text-[16px] font-bold text-[#2E1F15] mb-3 text-left">Loved by devotees</h3>
+                    <ReviewMarquee reviews={reviews} />
+                </div>
+            )}
 
             {/* About Chadhava */}
             {chadhava.description && (
@@ -824,12 +846,12 @@ export default function ChadhavaDetailPage() {
                 <div className="px-4 pt-5">
                     <div className="bg-white rounded-[24px] border border-[#FFEFE2] overflow-hidden shadow-sm">
                         {chadhava.mandirAppImage && (
-                            <div className="w-full h-36 overflow-hidden">
+                            <div className="w-full overflow-hidden">
                                 <img
                                     src={optimizedImg(chadhava.mandirAppImage, 700)}
                                     onError={(e) => { e.currentTarget.src = chadhava.mandirAppImage || ""; }}
                                     alt={chadhava.templeName}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-auto block"
                                     loading="lazy"
                                 />
                             </div>
@@ -991,7 +1013,7 @@ export default function ChadhavaDetailPage() {
                                         src={optimizedImg(chadhava.prasad?.image || chadhava.image, 140)}
                                         onError={(e) => { e.currentTarget.src = chadhava.prasad?.image || chadhava.image; }}
                                         alt="Prasad Box"
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-fit"
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">

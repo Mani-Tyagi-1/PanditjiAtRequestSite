@@ -355,11 +355,11 @@ export default function ChadhavaPage() {
                                 className="bg-[#FFFDF9] rounded-[24px] overflow-hidden border border-[#FFEFE2] shadow-[0_12px_36px_-12px_rgba(224,90,16,0.12)] cursor-pointer active:scale-[0.995] transition-transform flex flex-col"
                             >
                                 {/* Banner Image container */}
-                                <div className="relative w-full h-52 overflow-hidden rounded-t-[24px]">
+                                <div className="relative w-full overflow-hidden rounded-t-[24px] bg-stone-100">
                                     <img
                                         src={c.image}
                                         alt={c.deity}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-auto block"
                                         loading="lazy"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />

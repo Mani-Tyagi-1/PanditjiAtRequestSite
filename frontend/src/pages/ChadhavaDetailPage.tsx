@@ -11,6 +11,8 @@ import { devshayaniCombo, DEVSHAYANI_COMBO_SLUG, COMBO_TEMPLES, COMBO_PRASAD_BOX
 import { money } from "../utils/currency";
 import analytics from "../utils/analytics";
 
+const PRASAD_BOX_IMAGE = "https://vedic-vaibhav.blr1.cdn.digitaloceanspaces.com/Pandit%20ji%20at%20request/panditji-removebg-preview.png";
+
 function CountdownTimer({ targetDate, variant = "badge" }: { targetDate: string; variant?: "badge" | "bar" | "goldbar" }) {
     const [timeLeft, setTimeLeft] = useState("");
     const isLongFormat = variant === "bar" || variant === "goldbar";
@@ -762,8 +764,8 @@ export default function ChadhavaDetailPage() {
                         onClick={() => setAddPrasad((v) => !v)}
                         className={`w-full text-left bg-white rounded-2xl border-2 p-3 flex gap-3 items-center transition-colors ${addPrasad ? "border-emerald-400 bg-emerald-50/40" : "border-dashed border-amber-300"}`}
                     >
-                        <span className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-                            <Gift className="w-5 h-5 text-amber-600" />
+                        <span className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 overflow-hidden">
+                            <img src={PRASAD_BOX_IMAGE} alt="Prasad Box" className="w-full h-full object-contain" />
                         </span>
                         <div className="flex-1 min-w-0">
                             <h5 className="text-[13.5px] font-bold text-stone-800">{chadhava.prasad.name}</h5>
@@ -1010,10 +1012,9 @@ export default function ChadhavaDetailPage() {
                             <div className="mt-5 border border-[#FFEFE2] rounded-2xl p-4 bg-[#FFFDF9] flex gap-3 text-left items-center">
                                 <div className="w-16 h-16 rounded-xl bg-orange-50 overflow-hidden shrink-0 border border-orange-100 flex items-center justify-center">
                                     <img
-                                        src={optimizedImg(chadhava.prasad?.image || chadhava.image, 140)}
-                                        onError={(e) => { e.currentTarget.src = chadhava.prasad?.image || chadhava.image; }}
+                                        src={PRASAD_BOX_IMAGE}
                                         alt="Prasad Box"
-                                        className="w-full h-full object-fit"
+                                        className="w-full h-full object-contain"
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">

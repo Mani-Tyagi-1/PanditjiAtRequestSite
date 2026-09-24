@@ -11,6 +11,7 @@ import analytics, { type AnalyticsItem } from "../utils/analytics";
 // Devshayani combo — prasad-box contents accordion (frontend-only, removable)
 import { DEVSHAYANI_COMBO_SLUG, COMBO_PRASAD_BOX_ITEMS } from "../data/devshayaniCombo";
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
+import { getPartnerRefCode } from "../utils/partnerRef";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 
 // State handed over from ChadhavaDetailPage via navigate(..., { state }). Carried
@@ -259,6 +260,9 @@ export default function ChadhavaBookingPage() {
 
     const handlePay = async () => {
         setError("");
+        // Read at pay time, not render time: the visitor may have landed on the invite link in
+        // another tab after this page mounted.
+        const partnerRefCode = getPartnerRefCode();
         const errors: Record<string, string> = {};
 
         if (!form.name.trim()) {
@@ -388,7 +392,11 @@ export default function ChadhavaBookingPage() {
                     email: form.email.trim(),
                     wish: form.wish.trim(),
                     familyMembers: finalFamilyMembers,
-                    deliveryAddress: addressPayload
+                    deliveryAddress: addressPayload,
+                    // Partner attribution: a devotee who arrived on an invite link often buys as
+                    // a guest, so the code has to travel with the order — there may be no profile
+                    // carrying it by the time payment settles.
+                    ...(partnerRefCode && { referralCode: partnerRefCode }),
                 }),
             });
             const orderData = await orderRes.json();

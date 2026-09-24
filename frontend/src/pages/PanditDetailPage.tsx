@@ -225,148 +225,148 @@ export default function PanditDetailPage() {
     .join(", ");
 
   return (
-    <div className="min-h-screen bg-[#FFFAF3] pb-24 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100 flex flex-col justify-between">
-      <div>
-        {/* Hero image header */}
-        <div className="relative h-64 bg-gradient-to-br from-orange-100 to-amber-100 shrink-0 shadow-sm border-b border-orange-100/50">
-          {pandit.profileImage ? (
-            <img
-              src={pandit.profileImage}
-              alt={fullName}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
-              className="w-full h-full object-cover object-top"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-7xl bg-[#FEF6EC]">🙏</div>
+    <div className="min-h-screen bg-[#FFFAF3] pb-28 font-sans w-full max-w-md mx-auto shadow-xl relative border-x border-orange-100">
+      {/* Hero */}
+      <div className="relative h-80 bg-gradient-to-br from-orange-200 via-amber-100 to-orange-100 overflow-hidden">
+        {pandit.profileImage ? (
+          <img
+            src={pandit.profileImage}
+            alt={fullName}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+            className="w-full h-full object-fill object-top"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-8xl">🙏</div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/25" />
+
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
+          className="absolute top-4 left-4 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform"
+        >
+          <ArrowLeft className="w-5 h-5 text-stone-700" />
+        </button>
+
+        {pandit.isVerified && (
+          <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/95 rounded-full px-3 py-1.5 shadow-md">
+            <BadgeCheck className="w-4 h-4 text-orange-500" />
+            <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Verified</span>
+          </div>
+        )}
+
+        <div className="absolute bottom-0 left-0 right-0 px-5 pb-12">
+          <h1 className="text-white font-extrabold text-[26px] leading-tight drop-shadow-lg">{fullName}</h1>
+          {location && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <MapPin className="w-3.5 h-3.5 text-orange-300 shrink-0" />
+              <span className="text-orange-50 text-xs font-medium">{location}</span>
+            </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        </div>
+      </div>
 
-          {/* Close/Back button */}
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-5 left-4 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md border border-orange-200/40 active:scale-90 transition-transform"
-          >
-            <ArrowLeft className="w-4.5 h-4.5 text-stone-700" />
-          </button>
-
-          {/* Name overlay */}
-          <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
-            <div className="flex items-end justify-between">
-              <div>
-                <h1 className="text-white font-bold text-2xl leading-tight drop-shadow">{fullName}</h1>
-                {location && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-                    <span className="text-orange-100 text-xs font-medium">{location}</span>
-                  </div>
-                )}
-              </div>
-              {pandit.isVerified && (
-                <div className="flex items-center gap-1 bg-white/95 rounded-full px-3 py-1 shadow border border-orange-100/60">
-                  <BadgeCheck className="w-4 h-4 text-orange-500" />
-                  <span className="text-[10px] font-bold text-orange-600 tracking-wider">Verified</span>
-                </div>
-              )}
-            </div>
+      {/* Body */}
+      <div className="relative -mt-8 px-4 space-y-4">
+        {/* Stats */}
+        <div className="grid grid-cols-3 divide-x divide-orange-100 bg-white rounded-2xl py-4 shadow-lg shadow-orange-100/60 border border-orange-100/70">
+          <div className="flex flex-col items-center justify-center px-2">
+            <p className="text-lg font-black text-stone-800 leading-none">{(pandit.rating ?? 5).toFixed(1)}</p>
+            <div className="mt-1.5"><StarRating rating={pandit.rating ?? 5} /></div>
+            <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Rating</p>
+          </div>
+          <div className="flex flex-col items-center justify-center px-2">
+            <p className="text-lg font-black text-orange-600 leading-none">{pandit.experienceInYears || 3}+</p>
+            <p className="text-[9px] text-stone-400 mt-2.5 font-bold uppercase tracking-wider">Yrs Experience</p>
+          </div>
+          <div className="flex flex-col items-center justify-center px-2">
+            <p className="text-lg font-black text-stone-800 leading-none capitalize">{pandit.gender || "—"}</p>
+            <p className="text-[9px] text-stone-400 mt-2.5 font-bold uppercase tracking-wider">Gender</p>
           </div>
         </div>
 
-        {/* Info Body */}
-        <div className="px-4 py-5 space-y-4">
+        {/* Availability */}
+        <div className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border text-xs font-bold ${pandit.isActive
+          ? "bg-green-50 border-green-200 text-green-700"
+          : "bg-stone-50 border-stone-200 text-stone-500"
+          }`}>
+          <span className="relative flex h-2.5 w-2.5">
+            {pandit.isActive && <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />}
+            <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${pandit.isActive ? "bg-green-500" : "bg-stone-400"}`} />
+          </span>
+          {pandit.isActive ? "Available for Puja right now" : "Currently offline / unavailable"}
+        </div>
 
-          {/* Quick Metrics */}
-          <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-3.5 shadow-sm border border-orange-100/70">
-            <div className="text-center flex flex-col items-center">
-              <StarRating rating={pandit.rating ?? 5} size="md" />
-              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Rating</p>
-            </div>
-            <div className="w-px h-8 bg-stone-100" />
-            <div className="text-center">
-              <p className="text-lg font-black text-orange-600 leading-none">{pandit.experienceInYears || 3}+</p>
-              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Yrs Exp</p>
-            </div>
-            <div className="w-px h-8 bg-stone-100" />
-            {/* <div className="text-center">
-              <p className="text-sm font-bold text-stone-700 leading-none">{pandit.age || "—"}</p>
-              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Age</p>
-            </div> */}
-            <div className="w-px h-8 bg-stone-100" />
-            <div className="text-center">
-              <p className="text-sm font-bold text-stone-700 leading-none capitalize">{pandit.gender || "—"}</p>
-              <p className="text-[9px] text-stone-400 mt-1 font-bold uppercase tracking-wider">Gender</p>
-            </div>
-          </div>
-
-          {/* Details Card */}
-          <div className="bg-white rounded-2xl border border-orange-100/70 shadow-sm divide-y divide-stone-100">
-
-            {pandit.dob && (
-              <DetailRow icon={<Calendar className="w-4 h-4 text-orange-500 shrink-0" />} label="Date of Birth" value={formatDate(pandit.dob)} />
-            )}
-
+        {/* Languages & service modes */}
+        {(pandit.languages?.length > 0 || pandit.serviceModes?.length > 0) && (
+          <div className="bg-white rounded-2xl border border-orange-100/70 shadow-sm p-4 space-y-4">
             {pandit.languages?.length > 0 && (
-              <DetailRow
-                icon={<Languages className="w-4 h-4 text-orange-500 shrink-0" />}
-                label="Languages"
-                value={pandit.languages.join(", ")}
-              />
-            )}
-
-            {pandit.serviceModes?.length > 0 && (
-              <div className="px-4 py-3 flex items-start gap-3">
-                <Briefcase className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-[11px] text-stone-400 font-medium mb-1.5">Service Modes</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {pandit.serviceModes.map((mode) => (
-                      <span
-                        key={mode}
-                        className="text-[10px] font-bold px-2.5 py-0.8 rounded-full bg-orange-50 text-orange-600 border border-orange-100/50"
-                      >
-                        {mode}
-                      </span>
-                    ))}
-                  </div>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Languages className="w-4 h-4 text-orange-500" />
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500">Languages</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {pandit.languages.map((l) => (
+                    <span key={l} className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70">
+                      {l}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
+            {pandit.serviceModes?.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Briefcase className="w-4 h-4 text-orange-500" />
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-stone-500">Service Modes</p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {pandit.serviceModes.map((mode) => (
+                    <span key={mode} className="text-xs font-semibold px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200/70 capitalize">
+                      {mode}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
+        {/* Details */}
+        {(pandit.dob || pandit.mobileType || pandit.location?.address || pandit.location?.pincode) && (
+          <div className="bg-white rounded-2xl border border-orange-100/70 shadow-sm divide-y divide-stone-100">
+            {pandit.dob && (
+              <DetailRow icon={<Calendar className="w-4 h-4 text-orange-500" />} label="Date of Birth" value={formatDate(pandit.dob)} />
+            )}
             {pandit.mobileType && (
-              <DetailRow icon={<Smartphone className="w-4 h-4 text-orange-500 shrink-0" />} label="Device" value={pandit.mobileType} />
+              <DetailRow icon={<Smartphone className="w-4 h-4 text-orange-500" />} label="Device" value={pandit.mobileType} />
             )}
-
             {pandit.location?.address && (
-              <DetailRow icon={<MapPin className="w-4 h-4 text-orange-500 shrink-0" />} label="Address" value={pandit.location.address} />
+              <DetailRow icon={<MapPin className="w-4 h-4 text-orange-500" />} label="Address" value={pandit.location.address} />
             )}
-
             {pandit.location?.pincode && (
-              <DetailRow icon={<Globe className="w-4 h-4 text-orange-500 shrink-0" />} label="Pincode" value={pandit.location.pincode} />
+              <DetailRow icon={<Globe className="w-4 h-4 text-orange-500" />} label="Pincode" value={pandit.location.pincode} />
             )}
           </div>
-
-          {/* Active status banner */}
-          <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border text-xs font-bold shadow-sm ${pandit.isActive
-            ? "bg-green-50/60 border-green-200 text-green-700"
-            : "bg-stone-50 border-stone-200 text-stone-500"
-            }`}>
-            <span className={`w-2 h-2 rounded-full ${pandit.isActive ? "bg-green-500 animate-ping" : "bg-stone-400"}`} />
-            {pandit.isActive ? "Currently Active & Available for Puja" : "Currently Offline / Unavailable"}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Sticky Bottom booking CTA */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-orange-100/80 px-4 py-3.5 flex items-center justify-between shadow-lg">
-          <div className="flex-1 pr-4">
-            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider leading-none">Specialist Assigned</p>
-            <p className="text-[13px] text-stone-800 font-bold mt-1.5 truncate">
-              {pandit.prefix} {pandit.firstName}
-            </p>
+        <div className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-orange-100 px-4 py-3 flex items-center gap-3 shadow-[0_-8px_24px_rgba(251,146,60,0.15)]">
+          <div className="w-11 h-11 shrink-0 rounded-full overflow-hidden border-2 border-orange-300 bg-orange-50 flex items-center justify-center text-lg">
+            {pandit.profileImage ? (
+              <img src={pandit.profileImage} alt="" className="w-full h-full object-cover object-top" />
+            ) : "🙏"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider leading-none">Book directly</p>
+            <p className="text-[13px] text-stone-800 font-bold mt-1 truncate">{pandit.prefix} {pandit.firstName}</p>
           </div>
           <button
             onClick={handleOpenModal}
-            className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs py-3 rounded-2xl shadow-md shadow-orange-100 active:scale-[0.98] transition-transform text-center uppercase tracking-wider"
+            className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs px-5 py-3 rounded-2xl shadow-md shadow-orange-200 active:scale-[0.97] transition-transform uppercase tracking-wider whitespace-nowrap"
           >
             Select Pandit Ji
           </button>
@@ -599,6 +599,13 @@ export default function PanditDetailPage() {
             <p className="mt-3 text-[10px] text-stone-400 italic text-center">
               * Zero advance fees required. Pay securely on WhatsApp post-ritual coordination.
             </p>
+
+            <button
+              onClick={() => setIsBookingConfirmed(false)}
+              className="mt-4 w-full rounded-xl bg-gradient-to-r from-orange-500 to-red-500 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-orange-100 active:scale-[0.98] transition-transform"
+            >
+              Done
+            </button>
 
             {/* Actions */}
             {/* <div className="mt-5 space-y-2.5 shrink-0">

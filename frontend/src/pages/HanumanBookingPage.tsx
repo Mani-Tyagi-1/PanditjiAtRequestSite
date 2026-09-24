@@ -16,6 +16,7 @@ import {
 import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden — see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
+import { getPartnerRefCode } from "../utils/partnerRef";
 
 type Step = "details" | "success";
 
@@ -287,6 +288,9 @@ export default function HanumanBookingPage() {
     };
 
     const handleConfirm = async () => {
+        // Read at confirm time, not render time: the devotee may have opened the invite link
+        // in another tab after this page mounted.
+        const partnerRefCode = getPartnerRefCode();
         setError("");
 
         if (!form.name.trim()) {
@@ -361,6 +365,9 @@ export default function HanumanBookingPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
                     userId: user?._id || (user as any)?.id,
+                    // Partner attribution — the code the devotee arrived on. Guests often have
+                    // no profile carrying it, so it has to travel with the booking.
+                    ...(partnerRefCode && { referralCode: partnerRefCode }),
                     // Resolve the catalog row by its stable `poojaID` string rather
                     // than a hardcoded Mongo _id, which differs between the dev and
                     // production clusters. The server falls back to

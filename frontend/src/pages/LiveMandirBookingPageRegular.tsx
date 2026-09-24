@@ -13,6 +13,7 @@ import { isValidPhone, toStoredPhone, useMoney } from "../utils/currency";
 // import CountryPicker from "../components/checkout/CountryPicker";  // hidden ÔÇö see the commented block below
 import PhoneField from "../components/checkout/PhoneField";
 import AdminUpsellAddon, { type UpsellProduct } from "../components/booking/LiveMandirPujas/AdminUpsellAddon";
+import { getPartnerRefCode } from "../utils/partnerRef";
 
 // Puja handed over from LiveMandirPujaDetailPage via navigate(..., { state }).
 // Carried in router state (not the URL) so a direct hit / refresh ÔÇö which has no
@@ -284,6 +285,9 @@ export default function LiveMandirBookingPageRegular() {
     };
 
     const handleConfirm = async () => {
+        // Read at confirm time, not render time: the devotee may have opened the invite link
+        // in another tab after this page mounted.
+        const partnerRefCode = getPartnerRefCode();
         if (submitInFlight.current) return;
         submitInFlight.current = true;
         setError("");
@@ -372,6 +376,9 @@ export default function LiveMandirBookingPageRegular() {
         }
 
         const payload = {
+            // Partner attribution — the code the devotee arrived on. Guests often have no
+            // profile carrying it, so it has to travel with the booking.
+            ...(partnerRefCode && { referralCode: partnerRefCode }),
             isLiveMandir: true,
             pujaSlug: puja.id,
             packageName: puja.pujaName,

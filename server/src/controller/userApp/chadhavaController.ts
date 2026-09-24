@@ -471,7 +471,7 @@ export const getChadhavaQuote: RequestHandler = async (req, res) => {
 // POST /chadhava-bookings/create-order — pending booking + Razorpay order
 export const createChadhavaOrder: RequestHandler = async (req, res) => {
   try {
-    const { chadhavaSlug, items, addPrasadBox, devoteeName, gotra, phone, wish, familyMembers, deliveryAddress, email, emailId } = req.body;
+    const { chadhavaSlug, items, addPrasadBox, devoteeName, gotra, phone, wish, familyMembers, deliveryAddress, email, emailId, referralCode } = req.body;
 
     if (!chadhavaSlug || !devoteeName || !phone) {
       res.status(400).json({
@@ -562,6 +562,10 @@ export const createChadhavaOrder: RequestHandler = async (req, res) => {
       gotra,
       phone: cleanPhone,
       wish,
+      // Partner affiliate code the devotee arrived on. Stored now, at checkout, because the
+      // browser is the only thing that knows it — by payment-verify time the tab may be gone
+      // and the webhook path has no client state at all.
+      ...(referralCode && { referralCode: String(referralCode).trim() }),
       status: "pending",
       paymentStatus: "pending",
       razorpayOrderId: order.id,
@@ -653,6 +657,7 @@ export const completeChadhavaPayment: RequestHandler = async (req, res) => {
     if (chadhavaWasUnpaid) {
       void sendPjarOrderToPartnerAffiliate({
         phone: (booking as any).phone,
+        referralCode: (booking as any).referralCode,
         orderId: booking.razorpayOrderId,
         orderPrice: Number((booking as any).totalAmount),
         productName: (booking as any).chadhavaName || "CHADHAVA",
@@ -802,6 +807,7 @@ export async function reconcileChadhavaPayment(opts: {
     // one of the two ever flips the booking to "paid", so it fires exactly once.
     void sendPjarOrderToPartnerAffiliate({
       phone: (booking as any).phone,
+      referralCode: (booking as any).referralCode,
       orderId: booking.razorpayOrderId,
       orderPrice: Number((booking as any).totalAmount),
       productName: (booking as any).chadhavaName || "CHADHAVA",

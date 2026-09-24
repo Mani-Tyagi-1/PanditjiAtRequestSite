@@ -91,6 +91,7 @@ export const createLiveBooking: RequestHandler = async (req, res) => {
       members,
       phone,
       wish,
+      referralCode,
     } = req.body;
 
     if (!pujaSlug || !devoteeName || !phone || amount == null) {
@@ -174,6 +175,10 @@ export const createLiveBooking: RequestHandler = async (req, res) => {
       gotra,
       contactNumber: cleanPhone,
       emailId: user.email,
+      // Both rows carry the code: this one settles through the pooja reconciler, the
+      // LiveMandirBooking below through this controller's own verify/webhook path, and
+      // either may be the one that credits the partner.
+      ...(referralCode && { referralCode: String(referralCode).trim() }),
     });
 
     const booking = await LiveMandirBooking.create({
@@ -188,6 +193,7 @@ export const createLiveBooking: RequestHandler = async (req, res) => {
       members,
       phone: cleanPhone,
       wish,
+      ...(referralCode && { referralCode: String(referralCode).trim() }),
       status: "pending",
       paymentStatus: "pending",
       razorpayOrderId: order.id,
@@ -290,6 +296,7 @@ export const completeLiveBookingPayment: RequestHandler = async (req, res) => {
       void sendPjarOrderToPartnerAffiliate({
         userId: (booking as any).userId,
         phone: (booking as any).phone,
+        referralCode: (booking as any).referralCode,
         orderId: booking.razorpayOrderId,
         orderPrice: Number((booking as any).amount),
         productName: (booking as any).pujaName || "LIVE_MANDIR",
@@ -421,6 +428,7 @@ export async function reconcileLiveMandirPayment(opts: {
     void sendPjarOrderToPartnerAffiliate({
       userId: (booking as any).userId,
       phone: (booking as any).phone,
+      referralCode: (booking as any).referralCode,
       orderId: booking.razorpayOrderId,
       orderPrice: Number((booking as any).amount),
       productName: (booking as any).pujaName || "LIVE_MANDIR",

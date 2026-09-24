@@ -21,6 +21,8 @@ export interface IShopifyOrder {
   giftWrapCharge: number;
   giftRecipientName?: string;
   giftMessage?: string;
+  /** Partner affiliate code captured from `?ref=` at checkout; credits the referrer on payment. */
+  referralCode?: string;
   totalAmount: number;
   customerName: string;
   phone: string;
@@ -62,6 +64,9 @@ const shopifyOrderSchema = new Schema<IShopifyOrder>(
     giftWrapCharge: { type: Number, default: 0 },
     giftRecipientName: { type: String, trim: true },
     giftMessage: { type: String, trim: true },
+    // Partner affiliate code from `?ref=`. Left unset for organic traffic rather than defaulting
+    // to "", so attribution never has to special-case an empty code.
+    referralCode: { type: String, trim: true },
     totalAmount: { type: Number, required: true },
     customerName: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },

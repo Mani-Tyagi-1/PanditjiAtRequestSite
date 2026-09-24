@@ -11,7 +11,7 @@ export const getAllPandits = async (
 ): Promise<Response> => {
   try {
     // Fetch all pandits from the database
-    const pandits = await Pandit.find();
+    const pandits = await Pandit.find({ isRestricted: { $ne: true } });
 
     // Return the response with the list of pandits
     return res.status(200).json({
@@ -262,7 +262,7 @@ export const fetchAllPandit = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const pandits = await Pandit.find();
+    const pandits = await Pandit.find({ isRestricted: { $ne: true } });
     return res.status(200).json({
       success: true,
       data: pandits,
@@ -283,7 +283,7 @@ export const fetchPanditById = async (
   try {
     const { id } = req.params;
     const pandit = await Pandit.findById(id);
-    if (!pandit) {
+    if (!pandit || pandit.isRestricted) {
       return res.status(404).json({
         success: false,
         message: "Pandit not found",

@@ -15,6 +15,7 @@ type Pandit = {
     rating?: number;
     isVerified?: boolean;
     isActive?: boolean;
+    isRestricted?: boolean;
     location?: { city?: string; state?: string };
 };
 
@@ -29,7 +30,7 @@ export default function VerifiedPanditJi() {
                 const { data } = await axios.get(`${API_URL}/pandits`);
                 if (data?.success && Array.isArray(data.data)) {
                     const filtered = data.data.filter((p: Pandit) => {
-                        if (p.isActive === false || p.isVerified !== true) return false;
+                        if (p.isActive === false || p.isRestricted === true || p.isVerified !== true) return false;
                         const fullName = `${p.prefix || ""} ${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
                         if (fullName.includes("nirmanyu thakur") || fullName.includes("vansh bhandari")) return false;
                         return true;

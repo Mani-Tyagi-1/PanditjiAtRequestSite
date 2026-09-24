@@ -20,6 +20,7 @@ interface Pandit {
   rating: number;
   isVerified: boolean;
   isActive: boolean;
+  isRestricted?: boolean;
   serviceModes: string[];
   location?: {
     city?: string;
@@ -60,7 +61,7 @@ function PanditCard({ pandit, index, onClick }: { pandit: Pandit; index: number;
       className="flex-shrink-0 w-44 bg-white rounded-2xl shadow-sm border border-orange-100/70 overflow-hidden cursor-pointer active:scale-95 transition-transform"
     >
       {/* Image */}
-      <div className="relative h-40 bg-gradient-to-br from-orange-50 to-amber-50">
+      <div className="relative aspect-square bg-gradient-to-br from-orange-50 to-amber-50">
         {pandit.profileImage ? (
           <img
             src={pandit.profileImage}
@@ -115,7 +116,7 @@ export function PanditSection() {
         if (data.success && Array.isArray(data.data)) {
           // Filter only verified and active pandits
           const verifiedActive = data.data.filter(
-            (p: Pandit) => p.isActive !== false && p.isVerified === true
+            (p: Pandit) => p.isActive !== false && p.isRestricted !== true && p.isVerified === true
           );
           // Pick 10 randomly
           const random10 = [...verifiedActive]

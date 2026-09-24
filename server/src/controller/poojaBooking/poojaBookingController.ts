@@ -180,7 +180,7 @@ export async function sendBookingConfirmationWhatsapp(booking: any) {
       assignedPanditName = "Temple Priest";
     } else {
       try {
-        const pandits = await Pandit.find({}).lean();
+        const pandits = await Pandit.find({ isRestricted: { $ne: true } }).lean();
 
         if (poojaMode === 'offline' && address) {
           let userLat = Number(address.lat || address.latitude || address.location?.lat);

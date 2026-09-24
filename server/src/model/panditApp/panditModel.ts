@@ -29,6 +29,7 @@ export interface IPandit extends Document {
   aadharFile?: string;
   isVerified: boolean;
   isActive: boolean;
+  isRestricted: boolean; // set from admin; restricted pandits are hidden from the public site
   rating: number; // ⬅️ NEW: Rating for pandit ji
 
   otp?: string;
@@ -63,6 +64,7 @@ const PanditSchema = new Schema<IPandit>(
     aadharFile: { type: String, default: "" },
     isVerified: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    isRestricted: { type: Boolean, default: false },
     rating: { type: Number, default: 5.0 }, // ⬅️ NEW: Default rating
 
     otp: String,

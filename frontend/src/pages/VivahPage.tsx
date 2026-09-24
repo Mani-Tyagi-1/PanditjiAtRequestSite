@@ -132,6 +132,7 @@ type Pandit = {
   experienceInYears?: number;
   isVerified?: boolean;
   isActive?: boolean;
+  isRestricted?: boolean;
   location?: { city?: string; state?: string };
 };
 
@@ -219,7 +220,7 @@ export default function VivahPage() {
         if (!data?.success || !Array.isArray(data.data)) return;
         const live: PanditCard[] = data.data
           .filter((p: Pandit) => {
-            if (p.isActive === false || p.isVerified !== true) return false;
+            if (p.isActive === false || p.isRestricted === true || p.isVerified !== true) return false;
             const n =
               `${p.prefix || ""} ${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
             return (

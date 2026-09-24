@@ -20,6 +20,7 @@ interface Pandit {
   rating: number;
   isVerified: boolean;
   isActive: boolean;
+  isRestricted?: boolean;
   serviceModes: string[];
   location?: {
     city?: string;
@@ -58,7 +59,7 @@ export default function AllPanditsPage() {
       .then((data) => {
         if (data.success && Array.isArray(data.data)) {
           const filtered = data.data.filter((p: Pandit) => {
-            if (p.isActive === false || p.isVerified !== true) return false;
+            if (p.isActive === false || p.isRestricted === true || p.isVerified !== true) return false;
             const fullName = `${p.prefix || ""} ${p.firstName || ""} ${p.lastName || ""}`.toLowerCase();
             if (fullName.includes("nirmanyu thakur") || fullName.includes("vansh bhandari")) return false;
             return true;
@@ -136,7 +137,7 @@ export default function AllPanditsPage() {
                 >
                   <div>
                     {/* Image */}
-                    <div className="relative h-36 bg-gradient-to-br from-orange-50 to-amber-50">
+                    <div className="relative aspect-square bg-gradient-to-br from-orange-50 to-amber-50">
                       {pandit.profileImage ? (
                         <img
                           src={pandit.profileImage}
@@ -177,15 +178,6 @@ export default function AllPanditsPage() {
                     </div>
                   </div>
 
-                  {pandit.serviceModes?.length > 0 && (
-                    <div className="px-3 pb-3 pt-1 flex flex-wrap gap-1">
-                      {pandit.serviceModes.slice(0, 2).map((mode) => (
-                        <span key={mode} className="text-[8.5px] font-bold px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100/50">
-                          {mode}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </motion.div>
               );
             })}

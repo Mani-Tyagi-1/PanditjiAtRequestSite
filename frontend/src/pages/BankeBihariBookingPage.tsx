@@ -23,6 +23,7 @@ import PackageUpgradeNudge, { type UpgradeOffer } from "../components/bankeBihar
 import CheckoutRecommendationsSheet, { type RecommendedPuja } from "../components/booking/CheckoutRecommendationsSheet";
 import { useShopifyCart } from "../context/ShopifyCartContext";
 import { clearPujaCheckoutDraft, loadPujaCheckoutDraft, savePujaCheckoutDraft } from "../utils/pujaCheckoutDraft";
+import { getPartnerRefCode } from "../utils/partnerRef";
 
 type Step = "details" | "success";
 
@@ -468,6 +469,9 @@ export default function BankeBihariBookingPage() {
     };
 
     const handleConfirm = async (skipRecommendations = false, checkout?: { shopSubtotal: number; relatedPuja?: RecommendedPuja | null }) => {
+        // Read at confirm time, not render time: the devotee may have opened the invite link
+        // in another tab after this page mounted.
+        const partnerRefCode = getPartnerRefCode();
         setError("");
 
         if (!form.name.trim()) {
@@ -584,6 +588,9 @@ export default function BankeBihariBookingPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(encryptPayload({
                     userId: user?._id || (user as any)?.id,
+                    // Partner attribution — the code the devotee arrived on. Guests often have
+                    // no profile carrying it, so it has to travel with the booking.
+                    ...(partnerRefCode && { referralCode: partnerRefCode }),
                     addons,
                     // Resolve the catalog row by its stable `poojaID` string rather
                     // than a hardcoded Mongo _id, which differs between the dev and

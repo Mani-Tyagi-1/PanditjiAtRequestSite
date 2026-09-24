@@ -1068,6 +1068,7 @@ export const completeVedicVivahPayment: RequestHandler = async (req, res) => {
       void sendPjarOrderToPartnerAffiliate({
         userId: booking.userId,
         phone: booking.whatsapp ? String(booking.whatsapp) : null,
+        referralCode: booking.referralCode,
         orderId: booking.razorpayOrderId,
         orderPrice: Number(booking.amountPaid),
         productName: "VEDIC_VIVAH",

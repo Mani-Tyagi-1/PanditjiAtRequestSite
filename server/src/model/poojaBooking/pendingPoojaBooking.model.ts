@@ -211,6 +211,8 @@ export interface IPendingPoojaBooking extends Document {
   assignedPandit: Types.ObjectId[];
 
   isFromApp?: boolean;
+  /** Partner affiliate code captured from `?ref=` at checkout. Carried onto the final booking. */
+  referralCode?: string;
   userAvailabilityVC?: boolean;
   currentLat?: number | null;
   currentLong?: number | null;
@@ -325,6 +327,9 @@ const PendingPoojaBookingSchema = new Schema<IPendingPoojaBooking>(
     assignedPandit: [{ type: Schema.Types.ObjectId, ref: 'Pandit' }],
 
     isFromApp: { type: Boolean, default: false },
+    // Partner affiliate code from `?ref=`. No default: an empty string would just have to be
+    // filtered out again at attribution time, so organic traffic simply leaves this unset.
+    referralCode: { type: String, trim: true },
     userAvailabilityVC: { type: Boolean, default: true },
     currentLat: { type: Number, default: null },
     currentLong: { type: Number, default: null },

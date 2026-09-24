@@ -5,6 +5,7 @@ import { encryptPayload, decryptData } from "../../../utils/encryption";
 import API_URL from "../../../utils/apiConfig";
 import { useAbandonedCart } from "../../../utils/useAbandonedCart";
 import { money } from "../../../utils/currency";
+import { getPartnerRefCode } from "../../../utils/partnerRef";
 
 // The contact number must stay a number: strip anything non-numeric and keep
 // the last 10 digits, so a pasted "+91 98765 43210" lands as "9876543210"
@@ -1265,21 +1266,9 @@ export default function BookingModal({
         ? `${selectedDate}T${selectedTime}`
         : selectedDate;
 
-      // Read partner referral code from localStorage (2-day TTL)
-      const partnerRefCode = (() => {
-        try {
-          const raw = localStorage.getItem("pjar_partner_ref");
-          if (!raw) return "";
-          const entry = JSON.parse(raw) as { code: string; storedAt: number };
-          if (Date.now() - entry.storedAt > 2 * 24 * 60 * 60 * 1000) {
-            localStorage.removeItem("pjar_partner_ref");
-            return "";
-          }
-          return entry.code || "";
-        } catch {
-          return "";
-        }
-      })();
+      // Partner referral code from localStorage (2-day TTL lives in the helper, so every
+      // checkout honours the same window).
+      const partnerRefCode = getPartnerRefCode();
 
       const pendingPayload = {
         userId: effectiveUserId,

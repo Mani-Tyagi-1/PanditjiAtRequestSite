@@ -152,6 +152,8 @@ const PoojaBookingSchema = new Schema<IPoojaBooking>(
       },
     ],
     isFromApp: { type: Boolean, default: false },
+    // Partner affiliate code from `?ref=`, spread over from the pending booking that settled.
+    referralCode: { type: String, trim: true },
 
     deceasedPersons: [
       {

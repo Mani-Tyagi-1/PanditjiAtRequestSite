@@ -63,6 +63,7 @@ import { sessionToken } from "../data/vivahApi";
 import { PJAR, PjarLogo, VivahMark, VivahScope } from "../components/vivah/VivahLayout";
 import MuhuratPicker, { prettyTime } from "../components/vivah/MuhuratPicker";
 import { isIndia } from "../utils/currency";
+import { getPartnerRefCode } from "../utils/partnerRef";
 import RitualSchedule, {
   suggestPlan,
   expandPlan,
@@ -528,15 +529,10 @@ export default function VivahCheckoutPage() {
     setEmail((v) => v || u.email || "");
   }, [token]);
 
-  // Referral code captured site-wide by <ReferralCapture/> in App.tsx.
-  const referralCode = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("pjar_partner_ref");
-      return raw ? String(JSON.parse(raw)?.code || "") : "";
-    } catch {
-      return "";
-    }
-  }, []);
+  // Referral code captured site-wide by <ReferralCapture/> in App.tsx. Read through the shared
+  // helper so the 2-day window applies here too — reading the entry directly, as this did, kept
+  // crediting the partner for as long as the browser held the key.
+  const referralCode = useMemo(() => getPartnerRefCode(), []);
 
   /* ── Kundali is only asked for on à-la-carte Kundali Milan ─────────────── */
   // Compare against the EXPANDED slugs, not the display slugs. A card can fold

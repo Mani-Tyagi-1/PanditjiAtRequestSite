@@ -30,6 +30,7 @@ import CodConfirmModal from "./CodConfirmModal";
 // until an order actually completes.
 const OrderSuccessModal = lazy(() => import("./OrderSuccessModal"));
 import { money } from "../../../utils/currency";
+import { getPartnerRefCode } from "../../../utils/partnerRef";
 
 const GIFT_WRAP_CHARGE = 49;
 const FIRST_ORDER_DISCOUNT_PERCENT = 10;
@@ -202,6 +203,7 @@ export default function ShopifyCartDrawer() {
 
     // Validates the delivery form and returns the trimmed payload (or null on error).
     const buildValidatedCheckout = (onError: (msg: string) => void) => {
+        const partnerRefCode = getPartnerRefCode();
         const { name, addressLine, city, state, pincode } = checkoutForm;
         if (!name.trim() || !addressLine.trim() || !city.trim() || !state.trim() || !pincode.trim()) {
             onError("Please fill in all shipping details.");
@@ -232,6 +234,9 @@ export default function ShopifyCartDrawer() {
             giftWrap,
             giftRecipientName: giftWrap ? giftRecipientName.trim() : "",
             giftMessage: giftWrap ? giftMessage.trim() : "",
+            // Partner attribution. Built here so both the prepaid and the COD submit carry it —
+            // the server stores it on the order and credits the referrer when payment settles.
+            ...(partnerRefCode && { referralCode: partnerRefCode }),
         };
     };
 

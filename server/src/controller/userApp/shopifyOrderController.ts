@@ -209,6 +209,7 @@ export const createShopifyOrder: RequestHandler = async (req, res) => {
       giftWrap,
       giftRecipientName,
       giftMessage,
+      referralCode,
     } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -318,6 +319,9 @@ export const createShopifyOrder: RequestHandler = async (req, res) => {
       city: String(city).trim(),
       state: String(state).trim(),
       pincode: String(pincode).trim(),
+      // Partner affiliate code the shopper arrived on — only the browser knows it, and the
+      // verify/webhook path that credits the partner runs without any client state.
+      ...(referralCode && { referralCode: String(referralCode).trim() }),
       paymentMethod: "razorpay",
       paymentStatus: "pending",
       status: "pending",
@@ -371,6 +375,7 @@ export const createCodShopifyOrder: RequestHandler = async (req, res) => {
       giftWrap,
       giftRecipientName,
       giftMessage,
+      referralCode,
     } = req.body;
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -470,6 +475,10 @@ export const createCodShopifyOrder: RequestHandler = async (req, res) => {
       city: String(city).trim(),
       state: String(state).trim(),
       pincode: String(pincode).trim(),
+      // Recorded for parity with the prepaid flow. Nothing credits a partner here: COD money
+      // only exists on delivery, so attribution would have to fire wherever that is marked
+      // paid — this keeps the code on the order for whenever that hook is added.
+      ...(referralCode && { referralCode: String(referralCode).trim() }),
       paymentMethod: "cod",
       paymentStatus: "pending",
       status: "confirmed",
@@ -555,6 +564,7 @@ export const completeShopifyOrderPayment: RequestHandler = async (req, res) => {
       void sendPjarOrderToPartnerAffiliate({
         userId: (order as any).user,
         phone: (order as any).phone,
+        referralCode: (order as any).referralCode,
         orderId: order.razorpayOrderId,
         orderPrice: Number((order as any).totalAmount),
         productName: "SHOPIFY_ORDER",

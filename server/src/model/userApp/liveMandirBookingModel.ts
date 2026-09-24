@@ -15,6 +15,8 @@ export interface ILiveMandirBooking {
   members: string;
   phone: string;
   wish: string;
+  /** Partner affiliate code captured from `?ref=` at checkout; credits the referrer on payment. */
+  referralCode?: string;
   status: "pending" | "confirmed" | "completed" | "cancelled";
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
   razorpayOrderId?: string;
@@ -41,6 +43,9 @@ const liveMandirBookingSchema = new Schema<ILiveMandirBooking>({
   members: { type: String, default: "" },
   phone: { type: String, required: true, trim: true },
   wish: { type: String, default: "" },
+  // Partner affiliate code from `?ref=`. Left unset for organic traffic rather than defaulting
+  // to "", so attribution never has to special-case an empty code.
+  referralCode: { type: String, trim: true },
   status: {
     type: String,
     enum: ["pending", "confirmed", "completed", "cancelled"],

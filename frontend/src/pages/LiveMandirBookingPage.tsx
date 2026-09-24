@@ -44,6 +44,7 @@ function resolveScheduledDate(label: string): string {
 
 import LiveMandirBookingPageRegular from "./LiveMandirBookingPageRegular";
 import AdminUpsellAddon, { type UpsellProduct } from "../components/booking/LiveMandirPujas/AdminUpsellAddon";
+import { getPartnerRefCode } from "../utils/partnerRef";
 
 const INPUT = "w-full bg-transparent px-3 py-3 text-[13px] text-stone-800 placeholder-stone-400 focus:outline-none";
 const INPUT_WRAPPER = "flex border border-stone-200 rounded-lg overflow-hidden bg-white focus-within:border-[#6b0504] focus-within:ring-1 focus-within:ring-[#6b0504]/20 transition-all t-focus-within";
@@ -288,6 +289,9 @@ function AdminLiveMandirBookingPage() {
     };
 
     const handleConfirm = async () => {
+        // Read at confirm time, not render time: the devotee may have opened the invite link
+        // in another tab after this page mounted.
+        const partnerRefCode = getPartnerRefCode();
         if (submitInFlight.current) return;
         submitInFlight.current = true;
         setError("");
@@ -380,6 +384,9 @@ function AdminLiveMandirBookingPage() {
         }
 
         const payload = {
+            // Partner attribution — the code the devotee arrived on. Guests often have no
+            // profile carrying it, so it has to travel with the booking.
+            ...(partnerRefCode && { referralCode: partnerRefCode }),
             isLiveMandir: true,
             pujaSlug: puja.id,
             packageName: `${puja.pujaName} - ${selectedPkg?.name || "Standard"}`,

@@ -77,6 +77,7 @@ export interface IShopifyProduct {
   onlineStoreUrl?: string | null;
   productType?: string;
   rashi?: string;
+  rating?: number;
   seo?: Schema.Types.Mixed | null;
   source?: string;
   status?: string;
@@ -183,6 +184,7 @@ const shopifyProductSchema = new Schema<IShopifyProduct>(
     onlineStoreUrl: { type: String, default: null },
     productType: { type: String, default: "" },
     rashi: { type: String, default: "" },
+    rating: { type: Number, default: 5 },
     seo: { type: Schema.Types.Mixed, default: null },
     source: { type: String, default: "shopify" },
     status: { type: String, default: "active", index: true },

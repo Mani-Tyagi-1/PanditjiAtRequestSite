@@ -576,8 +576,8 @@ export default function LiveMandirPujaDetailPage() {
                     <div className="flex items-center flex-wrap gap-x-2.5 min-[360px]:gap-x-3 gap-y-1 mt-2">
                         <span className="bg-orange-100 text-orange-700 t-bg-alt t-text-dark text-[10.5px] min-[360px]:text-[11px] font-semibold px-2 min-[360px]:px-2.5 py-0.5 rounded-full">{puja.deity}</span>
                         <span className="flex items-center gap-1 text-[11px] min-[360px]:text-[12px]">
-                            <Stars value={4.6} />
-                            <span className="font-bold text-stone-700">4.6</span>
+                            <Stars value={puja.rating ?? 5} />
+                            <span className="font-bold text-stone-700">{(puja.rating ?? 5).toFixed(1)}</span>
                             <span className="text-stone-400">· {devoteesLabel} devotees</span>
                         </span>
                     </div>

@@ -341,7 +341,7 @@ function LiveMandirVerticalCard({ puja, onBook }: { puja: LivePuja; onBook: () =
 
 
                 <span className=" absolute top-2 right-2 flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md self-start shrink-0">
-                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> {(puja.rating ?? 4.9).toFixed(1)}
+                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> {(puja.rating ?? 5).toFixed(1)}
                 </span>
 
                 {discount > 0 && (

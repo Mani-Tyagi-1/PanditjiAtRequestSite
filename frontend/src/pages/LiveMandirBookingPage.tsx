@@ -651,7 +651,7 @@ function AdminLiveMandirBookingPage() {
                                     <p className={`text-[12px] font-medium mt-1 ${adminTheme ? 't-text' : 'text-[#4C3F91]'}`}>{selectedPkg?.name} package</p>
                                 </div>
                                 <span className={`flex items-center gap-1 shrink-0 border rounded-full px-2 py-0.5 text-[11px] font-bold ${adminTheme ? 't-bg-alt t-border-light t-text-dark' : 'bg-orange-50 border-orange-100 text-[#4C3F91]'}`}>
-                                    ★ 4.6
+                                    ★ {(puja.rating ?? 5).toFixed(1)}
                                 </span>
                             </div>
 

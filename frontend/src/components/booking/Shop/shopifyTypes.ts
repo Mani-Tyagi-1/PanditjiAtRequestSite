@@ -45,6 +45,7 @@ export type ShopifyProduct = {
         maxVariantCompareAtPrice: Money;
     };
     rashi?: string;
+    rating?: number;
     category?: string | null;
     productType?: string;
     status?: string;

@@ -53,6 +53,7 @@ const PoojaSchema = new mongoose.Schema(
       },
     ],
     isActive: { type: Boolean, default: true },
+    rating: { type: Number, default: 5 },
     isFeatured: { type: Boolean, default: false },
     featuredRank: { type: Number, default: null },
     isExclusive: { type: Boolean, default: false },

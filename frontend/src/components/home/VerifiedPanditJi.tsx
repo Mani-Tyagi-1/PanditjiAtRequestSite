@@ -103,7 +103,7 @@ export default function VerifiedPanditJi() {
                                             </p>
                                         )}
                                         <p className="flex items-center gap-1 text-[12px] font-bold text-amber-700 mt-0.5">
-                                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {(p.rating ?? 4.8).toFixed(1)}
+                                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> {(p.rating ?? 5).toFixed(1)}
                                         </p>
                                     </div>
                                 </button>

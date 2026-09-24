@@ -197,7 +197,7 @@ export default function ShopifyProductDetailPage() {
                     <h2 className="text-2xl font-bold text-stone-850 leading-tight">{product.title}</h2>
                     <div className="flex items-center gap-1.5 mt-2">
                         <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[11.5px] font-bold">
-                            <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" /> 4.9
+                            <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" /> {(product.rating ?? 5).toFixed(1)}
                         </span>
                         <span className="text-[12px] text-stone-500 font-semibold">Energized & Certified</span>
                     </div>

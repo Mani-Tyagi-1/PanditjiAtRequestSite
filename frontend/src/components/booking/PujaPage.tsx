@@ -622,7 +622,7 @@ export default function PujaDetailPage() {
                                 {deity}
                             </span>
                             <div className="flex items-center gap-1 text-amber-500 text-xs font-semibold">
-                                ★ 4.9
+                                ★ {(pujaData.rating ?? 5).toFixed(1)}
                                 <span className="text-stone-400 font-light ml-0.5">
                                     (312 reviews)
                                 </span>

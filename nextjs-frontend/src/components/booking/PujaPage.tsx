@@ -310,7 +310,10 @@ export default function PujaDetailPage() {
         const fetchPooja = async () => {
             try {
                 const apiUrl = API_URL;
-                const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`);
+                // Bounded wait: a hung backend must end in the "not found" state, not a spinner.
+                const response = await fetch(`${apiUrl}/fetch-pooja-by-id/${pujaId}`, {
+                    signal: AbortSignal.timeout(15000),
+                });
                 const data = await response.json();
 
                 if (data && data.pooja) {
@@ -327,6 +330,8 @@ export default function PujaDetailPage() {
 
         if (pujaId) {
             fetchPooja();
+        } else {
+            setIsLoading(false);
         }
     }, [pujaId]);
 

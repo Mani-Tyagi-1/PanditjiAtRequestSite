@@ -62,6 +62,8 @@ type LivePuja = {
 
 type Tab = "home" | "mandir";
 
+const DEFAULT_CAT = "Puja";
+
 export default function BookPujaPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -69,7 +71,7 @@ export default function BookPujaPage() {
 
     const [poojas, setPoojas] = useState<Pooja[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [activeCat, setActiveCat] = useState<string>("All");
+    const [activeCat, setActiveCat] = useState<string>(DEFAULT_CAT);
     const [loadingHome, setLoadingHome] = useState(true);
 
     const [livePujas, setLivePujas] = useState<LivePuja[]>([]);
@@ -84,7 +86,10 @@ export default function BookPujaPage() {
                 ]);
                 const allP: Pooja[] = pRes.data?.poojas || [];
                 setPoojas(allP.filter((p) => isTodayOrFuture(p.specialDate)));
-                setCategories(cRes.data?.poojaCategory || []);
+                const cats: Category[] = cRes.data?.poojaCategory || [];
+                setCategories(cats);
+                // Fall back to "All" if the default category doesn't exist
+                if (!cats.some((c) => c.category_name_en === DEFAULT_CAT)) setActiveCat("All");
             } catch (err) {
                 console.error("Error loading poojas/categories:", err);
             } finally {

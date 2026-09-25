@@ -136,17 +136,6 @@ export default function ShopPage() {
                 >
                     <ArrowLeft className="w-4 h-4 text-stone-700" />
                 </button>
-                <button
-                    onClick={() => (isPujaCheckout ? navigate(returnTo!) : openCart())}
-                    className="absolute right-4 top-3 w-8 h-8 rounded-full bg-white/70 flex items-center justify-center shadow-sm active:scale-90 transition-transform"
-                >
-                    <ShoppingCart className="w-4 h-4 text-stone-700" />
-                    {count > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-orange-500 text-white text-[9px] font-bold">
-                            {count}
-                        </span>
-                    )}
-                </button>
                 <h1 className="text-center text-[26px] font-bold text-orange-600" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
                     Pandit Ji At Request Shop
                 </h1>
@@ -163,8 +152,8 @@ export default function ShopPage() {
                 )}
 
                 {/* Search Bar */}
-                <div className="relative mt-4">
-                    <div className="flex items-center gap-3 bg-white rounded-2xl px-4 py-2.5 shadow-sm border border-orange-100">
+                <div className="relative mt-4 flex items-center gap-2">
+                    <div className="flex flex-1 items-center gap-3 bg-white rounded-2xl px-4 py-2.5 shadow-sm border border-orange-100">
                         <Search className="w-4 h-4 text-stone-400 shrink-0" />
                         <input
                             type="text"
@@ -179,6 +168,18 @@ export default function ShopPage() {
                             </button>
                         )}
                     </div>
+                    <button
+                        onClick={() => (isPujaCheckout ? navigate(returnTo!) : openCart())}
+                        aria-label="Open cart"
+                        className="relative shrink-0 w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-orange-100 active:scale-90 transition-transform"
+                    >
+                        <ShoppingCart className="w-4 h-4 text-stone-700" />
+                        {count > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 flex items-center justify-center rounded-full bg-orange-500 text-white text-[9px] font-bold">
+                                {count}
+                            </span>
+                        )}
+                    </button>
                 </div>
             </div>
 
